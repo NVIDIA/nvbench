@@ -9,15 +9,19 @@
 #include <cuda_runtime_api.h>
 
 #define CUDA_CALL(call)                                                        \
-  do {                                                                         \
+  do                                                                           \
+  {                                                                            \
     cudaError err = call;                                                      \
-    if (cudaSuccess != err) {                                                  \
-      fprintf(stderr, "CUDA error in file '%s' in line %i : %s.\n", __FILE__,  \
-              __LINE__, cudaGetErrorString(err));                              \
+    if (cudaSuccess != err)                                                    \
+    {                                                                          \
+      fprintf(stderr,                                                          \
+              "CUDA error in file '%s' in line %i : %s.\n",                    \
+              __FILE__,                                                        \
+              __LINE__,                                                        \
+              cudaGetErrorString(err));                                        \
       exit(EXIT_FAILURE);                                                      \
     }                                                                          \
   } while (0)
-
 
 namespace nvbench
 {
@@ -41,15 +45,9 @@ public:
     CUDA_CALL(cudaEventDestroy(stop_));
   }
 
-  void start()
-  {
-    CUDA_CALL(cudaEventRecord(start_, 0));
-  }
+  void start() { CUDA_CALL(cudaEventRecord(start_, 0)); }
 
-  void stop()
-  {
-    CUDA_CALL(cudaEventRecord(stop_, 0));
-  }
+  void stop() { CUDA_CALL(cudaEventRecord(stop_, 0)); }
 
   double milliseconds_elapsed()
   {
@@ -60,10 +58,7 @@ public:
     return elapsed_time;
   }
 
-  double seconds_elapsed()
-  {
-    return milliseconds_elapsed() / 1000.0;
-  }
+  double seconds_elapsed() { return milliseconds_elapsed() / 1000.0; }
 };
 
-}
+} // namespace nvbench
