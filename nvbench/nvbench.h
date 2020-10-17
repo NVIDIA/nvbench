@@ -1,4 +1,5 @@
 // TODO license. I'd like to make this BSD 3-clause for simplicity.
+// TODO Need a way to select device at runtime.
 
 #pragma once
 
