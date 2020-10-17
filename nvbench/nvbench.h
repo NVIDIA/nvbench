@@ -1,5 +1,6 @@
 // TODO license. I'd like to make this BSD 3-clause for simplicity.
 // TODO Need a way to select device at runtime.
+// TODO Need to customize reported times more: Wall *and/or* CPU *and/or* GPU
 
 #pragma once
 
