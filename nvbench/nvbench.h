@@ -2,6 +2,7 @@
 // TODO Need a way to select device at runtime.
 // TODO Need to customize reported times more: Wall *and/or* CPU *and/or* GPU
 // TODO Implement GPU-time only benchmarks.
+// TODO Scale max range to device limits via BENCHMARK_APPLY macros
 
 #pragma once
 
