@@ -13,6 +13,13 @@ CPMAddPackage(
   "RUN_HAVE_STD_REGEX 0"
 )
 
+# Why does CMake make it so difficult to enable cuda C++17 with interface
+# properties...Resorting to brute force to unblock.
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAG} -std=c++17")
+
 add_library(nvbench INTERFACE)
 target_include_directories(nvbench INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
 target_link_libraries(nvbench INTERFACE benchmark_main)
+set_target_properties(nvbench PROPERTIES INTERFACE_COMPILE_FEATURES cuda_std_17)
+
+add_subdirectory(testing)
