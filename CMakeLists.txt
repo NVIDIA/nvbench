@@ -13,6 +13,12 @@ CPMAddPackage(
   "RUN_HAVE_STD_REGEX 0"
 )
 
+CPMAddPackage(
+  NAME fmt
+  GITHUB_REPOSITORY fmtlib/fmt
+  GIT_TAG 7.1.3
+)
+
 # Why does CMake make it so difficult to enable cuda C++17 with interface
 # properties...Resorting to brute force to unblock.
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAG} -std=c++17")
