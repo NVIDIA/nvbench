@@ -14,7 +14,7 @@ int64_axis::~int64_axis() = default;
 void int64_axis::set_inputs(const std::vector<int64_t> &inputs)
 {
   m_inputs = inputs;
-  if (!m_is_power_of_two)
+  if (!this->is_power_of_two())
   {
     m_values = inputs;
   }
@@ -26,8 +26,7 @@ void int64_axis::set_inputs(const std::vector<int64_t> &inputs)
       if (in < 0 || in >= 64)
       {
         throw std::runtime_error(fmt::format("{}:{}: Input value exceeds valid "
-                                             "range "
-                                             "for power-of-two mode. "
+                                             "range for power-of-two mode. "
                                              "Input={} ValidRange=[0, 63]",
                                              __FILE__,
                                              __LINE__,
@@ -39,14 +38,15 @@ void int64_axis::set_inputs(const std::vector<int64_t> &inputs)
     std::transform(inputs.cbegin(), inputs.cend(), m_values.begin(), conv);
   }
 }
-std::string int64_axis::do_get_user_string(std::size_t i) const
+std::string int64_axis::do_get_input_string(std::size_t i) const
 {
   return fmt::to_string(m_inputs[i]);
 }
-std::string int64_axis::do_get_user_description(std::size_t i) const
+std::string int64_axis::do_get_description(std::size_t i) const
 {
-  return m_is_power_of_two ? fmt::format("2^{} = {}", m_inputs[i], m_values[i])
-                           : std::string{};
+  return this->is_power_of_two()
+           ? fmt::format("2^{} = {}", m_inputs[i], m_values[i])
+           : std::string{};
 }
 
 } // namespace nvbench

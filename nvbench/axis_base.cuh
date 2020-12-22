@@ -1,7 +1,7 @@
 #pragma once
 
-#include <utility>
 #include <string>
+#include <utility>
 
 namespace nvbench
 {
@@ -24,14 +24,14 @@ struct axis_base
 
   [[nodiscard]] std::size_t get_size() const { return this->do_get_size(); }
 
-  [[nodiscard]] std::string get_user_string(std::size_t i) const
+  [[nodiscard]] std::string get_input_string(std::size_t i) const
   {
-    return this->do_get_user_string(i);
+    return this->do_get_input_string(i);
   }
 
-  [[nodiscard]] std::string get_user_description(std::size_t i) const
+  [[nodiscard]] std::string get_description(std::size_t i) const
   {
-    return this->do_get_user_description(i);
+    return this->do_get_description(i);
   }
 
 protected:
@@ -41,9 +41,9 @@ protected:
   {}
 
 private:
-  virtual std::size_t do_get_size() const                        = 0;
-  virtual std::string do_get_user_string(std::size_t) const      = 0;
-  virtual std::string do_get_user_description(std::size_t) const = 0;
+  virtual std::size_t do_get_size() const                      = 0;
+  virtual std::string do_get_input_string(std::size_t i) const = 0;
+  virtual std::string do_get_description(std::size_t i) const  = 0;
 
   std::string m_name;
   axis_type m_type;
