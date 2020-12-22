@@ -47,9 +47,23 @@ void test_several()
   ASSERT(axis.get_description(2) == "");
 }
 
+void test_get_index()
+{
+  nvbench::type_axis axis("GetIndexTest");
+  axis.set_inputs<
+    nvbench::
+      type_list<nvbench::int8_t, nvbench::uint16_t, nvbench::float32_t, bool>>();
+
+  ASSERT(axis.get_index("I8") == 0);
+  ASSERT(axis.get_index("U16") == 1);
+  ASSERT(axis.get_index("F32") == 2);
+  ASSERT(axis.get_index("bool") == 3);
+}
+
 int main()
 {
   test_empty();
   test_single();
   test_several();
+  test_get_index();
 }
