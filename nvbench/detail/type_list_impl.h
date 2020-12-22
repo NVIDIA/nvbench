@@ -7,7 +7,14 @@ namespace nvbench
 {
 
 template <typename... Ts>
-struct type_list;
+struct type_list
+{};
+
+template <typename T>
+struct wrapped_type
+{
+  using type = T;
+};
 
 namespace tl
 {
@@ -82,6 +89,23 @@ struct cartesian_product<
     nvbench::type_list<nvbench::type_list<Tail...>, TL, TLTail...>>::type;
   using type = decltype(detail::concat(cur{}, next{}));
 };
+
+//------------------------------------------------------------------------------
+template <typename TypeList, typename Functor, std::size_t... Is>
+void foreach (std::index_sequence<Is...>, Functor && f)
+{
+  // Garmonbozia...
+  ((f(wrapped_type<decltype(detail::get<Is>(TypeList{}))>{})), ...);
+}
+
+template <typename TypeList, typename Functor>
+void foreach (Functor &&f)
+{
+  constexpr std::size_t list_size = decltype(detail::size(TypeList{}))::value;
+  using indices                   = std::make_index_sequence<list_size>;
+
+  detail::foreach<TypeList>(indices{}, std::forward<Functor>(f));
+}
 
 } // namespace detail
 } // namespace tl

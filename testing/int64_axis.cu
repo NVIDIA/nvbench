@@ -1,6 +1,6 @@
 #include <nvbench/int64_axis.cuh>
 
-#include "testing/test_asserts.cuh"
+#include "test_asserts.cuh"
 
 #include <fmt/format.h>
 

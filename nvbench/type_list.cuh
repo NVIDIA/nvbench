@@ -9,8 +9,11 @@ namespace nvbench
 {
 
 template <typename... Ts>
-struct type_list
-{};
+struct type_list;
+
+// Wraps a type for use with nvbench::tl::foreach.
+template <typename T>
+struct wrapped_type;
 
 namespace tl
 {
@@ -98,6 +101,26 @@ using prepend_each = typename detail::prepend_each<T, TypeLists>::type;
  */
 template <typename TypeLists>
 using cartesian_product = typename detail::cartesian_product<TypeLists>::type;
+
+/**
+ * Invoke the Functor once for each type in TypeList. The type will be passed to
+ * `f` as a `nvbench::wrapped_type<T>` argument.
+ *
+ * ```c++
+ * using TL = nvbench::type_list<int8_t, int16_t, int32_t, int64_t>;
+ * std::vector<std::size_t> sizes;
+ * nvbench::tl::foreach<TL>([&sizes](auto wrapped_type) {
+ *   using T = typename decltype(wrapped_type)::type;
+ *   sizes.push_back(sizeof(T));
+ * });
+ * static_assert(sizes == {1, 2, 3, 4});
+ * ```
+ */
+template <typename TypeList, typename Functor>
+void foreach (Functor &&f)
+{
+  detail::foreach<TypeList>(std::forward<Functor>(f));
+}
 
 } // namespace tl
 

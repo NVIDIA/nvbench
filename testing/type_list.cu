@@ -2,8 +2,15 @@
 
 #include <nvbench/type_strings.cuh>
 
+#include "test_asserts.cuh"
+
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
 #include <cstdint>
+#include <string>
 #include <type_traits>
+#include <vector>
 
 // Unique, numbered types for testing type_list functionality.
 using T0 = std::integral_constant<std::size_t, 0>;
@@ -103,5 +110,37 @@ struct test_cartesian_product
   static_assert(std::is_same_v<nvbench::tl::cartesian_product<TLs>, CartProd>);
 };
 
-// This test only has static asserts.
-int main() {}
+struct test_foreach
+{
+  using TL0 = nvbench::type_list<>;
+  using TL1 = nvbench::type_list<T0>;
+  using TL2 = nvbench::type_list<T0, T1>;
+  using TL3 = nvbench::type_list<T0, T1, T2>;
+
+  template <typename TypeList>
+  static void test(std::vector<std::string> ref_vals)
+  {
+    std::vector<std::string> test_vals;
+    nvbench::tl::foreach<TypeList>([&test_vals](auto wrapped_type) {
+      using T = typename decltype(wrapped_type)::type;
+      test_vals.push_back(nvbench::type_strings<T>::input_string());
+    });
+    ASSERT_MSG(test_vals == ref_vals,
+               fmt::format("{} != {}", test_vals, ref_vals));
+  }
+
+  static void run()
+  {
+    test<TL0>({});
+    test<TL1>({"T0"});
+    test<TL2>({"T0", "T1"});
+    test<TL3>({"T0", "T1", "T2"});
+  }
+};
+
+int main()
+{
+  // Note that most tests in this file are just static asserts. Only those with
+  // runtime components are listed here.
+  test_foreach::run();
+}
