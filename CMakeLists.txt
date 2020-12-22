@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 3.18)
+
+project(nvbench CUDA)
+
 include(CPM)
 
 CPMAddPackage(
@@ -23,9 +27,5 @@ CPMAddPackage(
 # properties...Resorting to brute force to unblock.
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAG} -std=c++17")
 
-add_library(nvbench INTERFACE)
-target_include_directories(nvbench INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
-target_link_libraries(nvbench INTERFACE benchmark_main)
-set_target_properties(nvbench PROPERTIES INTERFACE_COMPILE_FEATURES cuda_std_17)
-
+add_subdirectory(nvbench)
 add_subdirectory(testing)
