@@ -1,9 +1,10 @@
 set(test_srcs
   int64_axis.cu
   float64_axis.cu
+  params.cu
+  string_axis.cu
   type_axis.cu
   type_list.cu
-  string_axis.cu
 )
 
 enable_testing()
