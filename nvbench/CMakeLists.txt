@@ -1,8 +1,9 @@
 set(srcs
   axis_base.cu
   float64_axis.cu
-  type_axis.cu
   int64_axis.cu
+  type_axis.cu
+  string_axis.cu
 )
 
 # TODO shared may be a good idea to reduce compilation overhead for large

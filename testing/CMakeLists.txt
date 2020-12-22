@@ -3,6 +3,7 @@ set(test_srcs
   float64_axis.cu
   type_axis.cu
   type_list.cu
+  string_axis.cu
 )
 
 enable_testing()
