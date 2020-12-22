@@ -1,5 +1,6 @@
 set(test_srcs
   int64_axis.cu
+  type_axis.cu
   type_list.cu
 )
 

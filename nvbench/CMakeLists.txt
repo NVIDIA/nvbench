@@ -1,5 +1,6 @@
 set(srcs
   axis_base.cu
+  type_axis.cu
   int64_axis.cu
 )
 
