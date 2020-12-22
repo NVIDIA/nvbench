@@ -1,4 +1,4 @@
-#include <nvbench/type_list.h>
+#include <nvbench/type_list.cuh>
 
 #include <cstdint>
 #include <type_traits>
