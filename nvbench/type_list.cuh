@@ -16,7 +16,18 @@ namespace tl
 {
 
 /**
- * Get the TypeList entry at the specified index.
+ * Get the size of a type_list as a `std::integral_constant<size_t, N>`.
+ *
+ * ```c++
+ * using TL = nvbench::type_list<T0, T1, T2, T3, T4>;
+ * static_assert(nvbench::tl::size<TL>::value == 5);
+ * ```
+ */
+template <typename TypeList>
+using size = decltype(detail::size(TypeList{}));
+
+/**
+ * Get the type at the specified index of a type_list.
  *
  * ```c++
  * using TL = nvbench::type_list<T0, T1, T2, T3, T4>;
@@ -85,8 +96,8 @@ using prepend_each = typename detail::prepend_each<T, TypeLists>::type;
  *  static_assert(std::is_same_v<bench::tl::cartesian_product<TLs>, CartProd>);
  * ```
  */
-template <typename TLs>
-using cartesian_product = typename detail::cartesian_product<TLs>::type;
+template <typename TypeLists>
+using cartesian_product = typename detail::cartesian_product<TypeLists>::type;
 
 } // namespace tl
 

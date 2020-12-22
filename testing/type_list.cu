@@ -1,5 +1,7 @@
 #include <nvbench/type_list.cuh>
 
+#include <nvbench/type_strings.cuh>
+
 #include <cstdint>
 #include <type_traits>
 
@@ -12,6 +14,27 @@ using T4 = std::integral_constant<std::size_t, 4>;
 using T5 = std::integral_constant<std::size_t, 5>;
 using T6 = std::integral_constant<std::size_t, 6>;
 using T7 = std::integral_constant<std::size_t, 7>;
+
+NVBENCH_DECLARE_TYPE_STRINGS(T0, "T0", "T0");
+NVBENCH_DECLARE_TYPE_STRINGS(T1, "T1", "T1");
+NVBENCH_DECLARE_TYPE_STRINGS(T2, "T2", "T2");
+NVBENCH_DECLARE_TYPE_STRINGS(T3, "T3", "T3");
+NVBENCH_DECLARE_TYPE_STRINGS(T4, "T4", "T4");
+NVBENCH_DECLARE_TYPE_STRINGS(T5, "T5", "T5");
+NVBENCH_DECLARE_TYPE_STRINGS(T6, "T6", "T6");
+NVBENCH_DECLARE_TYPE_STRINGS(T7, "T7", "T7");
+
+struct test_size
+{
+  using TL0 = nvbench::type_list<>;
+  using TL1 = nvbench::type_list<T0>;
+  using TL2 = nvbench::type_list<T0, T1>;
+  using TL3 = nvbench::type_list<T0, T1, T2>;
+  static_assert(nvbench::tl::size<TL0>{} == 0);
+  static_assert(nvbench::tl::size<TL1>{} == 1);
+  static_assert(nvbench::tl::size<TL2>{} == 2);
+  static_assert(nvbench::tl::size<TL3>{} == 3);
+};
 
 struct test_get
 {

@@ -15,6 +15,10 @@ namespace tl
 namespace detail
 {
 
+template <typename... Ts>
+auto size(nvbench::type_list<Ts...>)
+  -> std::integral_constant<std::size_t, sizeof...(Ts)>;
+
 template <std::size_t I, typename... Ts>
 auto get(nvbench::type_list<Ts...>)
   -> std::tuple_element_t<I, std::tuple<Ts...>>;
