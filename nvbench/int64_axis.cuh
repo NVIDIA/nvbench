@@ -40,16 +40,16 @@ struct int64_axis final : public axis_base
     return static_cast<bool>(m_flags & int64_axis_flags::power_of_two);
   }
 
-  void set_inputs(const std::vector<int64_t> &inputs);
+  void set_inputs(std::vector<int64_t> inputs);
 
   [[nodiscard]] const std::vector<int64_t> &get_inputs() const
   {
     return m_inputs;
   };
 
-  [[nodiscard]] const std::vector<int64_t> &get_values() const
+  [[nodiscard]] int64_t get_value(std::size_t i) const
   {
-    return m_values;
+    return m_values[i];
   };
 
 private:

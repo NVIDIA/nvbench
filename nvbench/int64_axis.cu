@@ -11,16 +11,16 @@ namespace nvbench
 
 int64_axis::~int64_axis() = default;
 
-void int64_axis::set_inputs(const std::vector<int64_t> &inputs)
+void int64_axis::set_inputs(std::vector<int64_t> inputs)
 {
-  m_inputs = inputs;
+  m_inputs = std::move(inputs);
   if (!this->is_power_of_two())
   {
-    m_values = inputs;
+    m_values = m_inputs;
   }
   else
   {
-    m_values.resize(inputs.size());
+    m_values.resize(m_inputs.size());
 
     auto conv = [](int64_t in) -> int64_t {
       if (in < 0 || in >= 64)
@@ -35,13 +35,15 @@ void int64_axis::set_inputs(const std::vector<int64_t> &inputs)
       return 1ll << in;
     };
 
-    std::transform(inputs.cbegin(), inputs.cend(), m_values.begin(), conv);
+    std::transform(m_inputs.cbegin(), m_inputs.cend(), m_values.begin(), conv);
   }
 }
+
 std::string int64_axis::do_get_input_string(std::size_t i) const
 {
   return fmt::to_string(m_inputs[i]);
 }
+
 std::string int64_axis::do_get_description(std::size_t i) const
 {
   return this->is_power_of_two()
