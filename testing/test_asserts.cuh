@@ -14,7 +14,7 @@
     }                                                                           \
   } while (false)
 
-#define ASSERT_MSG(cond, msg)                                                  \
+#define ASSERT_MSG(cond, fmtstr, ...)                                          \
   do                                                                           \
   {                                                                            \
     if (cond)                                                                  \
@@ -25,7 +25,7 @@
                  __FILE__,                                                     \
                  __LINE__,                                                     \
                  #cond,                                                        \
-                 msg);                                                         \
+                 fmt::format(fmtstr, __VA_ARGS__));                            \
       exit(EXIT_FAILURE);                                                      \
     }                                                                          \
   } while (false)

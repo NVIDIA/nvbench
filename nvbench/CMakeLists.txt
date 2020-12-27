@@ -5,6 +5,7 @@ set(srcs
   params.cu
   string_axis.cu
   type_axis.cu
+  detail/state_generator.cu
 )
 
 # TODO shared may be a good idea to reduce compilation overhead for large

@@ -3,6 +3,7 @@ set(test_srcs
   int64_axis.cu
   float64_axis.cu
   params.cu
+  state_generator.cu
   string_axis.cu
   type_axis.cu
   type_list.cu
