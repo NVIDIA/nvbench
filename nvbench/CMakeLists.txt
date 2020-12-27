@@ -5,6 +5,7 @@ set(srcs
   params.cu
   string_axis.cu
   type_axis.cu
+  state.cu
   detail/state_generator.cu
 )
 
