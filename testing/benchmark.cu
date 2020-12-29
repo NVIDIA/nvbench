@@ -33,7 +33,7 @@ void test_type_axes()
   bench.set_type_axes_names({"Integer", "Float", "Other"});
 
   fmt::memory_buffer buffer;
-  const auto &axes = bench.get_type_axes();
+  const auto &axes = bench.get_axes().get_axes();
   for (const auto &axis : axes)
   {
     fmt::format_to(buffer, "Axis: {}\n", axis->get_name());
@@ -119,9 +119,8 @@ void test_float64_axes()
 {
   no_types_bench bench;
   bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
-  ASSERT(bench.get_float64_axes().size() == 1);
-  ASSERT(bench.get_float64_axes()[0] != nullptr);
-  const auto &axis = *bench.get_float64_axes()[0];
+  ASSERT(bench.get_axes().get_axes().size() == 1);
+  const auto &axis = bench.get_axes().get_float64_axis("F64 Axis");
   ASSERT(axis.get_size() == 5);
   ASSERT(axis.get_value(0) == 0.);
   ASSERT(axis.get_value(1) == .1);
@@ -134,9 +133,9 @@ void test_int64_axes()
 {
   no_types_bench bench;
   bench.add_int64_axis("I64 Axis", {10, 11, 12, 13, 14});
-  ASSERT(bench.get_int64_axes().size() == 1);
-  ASSERT(bench.get_int64_axes()[0] != nullptr);
-  const auto &axis = *bench.get_int64_axes()[0];
+  ASSERT(bench.get_axes().get_axes().size() == 1);
+  ASSERT(bench.get_axes().get_axes()[0] != nullptr);
+  const auto &axis = bench.get_axes().get_int64_axis("I64 Axis");
   ASSERT(axis.get_size() == 5);
   ASSERT(axis.get_value(0) == 10);
   ASSERT(axis.get_value(1) == 11);
@@ -149,9 +148,9 @@ void test_int64_power_of_two_axes()
 {
   no_types_bench bench;
   bench.add_int64_power_of_two_axis("I64 POT Axis", {1, 2, 3, 4, 5});
-  ASSERT(bench.get_int64_axes().size() == 1);
-  ASSERT(bench.get_int64_axes()[0] != nullptr);
-  const auto &axis = *bench.get_int64_axes()[0];
+  ASSERT(bench.get_axes().get_axes().size() == 1);
+  ASSERT(bench.get_axes().get_axes()[0] != nullptr);
+  const auto &axis = bench.get_axes().get_int64_axis("I64 POT Axis");
   ASSERT(axis.get_size() == 5);
   ASSERT(axis.get_value(0) == 2);
   ASSERT(axis.get_value(1) == 4);
@@ -164,9 +163,9 @@ void test_string_axes()
 {
   no_types_bench bench;
   bench.add_string_axis("Strings", {"string a", "string b", "string c"});
-  ASSERT(bench.get_string_axes().size() == 1);
-  ASSERT(bench.get_string_axes()[0] != nullptr);
-  const auto &axis = *bench.get_string_axes()[0];
+  ASSERT(bench.get_axes().get_axes().size() == 1);
+  ASSERT(bench.get_axes().get_axes()[0] != nullptr);
+  const auto &axis = bench.get_axes().get_string_axis("Strings");
   ASSERT(axis.get_size() == 3);
   ASSERT(axis.get_value(0) == "string a");
   ASSERT(axis.get_value(1) == "string b");

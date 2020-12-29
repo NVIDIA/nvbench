@@ -1,4 +1,5 @@
 set(test_srcs
+  axes_metadata.cu
   benchmark.cu
   int64_axis.cu
   float64_axis.cu
