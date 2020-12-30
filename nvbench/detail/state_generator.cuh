@@ -1,8 +1,10 @@
 #pragma once
 
-#include <nvbench/axis_base.cuh> // for axis_type
+#include <nvbench/axes_metadata.cuh>
+#include <nvbench/axis_base.cuh>
+#include <nvbench/state.cuh>
 
-#include <string_view>
+#include <string>
 #include <vector>
 
 namespace nvbench
@@ -13,9 +15,13 @@ namespace detail
 
 struct state_generator
 {
+
+  static std::vector<nvbench::state> create(const axes_metadata &axes);
+
+protected:
   struct axis_index
   {
-    std::string_view axis;
+    std::string axis;
     nvbench::axis_type type;
     std::size_t index;
     std::size_t size;
@@ -26,7 +32,7 @@ struct state_generator
     this->add_axis(axis.get_name(), axis.get_type(), axis.get_size());
   }
 
-  void add_axis(std::string_view axis,
+  void add_axis(std::string axis,
                 nvbench::axis_type type,
                 std::size_t size)
   {
@@ -35,9 +41,6 @@ struct state_generator
 
   [[nodiscard]] std::size_t get_number_of_states() const;
 
-  // Yep, this class is its own non-STL-style iterator.
-  // It's fiiiiine, we're in detail::. PRs welcome.
-  //
   // Usage:
   // ```
   // state_generator sg;
@@ -60,7 +63,6 @@ struct state_generator
   [[nodiscard]] bool iter_valid() const;
   void next();
 
-private:
   std::vector<axis_index> m_indices;
   std::size_t m_current{};
   std::size_t m_total{};
