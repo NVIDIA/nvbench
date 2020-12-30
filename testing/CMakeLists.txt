@@ -2,6 +2,7 @@ set(test_srcs
   axes_metadata.cu
   benchmark.cu
   cuda_timer.cu
+  cpu_timer.cu
   float64_axis.cu
   int64_axis.cu
   params.cu
