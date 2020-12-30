@@ -1,10 +1,9 @@
 #pragma once
 
+#include <nvbench/named_values.cuh>
 #include <nvbench/types.cuh>
 
 #include <string>
-#include <unordered_map>
-#include <variant>
 
 namespace nvbench
 {
@@ -33,24 +32,9 @@ struct state
 protected:
   friend struct nvbench::detail::state_generator;
 
-  using param_type =
-    std::variant<nvbench::int64_t, nvbench::float64_t, std::string>;
-  using params_type = std::unordered_map<std::string, param_type>;
-
   state() = default;
 
-  explicit state(params_type params)
-      : m_params{std::move(params)}
-  {}
-
-  [[nodiscard]] const params_type &get_params() const { return m_params; }
-  [[nodiscard]] const param_type &get_param(const std::string &name) const;
-
-  void set_param(std::string axis_name, nvbench::int64_t value);
-  void set_param(std::string axis_name, nvbench::float64_t value);
-  void set_param(std::string axis_name, std::string value);
-
-  params_type m_params;
+  nvbench::named_values m_axis_values;
 };
 
 } // namespace nvbench

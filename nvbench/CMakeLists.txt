@@ -5,7 +5,7 @@ set(srcs
   cuda_call.cu
   float64_axis.cu
   int64_axis.cu
-  params.cu
+  named_values.cu
   state.cu
   string_axis.cu
   type_axis.cu

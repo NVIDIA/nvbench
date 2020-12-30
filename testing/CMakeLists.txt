@@ -5,7 +5,7 @@ set(test_srcs
   cpu_timer.cu
   float64_axis.cu
   int64_axis.cu
-  params.cu
+  named_values.cu
   state.cu
   state_generator.cu
   string_axis.cu

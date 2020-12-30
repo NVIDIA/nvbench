@@ -41,19 +41,19 @@ std::vector<nvbench::state> state_generator::create(const axes_metadata &axes)
             break;
 
           case axis_type::int64:
-            state.set_param(
+            state.m_axis_values.set_int64(
               axis_info.axis,
               axes.get_int64_axis(axis_info.axis).get_value(axis_info.index));
             break;
 
           case axis_type::float64:
-            state.set_param(
+            state.m_axis_values.set_float64(
               axis_info.axis,
               axes.get_float64_axis(axis_info.axis).get_value(axis_info.index));
             break;
 
           case axis_type::string:
-            state.set_param(
+            state.m_axis_values.set_string(
               axis_info.axis,
               axes.get_string_axis(axis_info.axis).get_value(axis_info.index));
             break;

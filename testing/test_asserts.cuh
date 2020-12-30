@@ -29,3 +29,25 @@
       exit(EXIT_FAILURE);                                                      \
     }                                                                          \
   } while (false)
+
+#define ASSERT_THROWS_ANY(expr)                                                \
+  do                                                                           \
+  {                                                                            \
+    bool threw = false;                                                        \
+    try                                                                        \
+    {                                                                          \
+      expr;                                                                    \
+    }                                                                          \
+    catch (...)                                                                \
+    {                                                                          \
+      threw = true;                                                            \
+    }                                                                          \
+    if (!threw)                                                                \
+    {                                                                          \
+      fmt::print("{}:{}: Expression expected exception: '{}'.",                \
+                 __FILE__,                                                     \
+                 __LINE__,                                                     \
+                 #expr);                                                       \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  } while (false)

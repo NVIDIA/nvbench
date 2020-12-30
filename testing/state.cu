@@ -7,22 +7,17 @@
 // Subclass to gain access to protected members for testing:
 struct state_tester : public nvbench::state
 {
-  using params_type = nvbench::state::params_type;
-
   state_tester()
       : nvbench::state()
   {}
-  explicit state_tester(params_type params)
-      : nvbench::state{std::move(params)}
-  {}
 
-  template <typename... Args>
-  void set_param(Args &&...args)
+  template <typename T>
+  void set_param(std::string name, T &&value)
   {
-    this->state::set_param(std::forward<Args>(args)...);
+    this->state::m_axis_values.set_value(std::move(name),
+                                         nvbench::named_values::value_type{
+                                           std::forward<T>(value)});
   }
-
-  const auto &get_params() const { return m_params; }
 };
 
 void test_params()
@@ -36,13 +31,6 @@ void test_params()
   ASSERT(state1.get_int64("TestInt") == nvbench::int64_t{22});
   ASSERT(state1.get_float64("TestFloat") == nvbench::float64_t{3.14});
   ASSERT(state1.get_string("TestString") == "A String!");
-
-  // Construct a state from the parameter map built above:
-  state_tester state2{state1.get_params()};
-
-  ASSERT(state2.get_int64("TestInt") == nvbench::int64_t{22});
-  ASSERT(state2.get_float64("TestFloat") == nvbench::float64_t{3.14});
-  ASSERT(state2.get_string("TestString") == "A String!");
 }
 
 int main() { test_params(); }
