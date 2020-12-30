@@ -2,12 +2,14 @@ set(srcs
   axes_metadata.cu
   axis_base.cu
   benchmark_base.cu
+  cuda_call.cu
   float64_axis.cu
   int64_axis.cu
   params.cu
+  state.cu
   string_axis.cu
   type_axis.cu
-  state.cu
+
   detail/state_generator.cu
 )
 

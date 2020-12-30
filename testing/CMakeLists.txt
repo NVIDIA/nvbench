@@ -1,8 +1,9 @@
 set(test_srcs
   axes_metadata.cu
   benchmark.cu
-  int64_axis.cu
+  cuda_timer.cu
   float64_axis.cu
+  int64_axis.cu
   params.cu
   state.cu
   state_generator.cu
