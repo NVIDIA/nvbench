@@ -52,6 +52,11 @@ struct int64_axis final : public axis_base
     return m_values[i];
   };
 
+  [[nodiscard]] const std::vector<int64_t> &get_values() const
+  {
+    return m_values;
+  };
+
 private:
   std::size_t do_get_size() const final { return m_inputs.size(); }
   std::string do_get_input_string(std::size_t) const final;
