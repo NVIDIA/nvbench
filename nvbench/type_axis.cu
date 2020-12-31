@@ -11,7 +11,7 @@ namespace nvbench
 
 type_axis::~type_axis() = default;
 
-std::size_t type_axis::get_index(const std::string &input_string) const
+std::size_t type_axis::get_type_index(const std::string &input_string) const
 {
   auto it =
     std::find(m_input_strings.cbegin(), m_input_strings.cend(), input_string);

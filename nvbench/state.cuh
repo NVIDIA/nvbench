@@ -34,6 +34,10 @@ protected:
 
   state() = default;
 
+  state(nvbench::named_values values)
+      : m_axis_values{std::move(values)}
+  {}
+
   nvbench::named_values m_axis_values;
 };
 

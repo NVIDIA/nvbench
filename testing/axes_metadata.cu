@@ -29,6 +29,14 @@ void test_type_axes()
   nvbench::axes_metadata axes;
   axes.set_type_axes_names<three_type_axes>({"Integer", "Float", "Other"});
 
+  ASSERT(axes.get_type_axis("Integer").get_name() == "Integer");
+  ASSERT(axes.get_type_axis("Float").get_name() == "Float");
+  ASSERT(axes.get_type_axis("Other").get_name() == "Other");
+
+  ASSERT(axes.get_type_axis(0).get_name() == "Integer");
+  ASSERT(axes.get_type_axis(1).get_name() == "Float");
+  ASSERT(axes.get_type_axis(2).get_name() == "Other");
+
   fmt::memory_buffer buffer;
   for (const auto &axis : axes.get_axes())
   {

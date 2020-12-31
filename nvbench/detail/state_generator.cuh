@@ -16,7 +16,8 @@ namespace detail
 struct state_generator
 {
 
-  static std::vector<nvbench::state> create(const axes_metadata &axes);
+  static std::vector<std::vector<nvbench::state>>
+  create(const axes_metadata &axes);
 
 protected:
   struct axis_index
@@ -32,9 +33,7 @@ protected:
     this->add_axis(axis.get_name(), axis.get_type(), axis.get_size());
   }
 
-  void add_axis(std::string axis,
-                nvbench::axis_type type,
-                std::size_t size)
+  void add_axis(std::string axis, nvbench::axis_type type, std::size_t size)
   {
     m_indices.push_back({std::move(axis), type, std::size_t{0}, size});
   }

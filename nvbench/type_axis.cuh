@@ -13,10 +13,11 @@ namespace nvbench
 
 struct type_axis final : public axis_base
 {
-  explicit type_axis(std::string name)
+  type_axis(std::string name, std::size_t axis_index)
       : axis_base{std::move(name), axis_type::type}
       , m_input_strings{}
       , m_descriptions{}
+      , m_axis_index{axis_index}
   {}
 
   ~type_axis() final;
@@ -24,7 +25,16 @@ struct type_axis final : public axis_base
   template <typename TypeList>
   void set_inputs();
 
-  std::size_t get_index(const std::string& input_string) const;
+  /**
+   * The index of this axis in the `benchmark`'s `type_axes` type list.
+   */
+  [[nodiscard]] std::size_t get_axis_index() const { return m_axis_index; }
+
+  /**
+   * The index in this axis of the type with the specified `input_string`.
+   */
+  [[nodiscard]] std::size_t
+  get_type_index(const std::string &input_string) const;
 
 private:
   std::size_t do_get_size() const final { return m_input_strings.size(); }
@@ -39,6 +49,7 @@ private:
 
   std::vector<std::string> m_input_strings;
   std::vector<std::string> m_descriptions;
+  std::size_t m_axis_index;
 };
 
 template <typename TypeList>

@@ -8,8 +8,9 @@
 
 void test_empty()
 {
-  nvbench::type_axis axis("Basic");
+  nvbench::type_axis axis("Basic", 0);
   ASSERT(axis.get_name() == "Basic");
+  ASSERT(axis.get_axis_index() == 0);
   ASSERT(axis.get_type() == nvbench::axis_type::type);
   ASSERT(axis.get_size() == 0);
 
@@ -20,7 +21,7 @@ void test_empty()
 
 void test_single()
 {
-  nvbench::type_axis axis("Single");
+  nvbench::type_axis axis("Single", 0);
   ASSERT(axis.get_name() == "Single");
 
   axis.set_inputs<nvbench::type_list<nvbench::int32_t>>();
@@ -32,7 +33,7 @@ void test_single()
 
 void test_several()
 {
-  nvbench::type_axis axis("Several");
+  nvbench::type_axis axis("Several", 0);
   ASSERT(axis.get_name() == "Several");
 
   axis.set_inputs<
@@ -47,17 +48,17 @@ void test_several()
   ASSERT(axis.get_description(2) == "");
 }
 
-void test_get_index()
+void test_get_type_index()
 {
-  nvbench::type_axis axis("GetIndexTest");
+  nvbench::type_axis axis("GetIndexTest", 0);
   axis.set_inputs<
     nvbench::
       type_list<nvbench::int8_t, nvbench::uint16_t, nvbench::float32_t, bool>>();
 
-  ASSERT(axis.get_index("I8") == 0);
-  ASSERT(axis.get_index("U16") == 1);
-  ASSERT(axis.get_index("F32") == 2);
-  ASSERT(axis.get_index("bool") == 3);
+  ASSERT(axis.get_type_index("I8") == 0);
+  ASSERT(axis.get_type_index("U16") == 1);
+  ASSERT(axis.get_type_index("F32") == 2);
+  ASSERT(axis.get_type_index("bool") == 3);
 }
 
 int main()
@@ -65,5 +66,5 @@ int main()
   test_empty();
   test_single();
   test_several();
-  test_get_index();
+  test_get_type_index();
 }

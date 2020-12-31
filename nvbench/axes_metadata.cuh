@@ -50,6 +50,8 @@ struct axes_metadata
   [[nodiscard]] const nvbench::axis_base &
   get_axis(std::string_view name, nvbench::axis_type type) const;
 
+  [[nodiscard]] const nvbench::type_axis &get_type_axis(std::size_t index) const;
+
 private:
   axes_type m_axes;
 };
@@ -63,15 +65,16 @@ void axes_metadata::set_type_axes_names(std::vector<std::string> names)
     throw std::runtime_error("set_type_axes_names(): len(names) != "
                              "len(type_axes)");
   }
-  auto names_iter = names.begin(); // contents will be moved from
-  nvbench::tl::foreach<type_axes>([&axes = m_axes, &names_iter](
+  std::size_t axis_index = 0;
+  auto names_iter        = names.begin(); // contents will be moved from
+  nvbench::tl::foreach<type_axes>([&axes = m_axes, &names_iter, &axis_index](
                                     [[maybe_unused]] auto wrapped_type) {
     // Note:
     // The word "type" appears 6 times in the next line.
     // Every. Single. Token.
-    // Take a moment to just appreciate this beautiful language:
     typedef typename decltype(wrapped_type)::type type_list;
-    auto axis = std::make_unique<nvbench::type_axis>(std::move(*names_iter++));
+    auto axis = std::make_unique<nvbench::type_axis>(std::move(*names_iter++),
+                                                     axis_index++);
     axis->set_inputs<type_list>();
     axes.push_back(std::move(axis));
   });
