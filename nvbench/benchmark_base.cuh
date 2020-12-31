@@ -5,8 +5,13 @@
 namespace nvbench
 {
 
-// Non-templated benchmark info. This is the class users will actually interact
-// with when they use a benchmark creation macro.
+/**
+ * Hold runtime benchmark information and provides public customization API for
+ * the `NVBENCH_CREATE` macros.
+ *
+ * Delegates responsibility to the following classes:
+ * - nvbench::axes_metadata: Axis specifications.
+ */
 struct benchmark_base
 {
   virtual ~benchmark_base();
