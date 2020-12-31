@@ -124,6 +124,109 @@ void test_basic()
 
 void test_create()
 {
+  nvbench::axes_metadata axes;
+  axes.add_float64_axis("Radians", {3.14, 6.28});
+  axes.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
+  axes.add_int64_axis("NumInputs",
+                      {10, 15, 20},
+                      nvbench::int64_axis_flags::power_of_two);
+  axes.add_string_axis("Strategy", {"Recursive", "Iterative"});
+
+  const std::vector<std::vector<nvbench::state>> states =
+    nvbench::detail::state_generator::create(axes);
+
+  // Outer vector has one entry per type_config. There are no type axes, so
+  // there's only one type_config:
+  ASSERT(states.size() == 1);
+
+  // Inner vectors have one entry per non-type config:
+  // 2 (Radians) * 3 (VecSize) * 3 (NumInputs) * 2 (Strategy) = 36
+  for (const auto &inner_states : states)
+  {
+    ASSERT(inner_states.size() == 36);
+  }
+
+  fmt::memory_buffer buffer;
+  std::string table_format =
+    "| {:^5} | {:^10} | {:^7} | {:^7} | {:^9} | {:^9} |\n";
+
+  fmt::format_to(buffer, "\n");
+  fmt::format_to(buffer,
+                 table_format,
+                 "State",
+                 "TypeConfig",
+                 "Radians",
+                 "VecSize",
+                 "NumInputs",
+                 "Strategy");
+
+  std::size_t type_config = 0;
+  std::size_t config = 0;
+  for (const auto &inner_states : states)
+  {
+    for (const nvbench::state &state : inner_states)
+    {
+      fmt::format_to(buffer,
+                     table_format,
+                     config++,
+                     type_config,
+                     state.get_float64("Radians"),
+                     state.get_int64("VecSize"),
+                     state.get_int64("NumInputs"),
+                     state.get_string("Strategy"));
+    }
+    type_config++;
+  }
+
+  const std::string ref =
+    R"expected(
+| State | TypeConfig | Radians | VecSize | NumInputs | Strategy  |
+|   0   |     0      |  3.14   |    2    |   1024    | Recursive |
+|   1   |     0      |  6.28   |    2    |   1024    | Recursive |
+|   2   |     0      |  3.14   |    3    |   1024    | Recursive |
+|   3   |     0      |  6.28   |    3    |   1024    | Recursive |
+|   4   |     0      |  3.14   |    4    |   1024    | Recursive |
+|   5   |     0      |  6.28   |    4    |   1024    | Recursive |
+|   6   |     0      |  3.14   |    2    |   32768   | Recursive |
+|   7   |     0      |  6.28   |    2    |   32768   | Recursive |
+|   8   |     0      |  3.14   |    3    |   32768   | Recursive |
+|   9   |     0      |  6.28   |    3    |   32768   | Recursive |
+|  10   |     0      |  3.14   |    4    |   32768   | Recursive |
+|  11   |     0      |  6.28   |    4    |   32768   | Recursive |
+|  12   |     0      |  3.14   |    2    |  1048576  | Recursive |
+|  13   |     0      |  6.28   |    2    |  1048576  | Recursive |
+|  14   |     0      |  3.14   |    3    |  1048576  | Recursive |
+|  15   |     0      |  6.28   |    3    |  1048576  | Recursive |
+|  16   |     0      |  3.14   |    4    |  1048576  | Recursive |
+|  17   |     0      |  6.28   |    4    |  1048576  | Recursive |
+|  18   |     0      |  3.14   |    2    |   1024    | Iterative |
+|  19   |     0      |  6.28   |    2    |   1024    | Iterative |
+|  20   |     0      |  3.14   |    3    |   1024    | Iterative |
+|  21   |     0      |  6.28   |    3    |   1024    | Iterative |
+|  22   |     0      |  3.14   |    4    |   1024    | Iterative |
+|  23   |     0      |  6.28   |    4    |   1024    | Iterative |
+|  24   |     0      |  3.14   |    2    |   32768   | Iterative |
+|  25   |     0      |  6.28   |    2    |   32768   | Iterative |
+|  26   |     0      |  3.14   |    3    |   32768   | Iterative |
+|  27   |     0      |  6.28   |    3    |   32768   | Iterative |
+|  28   |     0      |  3.14   |    4    |   32768   | Iterative |
+|  29   |     0      |  6.28   |    4    |   32768   | Iterative |
+|  30   |     0      |  3.14   |    2    |  1048576  | Iterative |
+|  31   |     0      |  6.28   |    2    |  1048576  | Iterative |
+|  32   |     0      |  3.14   |    3    |  1048576  | Iterative |
+|  33   |     0      |  6.28   |    3    |  1048576  | Iterative |
+|  34   |     0      |  3.14   |    4    |  1048576  | Iterative |
+|  35   |     0      |  6.28   |    4    |  1048576  | Iterative |
+)expected";
+
+  const std::string test = fmt::to_string(buffer);
+  ASSERT_MSG(test == ref,
+             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+}
+
+
+void test_create_with_types()
+{
   using floats = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
   using ints   = nvbench::type_list<nvbench::int32_t, nvbench::int64_t>;
   using misc   = nvbench::type_list<void, bool>;
@@ -495,4 +598,5 @@ int main()
   test_single_state();
   test_basic();
   test_create();
+  test_create_with_types();
 }
