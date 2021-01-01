@@ -113,7 +113,7 @@ using cartesian_product = typename detail::cartesian_product<TypeLists>::type;
  *   using T = typename decltype(wrapped_type)::type;
  *   sizes.push_back(sizeof(T));
  * });
- * static_assert(sizes == {1, 2, 3, 4});
+ * assert(sizes == {1, 2, 3, 4});
  * ```
  */
 template <typename TypeList, typename Functor>
