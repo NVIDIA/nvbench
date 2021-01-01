@@ -1,9 +1,15 @@
 #pragma once
 
 #include <nvbench/axes_metadata.cuh>
+#include <nvbench/state.cuh>
+
+#include <vector>
 
 namespace nvbench
 {
+
+template <typename BenchmarkType>
+struct runner;
 
 /**
  * Hold runtime benchmark information and provides public customization API for
@@ -23,12 +29,6 @@ struct benchmark_base
   }
 
   [[nodiscard]] const std::string &get_name() const { return m_name; }
-
-  // Convenience API for a single type_axis.
-  benchmark_base &set_type_axes_name(std::string name)
-  {
-    return this->set_type_axes_names({std::move(name)});
-  }
 
   benchmark_base &set_type_axes_names(std::vector<std::string> names)
   {
@@ -72,13 +72,30 @@ struct benchmark_base
     return m_axes;
   }
 
+  [[nodiscard]] const std::vector<std::vector<nvbench::state>> &
+  get_states() const
+  {
+    return m_states;
+  }
+  [[nodiscard]] std::vector<std::vector<nvbench::state>> &get_states()
+  {
+    return m_states;
+  }
+
+  void run() { this->do_run(); }
+
 protected:
+  template <typename BenchmarkType>
+  friend struct runner;
+
   std::string m_name;
   nvbench::axes_metadata m_axes;
+  std::vector<std::vector<nvbench::state>> m_states;
 
 private:
-  // route this through a virtual so the templated subclass can inject type info
+  // route these through virtuals so the templated subclass can inject type info
   virtual void do_set_type_axes_names(std::vector<std::string> names) = 0;
+  virtual void do_run()                                               = 0;
 };
 
 } // namespace nvbench

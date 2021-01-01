@@ -4,6 +4,7 @@
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/type_list.cuh>
+#include <nvbench/runner.cuh>
 
 #include <string>
 #include <vector>
@@ -31,7 +32,7 @@ namespace nvbench
  * @tparam TypeAxes A `nvbench::type_list` of `nvbench::type_list`s. See the
  * [README](../README.md) for more details.
  */
-template <typename KernelGenerator, typename TypeAxes>
+template <typename KernelGenerator, typename TypeAxes = nvbench::type_list<>>
 struct benchmark final : public benchmark_base
 {
   using kernel_generator = KernelGenerator;
@@ -52,6 +53,13 @@ private:
   void do_set_type_axes_names(std::vector<std::string> names) override
   {
     m_axes.template set_type_axes_names<type_axes>(std::move(names));
+  }
+
+  void do_run() override
+  {
+    nvbench::runner<benchmark> runner{*this};
+    runner.generate_states();
+    runner.run();
   }
 };
 

@@ -55,11 +55,13 @@ state_generator::create(const axes_metadata &axes)
                     }
                   });
 
-    // Sort type axes by index:
+    // Reverse sort type axes by index. This way the state_generator's cartesian
+    // product of the type axes values will be enumerated in the same order as
+    // nvbench::tl::cartesian_product<type_axes>.
     std::sort(type_axes.begin(),
               type_axes.end(),
               [](const auto &axis_1, const auto &axis_2) {
-                return axis_1.get().get_axis_index() <
+                return axis_1.get().get_axis_index() >
                        axis_2.get().get_axis_index();
               });
 
@@ -127,11 +129,11 @@ state_generator::create(const axes_metadata &axes)
                 axes.get_string_axis(axis_info.axis).get_value(axis_info.index));
               break;
           } // switch (type)
-        } // for (axis_info : current_indices)
+        }   // for (axis_info : current_indices)
         states.push_back(std::move(state));
       } // for non_type_sg configs
-    } // for type_sg configs
-  } // scope break
+    }   // for type_sg configs
+  }     // scope break
 
   // phew.
   return result;

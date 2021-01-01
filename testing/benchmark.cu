@@ -1,5 +1,8 @@
 #include <nvbench/benchmark.cuh>
 
+#include <nvbench/callable.cuh>
+#include <nvbench/named_values.cuh>
+#include <nvbench/state.cuh>
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
 #include <nvbench/types.cuh>
@@ -8,7 +11,53 @@
 
 #include <fmt/format.h>
 
-struct dummy_kernel;
+#include <algorithm>
+#include <utility>
+#include <variant>
+#include <vector>
+
+template <typename T>
+std::vector<T> sort(std::vector<T> &&vec)
+{
+  std::sort(vec.begin(), vec.end());
+  return std::move(vec);
+}
+
+void no_op_generator(nvbench::state &state)
+{
+  fmt::memory_buffer params;
+  fmt::format_to(params, "Params:");
+  const auto &axis_values = state.get_axis_values();
+  for (const auto &name : sort(axis_values.get_names()))
+  {
+    std::visit(
+      [&params, &name](const auto &value) {
+        fmt::format_to(params, " {}: {}", name, value);
+      },
+      axis_values.get_value(name));
+  }
+
+  // Marking as skipped to signal that this state is run:
+  state.skip(fmt::to_string(std::move(params)));
+}
+NVBENCH_DEFINE_CALLABLE(no_op_generator, no_op_callable);
+
+template <typename Integer, typename Float, typename Other>
+void template_no_op_generator(nvbench::state &state,
+                              nvbench::type_list<Integer, Float, Other>)
+{
+  ASSERT(nvbench::type_strings<Integer>::input_string() ==
+         state.get_string("Integer"));
+  ASSERT(nvbench::type_strings<Float>::input_string() ==
+         state.get_string("Float"));
+  ASSERT(nvbench::type_strings<Other>::input_string() ==
+         state.get_string("Other"));
+
+  // Enum params using non-templated version:
+  no_op_generator(state);
+}
+NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator,
+                                 template_no_op_callable);
 
 using int_list = nvbench::type_list<nvbench::int8_t,
                                     nvbench::int16_t,
@@ -20,12 +69,10 @@ using float_list = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
 using misc_list = nvbench::type_list<bool, void>;
 
 using lots_of_types_bench =
-  nvbench::benchmark<dummy_kernel,
+  nvbench::benchmark<template_no_op_callable,
                      nvbench::type_list<int_list, float_list, misc_list>>;
 
-using no_types = nvbench::type_list<>;
-
-using no_types_bench = nvbench::benchmark<dummy_kernel, no_types>;
+using no_types_bench = nvbench::benchmark<no_op_callable>;
 
 void test_type_axes()
 {
@@ -172,6 +219,15 @@ void test_string_axes()
   ASSERT(axis.get_value(2) == "string c");
 }
 
+void test_run()
+{
+  // More exhaustive testing is in runner.cu. This just tests that the
+  // runner is called.
+  no_types_bench bench;
+  ASSERT(bench.get_states().empty());
+  bench.run();
+  ASSERT(bench.get_states().size() == 1);
+}
 
 int main()
 {
@@ -181,4 +237,5 @@ int main()
   test_int64_axes();
   test_int64_power_of_two_axes();
   test_string_axes();
+  test_run();
 }

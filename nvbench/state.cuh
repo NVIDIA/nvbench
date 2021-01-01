@@ -29,6 +29,18 @@ struct state
   [[nodiscard]] const std::string &
   get_string(const std::string &axis_name) const;
 
+  void skip(std::string reason) { m_skip_reason = std::move(reason); }
+  [[nodiscard]] bool is_skipped() const { return !m_skip_reason.empty(); }
+  [[nodiscard]] const std::string &get_skip_reason() const
+  {
+    return m_skip_reason;
+  }
+
+  [[nodiscard]] const named_values &get_axis_values() const
+  {
+    return m_axis_values;
+  }
+
 protected:
   friend struct nvbench::detail::state_generator;
 
@@ -39,6 +51,7 @@ protected:
   {}
 
   nvbench::named_values m_axis_values;
+  std::string m_skip_reason;
 };
 
 } // namespace nvbench
