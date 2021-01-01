@@ -2,6 +2,7 @@ set(srcs
   axes_metadata.cu
   axis_base.cu
   benchmark_base.cu
+  benchmark_manager.cu
   cuda_call.cu
   float64_axis.cu
   int64_axis.cu

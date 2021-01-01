@@ -2,6 +2,9 @@
 
 #include <fmt/format.h>
 
+#include <cstdio>
+#include <stdexcept>
+
 #define ASSERT(cond)                                                            \
   do                                                                            \
   {                                                                             \
@@ -10,7 +13,8 @@
     else                                                                        \
     {                                                                           \
       fmt::print("{}:{}: Assertion failed ({}).\n", __FILE__, __LINE__, #cond); \
-      exit(EXIT_FAILURE);                                                       \
+      std::fflush(stdout);                                                      \
+      throw std::runtime_error("Unit test failure.");                           \
     }                                                                           \
   } while (false)
 
@@ -26,7 +30,8 @@
                  __LINE__,                                                     \
                  #cond,                                                        \
                  fmt::format(fmtstr, __VA_ARGS__));                            \
-      exit(EXIT_FAILURE);                                                      \
+      std::fflush(stdout);                                                      \
+      throw std::runtime_error("Unit test failure.");                          \
     }                                                                          \
   } while (false)
 
@@ -48,6 +53,7 @@
                  __FILE__,                                                     \
                  __LINE__,                                                     \
                  #expr);                                                       \
-      exit(EXIT_FAILURE);                                                      \
+      std::fflush(stdout);                                                      \
+      throw std::runtime_error("Unit test failure.");                          \
     }                                                                          \
   } while (false)
