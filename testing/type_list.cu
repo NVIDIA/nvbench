@@ -84,6 +84,27 @@ struct test_prepend_each
   static_assert(std::is_same_v<nvbench::tl::prepend_each<T, TLs>, Expected>);
 };
 
+ struct test_empty_cartesian_product
+{
+  using prod = nvbench::tl::cartesian_product<nvbench::type_list<>>;
+  static_assert(
+    std::is_same_v<prod, nvbench::type_list<nvbench::type_list<>>>);
+};
+
+struct test_single_cartesian_product
+{
+  using prod_1 =
+    nvbench::tl::cartesian_product<nvbench::type_list<nvbench::type_list<T0>>>;
+  static_assert(
+    std::is_same_v<prod_1, nvbench::type_list<nvbench::type_list<T0>>>);
+
+  using prod_2 = nvbench::tl::cartesian_product<
+    nvbench::type_list<nvbench::type_list<T0, T1>>>;
+  static_assert(std::is_same_v<prod_2,
+                               nvbench::type_list<nvbench::type_list<T0>,
+                                                  nvbench::type_list<T1>>>);
+};
+
 struct test_cartesian_product
 {
   using U0       = T2;

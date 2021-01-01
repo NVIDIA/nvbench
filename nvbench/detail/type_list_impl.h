@@ -59,22 +59,27 @@ struct cartesian_product;
 
 template <>
 struct cartesian_product<nvbench::type_list<>>
-{
-  using type = nvbench::type_list<>;
+{ // If no input type_lists are provided, there's just one output --
+  // a null type_list:
+  using type = nvbench::type_list<nvbench::type_list<>>;
 };
 
 template <typename... TLTail>
 struct cartesian_product<nvbench::type_list<nvbench::type_list<>, TLTail...>>
-{
+{ // This is a recursion base case -- in practice empty type_lists should
+  // not be passed into cartesian_product.
   using type = nvbench::type_list<>;
 };
 
 template <typename T, typename... Ts>
 struct cartesian_product<nvbench::type_list<nvbench::type_list<T, Ts...>>>
 {
-  using cur  = nvbench::type_list<nvbench::type_list<T>>;
-  using next = typename detail::cartesian_product<
-    nvbench::type_list<nvbench::type_list<Ts...>>>::type;
+  using cur = nvbench::type_list<nvbench::type_list<T>>;
+  using next =
+    std::conditional_t<sizeof...(Ts) != 0,
+                       typename detail::cartesian_product<
+                         nvbench::type_list<nvbench::type_list<Ts...>>>::type,
+                       nvbench::type_list<>>;
   using type = decltype(detail::concat(cur{}, next{}));
 };
 
