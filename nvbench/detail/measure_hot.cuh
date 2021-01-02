@@ -77,16 +77,18 @@ private:
 
   void run_trials()
   {
-    // Use warmup results to estimate the number of iterations to run:
-    const auto warmup = m_cuda_timer.get_duration();
-    auto cur_trials   = static_cast<nvbench::int64_t>(m_min_time / warmup);
-    cur_trials        = std::max(cur_trials, 1ll);
+    // Use warmup results to estimate the number of iterations to run.
+    // The .95 factor here pads the batch_size a bit to avoid needing a second
+    // batch due to noise.
+    const auto time_estimate = m_cuda_timer.get_duration() * 0.95;
+    auto batch_size = static_cast<nvbench::int64_t>(m_min_time / time_estimate);
+    batch_size      = std::max(batch_size, 1ll);
 
     do
     {
       m_cuda_timer.start(m_launch.get_stream());
       m_cpu_timer.start();
-      for (nvbench::int64_t i = 0; i < cur_trials; ++i)
+      for (nvbench::int64_t i = 0; i < batch_size; ++i)
       {
         this->launch_kernel();
       }
@@ -96,11 +98,11 @@ private:
 
       m_cuda_time += m_cuda_timer.get_duration();
       m_cpu_time += m_cpu_timer.get_duration();
-      m_num_trials += cur_trials;
+      m_num_trials += batch_size;
 
       // Predict number of remaining iterations:
-      cur_trials = (m_min_time - m_cuda_time) / (m_cuda_time / m_num_trials);
-    } while (cur_trials > 0);
+      batch_size = (m_min_time - m_cuda_time) / (m_cuda_time / m_num_trials);
+    } while (batch_size > 0);
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
