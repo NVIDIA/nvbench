@@ -2,10 +2,26 @@
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/axis_base.cuh>
+#include <nvbench/benchmark.cuh>
+#include <nvbench/callable.cuh>
 
 #include "test_asserts.cuh"
 
 #include <fmt/format.h>
+
+// Mock up a benchmark for testing:
+void dummy_generator(nvbench::state &) {}
+NVBENCH_DEFINE_CALLABLE(dummy_generator, dummy_callable);
+using dummy_bench = nvbench::benchmark<dummy_callable>;
+
+using floats    = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
+using ints      = nvbench::type_list<nvbench::int32_t, nvbench::int64_t>;
+using misc      = nvbench::type_list<void, bool>;
+using type_axes = nvbench::type_list<floats, ints, misc>;
+template <typename F, typename I, typename M>
+void template_generator(nvbench::state &, nvbench::type_list<F, I, M>){};
+NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_generator, template_callable);
+using template_bench = nvbench::benchmark<template_callable, type_axes>;
 
 struct state_generator_tester : nvbench::detail::state_generator
 {
@@ -124,16 +140,16 @@ void test_basic()
 
 void test_create()
 {
-  nvbench::axes_metadata axes;
-  axes.add_float64_axis("Radians", {3.14, 6.28});
-  axes.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
-  axes.add_int64_axis("NumInputs",
-                      {10, 15, 20},
-                      nvbench::int64_axis_flags::power_of_two);
-  axes.add_string_axis("Strategy", {"Recursive", "Iterative"});
+  dummy_bench bench;
+  bench.add_float64_axis("Radians", {3.14, 6.28});
+  bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
+  bench.add_int64_axis("NumInputs",
+                       {10, 15, 20},
+                       nvbench::int64_axis_flags::power_of_two);
+  bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
 
   const std::vector<std::vector<nvbench::state>> states =
-    nvbench::detail::state_generator::create(axes);
+    nvbench::detail::state_generator::create(bench);
 
   // Outer vector has one entry per type_config. There are no type axes, so
   // there's only one type_config:
@@ -161,7 +177,7 @@ void test_create()
                  "Strategy");
 
   std::size_t type_config = 0;
-  std::size_t config = 0;
+  std::size_t config      = 0;
   for (const auto &inner_states : states)
   {
     for (const nvbench::state &state : inner_states)
@@ -224,26 +240,19 @@ void test_create()
              fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
 }
 
-
 void test_create_with_types()
 {
-  using floats = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
-  using ints   = nvbench::type_list<nvbench::int32_t, nvbench::int64_t>;
-  using misc   = nvbench::type_list<void, bool>;
-
-  using type_axes = nvbench::type_list<floats, ints, misc>;
-
-  nvbench::axes_metadata axes;
-  axes.set_type_axes_names<type_axes>({"Floats", "Ints", "Misc"});
-  axes.add_float64_axis("Radians", {3.14, 6.28});
-  axes.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
-  axes.add_int64_axis("NumInputs",
-                      {10, 15, 20},
-                      nvbench::int64_axis_flags::power_of_two);
-  axes.add_string_axis("Strategy", {"Recursive", "Iterative"});
+  template_bench bench;
+  bench.set_type_axes_names({"Floats", "Ints", "Misc"});
+  bench.add_float64_axis("Radians", {3.14, 6.28});
+  bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
+  bench.add_int64_axis("NumInputs",
+                       {10, 15, 20},
+                       nvbench::int64_axis_flags::power_of_two);
+  bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
 
   const std::vector<std::vector<nvbench::state>> states =
-    nvbench::detail::state_generator::create(axes);
+    nvbench::detail::state_generator::create(bench);
 
   // Outer vector has one entry per type_config
   // 2 (Floats) * 2 (Ints) * 2 (Misc) = 8 total type_configs
@@ -257,8 +266,8 @@ void test_create_with_types()
   }
 
   fmt::memory_buffer buffer;
-  std::string table_format =
-    "| {:^5} | {:^10} | {:^6} | {:^4} | {:^4} | {:^7} | {:^7} | {:^9} | {:^9} |\n";
+  std::string table_format = "| {:^5} | {:^10} | {:^6} | {:^4} | {:^4} | {:^7} "
+                             "| {:^7} | {:^9} | {:^9} |\n";
 
   fmt::format_to(buffer, "\n");
   fmt::format_to(buffer,
@@ -274,7 +283,7 @@ void test_create_with_types()
                  "Strategy");
 
   std::size_t type_config = 0;
-  std::size_t config = 0;
+  std::size_t config      = 0;
   for (const auto &inner_states : states)
   {
     for (const nvbench::state &state : inner_states)

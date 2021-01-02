@@ -12,6 +12,7 @@
 #include <nvbench/exec.cuh>
 #include <nvbench/launch.cuh>
 #include <nvbench/main.cuh>
+#include <nvbench/range.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/type_list.cuh>
 #include <nvbench/types.cuh>

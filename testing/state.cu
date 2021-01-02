@@ -1,15 +1,22 @@
 #include <nvbench/state.cuh>
 
+#include <nvbench/benchmark.cuh>
+#include <nvbench/callable.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
 #include "test_asserts.cuh"
 
+// Mock up a benchmark for testing:
+void dummy_generator(nvbench::state &) {}
+NVBENCH_DEFINE_CALLABLE(dummy_generator, dummy_callable);
+using dummy_bench = nvbench::benchmark<dummy_callable>;
+
 // Subclass to gain access to protected members for testing:
 struct state_tester : public nvbench::state
 {
-  state_tester()
-      : nvbench::state()
+  state_tester(const nvbench::benchmark_base& bench)
+      : nvbench::state{bench}
   {}
 
   template <typename T>
@@ -23,8 +30,10 @@ struct state_tester : public nvbench::state
 
 void test_params()
 {
+  dummy_bench bench;
+
   // Build a state param by param
-  state_tester state;
+  state_tester state{bench};
   state.set_param("TestInt", nvbench::int64_t{22});
   state.set_param("TestFloat", nvbench::float64_t{3.14});
   state.set_param("TestString", "A String!");
@@ -36,7 +45,8 @@ void test_params()
 
 void test_summaries()
 {
-  state_tester state;
+  dummy_bench bench;
+  state_tester state{bench};
   ASSERT(state.get_summaries().size() == 0);
 
   {

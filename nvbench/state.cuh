@@ -10,6 +10,8 @@
 namespace nvbench
 {
 
+struct benchmark_base;
+
 namespace detail
 {
 struct state_generator;
@@ -45,6 +47,24 @@ struct state
   [[nodiscard]] const std::string &
   get_string(const std::string &axis_name) const;
 
+  void set_items_processed_per_launch(nvbench::int64_t items)
+  {
+    m_items_processed_per_launch = items;
+  }
+  nvbench::int64_t get_items_processed_per_launch() const
+  {
+    return m_items_processed_per_launch;
+  }
+
+  void set_global_bytes_accessed_per_launch(nvbench::int64_t bytes)
+  {
+    m_global_bytes_accessed_per_launch = bytes;
+  }
+  nvbench::int64_t get_global_bytes_accessed_per_launch() const
+  {
+    return m_global_bytes_accessed_per_launch;
+  }
+
   void skip(std::string reason) { m_skip_reason = std::move(reason); }
   [[nodiscard]] bool is_skipped() const { return !m_skip_reason.empty(); }
   [[nodiscard]] const std::string &get_skip_reason() const
@@ -57,6 +77,8 @@ struct state
     return m_axis_values;
   }
 
+  const benchmark_base &get_benchmark() const { return m_benchmark; }
+
   summary &add_summary(std::string summary_name);
   summary &add_summary(summary s);
   [[nodiscard]] const summary &get_summary(std::string_view name) const;
@@ -67,15 +89,21 @@ struct state
 protected:
   friend struct nvbench::detail::state_generator;
 
-  state() = default;
-
-  state(nvbench::named_values values)
-      : m_axis_values{std::move(values)}
+  explicit state(const benchmark_base &bench)
+      : m_benchmark{bench}
   {}
 
+  state(const benchmark_base &bench, nvbench::named_values values)
+      : m_benchmark{bench}
+      , m_axis_values{std::move(values)}
+  {}
+
+  const nvbench::benchmark_base &m_benchmark;
   nvbench::named_values m_axis_values;
   std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;
+  nvbench::int64_t m_items_processed_per_launch{};
+  nvbench::int64_t m_global_bytes_accessed_per_launch{};
 };
 
 } // namespace nvbench

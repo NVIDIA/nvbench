@@ -1,5 +1,6 @@
 #include <nvbench/detail/state_generator.cuh>
 
+#include <nvbench/benchmark_base.cuh>
 #include <nvbench/named_values.cuh>
 #include <nvbench/type_axis.cuh>
 
@@ -18,7 +19,7 @@ namespace detail
 {
 
 std::vector<std::vector<nvbench::state>>
-state_generator::create(const axes_metadata &axes)
+state_generator::create(const benchmark_base &bench)
 {
   // Assemble states into a std::vector<std::vector<nvbench::state>>, where the
   // outer vector has one inner vector per type_config, and all configs in an
@@ -27,6 +28,7 @@ state_generator::create(const axes_metadata &axes)
   // matching up states to kernel_generator instantiations much easier during
   // dispatch.
 
+  const axes_metadata& axes = bench.get_axes();
   // vector of all axes:
   const std::vector<std::unique_ptr<axis_base>> &axes_vec = axes.get_axes();
 
@@ -99,7 +101,7 @@ state_generator::create(const axes_metadata &axes)
       for (non_type_sg.init(); non_type_sg.iter_valid(); non_type_sg.next())
       {
         // Initialize each state with the current type_config:
-        nvbench::state state{type_config};
+        nvbench::state state{bench, type_config};
         // Add non-type parameters to state:
         for (const axis_index &axis_info : non_type_sg.get_current_indices())
         {

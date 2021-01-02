@@ -12,6 +12,7 @@ set(srcs
   type_axis.cu
 
   detail/markdown_format.cu
+  detail/measure_cold.cu
   detail/measure_hot.cu
   detail/state_generator.cu
 )

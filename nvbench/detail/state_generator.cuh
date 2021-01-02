@@ -9,7 +9,7 @@
 
 namespace nvbench
 {
-
+struct benchmark_base;
 namespace detail
 {
 
@@ -17,7 +17,7 @@ struct state_generator
 {
 
   static std::vector<std::vector<nvbench::state>>
-  create(const axes_metadata &axes);
+  create(const benchmark_base &bench);
 
 protected:
   struct axis_index

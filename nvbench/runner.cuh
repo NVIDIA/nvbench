@@ -24,7 +24,7 @@ struct runner
   void generate_states()
   {
     m_benchmark.m_states =
-      nvbench::detail::state_generator::create(m_benchmark.m_axes);
+      nvbench::detail::state_generator::create(m_benchmark);
   }
 
   void run()

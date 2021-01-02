@@ -124,7 +124,7 @@ void markdown_format::print()
     using T = std::decay_t<decltype(v)>;
     if constexpr (std::is_same_v<T, nvbench::float64_t>)
     {
-      return fmt::format("{:7.5g}", v);
+      return fmt::format("{:.5g}", v);
     }
     else if constexpr (std::is_same_v<T, std::string>)
     {
@@ -136,20 +136,48 @@ void markdown_format::print()
   auto format_duration = [](nvbench::float64_t seconds) {
     if (seconds >= 1.) // 1+ sec
     {
-      return fmt::format("{:5.2f} s", seconds);
+      return fmt::format("{:.2f} s", seconds);
     }
-    else if (seconds >= 1e-1) // 100+ ms.
+    else if (seconds >= 1e-2) // 10+ ms.
     {
-      return fmt::format("{:5.2f} ms", seconds * 1e3);
+      return fmt::format("{:.2f} ms", seconds * 1e3);
     }
-    else if (seconds >= 1e-4) // 100+ us.
+    else if (seconds >= 1e-5) // 10+ us.
     {
-      return fmt::format("{:5.2f} us", seconds * 1e6);
+      return fmt::format("{:.2f} us", seconds * 1e6);
     }
     else
     {
-      return fmt::format("{:5.2f} ns", seconds * 1e9);
+      return fmt::format("{:.2f} ns", seconds * 1e9);
     }
+  };
+
+  auto format_item_rate = [](nvbench::float64_t items_per_second) {
+    return fmt::format("{:.3g}/sec", items_per_second);
+  };
+
+  auto format_byte_rate = [](nvbench::float64_t bytes_per_second) {
+    if (bytes_per_second >= 10. * 1024. * 1024. * 1024.) // 10 GiB/s
+    {
+      return fmt::format("{:.2f} GiB/s",
+                         bytes_per_second / (1024. * 1024. * 1024.));
+    }
+    else if (bytes_per_second >= 10. * 1024. * 1024.) // 10 MiB/s
+    {
+      return fmt::format("{:.2f} MiB/s", bytes_per_second / (1024. * 1024.));
+    }
+    else if (bytes_per_second >= 10. * 1024.) // 10 KiB/s.
+    {
+      return fmt::format("{:.2f} KiB/s", bytes_per_second / 1024.);
+    }
+    else
+    {
+      return fmt::format("{:.2f} B/s", bytes_per_second);
+    }
+  };
+
+  auto format_percentage = [](nvbench::float64_t percentage) {
+    return fmt::format("{:.2f}%", percentage);
   };
 
   auto &mgr = nvbench::benchmark_manager::get();
@@ -178,11 +206,31 @@ void markdown_format::print()
                                       ? summ.get_string("short_name")
                                       : summ.get_name();
 
-          if (summ.has_value("hint") && summ.get_string("hint") == "duration")
+          std::string hint = summ.has_value("hint") ? summ.get_string("hint")
+                                                    : std::string{};
+          if (hint == "duration")
           {
             table.add_cell(row,
                            name,
                            format_duration(summ.get_float64("value")));
+          }
+          else if (hint == "item_rate")
+          {
+            table.add_cell(row,
+                           name,
+                           format_item_rate(summ.get_float64("value")));
+          }
+          else if (hint == "byte_rate")
+          {
+            table.add_cell(row,
+                           name,
+                           format_byte_rate(summ.get_float64("value")));
+          }
+          else if (hint == "percentage")
+          {
+            table.add_cell(row,
+                           name,
+                           format_percentage(summ.get_float64("value")));
           }
           else
           {
