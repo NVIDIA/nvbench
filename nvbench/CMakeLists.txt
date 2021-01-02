@@ -11,6 +11,8 @@ set(srcs
   string_axis.cu
   type_axis.cu
 
+  detail/markdown_format.cu
+  detail/measure_hot.cu
   detail/state_generator.cu
 )
 

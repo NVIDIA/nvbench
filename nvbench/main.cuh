@@ -2,9 +2,14 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
+#include <nvbench/detail/markdown_format.cuh>
 
 #define NVBENCH_MAIN                                                           \
-  int main() { BENCHMARK_MAIN_BODY; }
+  int main()                                                                   \
+  {                                                                            \
+    NVBENCH_MAIN_BODY;                                                         \
+    return 0;                                                                  \
+  }
 
 #define NVBENCH_MAIN_BODY                                                      \
   do                                                                           \
@@ -14,4 +19,6 @@
     {                                                                          \
       bench_ptr->run();                                                        \
     }                                                                          \
+    nvbench::detail::markdown_format printer;                                  \
+    printer.print();                                                           \
   } while (false)

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <nvbench/named_values.cuh>
+#include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
 #include <string>
+#include <vector>
 
 namespace nvbench
 {
@@ -13,6 +15,20 @@ namespace detail
 struct state_generator;
 }
 
+/**
+ * Stores all information about a particular benchmark configuration.
+ *
+ * One state object exists for every combination of a benchmark's parameter
+ * axes. It provides access to:
+ * - Parameter values (get_int64, get_float64, get_string)
+ *   - The names of parameters from type axes are stored as strings.
+ * - Skip information (skip, is_skipped, get_skip_reason)
+ *   - If the benchmark fails or is invalid, it may be skipped with an
+ *     informative message.
+ * - Summaries (add_summary, get_summary, get_summaries)
+ *   - Summaries store measurement information as key/value pairs.
+ *     See nvbench::summary for details.
+ */
 struct state
 {
   // move-only
@@ -41,6 +57,13 @@ struct state
     return m_axis_values;
   }
 
+  summary &add_summary(std::string summary_name);
+  summary &add_summary(summary s);
+  [[nodiscard]] const summary &get_summary(std::string_view name) const;
+  [[nodiscard]] summary &get_summary(std::string_view name);
+  [[nodiscard]] const std::vector<summary> &get_summaries() const;
+  [[nodiscard]] std::vector<summary> &get_summaries();
+
 protected:
   friend struct nvbench::detail::state_generator;
 
@@ -51,6 +74,7 @@ protected:
   {}
 
   nvbench::named_values m_axis_values;
+  std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;
 };
 

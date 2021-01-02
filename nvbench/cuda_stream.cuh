@@ -1,3 +1,5 @@
+#pragma once
+
 #include <nvbench/cuda_call.cuh>
 
 #include <cuda_runtime_api.h>
@@ -17,7 +19,7 @@ struct cuda_stream
   cuda_stream &operator=(const cuda_stream &) = delete;
   cuda_stream &operator=(cuda_stream &&) = default;
 
-  operator cudaStream_t() { return m_stream; }
+  operator cudaStream_t() const { return m_stream; }
 
 private:
   cudaStream_t m_stream;

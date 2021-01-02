@@ -2,6 +2,8 @@
 
 #include <nvbench/cuda_call.cuh>
 
+#include <nvbench/types.cuh>
+
 #include <cuda_runtime_api.h>
 
 namespace nvbench
@@ -37,7 +39,7 @@ struct cuda_timer
     NVBENCH_CUDA_CALL(cudaEventRecord(m_stop, stream));
   }
 
-  bool ready() const
+  [[nodiscard]] bool ready() const
   {
     const cudaError_t state = cudaEventQuery(m_stop);
     if (state == cudaErrorNotReady)
@@ -48,7 +50,8 @@ struct cuda_timer
     return true;
   }
 
-  double get_duration() const
+  // In seconds:
+  [[nodiscard]] nvbench::float64_t get_duration() const
   {
     NVBENCH_CUDA_CALL(cudaEventSynchronize(m_stop));
     float elapsed_time;

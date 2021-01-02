@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nvbench/types.cuh>
+
 #include <chrono>
 
 namespace nvbench
@@ -19,7 +21,8 @@ struct cpu_timer
 
   void stop() { m_stop = std::chrono::high_resolution_clock::now(); }
 
-  double get_duration()
+  // In seconds:
+  [[nodiscard]] nvbench::float64_t get_duration()
   {
     const auto duration = m_stop - m_start;
     const auto ns =
