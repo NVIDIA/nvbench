@@ -32,7 +32,7 @@ void int64_axis::set_inputs(std::vector<int64_t> inputs)
                                              __LINE__,
                                              in));
       }
-      return 1ll << in;
+      return int64_axis::compute_pow2(in);
     };
 
     std::transform(m_inputs.cbegin(), m_inputs.cend(), m_values.begin(), conv);

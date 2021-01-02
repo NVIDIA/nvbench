@@ -57,13 +57,28 @@ void measure_cold_base::generate_summaries()
   // Log to stdout:
   fmt::memory_buffer param_buffer;
   fmt::format_to(param_buffer, "");
+  const axes_metadata &axes = m_state.get_benchmark().get_axes();
   const auto &axis_values = m_state.get_axis_values();
   for (const auto &name : axis_values.get_names())
   {
     fmt::format_to(param_buffer, "{}=", name);
-    std::visit([&param_buffer](
-                 const auto &val) { fmt::format_to(param_buffer, "{} ", val); },
-               axis_values.get_value(name));
+
+    // Handle power-of-two int64 axes differently:
+    if (axis_values.get_type(name) == named_values::type::int64 &&
+        axes.get_int64_axis(name).is_power_of_two())
+    {
+      const nvbench::uint64_t value    = axis_values.get_int64(name);
+      const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
+      fmt::format_to(param_buffer, "2^{}", exponent);
+    }
+    else
+    {
+      std::visit(
+        [&param_buffer](const auto &val) {
+          fmt::format_to(param_buffer, "{} ", val);
+        },
+        axis_values.get_value(name));
+    }
   }
 
   fmt::print("Benchmark {} Params: [ {}] Cold {:.6f} ms GPU, {:.6f} ms CPU, "

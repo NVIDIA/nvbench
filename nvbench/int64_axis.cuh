@@ -57,6 +57,23 @@ struct int64_axis final : public axis_base
     return m_values;
   };
 
+  static nvbench::int64_t compute_pow2(nvbench::int64_t exponent)
+  {
+    return 1ll << exponent;
+  }
+
+  static nvbench::int64_t compute_log2(nvbench::int64_t value)
+  {
+    // TODO use <bit> functions in C++20
+    nvbench::uint64_t bits = static_cast<nvbench::uint64_t>(value);
+    nvbench::int64_t exponent = 0;
+    while (bits >>= 1)
+    {
+      ++exponent;
+    }
+    return exponent;
+  };
+
 private:
   std::size_t do_get_size() const final { return m_inputs.size(); }
   std::string do_get_input_string(std::size_t) const final;

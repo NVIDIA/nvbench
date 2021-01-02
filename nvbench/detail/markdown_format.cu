@@ -153,7 +153,22 @@ void markdown_format::print()
   };
 
   auto format_item_rate = [](nvbench::float64_t items_per_second) {
-    return fmt::format("{:.3g}/sec", items_per_second);
+    if (items_per_second >= 1e9)
+    {
+      return fmt::format("{:0.2f} GHz", items_per_second * 1e-9);
+    }
+    else if (items_per_second >= 1e6)
+    {
+      return fmt::format("{:0.2f} MHz", items_per_second * 1e-6);
+    }
+    else if (items_per_second >= 1e3)
+    {
+      return fmt::format("{:0.2f} KHz", items_per_second * 1e-3);
+    }
+    else
+    {
+      return fmt::format("{:0.2f} Hz", items_per_second);
+    }
   };
 
   auto format_byte_rate = [](nvbench::float64_t bytes_per_second) {
@@ -183,25 +198,46 @@ void markdown_format::print()
   auto &mgr = nvbench::benchmark_manager::get();
   for (const auto &bench_ptr : mgr.get_benchmarks())
   {
-    fmt::print("\n# {}\n\n", bench_ptr->get_name());
+    const benchmark_base &bench = *bench_ptr;
+    const axes_metadata &axes   = bench.get_axes();
+
+    fmt::print("\n# {}\n\n", bench.get_name());
 
     std::size_t row = 0;
     table_builder table;
 
-    for (const auto &inner_states : bench_ptr->get_states())
+    for (const auto &inner_states : bench.get_states())
     {
       for (const nvbench::state &state : inner_states)
       {
         const auto &axis_values = state.get_axis_values();
         for (const auto &name : axis_values.get_names())
         {
-          std::string value = std::visit(format_visitor,
-                                         axis_values.get_value(name));
-          table.add_cell(row, name, std::move(value));
+          // Handle power-of-two int64 axes differently:
+          if (axis_values.get_type(name) == named_values::type::int64 &&
+              axes.get_int64_axis(name).is_power_of_two())
+          {
+            const nvbench::uint64_t value    = axis_values.get_int64(name);
+            const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
+            table.add_cell(row, name, fmt::format("2^{}", exponent));
+            table.add_cell(row,
+                           fmt::format("({})", name),
+                           fmt::to_string(value));
+          }
+          else
+          {
+            std::string value = std::visit(format_visitor,
+                                           axis_values.get_value(name));
+            table.add_cell(row, name, std::move(value));
+          }
         }
 
         for (const auto &summ : state.get_summaries())
         {
+          if (summ.has_value("hide"))
+          {
+            continue;
+          }
           const std::string &name = summ.has_value("short_name")
                                       ? summ.get_string("short_name")
                                       : summ.get_name();
