@@ -29,7 +29,7 @@ CPMAddPackage(
 
 # Why does CMake make it so difficult to enable cuda C++17 with interface
 # properties...Resorting to brute force to unblock.
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAG} -std=c++17")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17")
 
 add_subdirectory(nvbench)
 add_subdirectory(testing)
