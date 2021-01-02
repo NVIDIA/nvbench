@@ -103,8 +103,7 @@ private:
     } while (cur_trials > 0);
   }
 
-  // TODO forceinline
-  void launch_kernel() { m_kernel_launcher(m_launch); }
+  __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
 
   KernelLauncher &m_kernel_launcher;
 };

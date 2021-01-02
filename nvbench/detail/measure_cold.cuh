@@ -98,8 +98,7 @@ private:
     } while (std::max(m_cuda_time, m_cpu_time) < m_min_time);
   }
 
-  // TODO forceinline
-  void launch_kernel() { m_kernel_launcher(m_launch); }
+  __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
 
   KernelLauncher &m_kernel_launcher;
 };
