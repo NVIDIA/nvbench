@@ -99,7 +99,7 @@ private:
       fmt::format_to(buffer, "|");
       for (const column &col : m_columns)
       { // fill=-, centered, empty string, width = max_width + 2
-        fmt::format_to(buffer, " {:{}} |", col.rows[row], col.max_width);
+        fmt::format_to(buffer, " {:>{}} |", col.rows[row], col.max_width);
       }
       fmt::format_to(buffer, "\n");
     }
@@ -133,6 +133,25 @@ void markdown_format::print()
     return fmt::format("{}", v);
   };
 
+  auto format_duration = [](nvbench::float64_t seconds) {
+    if (seconds >= 1.) // 1+ sec
+    {
+      return fmt::format("{:5.2f} s", seconds);
+    }
+    else if (seconds >= 1e-1) // 100+ ms.
+    {
+      return fmt::format("{:5.2f} ms", seconds * 1e3);
+    }
+    else if (seconds >= 1e-4) // 100+ us.
+    {
+      return fmt::format("{:5.2f} us", seconds * 1e6);
+    }
+    else
+    {
+      return fmt::format("{:5.2f} ns", seconds * 1e9);
+    }
+  };
+
   auto &mgr = nvbench::benchmark_manager::get();
   for (const auto &bench_ptr : mgr.get_benchmarks())
   {
@@ -153,15 +172,24 @@ void markdown_format::print()
           table.add_cell(row, name, std::move(value));
         }
 
-        for (const auto &summary : state.get_summaries())
+        for (const auto &summ : state.get_summaries())
         {
-          const std::string &name = summary.has_value("short_name")
-                                      ? summary.get_string("short_name")
-                                      : summary.get_name();
+          const std::string &name = summ.has_value("short_name")
+                                      ? summ.get_string("short_name")
+                                      : summ.get_name();
 
-          std::string value = std::visit(format_visitor,
-                                         summary.get_value("value"));
-          table.add_cell(row, name, std::move(value));
+          if (summ.has_value("hint") && summ.get_string("hint") == "duration")
+          {
+            table.add_cell(row,
+                           name,
+                           format_duration(summ.get_float64("value")));
+          }
+          else
+          {
+            table.add_cell(row,
+                           name,
+                           std::visit(format_visitor, summ.get_value("value")));
+          }
         }
         row++;
       }
