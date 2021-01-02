@@ -88,7 +88,12 @@ state_generator::create(const benchmark_base &bench)
     {
       // Construct map of current type axis parameters:
       type_config.clear();
-      for (const auto &axis_info : type_sg.get_current_indices())
+
+      // Reverse the type axes so they're once again in the same order as
+      // specified:
+      auto indices = type_sg.get_current_indices();
+      std::reverse(indices.begin(), indices.end());
+      for (const auto &axis_info : indices)
       {
         type_config.set_string(
           axis_info.axis,

@@ -10,30 +10,43 @@
 namespace nvbench
 {
 
-void named_values::clear() { m_map.clear(); }
+void named_values::clear() { m_storage.clear(); }
 
-std::size_t named_values::get_size() const { return m_map.size(); }
+std::size_t named_values::get_size() const { return m_storage.size(); }
 
 std::vector<std::string> named_values::get_names() const
 {
   std::vector<std::string> names;
-  names.reserve(m_map.size());
-  std::transform(m_map.cbegin(),
-                 m_map.cend(),
+  names.reserve(m_storage.size());
+  std::transform(m_storage.cbegin(),
+                 m_storage.cend(),
                  std::back_inserter(names),
-                 [](const auto &val) { return val.first; });
+                 [](const auto &val) { return val.name; });
   return names;
 }
 
 bool named_values::has_value(const std::string &name) const
 {
-  return m_map.find(name) != m_map.cend();
+  auto iter =
+    std::find_if(m_storage.cbegin(),
+                 m_storage.cend(),
+                 [&name](const auto &val) { return val.name == name; });
+  return iter != m_storage.cend();
 }
 
 const named_values::value_type &
 named_values::get_value(const std::string &name) const
 {
-  return m_map.at(name);
+  auto iter =
+    std::find_if(m_storage.cbegin(),
+                 m_storage.cend(),
+                 [&name](const auto &val) { return val.name == name; });
+  if (iter == m_storage.cend())
+  {
+    throw std::runtime_error(
+      fmt::format("{}:{}: No value with name '{}'.", __FILE__, __LINE__, name));
+  }
+  return iter->value;
 }
 
 named_values::type named_values::get_type(const std::string &name) const
@@ -79,30 +92,33 @@ const std::string &named_values::get_string(const std::string &name) const
 
 void named_values::set_int64(std::string name, nvbench::int64_t value)
 {
-  m_map.insert(std::make_pair(std::move(name), value_type{std::move(value)}));
+  m_storage.push_back({std::move(name), value_type{value}});
 }
 
 void named_values::set_float64(std::string name, nvbench::float64_t value)
 {
-  m_map.insert(std::make_pair(std::move(name), value_type{std::move(value)}));
+  m_storage.push_back({std::move(name), value_type{value}});
 }
 
 void named_values::set_string(std::string name, std::string value)
 {
-  m_map.insert(std::make_pair(std::move(name), value_type{std::move(value)}));
+  m_storage.push_back({std::move(name), value_type{std::move(value)}});
 }
 
 void named_values::set_value(std::string name, named_values::value_type value)
 {
-  m_map.insert(std::make_pair(std::move(name), std::move(value)));
+  m_storage.push_back({std::move(name), std::move(value)});
 }
 
 void named_values::remove_value(const std::string &name)
 {
-  auto iter = m_map.find(name);
-  if (iter != m_map.end())
+  auto iter =
+    std::find_if(m_storage.begin(), m_storage.end(), [&name](const auto &val) {
+      return val.name == name;
+    });
+  if (iter != m_storage.end())
   {
-    m_map.erase(iter);
+    m_storage.erase(iter);
   }
 }
 

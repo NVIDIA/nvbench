@@ -3,8 +3,8 @@
 #include <nvbench/types.cuh>
 
 #include <string>
-#include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace nvbench
 {
@@ -47,9 +47,14 @@ struct named_values
   void remove_value(const std::string& name);
 
 private:
-  using map_type = std::unordered_map<std::string, value_type>;
+  struct named_value
+  {
+    std::string name;
+    value_type value;
+  };
+  using storage_type = std::vector<named_value>;
 
-  map_type m_map;
+  storage_type m_storage;
 };
 
 } // namespace nvbench
