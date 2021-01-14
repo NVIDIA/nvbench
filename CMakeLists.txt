@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.18)
+# 3.18.3 is needed for a  MSVC + NVCC + C++17 bugfix.
+cmake_minimum_required(VERSION 3.18.3)
 
 project(nvbench CUDA)
 
@@ -26,10 +27,6 @@ CPMAddPackage(
   GITHUB_REPOSITORY fmtlib/fmt
   GIT_TAG 7.1.3
 )
-
-# Why does CMake make it so difficult to enable cuda C++17 with interface
-# properties...Resorting to brute force to unblock.
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17")
 
 add_subdirectory(nvbench)
 add_subdirectory(testing)

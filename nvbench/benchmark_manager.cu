@@ -9,7 +9,7 @@ namespace nvbench
 {
 
 benchmark_manager &benchmark_manager::get()
-{
+{ // Karen's function:
   static benchmark_manager the_manager;
   return the_manager;
 }
