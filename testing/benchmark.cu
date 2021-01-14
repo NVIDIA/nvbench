@@ -229,6 +229,45 @@ void test_run()
   ASSERT(bench.get_states().size() == 1);
 }
 
+void test_clone()
+{
+  lots_of_types_bench bench;
+  bench.set_type_axes_names({"Integer", "Float", "Other"});
+  bench.add_string_axis("Strings", {"string a", "string b", "string c"});
+  bench.add_int64_power_of_two_axis("I64 POT Axis", {10, 20});
+  bench.add_int64_axis("I64 Axis", {10, 20});
+  bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
+
+  std::unique_ptr<nvbench::benchmark_base> clone_base = bench.clone();
+  ASSERT(clone_base.get() != nullptr);
+
+  auto *clone = dynamic_cast<lots_of_types_bench *>(clone_base.get());
+  ASSERT(clone != nullptr);
+
+  ASSERT(bench.get_name() == clone->get_name());
+
+  const auto &ref_axes   = bench.get_axes().get_axes();
+  const auto &clone_axes = clone->get_axes().get_axes();
+  ASSERT(ref_axes.size() == clone_axes.size());
+  for (std::size_t i = 0; i < ref_axes.size(); ++i)
+  {
+    const nvbench::axis_base *ref_axis   = ref_axes[i].get();
+    const nvbench::axis_base *clone_axis = clone_axes[i].get();
+    ASSERT(ref_axis != nullptr);
+    ASSERT(clone_axis != nullptr);
+    ASSERT(ref_axis->get_name() == clone_axis->get_name());
+    ASSERT(ref_axis->get_type() == clone_axis->get_type());
+    ASSERT(ref_axis->get_size() == clone_axis->get_size());
+    for (std::size_t j = 0; j < ref_axis->get_size(); ++j)
+    {
+      ASSERT(ref_axis->get_input_string(j) == clone_axis->get_input_string(j));
+      ASSERT(ref_axis->get_description(j) == clone_axis->get_description(j));
+    }
+  }
+
+  ASSERT(clone->get_states().empty());
+}
+
 int main()
 {
   test_type_axes();
@@ -238,4 +277,5 @@ int main()
   test_int64_power_of_two_axes();
   test_string_axes();
   test_run();
+  test_clone();
 }

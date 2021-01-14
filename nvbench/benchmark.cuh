@@ -50,12 +50,17 @@ struct benchmark final : public benchmark_base
   ~benchmark() override = default;
 
 private:
-  void do_set_type_axes_names(std::vector<std::string> names) override
+  std::unique_ptr<benchmark_base> do_clone() const final
+  {
+    return std::make_unique<benchmark>();
+  }
+
+  void do_set_type_axes_names(std::vector<std::string> names) final
   {
     m_axes.template set_type_axes_names<type_axes>(std::move(names));
   }
 
-  void do_run() override
+  void do_run() final
   {
     nvbench::runner<benchmark> runner{*this};
     runner.generate_states();

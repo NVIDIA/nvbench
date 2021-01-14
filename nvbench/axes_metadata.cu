@@ -8,6 +8,26 @@
 namespace nvbench
 {
 
+axes_metadata::axes_metadata(const axes_metadata &other)
+{
+  m_axes.reserve(other.get_axes().size());
+  for (const auto &axis : other.get_axes())
+  {
+    m_axes.push_back(axis->clone());
+  }
+}
+
+axes_metadata &axes_metadata::operator=(const axes_metadata &other)
+{
+  m_axes.clear();
+  m_axes.reserve(other.get_axes().size());
+  for (const auto &axis : other.get_axes())
+  {
+    m_axes.push_back(axis->clone());
+  }
+  return *this;
+}
+
 void axes_metadata::add_float64_axis(std::string name,
                                      std::vector<nvbench::float64_t> data)
 {

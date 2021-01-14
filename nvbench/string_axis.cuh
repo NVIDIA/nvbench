@@ -28,6 +28,10 @@ struct string_axis final : public axis_base
   }
 
 private:
+  std::unique_ptr<axis_base> do_clone() const
+  {
+    return std::make_unique<string_axis>(*this);
+  }
   std::size_t do_get_size() const final { return m_values.size(); }
   std::string do_get_input_string(std::size_t i) const final
   {

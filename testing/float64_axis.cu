@@ -5,6 +5,7 @@
 void test_empty()
 {
   nvbench::float64_axis axis("Empty");
+
   ASSERT(axis.get_name() == "Empty");
   ASSERT(axis.get_type() == nvbench::axis_type::float64);
   ASSERT(axis.get_size() == 0);
@@ -12,15 +13,24 @@ void test_empty()
   axis.set_inputs({});
 
   ASSERT(axis.get_size() == 0);
+
+  const auto clone_base = axis.clone();
+  ASSERT(clone_base.get() != nullptr);
+  const auto *clone =
+    dynamic_cast<const nvbench::float64_axis *>(clone_base.get());
+  ASSERT(clone != nullptr);
+
+  ASSERT(clone->get_name() == "Empty");
+  ASSERT(clone->get_type() == nvbench::axis_type::float64);
+  ASSERT(clone->get_size() == 0);
 }
 
 void test_basic()
 {
   nvbench::float64_axis axis("Basic");
-  ASSERT(axis.get_name() == "Basic");
-
   axis.set_inputs({-100.3, 0., 2064.15});
 
+  ASSERT(axis.get_name() == "Basic");
   ASSERT(axis.get_size() == 3);
   ASSERT(axis.get_value(0) == -100.3);
   ASSERT(axis.get_input_string(0) == "-100.3");
@@ -31,6 +41,24 @@ void test_basic()
   ASSERT(axis.get_value(2) == 2064.15);
   ASSERT(axis.get_input_string(2) == "2064.15");
   ASSERT(axis.get_description(2) == "");
+
+  const auto clone_base = axis.clone();
+  ASSERT(clone_base.get() != nullptr);
+  const auto *clone =
+    dynamic_cast<const nvbench::float64_axis *>(clone_base.get());
+  ASSERT(clone != nullptr);
+
+  ASSERT(clone->get_name() == "Basic");
+  ASSERT(clone->get_size() == 3);
+  ASSERT(clone->get_value(0) == -100.3);
+  ASSERT(clone->get_input_string(0) == "-100.3");
+  ASSERT(clone->get_description(0) == "");
+  ASSERT(clone->get_value(1) == 0.);
+  ASSERT(clone->get_input_string(1) == "0");
+  ASSERT(clone->get_description(1) == "");
+  ASSERT(clone->get_value(2) == 2064.15);
+  ASSERT(clone->get_input_string(2) == "2064.15");
+  ASSERT(clone->get_description(2) == "");
 }
 
 int main()

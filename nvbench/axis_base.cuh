@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -17,6 +18,8 @@ enum class axis_type
 struct axis_base
 {
   virtual ~axis_base();
+
+  [[nodiscard]] std::unique_ptr<axis_base> clone() const;
 
   [[nodiscard]] const std::string &get_name() const { return m_name; }
 
@@ -41,6 +44,7 @@ protected:
   {}
 
 private:
+  virtual std::unique_ptr<axis_base> do_clone() const          = 0;
   virtual std::size_t do_get_size() const                      = 0;
   virtual std::string do_get_input_string(std::size_t i) const = 0;
   virtual std::string do_get_description(std::size_t i) const  = 0;

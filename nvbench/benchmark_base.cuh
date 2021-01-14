@@ -3,6 +3,7 @@
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/state.cuh>
 
+#include <memory>
 #include <vector>
 
 namespace nvbench
@@ -21,6 +22,15 @@ struct runner;
 struct benchmark_base
 {
   virtual ~benchmark_base();
+
+  /**
+   * Returns a pointer to a new instance of the concrete benchmark<...>
+   * subclass.
+   *
+   * The result will have the same name as the source benchmark, and the
+   * axes will be shallow-copied. The result will have an empty `get_state()`.
+   */
+  [[nodiscard]] std::unique_ptr<benchmark_base> clone() const;
 
   benchmark_base &set_name(std::string name)
   {
@@ -94,6 +104,7 @@ protected:
 
 private:
   // route these through virtuals so the templated subclass can inject type info
+  virtual std::unique_ptr<benchmark_base> do_clone() const            = 0;
   virtual void do_set_type_axes_names(std::vector<std::string> names) = 0;
   virtual void do_run()                                               = 0;
 };

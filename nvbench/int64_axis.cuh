@@ -75,6 +75,10 @@ struct int64_axis final : public axis_base
   };
 
 private:
+  std::unique_ptr<axis_base> do_clone() const
+  {
+    return std::make_unique<int64_axis>(*this);
+  }
   std::size_t do_get_size() const final { return m_inputs.size(); }
   std::string do_get_input_string(std::size_t) const final;
   std::string do_get_description(std::size_t) const final;

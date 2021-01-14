@@ -18,7 +18,14 @@ namespace nvbench
 // Holds dynamic axes information.
 struct axes_metadata
 {
-  using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
+  using axes_type = std::vector<std::unique_ptr<const nvbench::axis_base>>;
+
+  axes_metadata() = default;
+  axes_metadata(axes_metadata&&) = default;
+  axes_metadata& operator=(axes_metadata&&) = default;
+
+  axes_metadata(const axes_metadata&);
+  axes_metadata& operator=(const axes_metadata&);
 
   template <typename type_axes>
   void set_type_axes_names(std::vector<std::string> names);

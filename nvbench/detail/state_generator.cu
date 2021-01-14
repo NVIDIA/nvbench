@@ -28,9 +28,10 @@ state_generator::create(const benchmark_base &bench)
   // matching up states to kernel_generator instantiations much easier during
   // dispatch.
 
-  const axes_metadata& axes = bench.get_axes();
+  const axes_metadata &axes = bench.get_axes();
   // vector of all axes:
-  const std::vector<std::unique_ptr<axis_base>> &axes_vec = axes.get_axes();
+  const std::vector<std::unique_ptr<const axis_base>> &axes_vec =
+    axes.get_axes();
 
   // Construct two state_generators:
   // - Only type_axis objects,
