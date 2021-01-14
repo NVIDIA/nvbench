@@ -105,10 +105,8 @@ private:
     }
   }
 
-  std::string m_row_format;
-  std::string m_div;
   std::vector<column> m_columns;
-  std::size_t m_num_rows;
+  std::size_t m_num_rows{};
 };
 
 } // namespace
