@@ -77,6 +77,11 @@ struct benchmark_base
     return *this;
   }
 
+  [[nodiscard]] nvbench::axes_metadata &get_axes()
+  {
+    return m_axes;
+  }
+
   [[nodiscard]] const nvbench::axes_metadata &get_axes() const
   {
     return m_axes;

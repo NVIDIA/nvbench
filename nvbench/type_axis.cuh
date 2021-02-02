@@ -25,6 +25,11 @@ struct type_axis final : public axis_base
   template <typename TypeList>
   void set_inputs();
 
+  void set_active_inputs(const std::vector<std::string>& inputs);
+
+  [[nodiscard]] bool get_is_active(const std::string &input) const;
+  [[nodiscard]] bool get_is_active(std::size_t index) const;
+
   /**
    * The index of this axis in the `benchmark`'s `type_axes` type list.
    */
@@ -53,6 +58,10 @@ private:
 
   std::vector<std::string> m_input_strings;
   std::vector<std::string> m_descriptions;
+  // Use a mask to store active flags; inactive types must still be indexed
+  // to keep things synced with the benchmark's type_axes typelist, which is
+  // not mutable. Use `get_is_active` to determine whether an entry is active.
+  std::vector<bool> m_mask;
   std::size_t m_axis_index;
 };
 
@@ -69,6 +78,9 @@ void type_axis::set_inputs()
       input_strings.push_back(Strings::input_string());
       descriptions.push_back(Strings::description());
     });
+
+  m_mask.clear();
+  m_mask.resize(m_input_strings.size(), true);
 }
 
 } // namespace nvbench

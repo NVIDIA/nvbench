@@ -40,17 +40,45 @@ void test_single()
   ASSERT(axis.get_size() == 1);
   ASSERT(axis.get_input_string(0) == "I32");
   ASSERT(axis.get_description(0) == "int32_t");
+  ASSERT(axis.get_is_active("I32") == true);
+  ASSERT(axis.get_is_active(0) == true);
 
-  const auto clone_base = axis.clone();
+  auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::type_axis *>(clone_base.get());
+  auto *clone =
+    dynamic_cast<nvbench::type_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Single");
   ASSERT(clone->get_size() == 1);
   ASSERT(clone->get_input_string(0) == "I32");
   ASSERT(clone->get_description(0) == "int32_t");
+  ASSERT(clone->get_is_active("I32") == true);
+  ASSERT(clone->get_is_active(0) == true);
+
+  clone->set_active_inputs({});
+  ASSERT(clone->get_name() == "Single");
+  ASSERT(clone->get_size() == 1);
+  ASSERT(clone->get_input_string(0) == "I32");
+  ASSERT(clone->get_description(0) == "int32_t");
+  ASSERT(clone->get_is_active("I32") == false);
+  ASSERT(clone->get_is_active(0) == false);
+  // The original property should not be modified:
+  ASSERT(axis.get_is_active("I32") == true);
+  ASSERT(axis.get_is_active(0) == true);
+
+  clone->set_active_inputs({"I32"});
+  ASSERT(clone->get_name() == "Single");
+  ASSERT(clone->get_size() == 1);
+  ASSERT(clone->get_input_string(0) == "I32");
+  ASSERT(clone->get_description(0) == "int32_t");
+  ASSERT(clone->get_is_active("I32") == true);
+  ASSERT(clone->get_is_active(0) == true);
+  // The original property should not be modified:
+  ASSERT(axis.get_is_active("I32") == true);
+  ASSERT(axis.get_is_active(0) == true);
+
+  ASSERT_THROWS_ANY(clone->set_active_inputs({"NotAValidEntry"}));
 }
 
 void test_several()
@@ -63,25 +91,69 @@ void test_several()
   ASSERT(axis.get_size() == 3);
   ASSERT(axis.get_input_string(0) == "I32");
   ASSERT(axis.get_description(0) == "int32_t");
+  ASSERT(axis.get_is_active(0) == true);
+  ASSERT(axis.get_is_active("I32") == true);
   ASSERT(axis.get_input_string(1) == "F64");
   ASSERT(axis.get_description(1) == "double");
+  ASSERT(axis.get_is_active(1) == true);
+  ASSERT(axis.get_is_active("F64") == true);
   ASSERT(axis.get_input_string(2) == "bool");
   ASSERT(axis.get_description(2) == "");
+  ASSERT(axis.get_is_active(2) == true);
+  ASSERT(axis.get_is_active("bool") == true);
 
-  const auto clone_base = axis.clone();
+  auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::type_axis *>(clone_base.get());
+  auto *clone =
+    dynamic_cast<nvbench::type_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Several");
   ASSERT(clone->get_size() == 3);
   ASSERT(clone->get_input_string(0) == "I32");
   ASSERT(clone->get_description(0) == "int32_t");
+  ASSERT(clone->get_is_active(0) == true);
+  ASSERT(clone->get_is_active("I32") == true);
   ASSERT(clone->get_input_string(1) == "F64");
   ASSERT(clone->get_description(1) == "double");
+  ASSERT(clone->get_is_active(1) == true);
+  ASSERT(clone->get_is_active("F64") == true);
   ASSERT(clone->get_input_string(2) == "bool");
   ASSERT(clone->get_description(2) == "");
+  ASSERT(clone->get_is_active(2) == true);
+  ASSERT(clone->get_is_active("bool") == true);
+
+  clone->set_active_inputs({"I32", "bool"});
+  ASSERT(clone->get_name() == "Several");
+  ASSERT(clone->get_size() == 3);
+  ASSERT(clone->get_input_string(0) == "I32");
+  ASSERT(clone->get_description(0) == "int32_t");
+  ASSERT(clone->get_is_active(0) == true);
+  ASSERT(clone->get_is_active("I32") == true);
+  ASSERT(clone->get_input_string(1) == "F64");
+  ASSERT(clone->get_description(1) == "double");
+  ASSERT(clone->get_is_active(1) == false);
+  ASSERT(clone->get_is_active("F64") == false);
+  ASSERT(clone->get_input_string(2) == "bool");
+  ASSERT(clone->get_description(2) == "");
+  ASSERT(clone->get_is_active(2) == true);
+  ASSERT(clone->get_is_active("bool") == true);
+
+  // The cloned axis should not change:
+  ASSERT(axis.get_name() == "Several");
+  ASSERT(axis.get_size() == 3);
+  ASSERT(axis.get_input_string(0) == "I32");
+  ASSERT(axis.get_description(0) == "int32_t");
+  ASSERT(axis.get_is_active(0) == true);
+  ASSERT(axis.get_is_active("I32") == true);
+  ASSERT(axis.get_input_string(1) == "F64");
+  ASSERT(axis.get_description(1) == "double");
+  ASSERT(axis.get_is_active(1) == true);
+  ASSERT(axis.get_is_active("F64") == true);
+  ASSERT(axis.get_input_string(2) == "bool");
+  ASSERT(axis.get_description(2) == "");
+  ASSERT(axis.get_is_active(2) == true);
+  ASSERT(axis.get_is_active("bool") == true);
 }
 
 void test_get_type_index()

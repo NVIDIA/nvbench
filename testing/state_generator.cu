@@ -601,6 +601,144 @@ void test_create_with_types()
              fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
 }
 
+void test_create_with_masked_types()
+{
+  template_bench bench;
+  bench.set_type_axes_names({"Floats", "Ints", "Misc"});
+  bench.add_float64_axis("Radians", {3.14, 6.28});
+  bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
+  bench.add_int64_axis("NumInputs",
+                       {10, 15, 20},
+                       nvbench::int64_axis_flags::power_of_two);
+  bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
+
+  // Mask out some types:
+  bench.get_axes().get_type_axis("Floats").set_active_inputs({"F32"});
+  bench.get_axes().get_type_axis("Ints").set_active_inputs({"I64"});
+
+  const std::vector<std::vector<nvbench::state>> states =
+    nvbench::detail::state_generator::create(bench);
+
+  fmt::memory_buffer buffer;
+  std::string table_format = "| {:^5} | {:^10} | {:^6} | {:^4} | {:^4} | {:^7} "
+                             "| {:^7} | {:^9} | {:^9} |\n";
+
+  fmt::format_to(buffer, "\n");
+  fmt::format_to(buffer,
+                 table_format,
+                 "State",
+                 "TypeConfig",
+                 "Floats",
+                 "Ints",
+                 "Misc",
+                 "Radians",
+                 "VecSize",
+                 "NumInputs",
+                 "Strategy");
+
+  std::size_t type_config = 0;
+  std::size_t config      = 0;
+  for (const auto &inner_states : states)
+  {
+    for (const nvbench::state &state : inner_states)
+    {
+      fmt::format_to(buffer,
+                     table_format,
+                     config++,
+                     type_config,
+                     state.get_string("Floats"),
+                     state.get_string("Ints"),
+                     state.get_string("Misc"),
+                     state.get_float64("Radians"),
+                     state.get_int64("VecSize"),
+                     state.get_int64("NumInputs"),
+                     state.get_string("Strategy"));
+    }
+    type_config++;
+  }
+
+  const std::string ref =
+    R"expected(
+| State | TypeConfig | Floats | Ints | Misc | Radians | VecSize | NumInputs | Strategy  |
+|   0   |     2      |  F32   | I64  | void |  3.14   |    2    |   1024    | Recursive |
+|   1   |     2      |  F32   | I64  | void |  6.28   |    2    |   1024    | Recursive |
+|   2   |     2      |  F32   | I64  | void |  3.14   |    3    |   1024    | Recursive |
+|   3   |     2      |  F32   | I64  | void |  6.28   |    3    |   1024    | Recursive |
+|   4   |     2      |  F32   | I64  | void |  3.14   |    4    |   1024    | Recursive |
+|   5   |     2      |  F32   | I64  | void |  6.28   |    4    |   1024    | Recursive |
+|   6   |     2      |  F32   | I64  | void |  3.14   |    2    |   32768   | Recursive |
+|   7   |     2      |  F32   | I64  | void |  6.28   |    2    |   32768   | Recursive |
+|   8   |     2      |  F32   | I64  | void |  3.14   |    3    |   32768   | Recursive |
+|   9   |     2      |  F32   | I64  | void |  6.28   |    3    |   32768   | Recursive |
+|  10   |     2      |  F32   | I64  | void |  3.14   |    4    |   32768   | Recursive |
+|  11   |     2      |  F32   | I64  | void |  6.28   |    4    |   32768   | Recursive |
+|  12   |     2      |  F32   | I64  | void |  3.14   |    2    |  1048576  | Recursive |
+|  13   |     2      |  F32   | I64  | void |  6.28   |    2    |  1048576  | Recursive |
+|  14   |     2      |  F32   | I64  | void |  3.14   |    3    |  1048576  | Recursive |
+|  15   |     2      |  F32   | I64  | void |  6.28   |    3    |  1048576  | Recursive |
+|  16   |     2      |  F32   | I64  | void |  3.14   |    4    |  1048576  | Recursive |
+|  17   |     2      |  F32   | I64  | void |  6.28   |    4    |  1048576  | Recursive |
+|  18   |     2      |  F32   | I64  | void |  3.14   |    2    |   1024    | Iterative |
+|  19   |     2      |  F32   | I64  | void |  6.28   |    2    |   1024    | Iterative |
+|  20   |     2      |  F32   | I64  | void |  3.14   |    3    |   1024    | Iterative |
+|  21   |     2      |  F32   | I64  | void |  6.28   |    3    |   1024    | Iterative |
+|  22   |     2      |  F32   | I64  | void |  3.14   |    4    |   1024    | Iterative |
+|  23   |     2      |  F32   | I64  | void |  6.28   |    4    |   1024    | Iterative |
+|  24   |     2      |  F32   | I64  | void |  3.14   |    2    |   32768   | Iterative |
+|  25   |     2      |  F32   | I64  | void |  6.28   |    2    |   32768   | Iterative |
+|  26   |     2      |  F32   | I64  | void |  3.14   |    3    |   32768   | Iterative |
+|  27   |     2      |  F32   | I64  | void |  6.28   |    3    |   32768   | Iterative |
+|  28   |     2      |  F32   | I64  | void |  3.14   |    4    |   32768   | Iterative |
+|  29   |     2      |  F32   | I64  | void |  6.28   |    4    |   32768   | Iterative |
+|  30   |     2      |  F32   | I64  | void |  3.14   |    2    |  1048576  | Iterative |
+|  31   |     2      |  F32   | I64  | void |  6.28   |    2    |  1048576  | Iterative |
+|  32   |     2      |  F32   | I64  | void |  3.14   |    3    |  1048576  | Iterative |
+|  33   |     2      |  F32   | I64  | void |  6.28   |    3    |  1048576  | Iterative |
+|  34   |     2      |  F32   | I64  | void |  3.14   |    4    |  1048576  | Iterative |
+|  35   |     2      |  F32   | I64  | void |  6.28   |    4    |  1048576  | Iterative |
+|  36   |     3      |  F32   | I64  | bool |  3.14   |    2    |   1024    | Recursive |
+|  37   |     3      |  F32   | I64  | bool |  6.28   |    2    |   1024    | Recursive |
+|  38   |     3      |  F32   | I64  | bool |  3.14   |    3    |   1024    | Recursive |
+|  39   |     3      |  F32   | I64  | bool |  6.28   |    3    |   1024    | Recursive |
+|  40   |     3      |  F32   | I64  | bool |  3.14   |    4    |   1024    | Recursive |
+|  41   |     3      |  F32   | I64  | bool |  6.28   |    4    |   1024    | Recursive |
+|  42   |     3      |  F32   | I64  | bool |  3.14   |    2    |   32768   | Recursive |
+|  43   |     3      |  F32   | I64  | bool |  6.28   |    2    |   32768   | Recursive |
+|  44   |     3      |  F32   | I64  | bool |  3.14   |    3    |   32768   | Recursive |
+|  45   |     3      |  F32   | I64  | bool |  6.28   |    3    |   32768   | Recursive |
+|  46   |     3      |  F32   | I64  | bool |  3.14   |    4    |   32768   | Recursive |
+|  47   |     3      |  F32   | I64  | bool |  6.28   |    4    |   32768   | Recursive |
+|  48   |     3      |  F32   | I64  | bool |  3.14   |    2    |  1048576  | Recursive |
+|  49   |     3      |  F32   | I64  | bool |  6.28   |    2    |  1048576  | Recursive |
+|  50   |     3      |  F32   | I64  | bool |  3.14   |    3    |  1048576  | Recursive |
+|  51   |     3      |  F32   | I64  | bool |  6.28   |    3    |  1048576  | Recursive |
+|  52   |     3      |  F32   | I64  | bool |  3.14   |    4    |  1048576  | Recursive |
+|  53   |     3      |  F32   | I64  | bool |  6.28   |    4    |  1048576  | Recursive |
+|  54   |     3      |  F32   | I64  | bool |  3.14   |    2    |   1024    | Iterative |
+|  55   |     3      |  F32   | I64  | bool |  6.28   |    2    |   1024    | Iterative |
+|  56   |     3      |  F32   | I64  | bool |  3.14   |    3    |   1024    | Iterative |
+|  57   |     3      |  F32   | I64  | bool |  6.28   |    3    |   1024    | Iterative |
+|  58   |     3      |  F32   | I64  | bool |  3.14   |    4    |   1024    | Iterative |
+|  59   |     3      |  F32   | I64  | bool |  6.28   |    4    |   1024    | Iterative |
+|  60   |     3      |  F32   | I64  | bool |  3.14   |    2    |   32768   | Iterative |
+|  61   |     3      |  F32   | I64  | bool |  6.28   |    2    |   32768   | Iterative |
+|  62   |     3      |  F32   | I64  | bool |  3.14   |    3    |   32768   | Iterative |
+|  63   |     3      |  F32   | I64  | bool |  6.28   |    3    |   32768   | Iterative |
+|  64   |     3      |  F32   | I64  | bool |  3.14   |    4    |   32768   | Iterative |
+|  65   |     3      |  F32   | I64  | bool |  6.28   |    4    |   32768   | Iterative |
+|  66   |     3      |  F32   | I64  | bool |  3.14   |    2    |  1048576  | Iterative |
+|  67   |     3      |  F32   | I64  | bool |  6.28   |    2    |  1048576  | Iterative |
+|  68   |     3      |  F32   | I64  | bool |  3.14   |    3    |  1048576  | Iterative |
+|  69   |     3      |  F32   | I64  | bool |  6.28   |    3    |  1048576  | Iterative |
+|  70   |     3      |  F32   | I64  | bool |  3.14   |    4    |  1048576  | Iterative |
+|  71   |     3      |  F32   | I64  | bool |  6.28   |    4    |  1048576  | Iterative |
+)expected";
+
+  const std::string test = fmt::to_string(buffer);
+  ASSERT_MSG(test == ref,
+             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+}
+
 int main()
 {
   test_empty();
@@ -608,4 +746,5 @@ int main()
   test_basic();
   test_create();
   test_create_with_types();
+  test_create_with_masked_types();
 }

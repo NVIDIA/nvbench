@@ -30,8 +30,7 @@ state_generator::create(const benchmark_base &bench)
 
   const axes_metadata &axes = bench.get_axes();
   // vector of all axes:
-  const std::vector<std::unique_ptr<const axis_base>> &axes_vec =
-    axes.get_axes();
+  const std::vector<std::unique_ptr<axis_base>> &axes_vec = axes.get_axes();
 
   // Construct two state_generators:
   // - Only type_axis objects,
@@ -94,15 +93,32 @@ state_generator::create(const benchmark_base &bench)
       // specified:
       auto indices = type_sg.get_current_indices();
       std::reverse(indices.begin(), indices.end());
+
+      // Are any types masked out?
+      bool any_are_masked = false;
+
       for (const auto &axis_info : indices)
       {
-        type_config.set_string(
-          axis_info.axis,
-          axes.get_type_axis(axis_info.axis).get_input_string(axis_info.index));
+        const auto &axis = axes.get_type_axis(axis_info.axis);
+        if (!any_are_masked && !axis.get_is_active(axis_info.index))
+        {
+          any_are_masked = true;
+        }
+
+        type_config.set_string(axis_info.axis,
+                               axis.get_input_string(axis_info.index));
+      }
+
+      // Reserve the current slot in the results
+      auto &states = result.emplace_back();
+
+      if (any_are_masked)
+      { // If any of the current types are masked out, don't generate any
+        // inner configs.
+        continue;
       }
 
       // Create the inner vector of states for the current type_config:
-      auto &states = result.emplace_back();
       states.reserve(num_non_type_configs);
       for (non_type_sg.init(); non_type_sg.iter_valid(); non_type_sg.next())
       {

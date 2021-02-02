@@ -59,10 +59,22 @@ const int64_axis &axes_metadata::get_int64_axis(std::string_view name) const
   return static_cast<const nvbench::int64_axis &>(axis);
 }
 
+int64_axis &axes_metadata::get_int64_axis(std::string_view name)
+{
+  auto &axis = this->get_axis(name, nvbench::axis_type::int64);
+  return static_cast<nvbench::int64_axis &>(axis);
+}
+
 const float64_axis &axes_metadata::get_float64_axis(std::string_view name) const
 {
   const auto &axis = this->get_axis(name, nvbench::axis_type::float64);
   return static_cast<const nvbench::float64_axis &>(axis);
+}
+
+float64_axis &axes_metadata::get_float64_axis(std::string_view name)
+{
+  auto &axis = this->get_axis(name, nvbench::axis_type::float64);
+  return static_cast<nvbench::float64_axis &>(axis);
 }
 
 const string_axis &axes_metadata::get_string_axis(std::string_view name) const
@@ -71,10 +83,60 @@ const string_axis &axes_metadata::get_string_axis(std::string_view name) const
   return static_cast<const nvbench::string_axis &>(axis);
 }
 
+string_axis &axes_metadata::get_string_axis(std::string_view name)
+{
+  auto &axis = this->get_axis(name, nvbench::axis_type::string);
+  return static_cast<nvbench::string_axis &>(axis);
+}
+
 const type_axis &axes_metadata::get_type_axis(std::string_view name) const
 {
   const auto &axis = this->get_axis(name, nvbench::axis_type::type);
   return static_cast<const nvbench::type_axis &>(axis);
+}
+
+type_axis &axes_metadata::get_type_axis(std::string_view name)
+{
+  auto &axis = this->get_axis(name, nvbench::axis_type::type);
+  return static_cast<nvbench::type_axis &>(axis);
+}
+
+const nvbench::type_axis &axes_metadata::get_type_axis(std::size_t index) const
+{
+  for (const auto &axis : m_axes)
+  {
+    if (axis->get_type() == nvbench::axis_type::type)
+    {
+      const type_axis &t_axis = static_cast<const type_axis &>(*axis);
+      if (t_axis.get_axis_index() == index)
+      {
+        return t_axis;
+      }
+    }
+  }
+  throw std::runtime_error(fmt::format("{}:{}: Invalid type axis index: {}.",
+                                       __FILE__,
+                                       __LINE__,
+                                       index));
+}
+
+nvbench::type_axis &axes_metadata::get_type_axis(std::size_t index)
+{
+  for (auto &axis : m_axes)
+  {
+    if (axis->get_type() == nvbench::axis_type::type)
+    {
+      type_axis &t_axis = static_cast<type_axis &>(*axis);
+      if (t_axis.get_axis_index() == index)
+      {
+        return t_axis;
+      }
+    }
+  }
+  throw std::runtime_error(fmt::format("{}:{}: Invalid type axis index: {}.",
+                                       __FILE__,
+                                       __LINE__,
+                                       index));
 }
 
 const axis_base &axes_metadata::get_axis(std::string_view name) const
@@ -85,6 +147,22 @@ const axis_base &axes_metadata::get_axis(std::string_view name) const
     });
 
   if (iter == m_axes.cend())
+  {
+    throw std::runtime_error(
+      fmt::format("{}:{}: Axis '{}' not found.", __FILE__, __LINE__, name));
+  }
+
+  return **iter;
+}
+
+axis_base &axes_metadata::get_axis(std::string_view name)
+{
+  auto iter =
+    std::find_if(m_axes.begin(), m_axes.end(), [&name](const auto &axis) {
+      return axis->get_name() == name;
+    });
+
+  if (iter == m_axes.end())
   {
     throw std::runtime_error(
       fmt::format("{}:{}: Axis '{}' not found.", __FILE__, __LINE__, name));
@@ -110,23 +188,21 @@ const axis_base &axes_metadata::get_axis(std::string_view name,
   return axis;
 }
 
-const nvbench::type_axis &axes_metadata::get_type_axis(std::size_t index) const
+axis_base &axes_metadata::get_axis(std::string_view name,
+                                   nvbench::axis_type type)
 {
-  for (const auto &axis : m_axes)
+  auto &axis = this->get_axis(name);
+  if (axis.get_type() != type)
   {
-    if (axis->get_type() == nvbench::axis_type::type)
-    {
-      const type_axis &t_axis = static_cast<const type_axis &>(*axis);
-      if (t_axis.get_axis_index() == index)
-      {
-        return t_axis;
-      }
-    }
+    throw std::runtime_error(fmt::format("{}:{}: Axis '{}' type mismatch "
+                                         "(expected {}, actual {}).",
+                                         __FILE__,
+                                         __LINE__,
+                                         name,
+                                         type,
+                                         axis.get_type()));
   }
-  throw std::runtime_error(fmt::format("{}:{}: Invalid type axis index: {}.",
-                                       __FILE__,
-                                       __LINE__,
-                                       index));
+  return axis;
 }
 
 } // namespace nvbench

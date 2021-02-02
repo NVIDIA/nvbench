@@ -18,14 +18,14 @@ namespace nvbench
 // Holds dynamic axes information.
 struct axes_metadata
 {
-  using axes_type = std::vector<std::unique_ptr<const nvbench::axis_base>>;
+  using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
 
-  axes_metadata() = default;
-  axes_metadata(axes_metadata&&) = default;
-  axes_metadata& operator=(axes_metadata&&) = default;
+  axes_metadata()                 = default;
+  axes_metadata(axes_metadata &&) = default;
+  axes_metadata &operator=(axes_metadata &&) = default;
 
-  axes_metadata(const axes_metadata&);
-  axes_metadata& operator=(const axes_metadata&);
+  axes_metadata(const axes_metadata &);
+  axes_metadata &operator=(const axes_metadata &);
 
   template <typename type_axes>
   void set_type_axes_names(std::vector<std::string> names);
@@ -40,24 +40,33 @@ struct axes_metadata
 
   [[nodiscard]] const nvbench::int64_axis &
   get_int64_axis(std::string_view name) const;
+  [[nodiscard]] nvbench::int64_axis &get_int64_axis(std::string_view name);
 
   [[nodiscard]] const nvbench::float64_axis &
   get_float64_axis(std::string_view name) const;
+  [[nodiscard]] nvbench::float64_axis &get_float64_axis(std::string_view name);
 
   [[nodiscard]] const nvbench::string_axis &
   get_string_axis(std::string_view name) const;
+  [[nodiscard]] nvbench::string_axis &get_string_axis(std::string_view name);
 
   [[nodiscard]] const nvbench::type_axis &
   get_type_axis(std::string_view name) const;
+  [[nodiscard]] nvbench::type_axis &get_type_axis(std::string_view name);
+
+  [[nodiscard]] const nvbench::type_axis &get_type_axis(std::size_t index) const;
+  [[nodiscard]] nvbench::type_axis &get_type_axis(std::size_t index);
 
   [[nodiscard]] const axes_type &get_axes() const { return m_axes; }
+  [[nodiscard]] axes_type &get_axes() { return m_axes; }
 
   [[nodiscard]] const nvbench::axis_base &get_axis(std::string_view name) const;
+  [[nodiscard]] nvbench::axis_base &get_axis(std::string_view name);
 
   [[nodiscard]] const nvbench::axis_base &
   get_axis(std::string_view name, nvbench::axis_type type) const;
-
-  [[nodiscard]] const nvbench::type_axis &get_type_axis(std::size_t index) const;
+  [[nodiscard]] nvbench::axis_base &get_axis(std::string_view name,
+                                             nvbench::axis_type type);
 
 private:
   axes_type m_axes;

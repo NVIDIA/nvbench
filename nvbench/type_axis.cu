@@ -11,6 +11,27 @@ namespace nvbench
 
 type_axis::~type_axis() = default;
 
+void type_axis::set_active_inputs(const std::vector<std::string> &inputs)
+{
+  m_mask.clear();
+  m_mask.resize(m_input_strings.size(), false);
+  for (const auto& input : inputs)
+  {
+    const auto idx = this->get_type_index(input);
+    m_mask[idx] = true;
+  }
+}
+
+bool type_axis::get_is_active(const std::string &input) const
+{
+  return this->get_is_active(this->get_type_index(input));
+}
+
+bool type_axis::get_is_active(std::size_t idx) const
+{
+  return m_mask.at(idx);
+}
+
 std::size_t type_axis::get_type_index(const std::string &input_string) const
 {
   auto it =
