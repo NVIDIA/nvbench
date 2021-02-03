@@ -26,11 +26,11 @@ namespace nvbench
 
 struct int64_axis final : public axis_base
 {
-  int64_axis(std::string name, int64_axis_flags flags = int64_axis_flags::none)
+  explicit int64_axis(std::string name)
       : axis_base{std::move(name), axis_type::int64}
       , m_inputs{}
       , m_values{}
-      , m_flags{flags}
+      , m_flags{int64_axis_flags::none}
   {}
 
   ~int64_axis() final;
@@ -40,34 +40,36 @@ struct int64_axis final : public axis_base
     return static_cast<bool>(m_flags & int64_axis_flags::power_of_two);
   }
 
-  void set_inputs(std::vector<int64_t> inputs);
+  void set_inputs(std::vector<int64_t> inputs,
+                  int64_axis_flags flags = int64_axis_flags::none);
 
   [[nodiscard]] const std::vector<int64_t> &get_inputs() const
   {
     return m_inputs;
   };
 
-  [[nodiscard]] int64_t get_value(std::size_t i) const
-  {
-    return m_values[i];
-  };
+  [[nodiscard]] int64_t get_value(std::size_t i) const { return m_values[i]; };
 
   [[nodiscard]] const std::vector<int64_t> &get_values() const
   {
     return m_values;
   };
 
+  int64_axis_flags get_flags() const { return m_flags; }
+
+  // Helper functions for pow2 conversions:
   static nvbench::int64_t compute_pow2(nvbench::int64_t exponent)
   {
     return 1ll << exponent;
   }
 
+  // UB if value < 0.
   static nvbench::int64_t compute_log2(nvbench::int64_t value)
   {
-    // TODO use <bit> functions in C++20
-    nvbench::uint64_t bits = static_cast<nvbench::uint64_t>(value);
+    // TODO use <bit> functions in C++20?
+    nvbench::uint64_t bits    = static_cast<nvbench::int64_t>(value);
     nvbench::int64_t exponent = 0;
-    while (bits >>= 1)
+    while ((bits >>= 1) != 0ull)
     {
       ++exponent;
     }

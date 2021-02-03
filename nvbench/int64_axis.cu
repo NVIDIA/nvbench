@@ -11,9 +11,11 @@ namespace nvbench
 
 int64_axis::~int64_axis() = default;
 
-void int64_axis::set_inputs(std::vector<int64_t> inputs)
+void int64_axis::set_inputs(std::vector<int64_t> inputs, int64_axis_flags flags)
 {
   m_inputs = std::move(inputs);
+  m_flags  = flags;
+
   if (!this->is_power_of_two())
   {
     m_values = m_inputs;

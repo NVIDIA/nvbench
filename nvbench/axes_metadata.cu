@@ -40,8 +40,8 @@ void axes_metadata::add_int64_axis(std::string name,
                                    std::vector<nvbench::int64_t> data,
                                    nvbench::int64_axis_flags flags)
 {
-  auto axis = std::make_unique<nvbench::int64_axis>(std::move(name), flags);
-  axis->set_inputs(std::move(data));
+  auto axis = std::make_unique<nvbench::int64_axis>(std::move(name));
+  axis->set_inputs(std::move(data), flags);
   m_axes.push_back(std::move(axis));
 }
 
