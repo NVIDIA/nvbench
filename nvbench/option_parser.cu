@@ -6,10 +6,10 @@
 #include <fmt/format.h>
 
 #include <cassert>
-#include <charconv>
 #include <iterator>
 #include <regex>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <tuple>
 #include <vector>
@@ -40,19 +40,20 @@ std::string_view submatch_to_sv(const sv_submatch &in)
 }
 //==============================================================================
 
-template <typename T>
-void parse(std::string_view input, T &val)
+// These numeric overloads /could/ be written in a single function using
+// std::from_chars, but charconv is a mess on GCC. Even GCC 10 only partially
+// implements it (missing support for floats).
+//
+// So we're stuck with materializing a std::string and calling std::stoX(). Ah
+// well. At least it's not istream.
+void parse(std::string_view input, nvbench::int64_t& val)
 {
-  // std::from_chars requires const char *, not iterators, grumble grumble
-  auto [_, err] = std::from_chars(&*input.cbegin(), &*input.cend(), val);
-  if (err != std::errc())
-  {
-    throw std::runtime_error(fmt::format("{}:{}: Error parsing value from "
-                                         "string '{}'",
-                                         __FILE__,
-                                         __LINE__,
-                                         input));
-  }
+  val = std::stoll(std::string(input));
+}
+
+void parse(std::string_view input, nvbench::float64_t& val)
+{
+  val = std::stod(std::string(input));
 }
 
 void parse(std::string_view input, std::string &val) { val = input; }
