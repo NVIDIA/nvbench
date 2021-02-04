@@ -82,7 +82,7 @@ private:
     // batch due to noise.
     const auto time_estimate = m_cuda_timer.get_duration() * 0.95;
     auto batch_size = static_cast<nvbench::int64_t>(m_min_time / time_estimate);
-    batch_size      = std::max(batch_size, 1ll);
+    batch_size      = std::max(batch_size, nvbench::int64_t{1});
 
     do
     {
