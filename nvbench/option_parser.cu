@@ -293,6 +293,13 @@ void option_parser::parse_impl()
                                            arg));
     }
   }
+
+  if (m_benchmarks.empty())
+  {
+    // If no benchmarks were specified, run all:
+    const auto &mgr = nvbench::benchmark_manager::get();
+    m_benchmarks = mgr.clone_benchmarks();
+  }
 }
 
 void option_parser::add_benchmark(const std::string &name)

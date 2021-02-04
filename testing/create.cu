@@ -2,7 +2,6 @@
 
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
-#include <nvbench/main.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
@@ -80,10 +79,11 @@ NVBENCH_CREATE_TEMPLATE(template_no_op_generator, type_axes)
 
 // Checks that the specified number of states exist and that each has been
 // skipped. Concatenates the skip reasons and returns the resulting string.
-std::string check_states_and_get_string(const nvbench::benchmark_base &bench,
-                                        std::size_t num_type_configs,
-                                        std::size_t states_per_type_config)
+std::string run_and_get_state_string(nvbench::benchmark_base &bench,
+                                     std::size_t num_type_configs,
+                                     std::size_t states_per_type_config)
 {
+  bench.run();
   fmt::memory_buffer buffer;
   const auto &states = bench.get_states();
   ASSERT(states.size() == num_type_configs);
@@ -101,30 +101,30 @@ std::string check_states_and_get_string(const nvbench::benchmark_base &bench,
 
 void validate_default_name()
 {
-  nvbench::benchmark_base &bench =
-    nvbench::benchmark_manager::get().get_benchmark("no_op_generator");
+  auto bench =
+    nvbench::benchmark_manager::get().get_benchmark("no_op_generator").clone();
 
   const std::string ref = "Params:\n";
 
-  const auto test = check_states_and_get_string(bench, 1, 1);
+  const auto test = run_and_get_state_string(*bench, 1, 1);
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void validate_custom_name()
 {
-  nvbench::benchmark_base &bench =
-    nvbench::benchmark_manager::get().get_benchmark("Custom Name");
+  auto bench =
+    nvbench::benchmark_manager::get().get_benchmark("Custom Name").clone();
 
   const std::string ref = "Params:\n";
 
-  const auto test = check_states_and_get_string(bench, 1, 1);
+  const auto test = run_and_get_state_string(*bench, 1, 1);
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void validate_no_types()
 {
-  nvbench::benchmark_base &bench =
-    nvbench::benchmark_manager::get().get_benchmark("No Types");
+  auto bench =
+    nvbench::benchmark_manager::get().get_benchmark("No Types").clone();
 
   const std::string ref = R"expected(Params: Float: 11 Int: 1 String: One
 Params: Float: 11 Int: 2 String: One
@@ -155,14 +155,14 @@ Params: Float: 13 Int: 2 String: Three
 Params: Float: 13 Int: 3 String: Three
 )expected";
 
-  const auto test = check_states_and_get_string(bench, 1, 27);
+  const auto test = run_and_get_state_string(*bench, 1, 27);
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void validate_only_types()
 {
-  nvbench::benchmark_base &bench =
-    nvbench::benchmark_manager::get().get_benchmark("Oops, All Types!");
+  auto bench =
+    nvbench::benchmark_manager::get().get_benchmark("Oops, All Types!").clone();
 
   const std::string ref = R"expected(Params: FloatT: F32 IntT: I32 MiscT: bool
 Params: FloatT: F32 IntT: I32 MiscT: void
@@ -174,16 +174,17 @@ Params: FloatT: F64 IntT: I64 MiscT: bool
 Params: FloatT: F64 IntT: I64 MiscT: void
 )expected";
 
-  const auto test = check_states_and_get_string(bench, 8, 1);
+  const auto test = run_and_get_state_string(*bench, 8, 1);
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void validate_all_axes()
 {
-  nvbench::benchmark_base &bench =
-    nvbench::benchmark_manager::get().get_benchmark("All The Axes");
+ auto bench =
+    nvbench::benchmark_manager::get().get_benchmark("All The Axes").clone();
 
-  const std::string ref = R"expected(Params: Float: 11 FloatT: F32 Int: 1 IntT: I32 MiscT: bool String: One
+  const std::string ref =
+    R"expected(Params: Float: 11 FloatT: F32 Int: 1 IntT: I32 MiscT: bool String: One
 Params: Float: 11 FloatT: F32 Int: 2 IntT: I32 MiscT: bool String: One
 Params: Float: 11 FloatT: F32 Int: 3 IntT: I32 MiscT: bool String: One
 Params: Float: 12 FloatT: F32 Int: 1 IntT: I32 MiscT: bool String: One
@@ -401,13 +402,12 @@ Params: Float: 13 FloatT: F64 Int: 2 IntT: I64 MiscT: void String: Three
 Params: Float: 13 FloatT: F64 Int: 3 IntT: I64 MiscT: void String: Three
 )expected";
 
-  const auto test = check_states_and_get_string(bench, 8, 27);
+  const auto test = run_and_get_state_string(*bench, 8, 27);
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 int main()
 {
-  NVBENCH_MAIN_BODY;
   validate_default_name();
   validate_custom_name();
   validate_no_types();

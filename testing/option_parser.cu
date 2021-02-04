@@ -8,14 +8,17 @@
 #include <fmt/format.h>
 
 //==============================================================================
-// Declare a benchmark for testing:
+// Declare a couple benchmarks for testing:
+void DummyBench(nvbench::state &state) { state.skip("Test"); }
+NVBENCH_CREATE(DummyBench);
+
 using Ts = nvbench::type_list<void, nvbench::int8_t, nvbench::uint8_t>;
 using Us = nvbench::type_list<bool, nvbench::float32_t, nvbench::float64_t>;
 
 template <typename T, typename U>
 void TestBench(nvbench::state &state, nvbench::type_list<T, U>)
 {
-  state.skip("Test");
+  DummyBench(state);
 }
 NVBENCH_CREATE_TEMPLATE(TestBench, NVBENCH_TYPE_AXES(Ts, Us))
   .set_type_axes_names({"T", "U"})
@@ -90,14 +93,14 @@ void test_empty()
   {
     nvbench::option_parser parser;
     parser.parse({});
-    ASSERT(parser.get_benchmarks().empty());
+    ASSERT(parser.get_benchmarks().size() == 2);
     ASSERT(parser.get_args().empty());
   }
 
   {
     nvbench::option_parser parser;
     parser.parse(0, nullptr);
-    ASSERT(parser.get_benchmarks().empty());
+    ASSERT(parser.get_benchmarks().size() == 2);
     ASSERT(parser.get_args().empty());
   }
 }
@@ -106,7 +109,7 @@ void test_exec_name_tolerance()
 {
   nvbench::option_parser parser;
   parser.parse({"TestExec"});
-  ASSERT(parser.get_benchmarks().empty());
+  ASSERT(parser.get_benchmarks().size() == 2);
   ASSERT(parser.get_args() == std::vector<std::string>{"TestExec"});
 }
 
@@ -116,14 +119,14 @@ void test_argc_argv_parse()
   {
     nvbench::option_parser parser;
     parser.parse(1, argv);
-    ASSERT(parser.get_benchmarks().empty());
+    ASSERT(parser.get_benchmarks().size() == 2);
     ASSERT(parser.get_args() == std::vector<std::string>{"TestExec"});
   }
 
   {
     nvbench::option_parser parser;
     parser.parse(0, nullptr);
-    ASSERT(parser.get_benchmarks().empty());
+    ASSERT(parser.get_benchmarks().size() == 2);
     ASSERT(parser.get_args().empty());
   }
 }

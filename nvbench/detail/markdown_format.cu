@@ -1,7 +1,6 @@
 #include <nvbench/detail/markdown_format.cuh>
 
 #include <nvbench/benchmark_base.cuh>
-#include <nvbench/benchmark_manager.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
@@ -116,7 +115,7 @@ namespace nvbench
 namespace detail
 {
 
-void markdown_format::print()
+void markdown_format::print(const benchmark_vector &benchmarks)
 {
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
@@ -193,8 +192,7 @@ void markdown_format::print()
     return fmt::format("{:.2f}%", percentage);
   };
 
-  auto &mgr = nvbench::benchmark_manager::get();
-  for (const auto &bench_ptr : mgr.get_benchmarks())
+  for (const auto &bench_ptr : benchmarks)
   {
     const benchmark_base &bench = *bench_ptr;
     const axes_metadata &axes   = bench.get_axes();
