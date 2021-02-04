@@ -77,7 +77,7 @@ std::vector<T> parse_list_values(std::string_view list_spec)
   {
     auto match          = *values_begin++;
     std::string_view sv = submatch_to_sv(match[1]);
-    ;
+
     T val;
     parse(sv, val);
     result.push_back(std::move(val));
