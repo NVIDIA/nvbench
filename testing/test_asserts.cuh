@@ -30,7 +30,7 @@
                  __LINE__,                                                     \
                  #cond,                                                        \
                  fmt::format(fmtstr, __VA_ARGS__));                            \
-      std::fflush(stdout);                                                      \
+      std::fflush(stdout);                                                     \
       throw std::runtime_error("Unit test failure.");                          \
     }                                                                          \
   } while (false)
@@ -53,7 +53,7 @@
                  __FILE__,                                                     \
                  __LINE__,                                                     \
                  #expr);                                                       \
-      std::fflush(stdout);                                                      \
+      std::fflush(stdout);                                                     \
       throw std::runtime_error("Unit test failure.");                          \
     }                                                                          \
   } while (false)
