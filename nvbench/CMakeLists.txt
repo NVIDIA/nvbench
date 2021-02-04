@@ -4,6 +4,8 @@ set(srcs
   benchmark_base.cu
   benchmark_manager.cu
   cuda_call.cu
+  device_info.cu
+  device_manager.cu
   float64_axis.cu
   int64_axis.cu
   named_values.cu

@@ -17,7 +17,10 @@ struct markdown_format
 
   // Hacked in to just print a basic summary table to stdout. There's lots of
   // room for improvement here.
-  static void print(const benchmark_vector &benchmarks);
+  void print(const benchmark_vector &benchmarks);
+
+  static void print_device_info();
+
 };
 
 } // namespace detail

@@ -1,6 +1,7 @@
 #include <nvbench/detail/markdown_format.cuh>
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/device_manager.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
@@ -117,6 +118,10 @@ namespace detail
 
 void markdown_format::print(const benchmark_vector &benchmarks)
 {
+  fmt::print("\n");
+  this->print_device_info();
+  fmt::print("\n");
+
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
     if constexpr (std::is_same_v<T, nvbench::float64_t>)
@@ -197,7 +202,7 @@ void markdown_format::print(const benchmark_vector &benchmarks)
     const benchmark_base &bench = *bench_ptr;
     const axes_metadata &axes   = bench.get_axes();
 
-    fmt::print("\n# {}\n\n", bench.get_name());
+    fmt::print("# {}\n\n", bench.get_name());
 
     std::size_t row = 0;
     table_builder table;
@@ -275,7 +280,37 @@ void markdown_format::print(const benchmark_vector &benchmarks)
       }
     }
 
-    fmt::print(table.to_string());
+    fmt::print("{}\n", table.to_string());
+  } // end foreach benchmark
+}
+
+void markdown_format::print_device_info()
+{
+  fmt::print("# Devices\n\n");
+
+  const auto &devices = nvbench::device_manager::get().get_devices();
+  for (const auto &device : devices)
+  {
+    const auto [gmem_free, gmem_used] = device.get_global_memory_info();
+
+    fmt::print("## {}: `{}`\n", device.get_id(), device.get_name());
+    fmt::print("* SM Version: {} (PTX Version: {})\n",
+               device.get_sm_version(),
+               device.get_ptx_version());
+    fmt::print("* Number of SMs: {}\n", device.get_number_of_sms());
+    fmt::print("* Global Memory: {} MiB Free / {} MiB Total\n",
+               gmem_free / 1024 / 1024,
+               gmem_used / 1024 / 1024);
+    fmt::print("* L2 Cache Size: {} KiB\n", device.get_l2_cache_size() / 1024);
+    fmt::print("* Maximum Active Blocks: {}/SM\n",
+               device.get_max_blocks_per_sm());
+    fmt::print("* Maximum Active Threads: {}/SM, {}/Block\n",
+               device.get_max_threads_per_sm(),
+               device.get_max_threads_per_block());
+    fmt::print("* Available Registers: {}/SM, {}/Block\n",
+               device.get_registers_per_sm(),
+               device.get_registers_per_block());
+    fmt::print("* ECC Enabled: {}\n", device.get_ecc_state() ? "Yes" : "No");
   }
 }
 
