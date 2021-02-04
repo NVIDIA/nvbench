@@ -311,6 +311,7 @@ void markdown_format::print_device_info()
                device.get_registers_per_sm(),
                device.get_registers_per_block());
     fmt::print("* ECC Enabled: {}\n", device.get_ecc_state() ? "Yes" : "No");
+    fmt::print("\n");
   }
 }
 
