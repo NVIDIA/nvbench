@@ -7,6 +7,7 @@ set(test_srcs
   float64_axis.cu
   int64_axis.cu
   named_values.cu
+  option_parser.cu
   runner.cu
   state.cu
   state_generator.cu

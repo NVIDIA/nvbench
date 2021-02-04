@@ -7,6 +7,7 @@ set(srcs
   float64_axis.cu
   int64_axis.cu
   named_values.cu
+  option_parser.cu
   state.cu
   string_axis.cu
   type_axis.cu
