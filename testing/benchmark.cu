@@ -112,8 +112,7 @@ Axis: Other
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_type_configs()
@@ -158,8 +157,7 @@ type_configs[15] = <I64, F64, void>
 )type_config_ref";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_float64_axes()

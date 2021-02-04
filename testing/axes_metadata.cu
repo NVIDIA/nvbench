@@ -72,14 +72,15 @@ Axis: Other
     std::mismatch(ref.cbegin(), ref.cend(), test.cbegin(), test.cend());
   const auto idx = diff.second - test.cbegin();
   ASSERT_MSG(test == ref,
-             fmt::format("Differs at character {}.\n"
-                         "Expected:\n\"{}\"\n\n"
-                         "Actual:\n\"{}\"\n-- ERROR --\n\"{}\"",
-                         idx,
-                         ref,
-                         std::string_view(test.c_str(), idx),
-                         std::string_view(test.c_str() + idx,
-                                          test.size() - idx)));
+             "Differs at character {}.\n"
+             "Expected:\n\"{}\"\n\n"
+             "Actual:\n\"{}\"\n"
+             "-- ERROR --\n"
+             "\"{}\"",
+             idx,
+             ref,
+             std::string_view(test.c_str(), idx),
+             std::string_view(test.c_str() + idx, test.size() - idx));
 }
 
 void test_float64_axes()

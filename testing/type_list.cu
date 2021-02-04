@@ -146,8 +146,7 @@ struct test_foreach
       using T = typename decltype(wrapped_type)::type;
       test_vals.push_back(nvbench::type_strings<T>::input_string());
     });
-    ASSERT_MSG(test_vals == ref_vals,
-               fmt::format("{} != {}", test_vals, ref_vals));
+    ASSERT_MSG(test_vals == ref_vals, "{} != {}", test_vals, ref_vals);
   }
 
   static void run()

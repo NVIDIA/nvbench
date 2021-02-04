@@ -134,8 +134,7 @@ void test_basic()
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_create()
@@ -236,8 +235,7 @@ void test_create()
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_create_with_types()
@@ -597,8 +595,7 @@ void test_create_with_types()
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_create_with_masked_types()
@@ -735,8 +732,7 @@ void test_create_with_masked_types()
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 int main()

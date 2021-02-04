@@ -141,8 +141,7 @@ Params: Float: 13 Int: 3 String: Three
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_types()
@@ -190,8 +189,7 @@ Params: FloatT: F64 IntT: I64 MiscT: void
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_both()
@@ -451,8 +449,7 @@ Params: Float: 13 FloatT: F64 Int: 3 IntT: I64 MiscT: void String: Three
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 int main()

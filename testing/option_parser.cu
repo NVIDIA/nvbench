@@ -156,8 +156,7 @@ void test_benchmark_long() // --benchmark
   nvbench::option_parser parser;
   parser.parse({"--benchmark", "TestBench"});
   const auto test = parser_to_state_string(parser);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_benchmark_short() // -b
@@ -179,8 +178,7 @@ void test_benchmark_short() // -b
   nvbench::option_parser parser;
   parser.parse({"-b", "TestBench"});
   const auto test = parser_to_state_string(parser);
-  ASSERT_MSG(test == ref,
-             fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
 void test_int64_axis()
@@ -213,16 +211,14 @@ void test_int64_axis()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " Ints [ ] : { 2 , 7 } "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "Ints:{2,7}"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
@@ -230,16 +226,14 @@ void test_int64_axis()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " Ints [ ] : ( 2 : 7 : 5 ) "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "Ints:(2:7:5)"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 
@@ -273,16 +267,14 @@ void test_int64_axis_pow2()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] : { 2 , 7 } "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "PO2s[pow2]:{2,7}"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
@@ -290,16 +282,14 @@ void test_int64_axis_pow2()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] : ( 2 : 7 : 5 ) "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "PO2s[pow2]:(2:7:5)"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 
@@ -333,16 +323,14 @@ void test_int64_axis_none_to_pow2()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] : { 2 , 7 } "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "Ints[pow2]:{2,7}"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
@@ -350,16 +338,14 @@ void test_int64_axis_none_to_pow2()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] : ( 2 : 7 : 5 ) "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "Ints[pow2]:(2:7:5)"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 
@@ -393,16 +379,14 @@ void test_int64_axis_pow2_to_none()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " PO2s [ ] : { 2 , 7 } "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "PO2s:{2,7}"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
@@ -410,16 +394,14 @@ void test_int64_axis_pow2_to_none()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " PO2s [ ] : ( 2 : 7 : 5 ) "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "PO2s:(2:7:5)"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 
@@ -453,16 +435,14 @@ void test_float64_axis()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " Floats [ ] : { 3.5 , 4.1 } "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "Floats:{3.5,4.1}"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
@@ -472,8 +452,7 @@ void test_float64_axis()
                   "--axis",
                   " Floats [ ] : ( 3.5 : 4.2 : 0.6 ) "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
@@ -481,8 +460,7 @@ void test_float64_axis()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", "Floats:(3.5:4.2:0.6)"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 
@@ -516,16 +494,14 @@ void test_string_axis()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " Strings [ ] : { fo br , baz } "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "Strings:{fo br,baz}"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 
@@ -547,16 +523,14 @@ void test_type_axis()
     parser.parse(
       {"--benchmark", "TestBench", "--axis", " T [ ] : { U8, void } "});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
     parser.parse({"--benchmark", "TestBench", "--axis", "T:{void,U8}"});
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 
@@ -726,8 +700,7 @@ void test_multi_axis()
       // clang-format on
     });
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
@@ -744,8 +717,7 @@ void test_multi_axis()
       // clang-format on
     });
     const auto test = parser_to_state_string(parser);
-    ASSERT_MSG(test == ref,
-               fmt::format("Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test));
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 }
 

@@ -23,10 +23,9 @@ void test_basic(cudaStream_t time_stream,
   NVBENCH_CUDA_CALL(cudaDeviceSynchronize());
   const bool captured = timer.get_duration() > 0.25;
   ASSERT_MSG(captured == expected,
-             fmt::format("Unexpected result from timer: {} seconds "
-                         " (expected {})",
-                         timer.get_duration(),
-                         (expected ? "> 0.25s" : "< 0.25s")));
+             "Unexpected result from timer: {} seconds (expected {})",
+             timer.get_duration(),
+             (expected ? "> 0.25s" : "< 0.25s"));
 }
 
 void test_basic()
