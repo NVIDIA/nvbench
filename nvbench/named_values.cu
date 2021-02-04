@@ -76,18 +76,48 @@ named_values::type named_values::get_type(const std::string &name) const
 }
 
 nvbench::int64_t named_values::get_int64(const std::string &name) const
+try
 {
   return std::get<nvbench::int64_t>(this->get_value(name));
 }
+catch (std::exception &err)
+{
+  throw std::runtime_error(fmt::format("{}:{}: Error looking up int64 value "
+                                       "`{}`:\n{}",
+                                       __FILE__,
+                                       __LINE__,
+                                       name,
+                                       err.what()));
+}
 
 nvbench::float64_t named_values::get_float64(const std::string &name) const
+try
 {
   return std::get<nvbench::float64_t>(this->get_value(name));
 }
+catch (std::exception &err)
+{
+  throw std::runtime_error(fmt::format("{}:{}: Error looking up float64 value "
+                                       "`{}`:\n{}",
+                                       __FILE__,
+                                       __LINE__,
+                                       name,
+                                       err.what()));
+}
 
 const std::string &named_values::get_string(const std::string &name) const
+try
 {
   return std::get<std::string>(this->get_value(name));
+}
+catch (std::exception &err)
+{
+  throw std::runtime_error(fmt::format("{}:{}: Error looking up string value "
+                                       "`{}`:\n{}",
+                                       __FILE__,
+                                       __LINE__,
+                                       name,
+                                       err.what()));
 }
 
 void named_values::set_int64(std::string name, nvbench::int64_t value)
