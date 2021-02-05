@@ -11,7 +11,7 @@ namespace detail
 
 struct l2flush
 {
-  l2flush()
+  __forceinline__ l2flush()
       : m_l2_buffer{nullptr}
   {
     int dev_id{};
@@ -24,7 +24,7 @@ struct l2flush
     }
   }
 
-  ~l2flush()
+  __forceinline__ ~l2flush()
   {
     if (m_l2_buffer)
     {
@@ -32,7 +32,7 @@ struct l2flush
     }
   }
 
-  void flush(cudaStream_t stream)
+  __forceinline__ void flush(cudaStream_t stream)
   {
     if (m_l2_size > 0)
     {

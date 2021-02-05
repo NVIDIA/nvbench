@@ -11,13 +11,13 @@ namespace nvbench
 
 struct cuda_timer
 {
-  cuda_timer()
+  __forceinline__ cuda_timer()
   {
     NVBENCH_CUDA_CALL(cudaEventCreate(&m_start));
     NVBENCH_CUDA_CALL(cudaEventCreate(&m_stop));
   }
 
-  ~cuda_timer()
+  __forceinline__ ~cuda_timer()
   {
     NVBENCH_CUDA_CALL(cudaEventDestroy(m_start));
     NVBENCH_CUDA_CALL(cudaEventDestroy(m_stop));
@@ -29,17 +29,17 @@ struct cuda_timer
   cuda_timer &operator=(const cuda_timer &) = delete;
   cuda_timer &operator=(cuda_timer &&) = default;
 
-  void start(cudaStream_t stream)
+  __forceinline__ void start(cudaStream_t stream)
   {
     NVBENCH_CUDA_CALL(cudaEventRecord(m_start, stream));
   }
 
-  void stop(cudaStream_t stream)
+  __forceinline__ void stop(cudaStream_t stream)
   {
     NVBENCH_CUDA_CALL(cudaEventRecord(m_stop, stream));
   }
 
-  [[nodiscard]] bool ready() const
+  [[nodiscard]] __forceinline__ bool ready() const
   {
     const cudaError_t state = cudaEventQuery(m_stop);
     if (state == cudaErrorNotReady)
@@ -51,7 +51,7 @@ struct cuda_timer
   }
 
   // In seconds:
-  [[nodiscard]] nvbench::float64_t get_duration() const
+  [[nodiscard]] __forceinline__ nvbench::float64_t get_duration() const
   {
     NVBENCH_CUDA_CALL(cudaEventSynchronize(m_stop));
     float elapsed_time;
