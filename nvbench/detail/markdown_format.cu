@@ -120,7 +120,6 @@ void markdown_format::print(const benchmark_vector &benchmarks)
 {
   fmt::print("\n");
   this->print_device_info();
-  fmt::print("\n");
 
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
@@ -197,12 +196,14 @@ void markdown_format::print(const benchmark_vector &benchmarks)
     return fmt::format("{:.2f}%", percentage);
   };
 
+  fmt::print("# Benchmark Summaries\n\n");
+
   for (const auto &bench_ptr : benchmarks)
   {
     const benchmark_base &bench = *bench_ptr;
     const axes_metadata &axes   = bench.get_axes();
 
-    fmt::print("# {}\n\n", bench.get_name());
+    fmt::print("## {}\n\n", bench.get_name());
 
     std::size_t row = 0;
     table_builder table;
