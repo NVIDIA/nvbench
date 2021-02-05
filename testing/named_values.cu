@@ -27,7 +27,7 @@ void test_basic()
   vals.set_int64("Int", 32);
   vals.set_float64("Float", 34.5);
   vals.set_string("String", "string!");
-  vals.set_value("IntVar", nvbench::named_values::value_type{36ll});
+  vals.set_value("IntVar", {nvbench::int64_t{36}});
 
   std::vector<std::string> names{"Float", "Int", "IntVar", "String"};
 
