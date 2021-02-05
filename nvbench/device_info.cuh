@@ -42,8 +42,8 @@ struct device_info
     return detail::get_ptx_version(m_id);
   }
 
-  /// @return The peak clock rate of the SM in Hz.
-  [[nodiscard]] std::size_t get_sm_peak_clock_rate() const
+  /// @return The default clock rate of the SM in Hz.
+  [[nodiscard]] std::size_t get_sm_default_clock_rate() const
   { // kHz -> Hz
     return static_cast<std::size_t>(m_prop.clockRate * 1000);
   }

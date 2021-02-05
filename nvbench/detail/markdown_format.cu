@@ -130,8 +130,8 @@ void markdown_format::print_device_info()
                device.get_sm_version(),
                device.get_ptx_version());
     fmt::print("* Number of SMs: {}\n", device.get_number_of_sms());
-    fmt::print("* SM Peak Clock Rate: {} MHz\n",
-               device.get_sm_peak_clock_rate() / 1000 / 1000);
+    fmt::print("* SM Default Clock Rate: {} MHz\n",
+               device.get_sm_default_clock_rate() / 1000 / 1000);
     fmt::print("* Global Memory: {} MiB Free / {} MiB Total\n",
                gmem_free / 1024 / 1024,
                gmem_used / 1024 / 1024);
