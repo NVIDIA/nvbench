@@ -7,10 +7,13 @@
 #include <nvbench/state.cuh>
 
 #include <nvbench/detail/l2flush.cuh>
+#include <nvbench/detail/statistics.cuh>
 
 #include <cuda_runtime.h>
 
+#include <algorithm>
 #include <utility>
+#include <vector>
 
 namespace nvbench
 {
@@ -30,23 +33,41 @@ struct measure_cold_base
   measure_cold_base &operator=(measure_cold_base &&) = delete;
 
 protected:
-  void initialize();
+  void initialize()
+  {
+    m_total_cuda_time = 0.;
+    m_total_cpu_time  = 0.;
+    m_cuda_noise      = 0.;
+    m_cpu_noise       = 0.;
+    m_total_iters     = 0;
+    m_cuda_times.clear();
+    m_cpu_times.clear();
+  }
 
   void generate_summaries();
+
+  nvbench::state &m_state;
 
   nvbench::launch m_launch{};
   nvbench::cuda_timer m_cuda_timer{};
   nvbench::cpu_timer m_cpu_timer{};
   nvbench::detail::l2flush m_l2flush{};
 
-  // seconds:
-  nvbench::float64_t m_min_time{1.};
-  nvbench::float64_t m_cuda_time{};
-  nvbench::float64_t m_cpu_time{};
+  nvbench::int64_t m_min_iters{1};
+  nvbench::int64_t m_total_iters{};
 
-  nvbench::int64_t m_num_trials{};
+  nvbench::float64_t m_max_noise{5.0}; // % rel stdev
+  nvbench::float64_t m_cuda_noise{};   // % rel stdev
+  nvbench::float64_t m_cpu_noise{};    // % rel stdev
 
-  nvbench::state &m_state;
+  nvbench::float64_t m_min_time{0.5};
+  nvbench::float64_t m_max_time{2.0};
+
+  nvbench::float64_t m_total_cuda_time{};
+  nvbench::float64_t m_total_cpu_time{};
+
+  std::vector<nvbench::float64_t> m_cuda_times{};
+  std::vector<nvbench::float64_t> m_cpu_times{};
 };
 
 template <typename KernelLauncher>
@@ -75,6 +96,8 @@ private:
 
   void run_trials()
   {
+    nvbench::float64_t total_time{};
+
     do
     {
       m_l2flush.flush(m_launch.get_stream());
@@ -90,12 +113,32 @@ private:
       NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
       m_cpu_timer.stop();
 
-      // TODO eventually these should also get logged in a vector for
-      // statistical analysis.
-      m_cuda_time += m_cuda_timer.get_duration();
-      m_cpu_time += m_cpu_timer.get_duration();
-      ++m_num_trials;
-    } while (std::max(m_cuda_time, m_cpu_time) < m_min_time);
+      const auto cur_cuda_time = m_cuda_timer.get_duration();
+      const auto cur_cpu_time  = m_cpu_timer.get_duration();
+      m_cuda_times.push_back(cur_cuda_time);
+      m_cpu_times.push_back(cur_cpu_time);
+      m_total_cuda_time += cur_cuda_time;
+      m_total_cpu_time += cur_cpu_time;
+      ++m_total_iters;
+
+      const auto cuda_mean_time = m_total_cuda_time / m_total_iters;
+      const auto cpu_mean_time  = m_total_cpu_time / m_total_iters;
+
+      // Only consider the cuda noise in the convergence criteria.
+      const auto cuda_stdev = nvbench::detail::compute_stdev(m_cuda_times,
+                                                             cuda_mean_time);
+      m_cuda_noise = cuda_stdev / cuda_mean_time * 100.;
+
+      total_time = std::max(m_total_cuda_time, m_total_cpu_time);
+
+    } while (total_time < m_max_time &&
+             (m_cuda_noise > m_max_noise || total_time < m_min_time ||
+              m_total_iters > m_min_iters));
+
+    const auto cpu_mean_time  = m_total_cpu_time / m_total_iters;
+    const auto cpu_stdev  = nvbench::detail::compute_stdev(m_cpu_times,
+                                                           cpu_mean_time);
+    m_cpu_noise  = cpu_stdev / cpu_mean_time * 100.;
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }

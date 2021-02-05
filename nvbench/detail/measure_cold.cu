@@ -15,13 +15,6 @@ namespace nvbench
 namespace detail
 {
 
-void measure_cold_base::initialize()
-{
-  m_cuda_time  = 0.;
-  m_cpu_time   = 0.;
-  m_num_trials = 0;
-}
-
 void measure_cold_base::generate_summaries()
 {
   {
@@ -29,10 +22,10 @@ void measure_cold_base::generate_summaries()
     summ.set_string("short_name", "Cold Trials");
     summ.set_string("description",
                     "Number of kernel executions in cold time measurements.");
-    summ.set_int64("value", m_num_trials);
+    summ.set_int64("value", m_total_iters);
   }
 
-  const auto avg_cuda_time = m_cuda_time / m_num_trials;
+  const auto avg_cuda_time = m_total_cuda_time / m_total_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Cold)");
     summ.set_string("hint", "duration");
@@ -43,7 +36,17 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
-  const auto avg_cpu_time = m_cpu_time / m_num_trials;
+  {
+    auto &summ = m_state.add_summary("GPU Relative Standard Deviation (Cold)");
+    summ.set_string("hint", "percentage");
+    summ.set_string("short_name", "GPU Noise");
+    summ.set_string("description",
+                    "Relative standard deviation of the cold GPU execution "
+                    "time measurements.");
+    summ.set_float64("value", m_cuda_noise);
+  }
+
+  const auto avg_cpu_time = m_total_cpu_time / m_total_iters;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Cold)");
     summ.set_string("hint", "duration");
@@ -54,11 +57,21 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", avg_cpu_time);
   }
 
+  {
+    auto &summ = m_state.add_summary("CPU Relative Standard Deviation (Cold)");
+    summ.set_string("hint", "percentage");
+    summ.set_string("short_name", "CPU Noise");
+    summ.set_string("description",
+                    "Relative standard deviation of the cold CPU execution "
+                    "time measurements.");
+    summ.set_float64("value", m_cpu_noise);
+  }
+
   // Log to stdout:
   fmt::memory_buffer param_buffer;
   fmt::format_to(param_buffer, "");
   const axes_metadata &axes = m_state.get_benchmark().get_axes();
-  const auto &axis_values = m_state.get_axis_values();
+  const auto &axis_values   = m_state.get_axis_values();
   for (const auto &name : axis_values.get_names())
   {
     if (param_buffer.size() != 0)
@@ -91,7 +104,7 @@ void measure_cold_base::generate_summaries()
              fmt::to_string(param_buffer),
              avg_cuda_time * 1e3,
              avg_cpu_time * 1e3,
-             m_num_trials);
+             m_total_iters);
   std::fflush(stdout);
 }
 

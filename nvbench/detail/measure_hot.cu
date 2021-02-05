@@ -6,10 +6,11 @@
 
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <variant>
 
-// note that these can be removed once there's a device_manager or some such:
+// TODO these can be removed once there's a device_manager or some such:
 #include <cuda_runtime_api.h>
 #include <nvbench/cuda_call.cuh>
 
@@ -19,6 +20,30 @@ namespace nvbench
 namespace detail
 {
 
+measure_hot_base::measure_hot_base(state &exec_state)
+    : m_state(exec_state)
+{
+  // Since cold measures converge to a stable result, increase the min_iters
+  // to match the cold result if available.
+  try
+  {
+    nvbench::int64_t cold_iters =
+      m_state.get_summary("Number of Trials (Cold)").get_int64("value");
+    m_min_iters = std::max(m_min_iters, cold_iters);
+  }
+  catch (...)
+  {
+    // TODO Need state API
+    //    m_min_iters = state.get_min_trials();
+  }
+
+  // TODO Need state API. Replace the following line with the commented one
+  const auto target_time = (m_min_time + m_max_time) / 2.;
+  //  const auto target_time = state.get_target_time();
+
+  m_min_time = std::max(m_min_time, target_time);
+}
+
 void measure_hot_base::generate_summaries()
 {
   {
@@ -26,10 +51,10 @@ void measure_hot_base::generate_summaries()
     summ.set_string("short_name", "Hot Trials");
     summ.set_string("description",
                     "Number of kernel executions in hot time measurements.");
-    summ.set_int64("value", m_num_trials);
+    summ.set_int64("value", m_num_iters);
   }
 
-  const auto avg_cuda_time = m_cuda_time / m_num_trials;
+  const auto avg_cuda_time = m_total_cuda_time / m_num_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Hot)");
     summ.set_string("hint", "duration");
@@ -40,7 +65,7 @@ void measure_hot_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
-  const auto avg_cpu_time = m_cpu_time / m_num_trials;
+  const auto avg_cpu_time = m_total_cpu_time / m_num_iters;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Hot)");
     summ.set_string("hide",
@@ -100,7 +125,7 @@ void measure_hot_base::generate_summaries()
   fmt::memory_buffer param_buffer;
   fmt::format_to(param_buffer, "");
   const axes_metadata &axes = m_state.get_benchmark().get_axes();
-  const auto &axis_values = m_state.get_axis_values();
+  const auto &axis_values   = m_state.get_axis_values();
   for (const auto &name : axis_values.get_names())
   {
     if (param_buffer.size() != 0)
@@ -133,7 +158,7 @@ void measure_hot_base::generate_summaries()
              fmt::to_string(param_buffer),
              avg_cuda_time * 1e3,
              avg_cpu_time * 1e3,
-             m_num_trials);
+             m_num_iters);
   std::fflush(stdout);
 }
 
