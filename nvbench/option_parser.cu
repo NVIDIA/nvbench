@@ -3,9 +3,12 @@
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/range.cuh>
 
+#include <nvbench/detail/markdown_format.cuh>
+
 #include <fmt/format.h>
 
 #include <cassert>
+#include <cstdlib>
 #include <iterator>
 #include <regex>
 #include <stdexcept>
@@ -46,12 +49,12 @@ std::string_view submatch_to_sv(const sv_submatch &in)
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
-void parse(std::string_view input, nvbench::int64_t& val)
+void parse(std::string_view input, nvbench::int64_t &val)
 {
   val = std::stoll(std::string(input));
 }
 
-void parse(std::string_view input, nvbench::float64_t& val)
+void parse(std::string_view input, nvbench::float64_t &val)
 {
   val = std::stod(std::string(input));
 }
@@ -273,7 +276,12 @@ void option_parser::parse_impl()
   {
     const auto &arg = *cur_arg;
 
-    if (arg == "--benchmark" || arg == "-b")
+    if (arg == "--list" || arg == "-l")
+    {
+      this->print_list();
+      std::exit(0);
+    }
+    else if (arg == "--benchmark" || arg == "-b")
     {
       check_params(1);
       this->add_benchmark(cur_arg[1]);
@@ -299,8 +307,16 @@ void option_parser::parse_impl()
   {
     // If no benchmarks were specified, run all:
     const auto &mgr = nvbench::benchmark_manager::get();
-    m_benchmarks = mgr.clone_benchmarks();
+    m_benchmarks    = mgr.clone_benchmarks();
   }
+}
+
+void option_parser::print_list() const
+{
+  using printer         = nvbench::detail::markdown_format;
+  const auto &bench_mgr = nvbench::benchmark_manager::get();
+  printer::print_device_info();
+  printer::print_benchmark_summaries(bench_mgr.get_benchmarks());
 }
 
 void option_parser::add_benchmark(const std::string &name)

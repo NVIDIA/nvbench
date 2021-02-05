@@ -103,6 +103,10 @@ void measure_hot_base::generate_summaries()
   const auto &axis_values = m_state.get_axis_values();
   for (const auto &name : axis_values.get_names())
   {
+    if (param_buffer.size() != 0)
+    {
+      param_buffer.push_back(' ');
+    }
     fmt::format_to(param_buffer, "{}=", name);
 
     // Handle power-of-two int64 axes differently:
@@ -117,13 +121,13 @@ void measure_hot_base::generate_summaries()
     {
       std::visit(
         [&param_buffer](const auto &val) {
-          fmt::format_to(param_buffer, "{} ", val);
+          fmt::format_to(param_buffer, "{}", val);
         },
         axis_values.get_value(name));
     }
   }
 
-  fmt::print("Benchmark {} Params: [ {}] Hot  {:.6f} ms GPU, {:.6f} ms CPU, "
+  fmt::print("`{}` [{}] Hot  {:.6f} ms GPU, {:.6f} ms CPU, "
              "{}x\n",
              m_state.get_benchmark().get_name(),
              fmt::to_string(param_buffer),

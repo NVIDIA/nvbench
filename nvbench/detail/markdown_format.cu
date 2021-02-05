@@ -163,6 +163,51 @@ void markdown_format::print_log_epilogue() { fmt::print("```\n\n"); }
 void markdown_format::print_benchmark_summaries(
   const benchmark_vector &benchmarks)
 {
+  fmt::print("# Benchmarks\n\n");
+  for (const auto &bench_ptr : benchmarks)
+  {
+    const auto &axes              = bench_ptr->get_axes().get_axes();
+    const std::size_t num_configs = std::transform_reduce(
+      axes.cbegin(),
+      axes.cend(),
+      std::size_t{1},
+      std::multiplies<>{},
+      [](const auto &axis_ptr) { return axis_ptr->get_size(); });
+
+    fmt::print("## `{}` ({} configurations)\n\n",
+               bench_ptr->get_name(),
+               num_configs);
+
+    fmt::print("### Axes\n\n");
+    for (const auto &axis_ptr : axes)
+    {
+      std::string flags_str(axis_ptr->get_flags_as_string());
+      if (!flags_str.empty())
+      {
+        flags_str = fmt::format(" [{}]", flags_str);
+      }
+      fmt::print("* `{}` : {}{}\n",
+                 axis_ptr->get_name(),
+                 axis_ptr->get_type_as_string(),
+                 flags_str);
+
+      const std::size_t num_vals = axis_ptr->get_size();
+      for (std::size_t i = 0; i < num_vals; ++i)
+      {
+        std::string desc = axis_ptr->get_description(i);
+        if (!desc.empty())
+        {
+          desc = fmt::format(" ({})", desc);
+        }
+        fmt::print("  * `{}`{}\n", axis_ptr->get_input_string(i), desc);
+      } // end foreach value
+    } // end foreach axis
+    fmt::print("\n");
+  } // end foreach bench
+}
+
+void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks)
+{
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
     if constexpr (std::is_same_v<T, nvbench::float64_t>)
@@ -238,14 +283,14 @@ void markdown_format::print_benchmark_summaries(
     return fmt::format("{:.2f}%", percentage);
   };
 
-  fmt::print("# Benchmark Summaries\n\n");
+  fmt::print("# Benchmark Summaries\n");
 
   for (const auto &bench_ptr : benchmarks)
   {
     const benchmark_base &bench = *bench_ptr;
     const axes_metadata &axes   = bench.get_axes();
 
-    fmt::print("## {}\n\n", bench.get_name());
+    fmt::print("\n## {}\n\n", bench.get_name());
 
     std::size_t row = 0;
     table_builder table;
@@ -323,7 +368,7 @@ void markdown_format::print_benchmark_summaries(
       }
     }
 
-    fmt::print("{}\n", table.to_string());
+    fmt::print("{}", table.to_string());
   } // end foreach benchmark
 }
 

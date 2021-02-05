@@ -15,16 +15,17 @@
 #define NVBENCH_MAIN_BODY(argc, argv)                                          \
   do                                                                           \
   {                                                                            \
+    nvbench::option_parser parser;                                             \
+    parser.parse(argc, argv);                                                  \
+                                                                               \
     nvbench::detail::markdown_format printer;                                  \
     printer.print_device_info();                                               \
     printer.print_log_preamble();                                              \
-    nvbench::option_parser parser;                                             \
-    parser.parse(argc, argv);                                                  \
     auto &benchmarks = parser.get_benchmarks();                                \
     for (auto &bench_ptr : benchmarks)                                         \
     {                                                                          \
       bench_ptr->run();                                                        \
     }                                                                          \
     printer.print_log_epilogue();                                              \
-    printer.print_benchmark_summaries(benchmarks);                             \
+    printer.print_benchmark_results(benchmarks);                               \
   } while (false)
