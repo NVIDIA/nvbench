@@ -5,6 +5,7 @@
 
 #include <cuda_runtime_api.h>
 
+#include <cstdint> // CHAR_BIT
 #include <string_view>
 #include <utility>
 
@@ -39,6 +40,12 @@ struct device_info
   [[nodiscard]] __forceinline__ int get_ptx_version() const
   {
     return detail::get_ptx_version(m_id);
+  }
+
+  /// @return The peak clock rate of the SM in Hz.
+  [[nodiscard]] std::size_t get_sm_peak_clock_rate() const
+  { // kHz -> Hz
+    return static_cast<std::size_t>(m_prop.clockRate * 1000);
   }
 
   /// @return The number of physical streaming multiprocessors on this device.
@@ -77,6 +84,12 @@ struct device_info
     return m_prop.regsPerBlock;
   }
 
+  /// @return The total number of bytes available in global memory.
+  [[nodiscard]] std::size_t get_global_memory_size() const
+  {
+    return m_prop.totalGlobalMem;
+  }
+
   struct memory_info
   {
     std::size_t bytes_free;
@@ -84,15 +97,43 @@ struct device_info
   };
 
   /// @return The size and usage of this device's global memory.
-  [[nodiscard]] memory_info get_global_memory_info() const;
+  [[nodiscard]] memory_info get_global_memory_usage() const;
 
-  //// @return The combined read/write global memory bandwidth in bytes/sec.
-  [[nodiscard]] std::size_t get_global_memory_bandwidth() const;
+  /// @return The peak clock rate of the global memory bus in Hz.
+  [[nodiscard]] std::size_t get_global_memory_bus_peak_clock_rate() const
+  { // kHz -> Hz
+    return static_cast<std::size_t>(m_prop.memoryClockRate) * 1000;
+  }
+
+  /// @return The width of the global memory bus in bits.
+  [[nodiscard]] int get_global_memory_bus_width() const
+  {
+    return m_prop.memoryBusWidth;
+  }
+
+  //// @return The global memory bus bandwidth in bytes/sec.
+  [[nodiscard]] std::size_t get_global_memory_bus_bandwidth() const
+  { // 2 is for DDR, CHAR_BITS to convert bus_width to bytes.
+    return 2 * this->get_global_memory_bus_peak_clock_rate() *
+           (this->get_global_memory_bus_width() / CHAR_BIT);
+  }
 
   /// @return The size of the L2 cache in bytes.
   [[nodiscard]] std::size_t get_l2_cache_size() const
   {
-    return m_prop.l2CacheSize;
+    return static_cast<std::size_t>(m_prop.l2CacheSize);
+  }
+
+  /// @return The available amount of shared memory in bytes per SM.
+  [[nodiscard]] std::size_t get_shared_memory_per_sm() const
+  {
+    return m_prop.sharedMemPerMultiprocessor;
+  }
+
+  /// @return The available amount of shared memory in bytes per block.
+  [[nodiscard]] std::size_t get_shared_memory_per_block() const
+  {
+    return m_prop.sharedMemPerBlock;
   }
 
   /// @return True if ECC is enabled on this device.

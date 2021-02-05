@@ -116,11 +116,53 @@ namespace nvbench
 namespace detail
 {
 
-void markdown_format::print(const benchmark_vector &benchmarks)
+void markdown_format::print_device_info()
 {
-  fmt::print("\n");
-  this->print_device_info();
+  fmt::print("# Devices\n\n");
 
+  const auto &devices = nvbench::device_manager::get().get_devices();
+  for (const auto &device : devices)
+  {
+    const auto [gmem_free, gmem_used] = device.get_global_memory_usage();
+
+    fmt::print("## {}: `{}`\n", device.get_id(), device.get_name());
+    fmt::print("* SM Version: {} (PTX Version: {})\n",
+               device.get_sm_version(),
+               device.get_ptx_version());
+    fmt::print("* Number of SMs: {}\n", device.get_number_of_sms());
+    fmt::print("* SM Peak Clock Rate: {} MHz\n",
+               device.get_sm_peak_clock_rate() / 1000 / 1000);
+    fmt::print("* Global Memory: {} MiB Free / {} MiB Total\n",
+               gmem_free / 1024 / 1024,
+               gmem_used / 1024 / 1024);
+    fmt::print("* Global Memory Bus Peak: {} GiB/sec ({}-bit DDR @{}MHz)\n",
+               device.get_global_memory_bus_bandwidth() / 1000 / 1000 / 1000,
+               device.get_global_memory_bus_width(),
+               device.get_global_memory_bus_peak_clock_rate() / 1000 / 1000);
+    fmt::print("* Max Shared Memory: {} KiB/SM, {} KiB/Block\n",
+               device.get_shared_memory_per_sm() / 1024,
+               device.get_shared_memory_per_block() / 1024);
+    fmt::print("* L2 Cache Size: {} KiB\n", device.get_l2_cache_size() / 1024);
+    fmt::print("* Maximum Active Blocks: {}/SM\n",
+               device.get_max_blocks_per_sm());
+    fmt::print("* Maximum Active Threads: {}/SM, {}/Block\n",
+               device.get_max_threads_per_sm(),
+               device.get_max_threads_per_block());
+    fmt::print("* Available Registers: {}/SM, {}/Block\n",
+               device.get_registers_per_sm(),
+               device.get_registers_per_block());
+    fmt::print("* ECC Enabled: {}\n", device.get_ecc_state() ? "Yes" : "No");
+    fmt::print("\n");
+  }
+}
+
+void markdown_format::print_log_preamble() { fmt::print("# Log\n\n```\n"); }
+
+void markdown_format::print_log_epilogue() { fmt::print("```\n\n"); }
+
+void markdown_format::print_benchmark_summaries(
+  const benchmark_vector &benchmarks)
+{
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
     if constexpr (std::is_same_v<T, nvbench::float64_t>)
@@ -283,37 +325,6 @@ void markdown_format::print(const benchmark_vector &benchmarks)
 
     fmt::print("{}\n", table.to_string());
   } // end foreach benchmark
-}
-
-void markdown_format::print_device_info()
-{
-  fmt::print("# Devices\n\n");
-
-  const auto &devices = nvbench::device_manager::get().get_devices();
-  for (const auto &device : devices)
-  {
-    const auto [gmem_free, gmem_used] = device.get_global_memory_info();
-
-    fmt::print("## {}: `{}`\n", device.get_id(), device.get_name());
-    fmt::print("* SM Version: {} (PTX Version: {})\n",
-               device.get_sm_version(),
-               device.get_ptx_version());
-    fmt::print("* Number of SMs: {}\n", device.get_number_of_sms());
-    fmt::print("* Global Memory: {} MiB Free / {} MiB Total\n",
-               gmem_free / 1024 / 1024,
-               gmem_used / 1024 / 1024);
-    fmt::print("* L2 Cache Size: {} KiB\n", device.get_l2_cache_size() / 1024);
-    fmt::print("* Maximum Active Blocks: {}/SM\n",
-               device.get_max_blocks_per_sm());
-    fmt::print("* Maximum Active Threads: {}/SM, {}/Block\n",
-               device.get_max_threads_per_sm(),
-               device.get_max_threads_per_block());
-    fmt::print("* Available Registers: {}/SM, {}/Block\n",
-               device.get_registers_per_sm(),
-               device.get_registers_per_block());
-    fmt::print("* ECC Enabled: {}\n", device.get_ecc_state() ? "Yes" : "No");
-    fmt::print("\n");
-  }
 }
 
 } // namespace detail
