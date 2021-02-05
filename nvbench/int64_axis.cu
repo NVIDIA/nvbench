@@ -53,4 +53,13 @@ std::string int64_axis::do_get_description(std::size_t i) const
            : std::string{};
 }
 
+std::string_view int64_axis::do_get_flags_as_string() const
+{
+  if (static_cast<bool>(m_flags & nvbench::int64_axis_flags::power_of_two))
+  {
+    return "pow2";
+  }
+  return {};
+}
+
 } // namespace nvbench

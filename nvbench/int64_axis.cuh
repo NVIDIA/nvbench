@@ -85,6 +85,8 @@ private:
   std::string do_get_input_string(std::size_t) const final;
   std::string do_get_description(std::size_t) const final;
 
+  std::string_view do_get_flags_as_string() const final;
+
   std::vector<int64_t> m_inputs;
   std::vector<int64_t> m_values;
   int64_axis_flags m_flags;
