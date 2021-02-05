@@ -35,13 +35,15 @@ measure_hot_base::measure_hot_base(state &exec_state)
   {
     // TODO Need state API
     //    m_min_iters = state.get_min_trials();
+    //
+
+    // Apply the target_time since we don't have noise convergence estimates
+    // from the cold executions:
+    // TODO Need state API. Replace the following line with the commented one
+    const auto target_time = (m_min_time + m_max_time) / 2.;
+    //  const auto target_time = state.get_target_time();
+    m_min_time = std::max(m_min_time, target_time);
   }
-
-  // TODO Need state API. Replace the following line with the commented one
-  const auto target_time = (m_min_time + m_max_time) / 2.;
-  //  const auto target_time = state.get_target_time();
-
-  m_min_time = std::max(m_min_time, target_time);
 }
 
 void measure_hot_base::generate_summaries()
