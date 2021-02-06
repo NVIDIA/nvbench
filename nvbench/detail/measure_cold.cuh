@@ -96,8 +96,6 @@ private:
 
   void run_trials()
   {
-    nvbench::float64_t total_time{};
-
     do
     {
       m_l2flush.flush(m_launch.get_stream());
@@ -121,24 +119,25 @@ private:
       m_total_cpu_time += cur_cpu_time;
       ++m_total_iters;
 
-      const auto cuda_mean_time = m_total_cuda_time / m_total_iters;
-      const auto cpu_mean_time  = m_total_cpu_time / m_total_iters;
-
       // Only consider the cuda noise in the convergence criteria.
-      const auto cuda_stdev = nvbench::detail::compute_stdev(m_cuda_times,
-                                                             cuda_mean_time);
-      m_cuda_noise = cuda_stdev / cuda_mean_time * 100.;
+      m_cuda_noise = nvbench::detail::compute_noise(m_cuda_times,
+                                                    m_total_cuda_time);
 
-      total_time = std::max(m_total_cuda_time, m_total_cpu_time);
+      const auto total_time = std::max(m_total_cuda_time, m_total_cpu_time);
 
-    } while (total_time < m_max_time &&
-             (m_cuda_noise > m_max_noise || total_time < m_min_time ||
-              m_total_iters > m_min_iters));
+      if (total_time > m_max_time) // Max time exceeded, stop iterating.
+      {
+        break;
+      }
 
-    const auto cpu_mean_time  = m_total_cpu_time / m_total_iters;
-    const auto cpu_stdev  = nvbench::detail::compute_stdev(m_cpu_times,
-                                                           cpu_mean_time);
-    m_cpu_noise  = cpu_stdev / cpu_mean_time * 100.;
+      if (total_time > m_min_time &&     // Min time okay
+          m_total_iters > m_min_iters && // Min iters okay
+          m_cuda_noise < m_max_noise)    // Noise okay
+      {
+        break;
+      }
+    } while (true);
+    m_cpu_noise = nvbench::detail::compute_noise(m_cpu_times, m_total_cpu_time);
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
