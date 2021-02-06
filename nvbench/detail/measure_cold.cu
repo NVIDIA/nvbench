@@ -6,6 +6,7 @@
 
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <variant>
 
@@ -98,12 +99,13 @@ void measure_cold_base::generate_summaries()
     }
   }
 
-  fmt::print("`{}` [{}] Cold {:.6f} ms GPU, {:.6f} ms CPU, "
+  fmt::print("`{}` [{}] Cold {:.6f}ms GPU, {:.6f}ms CPU, {:0.2f}s total, "
              "{}x\n",
              m_state.get_benchmark().get_name(),
              fmt::to_string(param_buffer),
              avg_cuda_time * 1e3,
              avg_cpu_time * 1e3,
+             std::max(m_total_cuda_time, m_total_cpu_time),
              m_total_iters);
   std::fflush(stdout);
 }
