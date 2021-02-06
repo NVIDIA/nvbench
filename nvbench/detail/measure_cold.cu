@@ -107,6 +107,23 @@ void measure_cold_base::generate_summaries()
              avg_cpu_time * 1e3,
              std::max(m_total_cuda_time, m_total_cpu_time),
              m_total_iters);
+  if (m_max_time_exceeded)
+  {
+    if (m_cuda_noise > m_max_noise)
+    {
+      fmt::print("!!!! Previous benchmark exceeded max time while over "
+                 "noise threshold ({:0.2f}% > {:0.2f}%)\n",
+                 m_cuda_noise,
+                 m_max_noise);
+    }
+    if (m_total_iters < m_min_iters)
+    {
+      fmt::print("!!!! Previous benchmark exceeded max time before "
+                 "accumulating min samples ({} < {})\n",
+                 m_total_iters,
+                 m_min_iters);
+    }
+  }
   std::fflush(stdout);
 }
 

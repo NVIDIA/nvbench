@@ -53,10 +53,10 @@ void measure_hot_base::generate_summaries()
     summ.set_string("short_name", "Hot Trials");
     summ.set_string("description",
                     "Number of kernel executions in hot time measurements.");
-    summ.set_int64("value", m_num_iters);
+    summ.set_int64("value", m_total_iters);
   }
 
-  const auto avg_cuda_time = m_total_cuda_time / m_num_iters;
+  const auto avg_cuda_time = m_total_cuda_time / m_total_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Hot)");
     summ.set_string("hint", "duration");
@@ -67,7 +67,7 @@ void measure_hot_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
-  const auto avg_cpu_time = m_total_cpu_time / m_num_iters;
+  const auto avg_cpu_time = m_total_cpu_time / m_total_iters;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Hot)");
     summ.set_string("hide",
@@ -161,7 +161,17 @@ void measure_hot_base::generate_summaries()
              avg_cuda_time * 1e3,
              avg_cpu_time * 1e3,
              std::max(m_total_cuda_time, m_total_cpu_time),
-             m_num_iters);
+             m_total_iters);
+  if (m_max_time_exceeded)
+  {
+    if (m_total_iters < m_min_iters)
+    {
+      fmt::print("!!!! Previous benchmark exceeded max time before "
+                 "accumulating min samples ({} < {})\n",
+                 m_total_iters,
+                 m_min_iters);
+    }
+  }
   std::fflush(stdout);
 }
 

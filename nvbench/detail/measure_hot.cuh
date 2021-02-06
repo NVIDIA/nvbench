@@ -28,27 +28,30 @@ struct measure_hot_base
 protected:
   void initialize()
   {
-    m_total_cpu_time   = 0.;
-    m_total_cuda_time = 0.;
-    m_num_iters       = 0;
+    m_total_cpu_time    = 0.;
+    m_total_cuda_time   = 0.;
+    m_total_iters       = 0;
+    m_max_time_exceeded = false;
   }
 
   void generate_summaries();
 
   nvbench::state &m_state;
 
-  nvbench::launch m_launch{};
-  nvbench::cuda_timer m_cuda_timer{};
-  nvbench::cpu_timer m_cpu_timer{};
+  nvbench::launch m_launch;
+  nvbench::cuda_timer m_cuda_timer;
+  nvbench::cpu_timer m_cpu_timer;
 
-  nvbench::int64_t m_num_iters{};
-  nvbench::int64_t m_min_iters{1};
+  nvbench::int64_t m_total_iters{};
+  nvbench::int64_t m_min_iters{100};
 
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_time{2.0};
+  nvbench::float64_t m_max_time{1.0};
 
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
+
+  bool m_max_time_exceeded{false};
 };
 
 template <typename KernelLauncher>
@@ -99,12 +102,24 @@ private:
 
       m_total_cpu_time += m_cpu_timer.get_duration();
       m_total_cuda_time += m_cuda_timer.get_duration();
-      m_num_iters += batch_size;
+      m_total_iters += batch_size;
 
       // Predict number of remaining iterations:
       batch_size = (m_min_time - m_total_cuda_time) /
-                   (m_total_cuda_time / m_num_iters);
-    } while (m_total_cuda_time < m_min_time || m_num_iters < m_min_iters);
+                   (m_total_cuda_time / m_total_iters);
+
+      if (m_total_cuda_time > m_min_time && // min time okay
+          m_total_iters > m_min_iters)      // min iters okay
+      {
+        break; // Stop iterating
+      }
+
+      if (m_total_cuda_time > m_max_time)
+      {
+        m_max_time_exceeded = true;
+        break;
+      }
+    } while (true);
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }

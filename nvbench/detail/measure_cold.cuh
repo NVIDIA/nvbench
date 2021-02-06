@@ -42,32 +42,35 @@ protected:
     m_total_iters     = 0;
     m_cuda_times.clear();
     m_cpu_times.clear();
+    m_max_time_exceeded = false;
   }
 
   void generate_summaries();
 
   nvbench::state &m_state;
 
-  nvbench::launch m_launch{};
-  nvbench::cuda_timer m_cuda_timer{};
-  nvbench::cpu_timer m_cpu_timer{};
-  nvbench::detail::l2flush m_l2flush{};
+  nvbench::launch m_launch;
+  nvbench::cuda_timer m_cuda_timer;
+  nvbench::cpu_timer m_cpu_timer;
+  nvbench::detail::l2flush m_l2flush;
 
-  nvbench::int64_t m_min_iters{1};
+  nvbench::int64_t m_min_iters{100};
   nvbench::int64_t m_total_iters{};
 
-  nvbench::float64_t m_max_noise{5.0}; // % rel stdev
+  nvbench::float64_t m_max_noise{1.0}; // % rel stdev
   nvbench::float64_t m_cuda_noise{};   // % rel stdev
   nvbench::float64_t m_cpu_noise{};    // % rel stdev
 
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_time{2.0};
+  nvbench::float64_t m_max_time{1.0};
 
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
 
-  std::vector<nvbench::float64_t> m_cuda_times{};
-  std::vector<nvbench::float64_t> m_cpu_times{};
+  std::vector<nvbench::float64_t> m_cuda_times;
+  std::vector<nvbench::float64_t> m_cpu_times;
+
+  bool m_max_time_exceeded{};
 };
 
 template <typename KernelLauncher>
@@ -125,15 +128,16 @@ private:
 
       const auto total_time = std::max(m_total_cuda_time, m_total_cpu_time);
 
-      if (total_time > m_max_time) // Max time exceeded, stop iterating.
-      {
-        break;
-      }
-
       if (total_time > m_min_time &&     // Min time okay
           m_total_iters > m_min_iters && // Min iters okay
           m_cuda_noise < m_max_noise)    // Noise okay
       {
+        break;
+      }
+
+      if (total_time > m_max_time) // Max time exceeded, stop iterating.
+      {
+        m_max_time_exceeded = true;
         break;
       }
     } while (true);
