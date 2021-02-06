@@ -5,11 +5,24 @@
 #include <nvbench/detail/markdown_format.cuh>
 #include <nvbench/option_parser.cuh>
 
+#include <iostream>
+
 #define NVBENCH_MAIN                                                           \
   int main(int argc, char const *const *argv)                                  \
+  try                                                                          \
   {                                                                            \
     NVBENCH_MAIN_BODY(argc, argv);                                             \
     return 0;                                                                  \
+  }                                                                            \
+  catch (std::exception & e)                                                   \
+  {                                                                            \
+    std::cerr << "\nNVBench encountered an error:\n\n" << e.what() << "\n";    \
+    return 1;                                                                  \
+  }                                                                            \
+  catch (...)                                                                  \
+  {                                                                            \
+    std::cerr << "\nNVBench encountered an unknown error.\n";                  \
+    return 1;                                                                  \
   }
 
 #define NVBENCH_MAIN_BODY(argc, argv)                                          \
