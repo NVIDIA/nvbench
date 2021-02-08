@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nvbench/detail/transform_reduce.cuh>
+
 #include <functional>
 #include <limits>
 #include <numeric>
@@ -25,17 +27,18 @@ compute_noise(const std::vector<nvbench::float64_t> &data,
     return std::numeric_limits<nvbench::float64_t>::infinity();
   }
 
-  const auto mean     = sum / num;
-  const auto variance = std::transform_reduce(data.cbegin(),
-                                              data.cend(),
-                                              0.,
-                                              std::plus<>{},
-                                              [mean](nvbench::float64_t val) {
-                                                val -= mean;
-                                                val *= val;
-                                                return val;
-                                              }) /
-                        (num - 1);
+  const auto mean = sum / num;
+  const auto variance =
+    nvbench::detail::transform_reduce(data.cbegin(),
+                                      data.cend(),
+                                      0.,
+                                      std::plus<>{},
+                                      [mean](nvbench::float64_t val) {
+                                        val -= mean;
+                                        val *= val;
+                                        return val;
+                                      }) /
+    (num - 1);
   const auto abs_stdev = std::sqrt(variance);
   const auto rel_stdev = abs_stdev / mean;
   return rel_stdev * 100.;

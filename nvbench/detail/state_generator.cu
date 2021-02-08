@@ -4,6 +4,8 @@
 #include <nvbench/named_values.cuh>
 #include <nvbench/type_axis.cuh>
 
+#include <nvbench/detail/transform_reduce.cuh>
+
 #include <algorithm>
 #include <functional>
 #include <numeric>
@@ -165,13 +167,13 @@ state_generator::create(const benchmark_base &bench)
 
 std::size_t state_generator::get_number_of_states() const
 {
-  return std::transform_reduce(m_indices.cbegin(),
-                               m_indices.cend(),
-                               std::size_t{1},
-                               std::multiplies<>{},
-                               [](const axis_index &size_info) {
-                                 return size_info.size;
-                               });
+  return nvbench::detail::transform_reduce(m_indices.cbegin(),
+                                           m_indices.cend(),
+                                           std::size_t{1},
+                                           std::multiplies<>{},
+                                           [](const axis_index &size_info) {
+                                             return size_info.size;
+                                           });
 }
 
 void state_generator::init()

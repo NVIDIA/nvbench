@@ -5,6 +5,8 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <nvbench/detail/transform_reduce.cuh>
+
 #include <fmt/format.h>
 
 #include <functional>
@@ -59,7 +61,7 @@ private:
 
   void fix_row_lengths()
   { // Ensure that each row is the same length:
-    m_num_rows = std::transform_reduce(
+    m_num_rows = nvbench::detail::transform_reduce(
       m_columns.cbegin(),
       m_columns.cend(),
       0ll,
@@ -167,7 +169,7 @@ void markdown_format::print_benchmark_summaries(
   for (const auto &bench_ptr : benchmarks)
   {
     const auto &axes              = bench_ptr->get_axes().get_axes();
-    const std::size_t num_configs = std::transform_reduce(
+    const std::size_t num_configs = nvbench::detail::transform_reduce(
       axes.cbegin(),
       axes.cend(),
       std::size_t{1},
