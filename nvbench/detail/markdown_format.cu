@@ -20,17 +20,22 @@ namespace
 
 struct table_builder
 {
-  void add_cell(std::size_t row, const std::string &header, std::string value)
+  void add_cell(std::size_t row,
+                const std::string &column_key,
+                const std::string &header,
+                std::string value)
   {
     auto iter = std::find_if(m_columns.begin(),
                              m_columns.end(),
-                             [&header](const column &col) {
-                               return col.header == header;
+                             [&column_key](const column &col) {
+                               return col.key == column_key;
                              });
 
     auto &col = iter == m_columns.end()
-                  ? m_columns.emplace_back(
-                      column{header, std::vector<std::string>{}, header.size()})
+                  ? m_columns.emplace_back(column{column_key,
+                                                  header,
+                                                  std::vector<std::string>{},
+                                                  header.size()})
                   : *iter;
 
     col.max_width = std::max(col.max_width, value.size());
@@ -54,6 +59,7 @@ struct table_builder
 private:
   struct column
   {
+    std::string key;
     std::string header;
     std::vector<std::string> rows;
     std::size_t max_width;
@@ -203,7 +209,7 @@ void markdown_format::print_benchmark_summaries(
         }
         fmt::print("  * `{}`{}\n", axis_ptr->get_input_string(i), desc);
       } // end foreach value
-    } // end foreach axis
+    }   // end foreach axis
     fmt::print("\n");
   } // end foreach bench
 }
@@ -310,8 +316,12 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
           {
             const nvbench::uint64_t value    = axis_values.get_int64(name);
             const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
-            table.add_cell(row, name, fmt::format("2^{}", exponent));
             table.add_cell(row,
+                           name + "_axis_pretty",
+                           name,
+                           fmt::format("2^{}", exponent));
+            table.add_cell(row,
+                           name + "_axis_descriptive",
                            fmt::format("({})", name),
                            fmt::to_string(value));
           }
@@ -319,7 +329,7 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
           {
             std::string value = std::visit(format_visitor,
                                            axis_values.get_value(name));
-            table.add_cell(row, name, std::move(value));
+            table.add_cell(row, name + "_axis", name, std::move(value));
           }
         }
 
@@ -329,40 +339,46 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
           {
             continue;
           }
-          const std::string &name = summ.has_value("short_name")
-                                      ? summ.get_string("short_name")
-                                      : summ.get_name();
+          const std::string &key    = summ.get_name();
+          const std::string &header = summ.has_value("short_name")
+                                        ? summ.get_string("short_name")
+                                        : key;
 
           std::string hint = summ.has_value("hint") ? summ.get_string("hint")
                                                     : std::string{};
           if (hint == "duration")
           {
             table.add_cell(row,
-                           name,
+                           key,
+                           header,
                            format_duration(summ.get_float64("value")));
           }
           else if (hint == "item_rate")
           {
             table.add_cell(row,
-                           name,
+                           key,
+                           header,
                            format_item_rate(summ.get_float64("value")));
           }
           else if (hint == "byte_rate")
           {
             table.add_cell(row,
-                           name,
+                           key,
+                           header,
                            format_byte_rate(summ.get_float64("value")));
           }
           else if (hint == "percentage")
           {
             table.add_cell(row,
-                           name,
+                           key,
+                           header,
                            format_percentage(summ.get_float64("value")));
           }
           else
           {
             table.add_cell(row,
-                           name,
+                           key,
+                           header,
                            std::visit(format_visitor, summ.get_value("value")));
           }
         }
