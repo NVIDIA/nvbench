@@ -48,14 +48,6 @@ measure_hot_base::measure_hot_base(state &exec_state)
 
 void measure_hot_base::generate_summaries()
 {
-  {
-    auto &summ = m_state.add_summary("Number of Trials (Hot)");
-    summ.set_string("short_name", "Hot Trials");
-    summ.set_string("description",
-                    "Number of kernel executions in hot time measurements.");
-    summ.set_int64("value", m_total_iters);
-  }
-
   const auto avg_cuda_time = m_total_cuda_time / m_total_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Hot)");
@@ -78,6 +70,14 @@ void measure_hot_base::generate_summaries()
                     "Average back-to-back kernel execution time observed "
                     "from host.");
     summ.set_float64("value", avg_cpu_time);
+  }
+
+  {
+    auto &summ = m_state.add_summary("Number of Trials (Hot)");
+    summ.set_string("short_name", "Trials");
+    summ.set_string("description",
+                    "Number of kernel executions in hot time measurements.");
+    summ.set_int64("value", m_total_iters);
   }
 
   if (const auto items = m_state.get_items_processed_per_launch(); items != 0)

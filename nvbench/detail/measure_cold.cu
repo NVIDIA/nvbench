@@ -18,14 +18,6 @@ namespace detail
 
 void measure_cold_base::generate_summaries()
 {
-  {
-    auto &summ = m_state.add_summary("Number of Trials (Cold)");
-    summ.set_string("short_name", "Cold Trials");
-    summ.set_string("description",
-                    "Number of kernel executions in cold time measurements.");
-    summ.set_int64("value", m_total_iters);
-  }
-
   const auto avg_cuda_time = m_total_cuda_time / m_total_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Cold)");
@@ -40,7 +32,7 @@ void measure_cold_base::generate_summaries()
   {
     auto &summ = m_state.add_summary("GPU Relative Standard Deviation (Cold)");
     summ.set_string("hint", "percentage");
-    summ.set_string("short_name", "GPU Noise");
+    summ.set_string("short_name", "Noise");
     summ.set_string("description",
                     "Relative standard deviation of the cold GPU execution "
                     "time measurements.");
@@ -61,11 +53,19 @@ void measure_cold_base::generate_summaries()
   {
     auto &summ = m_state.add_summary("CPU Relative Standard Deviation (Cold)");
     summ.set_string("hint", "percentage");
-    summ.set_string("short_name", "CPU Noise");
+    summ.set_string("short_name", "Noise");
     summ.set_string("description",
                     "Relative standard deviation of the cold CPU execution "
                     "time measurements.");
     summ.set_float64("value", m_cpu_noise);
+  }
+
+  {
+    auto &summ = m_state.add_summary("Number of Trials (Cold)");
+    summ.set_string("short_name", "Trials");
+    summ.set_string("description",
+                    "Number of kernel executions in cold time measurements.");
+    summ.set_int64("value", m_total_iters);
   }
 
   // Log to stdout:
