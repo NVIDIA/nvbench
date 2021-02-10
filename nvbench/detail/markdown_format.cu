@@ -267,6 +267,25 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
     }
   };
 
+  auto format_bytes = [](nvbench::int64_t bytes) {
+    if (bytes >= 10. * 1024. * 1024. * 1024.) // 10 GiB
+    {
+      return fmt::format("{:.2f} GiB", bytes / (1024. * 1024. * 1024.));
+    }
+    else if (bytes >= 10. * 1024. * 1024.) // 10 MiB
+    {
+      return fmt::format("{:.2f} MiB", bytes / (1024. * 1024.));
+    }
+    else if (bytes >= 10 * 1024) // 10 KiB.
+    {
+      return fmt::format("{:.2f} KiB", bytes / 1024.);
+    }
+    else
+    {
+      return fmt::format("{:.2f} B", static_cast<nvbench::float64_t>(bytes));
+    }
+  };
+
   auto format_byte_rate = [](nvbench::float64_t bytes_per_second) {
     if (bytes_per_second >= 10. * 1024. * 1024. * 1024.) // 10 GiB/s
     {
@@ -359,6 +378,13 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
                            key,
                            header,
                            format_item_rate(summ.get_float64("value")));
+          }
+          else if (hint == "bytes")
+          {
+            table.add_cell(row,
+                           key,
+                           header,
+                           format_bytes(summ.get_int64("value")));
           }
           else if (hint == "byte_rate")
           {
