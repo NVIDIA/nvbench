@@ -20,7 +20,8 @@ namespace nvbench
  * - "hint": {"duration", "bandwidth", "bytes", "etc}
  * - "fmt_string": "{:9.5f}"
  * - "short_name": "%PeakMBW" (Abbreviated name for table headings)
- * - "description": "Average global device memory throughput as a percentage of the device's peak bandwidth."
+ * - "description": "Average global device memory throughput as a percentage of
+ * the device's peak bandwidth."
  *
  * Hints:
  * - "hint" unset: Arbitrary value is stored in a key named "value".
@@ -34,6 +35,12 @@ struct summary : public nvbench::named_values
   explicit summary(std::string name)
       : m_name(std::move(name))
   {}
+
+  // move-only
+  summary(const summary &) = delete;
+  summary(summary &&)      = default;
+  summary &operator=(const summary &) = delete;
+  summary &operator=(summary &&) = default;
 
   void set_name(std::string name) { m_name = std::move(name); }
   const std::string &get_name() const { return m_name; }
