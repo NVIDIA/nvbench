@@ -148,17 +148,43 @@ std::vector<std::string> parse_range_values(std::string_view range_spec,
 template <typename T>
 std::vector<T> parse_values(std::string_view value_spec)
 {
-  static const std::regex list_regex{"\\{"        // Literal {
-                                     "\\s*"       // Whitespace
-                                     "([^\\}]+?)" // list of values
-                                     "\\s*"       // Whitespace
-                                     "\\}"};      // Literal }
+  // Match a list of values, e.g. [3, 4, 5, 6, 7]
+  static const std::regex list_regex{"^"        // Start of string
+                                     "\\["      // Literal [
+                                     "\\s*"     // Whitespace
+                                     "("        // Start value capture
+                                     "[^\\]]+?" // One or more "not ]"
+                                     ","        // Literal '.'
+                                     "[^\\]]+?" // One or more "not ]"
+                                     ")"        // End value capture
+                                     "\\s*"     // Whitespace
+                                     "\\]"      // Literal ]
+                                     "$"};      // EOS
 
-  static const std::regex range_regex{"\\("        // Literal (
-                                      "\\s*"       // Whitespace
-                                      "([^\\)]+?)" // range spec
-                                      "\\s*"       // Whitespace
-                                      "\\)"};      // Literal )
+  // Match a range specification, e.g. "[1:10:2]"
+  static const std::regex range_regex{"^"        // Start of string
+                                      "\\["      // Literal [
+                                      "\\s*"     // Whitespace
+                                      "("        // Start value capture
+                                      "[^\\]]+?" // One or more "not ]"
+                                      ":"        // Literal ':'
+                                      "[^\\]]+?" // One or more "not ]"
+                                      ")"        // End value capture
+                                      "\\s*"     // Whitespace
+                                      "\\]"      // Literal ]
+                                      "$"};      // EOS
+
+  // Match a single value, e.g. "XXX" or "[XXX]"
+  static const std::regex single_regex{"^"          // Start of string
+                                       "\\[?"       // Literal `[`
+                                       "\\s*"       // Whitespace
+                                       "("          // Start value capture
+                                       "[^,\\]:]+?" // One or more "not ,]:"
+                                       ")"          // End value capture
+                                       "\\s*"       // Whitespace
+                                       "\\]?"       // Optional Literal ]
+                                       "$"};        // EOS
+
   sv_match match;
   if (std::regex_search(value_spec.cbegin(),
                         value_spec.cend(),
@@ -174,6 +200,15 @@ std::vector<T> parse_values(std::string_view value_spec)
   {
     return parse_range_values(submatch_to_sv(match[1]),
                               nvbench::wrapped_type<T>{});
+  }
+  else if (std::regex_search(value_spec.cbegin(),
+                             value_spec.cend(),
+                             match,
+                             single_regex))
+  {
+    T val;
+    parse(submatch_to_sv(match[1]), val);
+    return {val};
   }
   else
   {
@@ -202,7 +237,7 @@ auto parse_axis_key_flag_value_spec(const std::string &spec)
     ")?"         // End optional tag group
 
     "\\s*"  // Optional Whitespace
-    ":"     // Literal :
+    "="     // Literal =
     "\\s*"  // Optional Whitespace
     "(.+?)" // Value spec
     "\\s*"  // Optional Whitespace
@@ -328,20 +363,22 @@ void option_parser::add_benchmark(const std::string &name)
 void option_parser::update_axis(const std::string &spec)
 {
   // Valid examples:
-  // - "NumInputs [pow2] : (10 : 30 : 5)" <- Range specification (::)
-  // - "UniqueKeys [] : { 10, 15, 20, 25, 30 }"  <- List spec {,,...}
-  // - "Quality : (0.0 : 1.0 : 0.1)"
-  // - "ValueType : { I32, F32, U64 }"
-  // - "RNG [] : { Uniform, Gaussian }"
+  // - "NumInputs [pow2] = [10 : 30 : 5]" <- Range specification (::)
+  // - "UniqueKeys[]=[10,15,20,25,30]"    <- List spec {,,...}
+  // - "Quality=0.781"                    <- Single value
+  // - "Quality=[0.0 : 1.0 : 0.1]"
+  // - "ValueType = [ I32, F32, U64 ]"
+  // - "ValueType=I32"
+  // - "RNG [] = [ Uniform, Gaussian ]"
   //
-  // Generally: "<AxisName> [<optional flags>] : <input spec>"
+  // Generally: "<AxisName> [<optional flags>] = <input spec>"
   //
   // Axis/Flag spec: "<AxisName>" (no flags)
   // Axis/Flag spec: "<AxisName> []" (no flags)
   // Axis/Flag spec: "<AxisName> [pow2]" (flags=`pow2`)
-  // Value spec: "{ <v1, <v2>, ... }" <- Explicit values
-  // Value spec: "(<start> : <stop>)" <- Range, inclusive start/stop
-  // Value spec: "(<start> : <stop> : <stride>)" <- Range, explicit stride
+  // Value spec: "[ <v1, <v2>, ... ]" <- Explicit values
+  // Value spec: "[<start> : <stop>]" <- Range, inclusive start/stop
+  // Value spec: "[<start> : <stop> : <stride>]" <- Range, explicit stride
 
   // Check that an active benchmark exists:
   if (m_benchmarks.empty())
