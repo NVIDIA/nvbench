@@ -133,7 +133,7 @@ void markdown_format::print_device_info()
   {
     const auto [gmem_free, gmem_used] = device.get_global_memory_usage();
 
-    fmt::print("## {}: `{}`\n", device.get_id(), device.get_name());
+    fmt::print("## [{}] `{}`\n", device.get_id(), device.get_name());
     fmt::print("* SM Version: {} (PTX Version: {})\n",
                device.get_sm_version(),
                device.get_ptx_version());
@@ -172,6 +172,7 @@ void markdown_format::print_benchmark_summaries(
   const benchmark_vector &benchmarks)
 {
   fmt::print("# Benchmarks\n\n");
+  std::size_t benchmark_id{0};
   for (const auto &bench_ptr : benchmarks)
   {
     const auto &axes              = bench_ptr->get_axes().get_axes();
@@ -182,7 +183,8 @@ void markdown_format::print_benchmark_summaries(
       std::multiplies<>{},
       [](const auto &axis_ptr) { return axis_ptr->get_size(); });
 
-    fmt::print("## `{}` ({} configurations)\n\n",
+    fmt::print("## [{}] `{}` ({} configurations)\n\n",
+               benchmark_id++,
                bench_ptr->get_name(),
                num_configs);
 
