@@ -357,7 +357,19 @@ void option_parser::print_list() const
 void option_parser::add_benchmark(const std::string &name)
 {
   const auto &mgr = nvbench::benchmark_manager::get();
-  m_benchmarks.push_back(mgr.get_benchmark(name).clone());
+
+  std::unique_ptr<nvbench::benchmark_base> new_bench;
+
+  nvbench::int64_t idx{-1};
+  try
+  {
+    ::parse(name, idx);
+  }
+  catch (std::invalid_argument &)
+  {}
+
+  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(idx).clone()
+                                  : mgr.get_benchmark(name).clone());
 }
 
 void option_parser::update_axis(const std::string &spec)

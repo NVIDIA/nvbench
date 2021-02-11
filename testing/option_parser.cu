@@ -153,10 +153,19 @@ void test_benchmark_long() // --benchmark
 |   8   |     8      |  U8  | F64  |  42  |  8   |  3.14  |   'S1'   |
 )expected";
 
-  nvbench::option_parser parser;
-  parser.parse({"--benchmark", "TestBench"});
-  const auto test = parser_to_state_string(parser);
-  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "TestBench"});
+    const auto test = parser_to_state_string(parser);
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "1"});
+    const auto test = parser_to_state_string(parser);
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
+  }
 }
 
 void test_benchmark_short() // -b
@@ -175,10 +184,19 @@ void test_benchmark_short() // -b
 |   8   |     8      |  U8  | F64  |  42  |  8   |  3.14  |   'S1'   |
 )expected";
 
-  nvbench::option_parser parser;
-  parser.parse({"-b", "TestBench"});
-  const auto test = parser_to_state_string(parser);
-  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
+  {
+    nvbench::option_parser parser;
+    parser.parse({"-b", "TestBench"});
+    const auto test = parser_to_state_string(parser);
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"-b", "1"});
+    const auto test = parser_to_state_string(parser);
+    ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
+  }
 }
 
 void test_int64_axis_single()
