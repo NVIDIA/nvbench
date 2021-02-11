@@ -40,7 +40,7 @@ benchmark_manager::get_benchmark(const std::string &name) const
                            });
   if (iter == m_benchmarks.cend())
   {
-    throw std::runtime_error(
+    throw std::out_of_range(
       fmt::format("{}:{}: No benchmark named '{}'.", name));
   }
 

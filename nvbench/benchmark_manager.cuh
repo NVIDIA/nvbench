@@ -32,10 +32,16 @@ struct benchmark_manager
   [[nodiscard]] benchmark_vector clone_benchmarks() const;
 
   /**
-   * Get a non-mutable reference to benchmark with the specified name.
+   * Get a non-mutable reference to benchmark with the specified name/index.
+   * @{
    */
   [[nodiscard]] const benchmark_base &
   get_benchmark(const std::string &name) const;
+  [[nodiscard]] const benchmark_base &get_benchmark(std::size_t idx) const
+  {
+    return *m_benchmarks.at(idx);
+  }
+  /**@}*/
 
   [[nodiscard]] const benchmark_vector &get_benchmarks() const
   {
