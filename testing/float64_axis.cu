@@ -39,7 +39,7 @@ void test_basic()
   ASSERT(axis.get_input_string(1) == "0");
   ASSERT(axis.get_description(1) == "");
   ASSERT(axis.get_value(2) == 2064.15);
-  ASSERT(axis.get_input_string(2) == "2064.15");
+  ASSERT(axis.get_input_string(2) == "2064.2");
   ASSERT(axis.get_description(2) == "");
 
   const auto clone_base = axis.clone();
@@ -57,7 +57,7 @@ void test_basic()
   ASSERT(clone->get_input_string(1) == "0");
   ASSERT(clone->get_description(1) == "");
   ASSERT(clone->get_value(2) == 2064.15);
-  ASSERT(clone->get_input_string(2) == "2064.15");
+  ASSERT(clone->get_input_string(2) == "2064.2");
   ASSERT(clone->get_description(2) == "");
 }
 
@@ -75,7 +75,7 @@ void test_updates()
   ASSERT(axis.get_input_string(1) == "0");
   ASSERT(axis.get_description(1) == "");
   ASSERT(axis.get_value(2) == 2064.15);
-  ASSERT(axis.get_input_string(2) == "2064.15");
+  ASSERT(axis.get_input_string(2) == "2064.2");
   ASSERT(axis.get_description(2) == "");
 
   auto clone_base = axis.clone();
@@ -92,7 +92,7 @@ void test_updates()
   ASSERT(clone->get_input_string(1) == "0");
   ASSERT(clone->get_description(1) == "");
   ASSERT(clone->get_value(2) == 2064.15);
-  ASSERT(clone->get_input_string(2) == "2064.15");
+  ASSERT(clone->get_input_string(2) == "2064.2");
   ASSERT(clone->get_description(2) == "");
 
   // Clear the clone:
@@ -110,7 +110,7 @@ void test_updates()
   ASSERT(axis.get_input_string(1) == "0");
   ASSERT(axis.get_description(1) == "");
   ASSERT(axis.get_value(2) == 2064.15);
-  ASSERT(axis.get_input_string(2) == "2064.15");
+  ASSERT(axis.get_input_string(2) == "2064.2");
   ASSERT(axis.get_description(2) == "");
 
   // Insert new data:
@@ -134,7 +134,7 @@ void test_updates()
   ASSERT(axis.get_input_string(1) == "0");
   ASSERT(axis.get_description(1) == "");
   ASSERT(axis.get_value(2) == 2064.15);
-  ASSERT(axis.get_input_string(2) == "2064.15");
+  ASSERT(axis.get_input_string(2) == "2064.2");
   ASSERT(axis.get_description(2) == "");
 }
 
