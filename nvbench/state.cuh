@@ -4,6 +4,7 @@
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -15,6 +16,7 @@ struct benchmark_base;
 namespace detail
 {
 struct state_generator;
+struct state_tester;
 }
 
 /**
@@ -51,7 +53,7 @@ struct state
   {
     m_items_processed_per_launch = items;
   }
-  nvbench::int64_t get_items_processed_per_launch() const
+  [[nodiscard]] nvbench::int64_t get_items_processed_per_launch() const
   {
     return m_items_processed_per_launch;
   }
@@ -60,7 +62,7 @@ struct state
   {
     m_global_bytes_accessed_per_launch = bytes;
   }
-  nvbench::int64_t get_global_bytes_accessed_per_launch() const
+  [[nodiscard]] nvbench::int64_t get_global_bytes_accessed_per_launch() const
   {
     return m_global_bytes_accessed_per_launch;
   }
@@ -77,7 +79,10 @@ struct state
     return m_axis_values;
   }
 
-  const benchmark_base &get_benchmark() const { return m_benchmark; }
+  [[nodiscard]] const benchmark_base &get_benchmark() const
+  {
+    return m_benchmark;
+  }
 
   summary &add_summary(std::string summary_name);
   summary &add_summary(summary s);
@@ -86,8 +91,9 @@ struct state
   [[nodiscard]] const std::vector<summary> &get_summaries() const;
   [[nodiscard]] std::vector<summary> &get_summaries();
 
-protected:
+private:
   friend struct nvbench::detail::state_generator;
+  friend struct nvbench::detail::state_tester;
 
   explicit state(const benchmark_base &bench)
       : m_benchmark{bench}
@@ -98,7 +104,7 @@ protected:
       , m_axis_values{std::move(values)}
   {}
 
-  const nvbench::benchmark_base &m_benchmark;
+  std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;
