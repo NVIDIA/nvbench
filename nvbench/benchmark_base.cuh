@@ -27,8 +27,8 @@ struct benchmark_base
    * Returns a pointer to a new instance of the concrete benchmark<...>
    * subclass.
    *
-   * The result will have the same name as the source benchmark, and the
-   * axes will be shallow-copied. The result will have an empty `get_state()`.
+   * The result will have the same name and axes as the source benchmark.
+   * The `get_states()` vector of the result will always be empty.
    */
   [[nodiscard]] std::unique_ptr<benchmark_base> clone() const;
 
