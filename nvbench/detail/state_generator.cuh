@@ -5,6 +5,7 @@
 #include <nvbench/state.cuh>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace nvbench
@@ -15,11 +16,42 @@ namespace detail
 
 struct state_generator
 {
-
   static std::vector<std::vector<nvbench::state>>
   create(const benchmark_base &bench);
 
-protected:
+private:
+  explicit state_generator(const benchmark_base &bench);
+
+  void build_axis_configs();
+  void build_states();
+
+  const benchmark_base &m_benchmark;
+  // bool is a mask value; true if the config is used.
+  std::vector<std::pair<nvbench::named_values, bool>> m_type_axis_configs;
+  std::vector<nvbench::named_values> m_non_type_axis_configs;
+  std::vector<std::vector<nvbench::state>> m_states;
+};
+
+// Detail class; Generates a cartesian product of axis indices.
+// Used by state_generator.
+//
+// Usage:
+// ```
+// state_iterator sg;
+// sg.add_axis(...);
+// for (sg.init(); sg.iter_valid(); sg.next())
+// {
+//   for (const auto& index : sg.get_current_indices())
+//   {
+//     std::string axis_name = index.axis;
+//     nvbench::axis_type type = index.type;
+//     std::size_t value_index = index.index;
+//     std::size_t axis_size = index.size;
+//   }
+// }
+// ```
+struct state_iterator
+{
   struct axis_index
   {
     std::string axis;
@@ -28,37 +60,11 @@ protected:
     std::size_t size;
   };
 
-  void add_axis(const nvbench::axis_base &axis)
-  {
-    this->add_axis(axis.get_name(), axis.get_type(), axis.get_size());
-  }
-
-  void add_axis(std::string axis, nvbench::axis_type type, std::size_t size)
-  {
-    m_indices.push_back({std::move(axis), type, std::size_t{0}, size});
-  }
-
+  void add_axis(const nvbench::axis_base &axis);
+  void add_axis(std::string axis, nvbench::axis_type type, std::size_t size);
   [[nodiscard]] std::size_t get_number_of_states() const;
-
-  // Usage:
-  // ```
-  // state_generator sg;
-  // sg.add_axis(...);
-  // for (sg.init(); sg.iter_valid(); sg.next())
-  // {
-  //   for (const auto& axis_index : sg.get_current_indices())
-  //   {
-  //     std::string axis_name = axis_index.axis;
-  //     nvbench::axis_type type = axis_index.type;
-  //     std::size_t value_index = axis_index.index;
-  //   }
-  // }
-  // ```
   void init();
-  [[nodiscard]] const std::vector<axis_index> &get_current_indices()
-  {
-    return m_indices;
-  }
+  [[nodiscard]] const std::vector<axis_index> &get_current_indices() const;
   [[nodiscard]] bool iter_valid() const;
   void next();
 
@@ -66,6 +72,7 @@ protected:
   std::size_t m_current{};
   std::size_t m_total{};
 };
+
 
 } // namespace detail
 } // namespace nvbench

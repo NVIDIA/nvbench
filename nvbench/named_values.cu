@@ -10,6 +10,13 @@
 namespace nvbench
 {
 
+void named_values::append(const named_values &other)
+{
+  m_storage.insert(m_storage.end(),
+                   other.m_storage.cbegin(),
+                   other.m_storage.cend());
+}
+
 void named_values::clear() { m_storage.clear(); }
 
 std::size_t named_values::get_size() const { return m_storage.size(); }

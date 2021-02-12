@@ -23,20 +23,10 @@ void template_generator(nvbench::state &, nvbench::type_list<F, I, M>){};
 NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_generator, template_callable);
 using template_bench = nvbench::benchmark<template_callable, type_axes>;
 
-struct state_generator_tester : nvbench::detail::state_generator
-{
-  using nvbench::detail::state_generator::add_axis;
-  using nvbench::detail::state_generator::get_current_indices;
-  using nvbench::detail::state_generator::get_number_of_states;
-  using nvbench::detail::state_generator::init;
-  using nvbench::detail::state_generator::iter_valid;
-  using nvbench::detail::state_generator::next;
-};
-
 void test_empty()
 {
   // no axes = one state
-  state_generator_tester sg;
+  nvbench::detail::state_iterator sg;
   ASSERT(sg.get_number_of_states() == 1);
   sg.init();
   ASSERT(sg.iter_valid());
@@ -47,7 +37,7 @@ void test_empty()
 void test_single_state()
 {
   // one single-value axis = one state
-  state_generator_tester sg;
+  nvbench::detail::state_iterator sg;
   sg.add_axis("OnlyAxis", nvbench::axis_type::string, 1);
   ASSERT(sg.get_number_of_states() == 1);
   sg.init();
@@ -64,7 +54,7 @@ void test_single_state()
 
 void test_basic()
 {
-  state_generator_tester sg;
+  nvbench::detail::state_iterator sg;
   sg.add_axis("Axis1", nvbench::axis_type::string, 2);
   sg.add_axis("Axis2", nvbench::axis_type::string, 3);
   sg.add_axis("Axis3", nvbench::axis_type::string, 3);

@@ -25,6 +25,8 @@ struct named_values
     string
   };
 
+  void append(const named_values& other);
+
   [[nodiscard]] std::size_t get_size() const;
   [[nodiscard]] std::vector<std::string> get_names() const;
 

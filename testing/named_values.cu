@@ -87,8 +87,47 @@ void test_basic()
   ASSERT(!vals.has_value("String"));
 }
 
+void test_append()
+{
+  nvbench::named_values vals1;
+  vals1.set_int64("Int1", 32);
+  vals1.set_float64("Float1", 34.5);
+  vals1.set_string("String1", "string1!");
+  vals1.set_value("IntVar1", {nvbench::int64_t{36}});
+
+  nvbench::named_values vals2;
+  vals2.set_int64("Int2", 42);
+  vals2.set_float64("Float2", 3.14);
+  vals2.set_string("String2", "string2!");
+  vals2.set_value("IntVar2", {nvbench::int64_t{55}});
+
+  vals1.append(vals2);
+
+  // Order should be preserved:
+  const auto &names = vals1.get_names();
+  ASSERT(names.size() == 8);
+  ASSERT(names[0] == "Int1");
+  ASSERT(names[1] == "Float1");
+  ASSERT(names[2] == "String1");
+  ASSERT(names[3] == "IntVar1");
+  ASSERT(names[4] == "Int2");
+  ASSERT(names[5] == "Float2");
+  ASSERT(names[6] == "String2");
+  ASSERT(names[7] == "IntVar2");
+
+  ASSERT(vals1.get_int64("Int1") == 32);
+  ASSERT(vals1.get_float64("Float1") == 34.5);
+  ASSERT(vals1.get_string("String1") == "string1!");
+  ASSERT(vals1.get_int64("IntVar1") == 36);
+  ASSERT(vals1.get_int64("Int2") == 42);
+  ASSERT(vals1.get_float64("Float2") == 3.14);
+  ASSERT(vals1.get_string("String2") == "string2!");
+  ASSERT(vals1.get_int64("IntVar2") == 55);
+}
+
 int main()
 {
   test_empty();
   test_basic();
+  test_append();
 }
