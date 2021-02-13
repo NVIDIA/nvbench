@@ -35,6 +35,7 @@ private:
   void parse_impl();
   void print_list() const;
   void add_benchmark(const std::string &name);
+  void update_devices(const std::string &devices);
   void update_axis(const std::string &spec);
   static void update_int64_axis(int64_axis &axis,
                                 std::string_view value_spec,

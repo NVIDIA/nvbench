@@ -49,6 +49,11 @@ std::string_view submatch_to_sv(const sv_submatch &in)
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
+void parse(std::string_view input, nvbench::int32_t &val)
+{
+  val = std::stoi(std::string(input));
+}
+
 void parse(std::string_view input, nvbench::int64_t &val)
 {
   val = std::stoll(std::string(input));
@@ -131,7 +136,7 @@ std::vector<T> parse_range_values(std::string_view range_spec,
   const T last   = range_params[1];
   const T stride = range_params.size() == 3 ? range_params[2] : T{1};
 
-  return nvbench::range(first, last, stride);
+  return nvbench::range<T, T>(first, last, stride);
 }
 
 // Disable range parsing for string types
@@ -322,6 +327,12 @@ void option_parser::parse_impl()
       this->add_benchmark(cur_arg[1]);
       cur_arg += 2;
     }
+    else if (arg == "--devices" || arg == "-d" || arg == "--device")
+    {
+      check_params(1);
+      this->update_devices(cur_arg[1]);
+      cur_arg += 2;
+    }
     else if (arg == "--axis" || arg == "-a")
     {
       check_params(1);
@@ -355,6 +366,7 @@ void option_parser::print_list() const
 }
 
 void option_parser::add_benchmark(const std::string &name)
+try
 {
   const auto &mgr = nvbench::benchmark_manager::get();
 
@@ -371,8 +383,48 @@ void option_parser::add_benchmark(const std::string &name)
   m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(idx).clone()
                                   : mgr.get_benchmark(name).clone());
 }
+catch (std::exception &e)
+{
+  throw std::runtime_error(fmt::format("{}:{}: Error parsing --benchmark "
+                                       "`{}`:\n{}",
+                                       __FILE__,
+                                       __LINE__,
+                                       name,
+                                       e.what()));
+}
+
+void option_parser::update_devices(const std::string &devices)
+try
+{
+  if (m_benchmarks.empty())
+  {
+    // If only one benchmark present, just add it. Otherwise error out.
+    const auto &mgr = nvbench::benchmark_manager::get();
+    if (mgr.get_benchmarks().size() != 1)
+    {
+      throw std::runtime_error(fmt::format("{}:{}: \"--axis <...>\" must "
+                                           "follow "
+                                           "\"--benchmark <...>\".",
+                                           __FILE__,
+                                           __LINE__));
+    }
+    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
+  }
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_devices(parse_values<nvbench::int32_t>(devices));
+}
+catch (std::exception &e)
+{
+  throw std::runtime_error(fmt::format("{}:{}: Error parsing --devices "
+                                       "`{}`:\n{}",
+                                       __FILE__,
+                                       __LINE__,
+                                       devices,
+                                       e.what()));
+}
 
 void option_parser::update_axis(const std::string &spec)
+try
 {
   // Valid examples:
   // - "NumInputs [pow2] = [10 : 30 : 5]" <- Range specification (::)
@@ -395,63 +447,67 @@ void option_parser::update_axis(const std::string &spec)
   // Check that an active benchmark exists:
   if (m_benchmarks.empty())
   {
-    throw std::runtime_error(fmt::format("{}:{}: \"--axis <...>\" must follow "
-                                         "\"--benchmark <...>\".",
-                                         __FILE__,
-                                         __LINE__));
+    // If only one benchmark present, just add it. Otherwise error out.
+    const auto &mgr = nvbench::benchmark_manager::get();
+    if (mgr.get_benchmarks().size() != 1)
+    {
+      throw std::runtime_error(fmt::format("{}:{}: \"--axis <...>\" must "
+                                           "follow "
+                                           "\"--benchmark <...>\".",
+                                           __FILE__,
+                                           __LINE__));
+    }
+    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
   }
   benchmark_base &bench = *m_benchmarks.back();
 
-  try
+  const auto [name, flags, values] = parse_axis_key_flag_value_spec(spec);
+  nvbench::axis_base &axis         = bench.get_axes().get_axis(name);
+  switch (axis.get_type())
   {
-    const auto [name, flags, values] = parse_axis_key_flag_value_spec(spec);
-    nvbench::axis_base &axis         = bench.get_axes().get_axis(name);
-    switch (axis.get_type())
-    {
-      case axis_type::type:
-        this->update_type_axis(static_cast<nvbench::type_axis &>(axis),
-                               values,
-                               flags);
-        break;
+    case axis_type::type:
+      this->update_type_axis(static_cast<nvbench::type_axis &>(axis),
+                             values,
+                             flags);
+      break;
 
-      case axis_type::int64:
-        this->update_int64_axis(static_cast<nvbench::int64_axis &>(axis),
+    case axis_type::int64:
+      this->update_int64_axis(static_cast<nvbench::int64_axis &>(axis),
+                              values,
+                              flags);
+      break;
+
+    case axis_type::float64:
+      this->update_float64_axis(static_cast<nvbench::float64_axis &>(axis),
                                 values,
                                 flags);
-        break;
 
-      case axis_type::float64:
-        this->update_float64_axis(static_cast<nvbench::float64_axis &>(axis),
-                                  values,
-                                  flags);
+      break;
 
-        break;
+    case axis_type::string:
+      this->update_string_axis(static_cast<nvbench::string_axis &>(axis),
+                               values,
+                               flags);
 
-      case axis_type::string:
-        this->update_string_axis(static_cast<nvbench::string_axis &>(axis),
-                                 values,
-                                 flags);
+      break;
 
-        break;
-
-      default:
-        // Internal error, this should never happen:
-        throw std::runtime_error(
-          fmt::format("{}:{}: Internal error: invalid axis type enum '{}'",
-                      __FILE__,
-                      __LINE__,
-                      static_cast<int>(axis.get_type())));
-    }
+    default:
+      // Internal error, this should never happen:
+      throw std::runtime_error(fmt::format("{}:{}: Internal error: invalid "
+                                           "axis type enum '{}'",
+                                           __FILE__,
+                                           __LINE__,
+                                           static_cast<int>(axis.get_type())));
   }
-  catch (std::runtime_error &err)
-  {
-    throw std::runtime_error(fmt::format("{}:{}: Error parsing `--axis` "
-                                         "specification `{}`.\n{}",
-                                         __FILE__,
-                                         __LINE__,
-                                         spec,
-                                         err.what()));
-  }
+}
+catch (std::exception &e)
+{
+  throw std::runtime_error(fmt::format("{}:{}: Error parsing --axis "
+                                       "`{}`:\n{}",
+                                       __FILE__,
+                                       __LINE__,
+                                       spec,
+                                       e.what()));
 }
 
 void option_parser::update_int64_axis(int64_axis &axis,

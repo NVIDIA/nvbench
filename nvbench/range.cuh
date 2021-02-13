@@ -16,15 +16,15 @@ using range_output_t = std::conditional_t<std::is_floating_point_v<T>,
                                           nvbench::int64_t>;
 }
 
-template <typename T>
-auto range(T start, T end, T stride = T{1})
+template <typename InT,
+          typename OutT = nvbench::detail::range_output_t<InT>>
+auto range(InT start, InT end, InT stride = InT{1})
 {
-  using output_t = detail::range_output_t<T>;
-  using result_t = std::vector<output_t>;
+  using result_t = std::vector<OutT>;
   result_t result;
   for (; start <= end; start += stride)
   {
-    result.push_back(static_cast<output_t>(start));
+    result.push_back(static_cast<OutT>(start));
   }
   return result;
 }
