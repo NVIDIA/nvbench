@@ -73,12 +73,10 @@ void test_empty()
 
   runner.generate_states();
   ASSERT(bench.get_states().size() == 1);
-  ASSERT(bench.get_states().front().size() == 1);
-  ASSERT(bench.get_states().front().front().is_skipped() == false);
+  ASSERT(bench.get_states().front().is_skipped() == false);
   runner.run();
   ASSERT(bench.get_states().size() == 1);
-  ASSERT(bench.get_states().front().size() == 1);
-  ASSERT(bench.get_states().front().front().is_skipped() == true);
+  ASSERT(bench.get_states().front().is_skipped() == true);
 }
 
 void test_non_types()
@@ -94,18 +92,16 @@ void test_non_types()
   runner_type runner{bench};
 
   runner.generate_states();
-  ASSERT(bench.get_states().size() == 1);
-  ASSERT(bench.get_states().front().size() == 27);
-  for (const auto &state : bench.get_states().front())
+  ASSERT(bench.get_states().size() == 27);
+  for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == false);
   }
 
   fmt::memory_buffer buffer;
   runner.run();
-  ASSERT(bench.get_states().size() == 1);
-  ASSERT(bench.get_states().front().size() == 27);
-  for (const auto &state : bench.get_states().front())
+  ASSERT(bench.get_states().size() == 27);
+  for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == true);
     fmt::format_to(buffer, "{}\n", state.get_skip_reason());
@@ -150,32 +146,25 @@ void test_types()
   using runner_type    = nvbench::runner<benchmark_type>;
 
   benchmark_type bench;
+  bench.set_devices(std::vector<int>{});
   bench.set_type_axes_names({"FloatT", "IntT", "MiscT"});
 
   runner_type runner{bench};
 
   runner.generate_states();
   ASSERT(bench.get_states().size() == 8);
-  for (const auto &inner_states : bench.get_states())
+  for (const auto &state : bench.get_states())
   {
-    ASSERT(inner_states.size() == 1);
-    for (const auto &state : inner_states)
-    {
-      ASSERT(state.is_skipped() == false);
-    }
+    ASSERT(state.is_skipped() == false);
   }
 
   fmt::memory_buffer buffer;
   runner.run();
   ASSERT(bench.get_states().size() == 8);
-  for (const auto &inner_states : bench.get_states())
+  for (const auto &state : bench.get_states())
   {
-    ASSERT(inner_states.size() == 1);
-    for (const auto &state : inner_states)
-    {
-      ASSERT(state.is_skipped() == true);
-      fmt::format_to(buffer, "{}\n", state.get_skip_reason());
-    }
+    ASSERT(state.is_skipped() == true);
+    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
   }
 
   const std::string ref = R"expected(Params: FloatT: F32 IntT: I32 MiscT: bool
@@ -198,6 +187,7 @@ void test_both()
   using runner_type    = nvbench::runner<benchmark_type>;
 
   benchmark_type bench;
+  bench.set_devices(std::vector<int>{});
   bench.set_type_axes_names({"FloatT", "IntT", "MiscT"});
   bench.add_int64_axis("Int", {1, 2, 3});
   bench.add_float64_axis("Float", {11.0, 12.0, 13.0});
@@ -206,27 +196,19 @@ void test_both()
   runner_type runner{bench};
 
   runner.generate_states();
-  ASSERT(bench.get_states().size() == 8);
-  for (const auto &inner_states : bench.get_states())
+  ASSERT(bench.get_states().size() == 8 * 27);
+  for (const auto &state : bench.get_states())
   {
-    ASSERT(inner_states.size() == 27);
-    for (const auto &state : inner_states)
-    {
-      ASSERT(state.is_skipped() == false);
-    }
+    ASSERT(state.is_skipped() == false);
   }
 
   fmt::memory_buffer buffer;
   runner.run();
-  ASSERT(bench.get_states().size() == 8);
-  for (const auto &inner_states : bench.get_states())
+  ASSERT(bench.get_states().size() == 8 * 27);
+  for (const auto &state : bench.get_states())
   {
-    ASSERT(inner_states.size() == 27);
-    for (const auto &state : inner_states)
-    {
-      ASSERT(state.is_skipped() == true);
-      fmt::format_to(buffer, "{}\n", state.get_skip_reason());
-    }
+    ASSERT(state.is_skipped() == true);
+    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
   }
 
   const std::string ref =

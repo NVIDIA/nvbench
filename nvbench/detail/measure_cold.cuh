@@ -3,6 +3,7 @@
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/device_info.cuh>
 #include <nvbench/launch.cuh>
 #include <nvbench/state.cuh>
 
@@ -33,6 +34,9 @@ struct measure_cold_base
   measure_cold_base &operator=(measure_cold_base &&) = delete;
 
 protected:
+
+  void check();
+
   void initialize()
   {
     m_total_cuda_time = 0.;
@@ -54,15 +58,15 @@ protected:
   nvbench::cpu_timer m_cpu_timer;
   nvbench::detail::l2flush m_l2flush;
 
-  nvbench::int64_t m_min_iters{100};
+  nvbench::int64_t m_min_iters{10};
   nvbench::int64_t m_total_iters{};
 
-  nvbench::float64_t m_max_noise{1.0}; // % rel stdev
+  nvbench::float64_t m_max_noise{0.5}; // % rel stdev
   nvbench::float64_t m_cuda_noise{};   // % rel stdev
   nvbench::float64_t m_cpu_noise{};    // % rel stdev
 
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_time{1.0};
+  nvbench::float64_t m_max_time{3.0};
 
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
@@ -83,6 +87,7 @@ struct measure_cold : public measure_cold_base
 
   void operator()()
   {
+    this->check();
     this->initialize();
     this->run_warmup();
     this->run_trials();

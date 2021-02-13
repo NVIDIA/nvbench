@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <stdexcept>
 #include <variant>
 
 namespace nvbench
@@ -16,9 +17,29 @@ namespace nvbench
 namespace detail
 {
 
+void measure_cold_base::check()
+{
+  const auto device = m_state.get_device();
+  if (!device)
+  {
+    throw std::runtime_error(fmt::format("{}:{}: Device required for `cold` "
+                                         "measurement.",
+                                         __FILE__,
+                                         __LINE__));
+  }
+  if (!device->is_active())
+  { // This means something went wrong higher up. Throw an error.
+    throw std::runtime_error(fmt::format("{}:{}: Internal error: Current "
+                                         "device is not active.",
+                                         __FILE__,
+                                         __LINE__));
+  }
+}
+
 void measure_cold_base::generate_summaries()
 {
-  const auto avg_cuda_time = m_total_cuda_time / m_total_iters;
+  const auto d_iters = static_cast<double>(m_total_iters);
+  const auto avg_cuda_time = m_total_cuda_time / d_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Cold)");
     summ.set_string("hint", "duration");
@@ -39,7 +60,7 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", m_cuda_noise);
   }
 
-  const auto avg_cpu_time = m_total_cpu_time / m_total_iters;
+  const auto avg_cpu_time = m_total_cpu_time / d_iters;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Cold)");
     summ.set_string("hint", "duration");
@@ -70,7 +91,7 @@ void measure_cold_base::generate_summaries()
 
   // Log to stdout:
   fmt::memory_buffer param_buffer;
-  fmt::format_to(param_buffer, "");
+  fmt::format_to(param_buffer, "Device={}", m_state.get_device()->get_id());
   const axes_metadata &axes = m_state.get_benchmark().get_axes();
   const auto &axis_values   = m_state.get_axis_values();
   for (const auto &name : axis_values.get_names())

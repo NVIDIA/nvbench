@@ -1,6 +1,7 @@
 #include <nvbench/detail/state_generator.cuh>
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/device_info.cuh>
 #include <nvbench/named_values.cuh>
 #include <nvbench/type_axis.cuh>
 
@@ -207,36 +208,53 @@ void state_generator::build_axis_configs()
 
 void state_generator::build_states()
 {
-  // Assemble states into a std::vector<std::vector<nvbench::state>>, where the
-  // outer vector has one inner vector per type_config, and all configs in an
-  // inner vector use the same type config. This should probably be wrapped up
-  // into a nicer data structure, but organizing states in this way makes
-  // matching up states to kernel_generator instantiations much easier during
-  // dispatch.
-
   m_states.clear();
-  m_states.reserve(m_type_axis_configs.size());
-  for (const auto &[type_config, axis_mask] : m_type_axis_configs)
+
+  const auto &devices = m_benchmark.get_devices();
+  if (devices.empty())
   {
-    auto &inner_states = m_states.emplace_back();
+    this->add_states_for_device(std::nullopt);
+  }
+  else
+  {
+    for (const auto &device : devices)
+    {
+      this->add_states_for_device(device);
+    }
+  }
+}
+
+void state_generator::add_states_for_device(
+  const std::optional<device_info> &device)
+{
+  const auto num_type_configs = m_type_axis_configs.size();
+  for (std::size_t type_config_index = 0; type_config_index < num_type_configs;
+       ++type_config_index)
+  {
+    const auto &[type_config,
+                 axis_mask] = m_type_axis_configs[type_config_index];
 
     if (!axis_mask)
     { // Don't generate inner vector if the type config is masked out.
       continue;
     }
 
-    inner_states.reserve(m_non_type_axis_configs.size());
     for (const auto &non_type_config : m_non_type_axis_configs)
     {
+      // Concatenate the type + non_type configurations:
       nvbench::named_values config = type_config;
       config.append(non_type_config);
-      inner_states.push_back(nvbench::state{m_benchmark, config});
+
+      // Create benchmark:
+      m_states.push_back(nvbench::state{m_benchmark,
+                                        std::move(config),
+                                        device,
+                                        type_config_index});
     }
   }
 }
 
-std::vector<std::vector<nvbench::state>>
-state_generator::create(const benchmark_base &bench)
+std::vector<nvbench::state> state_generator::create(const benchmark_base &bench)
 {
   state_generator sg{bench};
   sg.build_axis_configs();

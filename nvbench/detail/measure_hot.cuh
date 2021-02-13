@@ -26,6 +26,9 @@ struct measure_hot_base
   measure_hot_base &operator=(measure_hot_base &&) = delete;
 
 protected:
+
+  void check();
+
   void initialize()
   {
     m_total_cpu_time    = 0.;
@@ -43,10 +46,10 @@ protected:
   nvbench::cpu_timer m_cpu_timer;
 
   nvbench::int64_t m_total_iters{};
-  nvbench::int64_t m_min_iters{100};
+  nvbench::int64_t m_min_iters{10};
 
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_time{1.0};
+  nvbench::float64_t m_max_time{3.0};
 
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
@@ -64,6 +67,7 @@ struct measure_hot : public measure_hot_base
 
   void operator()()
   {
+    this->check();
     this->initialize();
     this->run_warmup();
     this->run_trials();

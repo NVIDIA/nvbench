@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nvbench/axes_metadata.cuh>
+#include <nvbench/device_info.cuh>
 #include <nvbench/state.cuh>
 
 #include <memory>
@@ -21,6 +22,7 @@ struct runner;
  */
 struct benchmark_base
 {
+  benchmark_base();
   virtual ~benchmark_base();
 
   /**
@@ -77,25 +79,37 @@ struct benchmark_base
     return *this;
   }
 
-  [[nodiscard]] nvbench::axes_metadata &get_axes()
+  void set_devices(std::vector<int> device_ids);
+
+  void set_devices(std::vector<nvbench::device_info> devices)
   {
-    return m_axes;
+    m_devices = std::move(devices);
   }
+
+  void add_device(int device_id);
+
+  void add_device(nvbench::device_info device)
+  {
+    m_devices.push_back(std::move(device));
+  }
+
+  [[nodiscard]] const std::vector<nvbench::device_info> &get_devices() const
+  {
+    return m_devices;
+  }
+
+  [[nodiscard]] nvbench::axes_metadata &get_axes() { return m_axes; }
 
   [[nodiscard]] const nvbench::axes_metadata &get_axes() const
   {
     return m_axes;
   }
 
-  [[nodiscard]] const std::vector<std::vector<nvbench::state>> &
-  get_states() const
+  [[nodiscard]] const std::vector<nvbench::state> &get_states() const
   {
     return m_states;
   }
-  [[nodiscard]] std::vector<std::vector<nvbench::state>> &get_states()
-  {
-    return m_states;
-  }
+  [[nodiscard]] std::vector<nvbench::state> &get_states() { return m_states; }
 
   void run() { this->do_run(); }
 
@@ -105,7 +119,8 @@ protected:
 
   std::string m_name;
   nvbench::axes_metadata m_axes;
-  std::vector<std::vector<nvbench::state>> m_states;
+  std::vector<nvbench::device_info> m_devices;
+  std::vector<nvbench::state> m_states;
 
 private:
   // route these through virtuals so the templated subclass can inject type info

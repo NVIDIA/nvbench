@@ -32,7 +32,7 @@ namespace
 {
 
 [[nodiscard]] std::string
-states_to_string(const std::vector<std::vector<nvbench::state>> &states)
+states_to_string(const std::vector<nvbench::state> &states)
 {
   fmt::memory_buffer buffer;
   std::string table_format = "| {:^5} | {:^10} | {:^4} | {:^4} | {:^4} "
@@ -50,24 +50,19 @@ states_to_string(const std::vector<std::vector<nvbench::state>> &states)
                  "Floats",
                  "Strings");
 
-  std::size_t type_config = 0;
-  std::size_t config      = 0;
-  for (const auto &inner_states : states)
+  std::size_t config = 0;
+  for (const auto &state : states)
   {
-    for (const nvbench::state &state : inner_states)
-    {
-      fmt::format_to(buffer,
-                     table_format,
-                     config++,
-                     type_config,
-                     state.get_string("T"),
-                     state.get_string("U"),
-                     state.get_int64("Ints"),
-                     state.get_int64("PO2s"),
-                     state.get_float64("Floats"),
-                     std::string{"\'"} + state.get_string("Strings") + "'");
-    }
-    type_config++;
+    fmt::format_to(buffer,
+                   table_format,
+                   config++,
+                   state.get_type_config_index(),
+                   state.get_string("T"),
+                   state.get_string("U"),
+                   state.get_int64("Ints"),
+                   state.get_int64("PO2s"),
+                   state.get_float64("Floats"),
+                   std::string{"\'"} + state.get_string("Strings") + "'");
   }
   return fmt::to_string(buffer);
 }
@@ -333,8 +328,7 @@ void test_int64_axis_pow2_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = 7 "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = 7 "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -451,8 +445,7 @@ void test_int64_axis_none_to_pow2_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = 7 "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = 7 "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -569,8 +562,7 @@ void test_int64_axis_pow2_to_none_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ ] = 2 "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ ] = 2 "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -584,8 +576,7 @@ void test_int64_axis_pow2_to_none_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -687,8 +678,7 @@ void test_float64_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Floats [ ] = 3.5 "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Floats [ ] = 3.5 "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -727,8 +717,7 @@ void test_float64_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", "Floats=[3.5:3.6]"});
+    parser.parse({"--benchmark", "TestBench", "--axis", "Floats=[3.5:3.6]"});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -893,8 +882,7 @@ void test_type_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " T [ ] = U8 "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " T [ ] = U8 "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -908,8 +896,7 @@ void test_type_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " T [ ] = [ U8 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " T [ ] = [ U8 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }

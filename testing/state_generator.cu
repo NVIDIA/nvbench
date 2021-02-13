@@ -130,6 +130,7 @@ void test_basic()
 void test_create()
 {
   dummy_bench bench;
+  bench.set_devices(std::vector<int>{});
   bench.add_float64_axis("Radians", {3.14, 6.28});
   bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
   bench.add_int64_axis("NumInputs",
@@ -137,22 +138,14 @@ void test_create()
                        nvbench::int64_axis_flags::power_of_two);
   bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
 
-  const std::vector<std::vector<nvbench::state>> states =
+  const std::vector<nvbench::state> states =
     nvbench::detail::state_generator::create(bench);
 
-  // Outer vector has one entry per type_config. There are no type axes, so
-  // there's only one type_config:
-  ASSERT(states.size() == 1);
-
-  // Inner vectors have one entry per non-type config:
   // 2 (Radians) * 3 (VecSize) * 3 (NumInputs) * 2 (Strategy) = 36
-  for (const auto &inner_states : states)
-  {
-    ASSERT(inner_states.size() == 36);
-  }
+  ASSERT(states.size() == 36);
 
   fmt::memory_buffer buffer;
-  std::string table_format =
+  const std::string table_format =
     "| {:^5} | {:^10} | {:^7} | {:^7} | {:^9} | {:^9} |\n";
 
   fmt::format_to(buffer, "\n");
@@ -165,22 +158,17 @@ void test_create()
                  "NumInputs",
                  "Strategy");
 
-  std::size_t type_config = 0;
-  std::size_t config      = 0;
-  for (const auto &inner_states : states)
+  std::size_t config = 0;
+  for (const auto &state : states)
   {
-    for (const nvbench::state &state : inner_states)
-    {
-      fmt::format_to(buffer,
-                     table_format,
-                     config++,
-                     type_config,
-                     state.get_float64("Radians"),
-                     state.get_int64("VecSize"),
-                     state.get_int64("NumInputs"),
-                     state.get_string("Strategy"));
-    }
-    type_config++;
+    fmt::format_to(buffer,
+                   table_format,
+                   config++,
+                   state.get_type_config_index(),
+                   state.get_float64("Radians"),
+                   state.get_int64("VecSize"),
+                   state.get_int64("NumInputs"),
+                   state.get_string("Strategy"));
   }
 
   const std::string ref =
@@ -231,6 +219,7 @@ void test_create()
 void test_create_with_types()
 {
   template_bench bench;
+  bench.set_devices(std::vector<int>{});
   bench.set_type_axes_names({"Floats", "Ints", "Misc"});
   bench.add_float64_axis("Radians", {3.14, 6.28});
   bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
@@ -239,19 +228,13 @@ void test_create_with_types()
                        nvbench::int64_axis_flags::power_of_two);
   bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
 
-  const std::vector<std::vector<nvbench::state>> states =
+  const std::vector<nvbench::state> states =
     nvbench::detail::state_generator::create(bench);
 
-  // Outer vector has one entry per type_config
-  // 2 (Floats) * 2 (Ints) * 2 (Misc) = 8 total type_configs
-  ASSERT(states.size() == 8);
-
-  // Inner vectors have one entry per non-type config:
-  // 2 (Radians) * 3 (VecSize) * 3 (NumInputs) * 2 (Strategy) = 36
-  for (const auto &inner_states : states)
-  {
-    ASSERT(inner_states.size() == 36);
-  }
+  // - 2 (Floats) * 2 (Ints) * 2 (Misc) = 8 total type_configs
+  // - 2 (Radians) * 3 (VecSize) * 3 (NumInputs) * 2 (Strategy) = 36 non_type
+  //   configs
+  ASSERT(states.size() == 8 * 36);
 
   fmt::memory_buffer buffer;
   std::string table_format = "| {:^5} | {:^10} | {:^6} | {:^4} | {:^4} | {:^7} "
@@ -270,25 +253,20 @@ void test_create_with_types()
                  "NumInputs",
                  "Strategy");
 
-  std::size_t type_config = 0;
-  std::size_t config      = 0;
-  for (const auto &inner_states : states)
+  std::size_t config = 0;
+  for (const auto &state : states)
   {
-    for (const nvbench::state &state : inner_states)
-    {
-      fmt::format_to(buffer,
-                     table_format,
-                     config++,
-                     type_config,
-                     state.get_string("Floats"),
-                     state.get_string("Ints"),
-                     state.get_string("Misc"),
-                     state.get_float64("Radians"),
-                     state.get_int64("VecSize"),
-                     state.get_int64("NumInputs"),
-                     state.get_string("Strategy"));
-    }
-    type_config++;
+    fmt::format_to(buffer,
+                   table_format,
+                   config++,
+                   state.get_type_config_index(),
+                   state.get_string("Floats"),
+                   state.get_string("Ints"),
+                   state.get_string("Misc"),
+                   state.get_float64("Radians"),
+                   state.get_int64("VecSize"),
+                   state.get_int64("NumInputs"),
+                   state.get_string("Strategy"));
   }
 
   const std::string ref =
@@ -591,6 +569,7 @@ void test_create_with_types()
 void test_create_with_masked_types()
 {
   template_bench bench;
+  bench.set_devices(std::vector<int>{});
   bench.set_type_axes_names({"Floats", "Ints", "Misc"});
   bench.add_float64_axis("Radians", {3.14, 6.28});
   bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
@@ -603,7 +582,7 @@ void test_create_with_masked_types()
   bench.get_axes().get_type_axis("Floats").set_active_inputs({"F32"});
   bench.get_axes().get_type_axis("Ints").set_active_inputs({"I64"});
 
-  const std::vector<std::vector<nvbench::state>> states =
+  const std::vector<nvbench::state> states =
     nvbench::detail::state_generator::create(bench);
 
   fmt::memory_buffer buffer;
@@ -623,25 +602,20 @@ void test_create_with_masked_types()
                  "NumInputs",
                  "Strategy");
 
-  std::size_t type_config = 0;
-  std::size_t config      = 0;
-  for (const auto &inner_states : states)
+  std::size_t config = 0;
+  for (const auto &state : states)
   {
-    for (const nvbench::state &state : inner_states)
-    {
-      fmt::format_to(buffer,
-                     table_format,
-                     config++,
-                     type_config,
-                     state.get_string("Floats"),
-                     state.get_string("Ints"),
-                     state.get_string("Misc"),
-                     state.get_float64("Radians"),
-                     state.get_int64("VecSize"),
-                     state.get_int64("NumInputs"),
-                     state.get_string("Strategy"));
-    }
-    type_config++;
+    fmt::format_to(buffer,
+                   table_format,
+                   config++,
+                   state.get_type_config_index(),
+                   state.get_string("Floats"),
+                   state.get_string("Ints"),
+                   state.get_string("Misc"),
+                   state.get_float64("Radians"),
+                   state.get_int64("VecSize"),
+                   state.get_int64("NumInputs"),
+                   state.get_string("Strategy"));
   }
 
   const std::string ref =
@@ -725,7 +699,69 @@ void test_create_with_masked_types()
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
+void test_devices()
+{
+  const auto device_0 = nvbench::device_info{0, {}};
+  const auto device_1 = nvbench::device_info{1, {}};
+  const auto device_2 = nvbench::device_info{2, {}};
+
+  dummy_bench bench;
+  bench.set_devices({device_0, device_1, device_2});
+  bench.add_string_axis("S", {"foo", "bar"});
+  bench.add_int64_axis("I", {2, 4});
+
+  const std::vector<nvbench::state> states =
+    nvbench::detail::state_generator::create(bench);
+
+  // 3 devices * 4 axis configs = 12 total states
+  ASSERT(states.size() == 12);
+
+  fmt::memory_buffer buffer;
+  const std::string table_format =
+    "| {:^5} | {:^6} | {:^5} | {:^3} |\n";
+
+  fmt::format_to(buffer, "\n");
+  fmt::format_to(buffer,
+                 table_format,
+                 "State",
+                 "Device",
+                 "S",
+                 "I");
+
+  std::size_t config = 0;
+  for (const auto &state : states)
+  {
+    fmt::format_to(buffer,
+                   table_format,
+                   config++,
+                   state.get_device()->get_id(),
+                   state.get_string("S"),
+                   state.get_int64("I"));
+  }
+
+  const std::string ref =
+    R"expected(
+| State | Device |   S   |  I  |
+|   0   |   0    |  foo  |  2  |
+|   1   |   0    |  bar  |  2  |
+|   2   |   0    |  foo  |  4  |
+|   3   |   0    |  bar  |  4  |
+|   4   |   1    |  foo  |  2  |
+|   5   |   1    |  bar  |  2  |
+|   6   |   1    |  foo  |  4  |
+|   7   |   1    |  bar  |  4  |
+|   8   |   2    |  foo  |  2  |
+|   9   |   2    |  bar  |  2  |
+|  10   |   2    |  foo  |  4  |
+|  11   |   2    |  bar  |  4  |
+)expected";
+
+  const std::string test = fmt::to_string(buffer);
+  ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
+}
+
 int main()
+try
 {
   test_empty();
   test_single_state();
@@ -733,4 +769,11 @@ int main()
   test_create();
   test_create_with_types();
   test_create_with_masked_types();
+  test_devices();
+  return 0;
+}
+catch (std::exception& e)
+{
+  fmt::print("{}\n", e.what());
+  return 1;
 }

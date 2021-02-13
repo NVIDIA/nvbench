@@ -15,11 +15,17 @@ namespace nvbench
 namespace detail
 {
 int get_ptx_version(int);
-}
+} // namespace detail
 
 struct device_info
 {
-  explicit device_info(int id);
+  explicit device_info(int device_id);
+
+  // Mainly used by unit tests:
+  device_info(int device_id, cudaDeviceProp prop)
+      : m_id{device_id}
+      , m_prop{prop}
+  {}
 
   /// @return The device's id on the current system.
   [[nodiscard]] int get_id() const { return m_id; }
@@ -28,6 +34,18 @@ struct device_info
   [[nodiscard]] std::string_view get_name() const
   {
     return std::string_view(m_prop.name);
+  }
+
+  [[nodiscard]] bool is_active() const
+  {
+    int id{-1};
+    NVBENCH_CUDA_CALL(cudaGetDevice(&id));
+    return id == m_id;
+  }
+
+  void set_active() const
+  {
+    NVBENCH_CUDA_CALL(cudaSetDevice(m_id));
   }
 
   /// @return The SM version of the current device as (major*100) + (minor*10).
@@ -145,6 +163,15 @@ struct device_info
     return m_prop;
   }
 
+  [[nodiscard]] bool operator==(const device_info &o) const
+  {
+    return m_id == o.m_id;
+  }
+  [[nodiscard]] bool operator!=(const device_info &o) const
+  {
+    return m_id != o.m_id;
+  }
+
 private:
   int m_id;
   cudaDeviceProp m_prop;
@@ -152,6 +179,8 @@ private:
 
 // get_ptx_version implementation; this needs to stay in the header so it will
 // pick up the downstream project's compilation settings.
+// TODO this is fragile and will break when called from any library
+// translation unit.
 namespace detail
 {
 // Templated to workaround ODR issues since __global__functions cannot be marked

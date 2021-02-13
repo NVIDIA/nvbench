@@ -13,9 +13,11 @@ NVBENCH_DEFINE_CALLABLE(dummy_generator, dummy_callable);
 using dummy_bench = nvbench::benchmark<dummy_callable>;
 
 // Subclass to gain access to protected members for testing:
+namespace nvbench::detail
+{
 struct state_tester : public nvbench::state
 {
-  state_tester(const nvbench::benchmark_base& bench)
+  state_tester(const nvbench::benchmark_base &bench)
       : nvbench::state{bench}
   {}
 
@@ -27,6 +29,9 @@ struct state_tester : public nvbench::state
                                            std::forward<T>(value)});
   }
 };
+} // namespace nvbench::detail
+
+using nvbench::detail::state_tester;
 
 void test_params()
 {
@@ -50,7 +55,7 @@ void test_summaries()
   ASSERT(state.get_summaries().size() == 0);
 
   {
-    nvbench::summary& summary = state.add_summary("Test Summary1");
+    nvbench::summary &summary = state.add_summary("Test Summary1");
     summary.set_float64("Float", 3.14);
     summary.set_int64("Int", 128);
     summary.set_string("String", "str");

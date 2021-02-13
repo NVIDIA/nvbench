@@ -1,10 +1,12 @@
 #pragma once
 
+#include <nvbench/device_info.cuh>
 #include <nvbench/named_values.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,7 +19,7 @@ namespace detail
 {
 struct state_generator;
 struct state_tester;
-}
+} // namespace detail
 
 /**
  * Stores all information about a particular benchmark configuration.
@@ -40,6 +42,20 @@ struct state
   state(state &&)      = default;
   state &operator=(const state &) = delete;
   state &operator=(state &&) = default;
+
+  /// The CUDA device associated with with this benchmark state. May be
+  /// nullopt for CPU-only benchmarks.
+  [[nodiscard]] const std::optional<nvbench::device_info> &get_device() const
+  {
+    return m_device;
+  }
+
+  /// An index into a benchmark::type_configs type_list. Returns 0 if no type
+  /// axes in the associated benchmark.
+  [[nodiscard]] std::size_t get_type_config_index() const
+  {
+    return m_type_config_index;
+  }
 
   [[nodiscard]] nvbench::int64_t get_int64(const std::string &axis_name) const;
 
@@ -99,13 +115,21 @@ private:
       : m_benchmark{bench}
   {}
 
-  state(const benchmark_base &bench, nvbench::named_values values)
+  state(const benchmark_base &bench,
+        nvbench::named_values values,
+        std::optional<nvbench::device_info> device,
+        std::size_t type_config_index)
       : m_benchmark{bench}
       , m_axis_values{std::move(values)}
+      , m_device{std::move(device)}
+      , m_type_config_index{type_config_index}
   {}
 
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
+  std::optional<nvbench::device_info> m_device;
+  std::size_t m_type_config_index{};
+
   std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;
   nvbench::int64_t m_items_processed_per_launch{};

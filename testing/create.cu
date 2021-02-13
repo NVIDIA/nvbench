@@ -83,18 +83,15 @@ std::string run_and_get_state_string(nvbench::benchmark_base &bench,
                                      std::size_t num_type_configs,
                                      std::size_t states_per_type_config)
 {
+  bench.set_devices(std::vector<int>{});
   bench.run();
   fmt::memory_buffer buffer;
   const auto &states = bench.get_states();
-  ASSERT(states.size() == num_type_configs);
-  for (const auto &inner_states : states)
+  ASSERT(states.size() == num_type_configs * states_per_type_config);
+  for (const auto &state : states)
   {
-    ASSERT(inner_states.size() == states_per_type_config);
-    for (const auto &state : inner_states)
-    {
-      ASSERT(state.is_skipped());
-      fmt::format_to(buffer, "{}\n", state.get_skip_reason());
-    }
+    ASSERT(state.is_skipped());
+    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
   }
   return fmt::to_string(buffer);
 }

@@ -4,6 +4,7 @@
 #include <nvbench/axis_base.cuh>
 #include <nvbench/state.cuh>
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -11,25 +12,27 @@
 namespace nvbench
 {
 struct benchmark_base;
+struct device_info;
+
 namespace detail
 {
 
 struct state_generator
 {
-  static std::vector<std::vector<nvbench::state>>
-  create(const benchmark_base &bench);
+  static std::vector<nvbench::state> create(const benchmark_base &bench);
 
 private:
   explicit state_generator(const benchmark_base &bench);
 
   void build_axis_configs();
   void build_states();
+  void add_states_for_device(const std::optional<nvbench::device_info> &device);
 
   const benchmark_base &m_benchmark;
   // bool is a mask value; true if the config is used.
   std::vector<std::pair<nvbench::named_values, bool>> m_type_axis_configs;
   std::vector<nvbench::named_values> m_non_type_axis_configs;
-  std::vector<std::vector<nvbench::state>> m_states;
+  std::vector<nvbench::state> m_states;
 };
 
 // Detail class; Generates a cartesian product of axis indices.
@@ -72,7 +75,6 @@ struct state_iterator
   std::size_t m_current{};
   std::size_t m_total{};
 };
-
 
 } // namespace detail
 } // namespace nvbench

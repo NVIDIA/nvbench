@@ -29,24 +29,51 @@ struct runner
 
   void run()
   {
-    auto states_iter = m_benchmark.m_states.begin();
-    if (states_iter + num_type_configs != m_benchmark.m_states.end())
+    if (m_benchmark.m_devices.empty())
     {
-      throw std::runtime_error("State vector doesn't match type_configs.");
+      this->run_device(std::nullopt);
     }
-
-    nvbench::tl::foreach<type_configs>(
-      [&states_iter](auto type_config_wrapper) {
-        using type_config = typename decltype(type_config_wrapper)::type;
-        for (nvbench::state &cur_state : *states_iter)
-        {
-          kernel_generator{}(cur_state, type_config{});
-        }
-        states_iter++;
-      });
+    else
+    {
+      for (const auto &device : m_benchmark.m_devices)
+      {
+        this->run_device(device);
+      }
+    }
   }
 
 private:
+
+  void run_device(const std::optional<nvbench::device_info> &device)
+  {
+    if (device)
+    {
+      device->set_active();
+    }
+
+    // Iterate through type_configs:
+    std::size_t type_config_index = 0;
+    nvbench::tl::foreach<type_configs>([&states = m_benchmark.m_states,
+                                        &type_config_index,
+                                        &device](auto type_config_wrapper) {
+
+      // Get current type_config:
+      using type_config = typename decltype(type_config_wrapper)::type;
+
+      // Find states with the current device / type_config
+      for (nvbench::state &cur_state : states)
+      {
+        if (cur_state.get_device() == device &&
+            cur_state.get_type_config_index() == type_config_index)
+        {
+          kernel_generator{}(cur_state, type_config{});
+        }
+      }
+
+      ++type_config_index;
+    });
+  }
+
   benchmark_type &m_benchmark;
 };
 

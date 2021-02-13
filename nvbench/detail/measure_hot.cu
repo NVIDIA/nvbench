@@ -10,15 +10,30 @@
 #include <cstdio>
 #include <variant>
 
-// TODO these can be removed once there's a device_manager or some such:
-#include <cuda_runtime_api.h>
-#include <nvbench/cuda_call.cuh>
-
 namespace nvbench
 {
 
 namespace detail
 {
+
+void measure_hot_base::check()
+{
+  const auto device = m_state.get_device();
+  if (!device)
+  {
+    throw std::runtime_error(fmt::format("{}:{}: Device required for `hot` "
+                                         "measurement.",
+                                         __FILE__,
+                                         __LINE__));
+  }
+  if (!device->is_active())
+  { // This means something went wrong higher up. Throw an error.
+    throw std::runtime_error(fmt::format("{}:{}: Internal error: Current "
+                                         "device is not active.",
+                                         __FILE__,
+                                         __LINE__));
+  }
+}
 
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state(exec_state)
@@ -48,7 +63,8 @@ measure_hot_base::measure_hot_base(state &exec_state)
 
 void measure_hot_base::generate_summaries()
 {
-  const auto avg_cuda_time = m_total_cuda_time / m_total_iters;
+  const auto d_iters       = static_cast<double>(m_total_iters);
+  const auto avg_cuda_time = m_total_cuda_time / d_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Hot)");
     summ.set_string("hint", "duration");
@@ -59,7 +75,7 @@ void measure_hot_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
-  const auto avg_cpu_time = m_total_cpu_time / m_total_iters;
+  const auto avg_cpu_time = m_total_cpu_time / d_iters;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Hot)");
     summ.set_string("hide",
@@ -86,13 +102,13 @@ void measure_hot_base::generate_summaries()
     summ.set_string("hint", "item_rate");
     summ.set_string("short_name", "Item Rate");
     summ.set_string("description", "Number of input items handled per second.");
-    summ.set_float64("value", items / avg_cuda_time);
+    summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
   }
 
   if (const auto bytes = m_state.get_global_bytes_accessed_per_launch();
       bytes != 0)
   {
-    const auto avg_used_gmem_bw = bytes / avg_cuda_time;
+    const auto avg_used_gmem_bw = static_cast<double>(bytes) / avg_cuda_time;
     {
       auto &summ = m_state.add_summary("Average Global Memory Throughput");
       summ.set_string("hint", "byte_rate");
@@ -103,16 +119,10 @@ void measure_hot_base::generate_summaries()
       summ.set_float64("value", avg_used_gmem_bw);
     }
 
-    // TODO cache this in a singleton somewhere.
-    int dev_id{};
-    cudaDeviceProp prop{};
-    NVBENCH_CUDA_CALL(cudaGetDevice(&dev_id));
-    NVBENCH_CUDA_CALL(cudaGetDeviceProperties(&prop, dev_id));
-    // clock rate in khz, width in bits. Result in bytes/sec.
-    const auto peak_gmem_bw = 2 * 1000. * prop.memoryClockRate * // (sec^-1)
-                              prop.memoryBusWidth / CHAR_BIT;    // bytes
-
     {
+      const auto peak_gmem_bw = static_cast<double>(
+        m_state.get_device()->get_global_memory_bus_bandwidth());
+
       auto &summ = m_state.add_summary("Percent Peak Global Memory Throughput");
       summ.set_string("hint", "percentage");
       summ.set_string("short_name", "PeakGMem");
@@ -125,7 +135,7 @@ void measure_hot_base::generate_summaries()
 
   // Log to stdout:
   fmt::memory_buffer param_buffer;
-  fmt::format_to(param_buffer, "");
+  fmt::format_to(param_buffer, "Device={}", m_state.get_device()->get_id());
   const axes_metadata &axes = m_state.get_benchmark().get_axes();
   const auto &axis_values   = m_state.get_axis_values();
   for (const auto &name : axis_values.get_names())
@@ -140,8 +150,8 @@ void measure_hot_base::generate_summaries()
     if (axis_values.get_type(name) == named_values::type::int64 &&
         axes.get_int64_axis(name).is_power_of_two())
     {
-      const nvbench::uint64_t value    = axis_values.get_int64(name);
-      const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
+      const nvbench::int64_t value    = axis_values.get_int64(name);
+      const nvbench::int64_t exponent = int64_axis::compute_log2(value);
       fmt::format_to(param_buffer, "2^{}", exponent);
     }
     else

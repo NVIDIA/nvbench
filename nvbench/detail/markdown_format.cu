@@ -218,6 +218,8 @@ void markdown_format::print_benchmark_summaries(
 
 void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks)
 {
+  // This needs to be refactored and cleaned up (someday....) but here's a
+  // buncha functors that do various string formatting stuff:
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
     if constexpr (std::is_same_v<T, nvbench::float64_t>)
@@ -312,110 +314,129 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
     return fmt::format("{:.2f}%", percentage);
   };
 
-  fmt::print("# Benchmark Summaries\n");
+  // Start printing benchmarks
+  fmt::print("# Benchmark Results\n");
 
   for (const auto &bench_ptr : benchmarks)
   {
-    const benchmark_base &bench = *bench_ptr;
-    const axes_metadata &axes   = bench.get_axes();
+    const auto &bench   = *bench_ptr;
+    const auto &devices = bench.get_devices();
+    const auto &axes    = bench.get_axes();
 
-    fmt::print("\n## {}\n\n", bench.get_name());
+    fmt::print("\n## {}\n", bench.get_name());
 
-    std::size_t row = 0;
-    table_builder table;
-
-    for (const auto &inner_states : bench.get_states())
+    // Do a single pass when no devices are specified. This happens for
+    // benchmarks with `cpu` exec_tags.
+    const std::size_t num_device_passes = devices.empty() ? 1 : devices.size();
+    for (std::size_t device_pass = 0; device_pass < num_device_passes;
+         ++device_pass)
     {
-      for (const nvbench::state &state : inner_states)
+      std::optional<nvbench::device_info> device =
+        devices.empty() ? std::nullopt
+                        : std::make_optional(devices[device_pass]);
+
+      if (device)
       {
-        const auto &axis_values = state.get_axis_values();
-        for (const auto &name : axis_values.get_names())
-        {
-          // Handle power-of-two int64 axes differently:
-          if (axis_values.get_type(name) == named_values::type::int64 &&
-              axes.get_int64_axis(name).is_power_of_two())
-          {
-            const nvbench::uint64_t value    = axis_values.get_int64(name);
-            const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
-            table.add_cell(row,
-                           name + "_axis_pretty",
-                           name,
-                           fmt::format("2^{}", exponent));
-            table.add_cell(row,
-                           name + "_axis_descriptive",
-                           fmt::format("({})", name),
-                           fmt::to_string(value));
-          }
-          else
-          {
-            std::string value = std::visit(format_visitor,
-                                           axis_values.get_value(name));
-            table.add_cell(row, name + "_axis", name, std::move(value));
-          }
-        }
-
-        for (const auto &summ : state.get_summaries())
-        {
-          if (summ.has_value("hide"))
-          {
-            continue;
-          }
-          const std::string &key    = summ.get_name();
-          const std::string &header = summ.has_value("short_name")
-                                        ? summ.get_string("short_name")
-                                        : key;
-
-          std::string hint = summ.has_value("hint") ? summ.get_string("hint")
-                                                    : std::string{};
-          if (hint == "duration")
-          {
-            table.add_cell(row,
-                           key,
-                           header,
-                           format_duration(summ.get_float64("value")));
-          }
-          else if (hint == "item_rate")
-          {
-            table.add_cell(row,
-                           key,
-                           header,
-                           format_item_rate(summ.get_float64("value")));
-          }
-          else if (hint == "bytes")
-          {
-            table.add_cell(row,
-                           key,
-                           header,
-                           format_bytes(summ.get_int64("value")));
-          }
-          else if (hint == "byte_rate")
-          {
-            table.add_cell(row,
-                           key,
-                           header,
-                           format_byte_rate(summ.get_float64("value")));
-          }
-          else if (hint == "percentage")
-          {
-            table.add_cell(row,
-                           key,
-                           header,
-                           format_percentage(summ.get_float64("value")));
-          }
-          else
-          {
-            table.add_cell(row,
-                           key,
-                           header,
-                           std::visit(format_visitor, summ.get_value("value")));
-          }
-        }
-        row++;
+        fmt::print("\n### [{}] {}\n\n", device->get_id(), device->get_name());
       }
-    }
 
-    fmt::print("{}", table.to_string());
-  } // end foreach benchmark
+      std::size_t row = 0;
+      table_builder table;
+
+      for (const auto &cur_state : bench.get_states())
+      {
+        if (cur_state.get_device() == device)
+        {
+          const auto &axis_values = cur_state.get_axis_values();
+          for (const auto &name : axis_values.get_names())
+          {
+            // Handle power-of-two int64 axes differently:
+            if (axis_values.get_type(name) == named_values::type::int64 &&
+                axes.get_int64_axis(name).is_power_of_two())
+            {
+              const nvbench::int64_t value    = axis_values.get_int64(name);
+              const nvbench::int64_t exponent = int64_axis::compute_log2(value);
+              table.add_cell(row,
+                             name + "_axis_pretty",
+                             name,
+                             fmt::format("2^{}", exponent));
+              table.add_cell(row,
+                             name + "_axis_descriptive",
+                             fmt::format("({})", name),
+                             fmt::to_string(value));
+            }
+            else
+            {
+              std::string value = std::visit(format_visitor,
+                                             axis_values.get_value(name));
+              table.add_cell(row, name + "_axis", name, std::move(value));
+            }
+          }
+
+          for (const auto &summ : cur_state.get_summaries())
+          {
+            if (summ.has_value("hide"))
+            {
+              continue;
+            }
+            const std::string &key    = summ.get_name();
+            const std::string &header = summ.has_value("short_name")
+                                          ? summ.get_string("short_name")
+                                          : key;
+
+            std::string hint = summ.has_value("hint") ? summ.get_string("hint")
+                                                      : std::string{};
+            if (hint == "duration")
+            {
+              table.add_cell(row,
+                             key,
+                             header,
+                             format_duration(summ.get_float64("value")));
+            }
+            else if (hint == "item_rate")
+            {
+              table.add_cell(row,
+                             key,
+                             header,
+                             format_item_rate(summ.get_float64("value")));
+            }
+            else if (hint == "bytes")
+            {
+              table.add_cell(row,
+                             key,
+                             header,
+                             format_bytes(summ.get_int64("value")));
+            }
+            else if (hint == "byte_rate")
+            {
+              table.add_cell(row,
+                             key,
+                             header,
+                             format_byte_rate(summ.get_float64("value")));
+            }
+            else if (hint == "percentage")
+            {
+              table.add_cell(row,
+                             key,
+                             header,
+                             format_percentage(summ.get_float64("value")));
+            }
+            else
+            {
+              table.add_cell(row,
+                             key,
+                             header,
+                             std::visit(format_visitor,
+                                        summ.get_value("value")));
+            }
+          }
+          row++;
+        }
+      }
+
+      fmt::print("{}", table.to_string());
+    } // end foreach device_pass
+  }
 }
 
 } // namespace detail
