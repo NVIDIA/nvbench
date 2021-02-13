@@ -2,6 +2,7 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
+#include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/markdown_format.cuh>
 #include <nvbench/option_parser.cuh>
 
@@ -12,6 +13,7 @@
   try                                                                          \
   {                                                                            \
     NVBENCH_MAIN_BODY(argc, argv);                                             \
+    NVBENCH_CUDA_CALL(cudaDeviceReset());                                      \
     return 0;                                                                  \
   }                                                                            \
   catch (std::exception & e)                                                   \
