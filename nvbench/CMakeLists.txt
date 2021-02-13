@@ -3,6 +3,7 @@ set(srcs
   axis_base.cu
   benchmark_base.cu
   benchmark_manager.cu
+  blocking_kernel.cu
   cuda_call.cu
   device_info.cu
   device_manager.cu

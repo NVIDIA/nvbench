@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
@@ -26,7 +27,6 @@ struct measure_hot_base
   measure_hot_base &operator=(measure_hot_base &&) = delete;
 
 protected:
-
   void check();
 
   void initialize()
@@ -44,12 +44,13 @@ protected:
   nvbench::launch m_launch;
   nvbench::cuda_timer m_cuda_timer;
   nvbench::cpu_timer m_cpu_timer;
+  nvbench::cpu_timer m_timeout_timer;
 
   nvbench::int64_t m_total_iters{};
   nvbench::int64_t m_min_iters{10};
 
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_time{3.0};
+  nvbench::float64_t m_max_time{5.0};
 
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
@@ -84,22 +85,44 @@ private:
 
   void run_trials()
   {
+    m_timeout_timer.start();
+
     // Use warmup results to estimate the number of iterations to run.
     // The .95 factor here pads the batch_size a bit to avoid needing a second
     // batch due to noise.
     const auto time_estimate = m_cuda_timer.get_duration() * 0.95;
     auto batch_size = static_cast<nvbench::int64_t>(m_min_time / time_estimate);
 
+    nvbench::blocking_kernel blocker;
+
     do
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
 
+      // Block stream until some work is queued.
+      // Limit the number of kernel executions while blocked to prevent
+      // deadlocks. See warnings on blocking_kernel.
+      const auto blocked_launches = std::min(batch_size, nvbench::int64_t{2});
+      const auto unblocked_launches = batch_size - blocked_launches;
+
+      blocker.block(m_launch.get_stream());
       m_cuda_timer.start(m_launch.get_stream());
+
+      for (nvbench::int64_t i = 0; i < blocked_launches; ++i)
+      {
+        // If your benchmark deadlocks in the next launch, reduce the size of
+        // blocked_launches. See note above.
+        this->launch_kernel();
+      }
+
       m_cpu_timer.start();
-      for (nvbench::int64_t i = 0; i < batch_size; ++i)
+      blocker.release(); // Start executing earlier launches
+
+      for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
       {
         this->launch_kernel();
       }
+
       m_cuda_timer.stop(m_launch.get_stream());
       NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
       m_cpu_timer.stop();
@@ -111,6 +134,9 @@ private:
       // Predict number of remaining iterations:
       batch_size = (m_min_time - m_total_cuda_time) /
                    (m_total_cuda_time / m_total_iters);
+
+      m_timeout_timer.stop();
+      const auto total_time = m_timeout_timer.get_duration();
 
       if (m_total_cuda_time > m_min_time && // min time okay
           m_total_iters > m_min_iters)      // min iters okay

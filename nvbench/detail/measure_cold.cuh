@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
@@ -34,7 +35,6 @@ struct measure_cold_base
   measure_cold_base &operator=(measure_cold_base &&) = delete;
 
 protected:
-
   void check();
 
   void initialize()
@@ -56,6 +56,7 @@ protected:
   nvbench::launch m_launch;
   nvbench::cuda_timer m_cuda_timer;
   nvbench::cpu_timer m_cpu_timer;
+  nvbench::cpu_timer m_timeout_timer;
   nvbench::detail::l2flush m_l2flush;
 
   nvbench::int64_t m_min_iters{10};
@@ -66,7 +67,7 @@ protected:
   nvbench::float64_t m_cpu_noise{};    // % rel stdev
 
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_time{3.0};
+  nvbench::float64_t m_max_time{5.0};
 
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
@@ -104,18 +105,20 @@ private:
 
   void run_trials()
   {
+    m_timeout_timer.start();
+    nvbench::blocking_kernel blocker;
     do
     {
       m_l2flush.flush(m_launch.get_stream());
       NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
 
+      blocker.block(m_launch.get_stream());
       m_cuda_timer.start(m_launch.get_stream());
-      m_cpu_timer.start();
-
       this->launch_kernel();
-
       m_cuda_timer.stop(m_launch.get_stream());
 
+      m_cpu_timer.start();
+      blocker.release();
       NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
       m_cpu_timer.stop();
 
@@ -131,11 +134,12 @@ private:
       m_cuda_noise = nvbench::detail::compute_noise(m_cuda_times,
                                                     m_total_cuda_time);
 
-      const auto total_time = std::max(m_total_cuda_time, m_total_cpu_time);
+      m_timeout_timer.stop();
+      const auto total_time = m_timeout_timer.get_duration();
 
-      if (total_time > m_min_time &&     // Min time okay
-          m_total_iters > m_min_iters && // Min iters okay
-          m_cuda_noise < m_max_noise)    // Noise okay
+      if (m_total_cuda_time > m_min_time && // Min time okay
+          m_total_iters > m_min_iters &&    // Min iters okay
+          m_cuda_noise < m_max_noise)       // Noise okay
       {
         break;
       }

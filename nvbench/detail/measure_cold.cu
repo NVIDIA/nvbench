@@ -38,7 +38,7 @@ void measure_cold_base::check()
 
 void measure_cold_base::generate_summaries()
 {
-  const auto d_iters = static_cast<double>(m_total_iters);
+  const auto d_iters       = static_cast<double>(m_total_iters);
   const auto avg_cuda_time = m_total_cuda_time / d_iters;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Cold)");
@@ -120,13 +120,13 @@ void measure_cold_base::generate_summaries()
     }
   }
 
-  fmt::print("`{}` [{}] Cold {:.6f}ms GPU, {:.6f}ms CPU, {:0.2f}s total, "
+  fmt::print("`{}` [{}] Cold {:.6f}ms GPU, {:.6f}ms CPU, {:0.2f}s total GPU, "
              "{}x\n",
              m_state.get_benchmark().get_name(),
              fmt::to_string(param_buffer),
              avg_cuda_time * 1e3,
              avg_cpu_time * 1e3,
-             std::max(m_total_cuda_time, m_total_cpu_time),
+             m_total_cuda_time,
              m_total_iters);
   if (m_max_time_exceeded)
   {
@@ -143,6 +143,13 @@ void measure_cold_base::generate_summaries()
                  "accumulating min samples ({} < {})\n",
                  m_total_iters,
                  m_min_iters);
+    }
+    if (m_total_cuda_time < m_min_time)
+    {
+      fmt::print("!!!! Previous benchmark exceeded max time before "
+                 "accumulating min sample time ({:.2f}s < {:.2f}s)\n",
+                 m_total_cuda_time,
+                 m_min_time);
     }
   }
   std::fflush(stdout);
