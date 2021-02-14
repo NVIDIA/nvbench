@@ -118,7 +118,7 @@ private:
       m_cuda_timer.stop(m_launch.get_stream());
 
       m_cpu_timer.start();
-      blocker.release();
+      blocker.unblock();
       NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
       m_cpu_timer.stop();
 

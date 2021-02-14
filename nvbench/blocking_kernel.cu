@@ -2,9 +2,6 @@
 
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_stream.cuh>
-#include <nvbench/detail/throw.cuh>
-
-#include <fmt/format.h>
 
 #include <cuda_runtime.h>
 
@@ -42,7 +39,7 @@ void blocking_kernel::block(const nvbench::cuda_stream &stream)
   block_stream<<<1, 1, 0, stream>>>(m_device_flag);
 }
 
-void blocking_kernel::release()
+void blocking_kernel::unblock()
 {
   volatile int& flag = m_host_flag;
   flag = 1;

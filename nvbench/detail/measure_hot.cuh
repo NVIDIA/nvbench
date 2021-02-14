@@ -116,7 +116,7 @@ private:
       }
 
       m_cpu_timer.start();
-      blocker.release(); // Start executing earlier launches
+      blocker.unblock(); // Start executing earlier launches
 
       for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
       {

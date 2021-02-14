@@ -35,15 +35,15 @@ struct cuda_stream;
  * my_kernel<<<...>>>();
  * NVBENCH_CUDA_CALL(cudaEventRecord(stop_event))
  *
- * blocker.release();
+ * blocker.unblock();
  * ```
  *
  * The work submitted after `blocker.block(stream)` will not execute until
- * `blocker.release()` is called.
+ * `blocker.unblock()` is called.
  *
  * ## Caveats and warnings
  *
- * - Every call to `block()` must be followed by a call to `release()`.
+ * - Every call to `block()` must be followed by a call to `unblock()`.
  * - Do not queue "too much" work while blocking.
  *   - Amount of work depends on device and driver.
  *   - Do tests and schedule conservatively (~32 kernel launches max).
@@ -58,7 +58,7 @@ struct blocking_kernel
   ~blocking_kernel();
 
   void block(const nvbench::cuda_stream &stream);
-  void release();
+  void unblock();
 
   // move-only
   blocking_kernel(const blocking_kernel &) = delete;
