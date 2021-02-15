@@ -119,7 +119,7 @@ struct state
   /// accumulate `min_time` measurements, and are often uninteresting. Setting
   /// this value can help improve performance by skipping time consuming
   /// measurement that don't provide much information.
-  /// Default value is 0, which disable the feature.
+  /// Default value is -1., which disables the feature.
   /// @{
   [[nodiscard]] nvbench::float64_t get_skip_time() const { return m_skip_time; }
   void set_skip_time(nvbench::float64_t skip_time) { m_skip_time = skip_time; }
@@ -150,6 +150,13 @@ struct state
   [[nodiscard]] summary &get_summary(std::string_view name);
   [[nodiscard]] const std::vector<summary> &get_summaries() const;
   [[nodiscard]] std::vector<summary> &get_summaries();
+
+  /// A single line description of the state:
+  ///
+  /// ```
+  /// <bench_name> [<parameters>]
+  /// ```
+  [[nodiscard]] std::string get_short_description() const;
 
 private:
   friend struct nvbench::detail::state_generator;

@@ -10,6 +10,8 @@
 namespace nvbench
 {
 
+struct runner_base;
+
 template <typename BenchmarkType>
 struct runner;
 
@@ -151,7 +153,7 @@ struct benchmark_base
   /// accumulate `min_time` measurements, and are often uninteresting. Setting
   /// this value can help improve performance by skipping time consuming
   /// measurement that don't provide much information.
-  /// Default value is 0, which disable the feature.
+  /// Default value is -1., which disables the feature.
   /// @{
   [[nodiscard]] nvbench::float64_t get_skip_time() const { return m_skip_time; }
   benchmark_base &set_skip_time(nvbench::float64_t skip_time)
@@ -175,8 +177,10 @@ struct benchmark_base
   /// @}
 
 protected:
+  friend struct nvbench::runner_base;
+
   template <typename BenchmarkType>
-  friend struct runner;
+  friend struct nvbench::runner;
 
   std::string m_name;
   nvbench::axes_metadata m_axes;
@@ -185,9 +189,9 @@ protected:
 
   nvbench::int64_t m_min_samples{10};
   nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_noise{0.5};
+  nvbench::float64_t m_max_noise{0.5}; // 0.5% relative standard deviation
 
-  nvbench::float64_t m_skip_time{0.};
+  nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
 
 private:

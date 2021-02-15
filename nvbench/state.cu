@@ -3,6 +3,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/types.cuh>
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -92,5 +93,60 @@ summary &state::get_summary(std::string_view name)
 const std::vector<summary> &state::get_summaries() const { return m_summaries; }
 
 std::vector<summary> &state::get_summaries() { return m_summaries; }
+
+std::string state::get_short_description() const
+{
+  fmt::memory_buffer buffer;
+
+  fmt::format_to(
+    buffer,
+    "{}",
+    fmt::format(fmt::emphasis::bold, "{}", m_benchmark.get().get_name()));
+
+  buffer.push_back(' ');
+  buffer.push_back('[');
+
+  auto append_key_value = [&buffer](const std::string &key,
+                                    const auto &value,
+                                    std::string value_fmtstr = "{}") {
+    constexpr auto key_format   = fmt::emphasis::italic;
+    constexpr auto value_format = fmt::emphasis::bold;
+
+    fmt::format_to(buffer,
+                   "{}{}={}",
+                   buffer.size() == 0 ? "" : " ",
+                   fmt::format(key_format, "{}", key),
+                   fmt::format(value_format, value_fmtstr, value));
+  };
+
+  if (m_device)
+  {
+    append_key_value("Device", m_device->get_id());
+  }
+
+  const axes_metadata &axes = m_benchmark.get().get_axes();
+  for (const auto &name : m_axis_values.get_names())
+  {
+    // Handle power-of-two int64 axes differently:
+    if (m_axis_values.get_type(name) == named_values::type::int64 &&
+        axes.get_int64_axis(name).is_power_of_two())
+    {
+      const nvbench::uint64_t value    = m_axis_values.get_int64(name);
+      const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
+      append_key_value(name, exponent, "2^{}");
+    }
+    else
+    {
+      auto visitor = [&name, &append_key_value](const auto &value) {
+        append_key_value(name, value);
+      };
+      std::visit(visitor, m_axis_values.get_value(name));
+    }
+  }
+
+  buffer.push_back(']');
+
+  return fmt::to_string(buffer);
+}
 
 } // namespace nvbench

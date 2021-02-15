@@ -11,6 +11,7 @@ set(srcs
   int64_axis.cu
   named_values.cu
   option_parser.cu
+  runner.cu
   state.cu
   string_axis.cu
   type_axis.cu

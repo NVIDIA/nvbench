@@ -4,6 +4,7 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -19,6 +20,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_min_samples{exec_state.get_min_samples()}
     , m_max_noise{exec_state.get_max_noise()}
     , m_min_time{exec_state.get_min_time()}
+    , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
 {}
 
@@ -43,28 +45,7 @@ void measure_cold_base::check()
 
 void measure_cold_base::generate_summaries()
 {
-  const auto d_samples     = static_cast<double>(m_total_samples);
-  const auto avg_cuda_time = m_total_cuda_time / d_samples;
-  {
-    auto &summ = m_state.add_summary("Average GPU Time (Cold)");
-    summ.set_string("hint", "duration");
-    summ.set_string("short_name", "Cold GPU");
-    summ.set_string("description",
-                    "Average isolated kernel execution time as measured "
-                    "by CUDA events.");
-    summ.set_float64("value", avg_cuda_time);
-  }
-
-  {
-    auto &summ = m_state.add_summary("GPU Relative Standard Deviation (Cold)");
-    summ.set_string("hint", "percentage");
-    summ.set_string("short_name", "Noise");
-    summ.set_string("description",
-                    "Relative standard deviation of the cold GPU execution "
-                    "time measurements.");
-    summ.set_float64("value", m_cuda_noise);
-  }
-
+  const auto d_samples    = static_cast<double>(m_total_samples);
   const auto avg_cpu_time = m_total_cpu_time / d_samples;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Cold)");
@@ -86,80 +67,104 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", m_cpu_noise);
   }
 
+  const auto avg_cuda_time = m_total_cuda_time / d_samples;
+  {
+    auto &summ = m_state.add_summary("Average GPU Time (Cold)");
+    summ.set_string("hint", "duration");
+    summ.set_string("short_name", "Cold GPU");
+    summ.set_string("description",
+                    "Average isolated kernel execution time as measured "
+                    "by CUDA events.");
+    summ.set_float64("value", avg_cuda_time);
+  }
+
+  {
+    auto &summ = m_state.add_summary("GPU Relative Standard Deviation (Cold)");
+    summ.set_string("hint", "percentage");
+    summ.set_string("short_name", "Noise");
+    summ.set_string("description",
+                    "Relative standard deviation of the cold GPU execution "
+                    "time measurements.");
+    summ.set_float64("value", m_cuda_noise);
+  }
+
   {
     auto &summ = m_state.add_summary("Number of Samples (Cold)");
-    summ.set_string("short_name", "Samples");
+    summ.set_string("short_name", "Cold N");
     summ.set_string("description",
                     "Number of kernel executions in cold time measurements.");
     summ.set_int64("value", m_total_samples);
   }
 
-  // Log to stdout:
-  fmt::memory_buffer param_buffer;
-  fmt::format_to(param_buffer, "Device={}", m_state.get_device()->get_id());
-  const axes_metadata &axes = m_state.get_benchmark().get_axes();
-  const auto &axis_values   = m_state.get_axis_values();
-  for (const auto &name : axis_values.get_names())
-  {
-    if (param_buffer.size() != 0)
-    {
-      param_buffer.push_back(' ');
-    }
-    fmt::format_to(param_buffer, "{}=", name);
+  const auto num_format = fmt::emphasis::bold;
+  const auto log_format = bg(fmt::color::black) | fg(fmt::color::dark_green) |
+                          fmt::emphasis::bold;
+  const auto warning_format = // bold yellow-on-black
+    bg(fmt::color::black) | fg(fmt::rgb{160, 135, 0}) | fmt::emphasis::bold;
 
-    // Handle power-of-two int64 axes differently:
-    if (axis_values.get_type(name) == named_values::type::int64 &&
-        axes.get_int64_axis(name).is_power_of_two())
-    {
-      const nvbench::uint64_t value    = axis_values.get_int64(name);
-      const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
-      fmt::format_to(param_buffer, "2^{}", exponent);
-    }
-    else
-    {
-      std::visit(
-        [&param_buffer](const auto &val) {
-          fmt::format_to(param_buffer, "{}", val);
-        },
-        axis_values.get_value(name));
-    }
-  }
-
-  fmt::print("`{}` [{}] Cold {:.6f}ms GPU, {:.6f}ms CPU, {:0.2f}s total GPU, "
-             "{}x\n",
-             m_state.get_benchmark().get_name(),
-             fmt::to_string(param_buffer),
-             avg_cuda_time * 1e3,
-             avg_cpu_time * 1e3,
-             m_total_cuda_time,
-             m_total_samples);
   if (m_max_time_exceeded)
   {
+    const auto timeout = m_timeout_timer.get_duration();
+
     if (m_cuda_noise > m_max_noise)
     {
-      fmt::print("!!!! Previous benchmark exceeded max time while over "
-                 "noise threshold ({:0.2f}% > {:0.2f}%)\n",
-                 m_cuda_noise,
-                 m_max_noise);
+      fmt::print("{} {}\n",
+                 fmt::format(warning_format, "{:5}", "Warn:"),
+                 fmt::format("Current measurement timed out ({}) while over "
+                             "noise threshold ({} < {})",
+                             fmt::format(num_format, "{:.2f}s", timeout),
+                             fmt::format(num_format, "{:0.2f}%", m_cuda_noise),
+                             fmt::format(num_format, "{:0.2f}%", m_max_noise)));
     }
     if (m_total_samples < m_min_samples)
     {
-      fmt::print("!!!! Previous benchmark exceeded max time before "
-                 "accumulating min samples ({} < {})\n",
-                 m_total_samples,
-                 m_min_samples);
+      fmt::print("{} {}\n",
+                 fmt::format(warning_format, "{:5}", "Warn:"),
+                 fmt::format("Current measurement timed out ({}) before "
+                             "accumulating min_samples ({} < {})",
+                             fmt::format(num_format, "{:.2f}s", timeout),
+                             fmt::format(num_format, "{}", m_total_samples),
+                             fmt::format(num_format, "{}", m_min_samples)));
     }
     if (m_total_cuda_time < m_min_time)
     {
-      fmt::print("!!!! Previous benchmark exceeded max time before "
-                 "accumulating min sample time ({:.2f}s < {:.2f}s)\n",
-                 m_total_cuda_time,
-                 m_min_time);
+      fmt::print(
+        "{} {}\n",
+        fmt::format(warning_format, "{:5}", "Warn:"),
+        fmt::format("Current measurement timed out ({}) before accumulating "
+                    "min_time ({} < {})",
+                    fmt::format(num_format, "{:.2f}s", timeout),
+                    fmt::format(num_format, "{:0.2}s", m_total_cuda_time),
+                    fmt::format(num_format, "{:0.2}s", m_min_time)));
     }
   }
+
+  // Log to stdout:
+  fmt::print(
+    "{} {}\n",
+    fmt::format(log_format, "{:5}", "Cold:"),
+    fmt::format("{} GPU, {} CPU, {} total GPU, {}",
+                fmt::format(num_format, "{:.6f}ms", avg_cuda_time * 1e3),
+                fmt::format(num_format, "{:.6f}ms", avg_cpu_time * 1e3),
+                fmt::format(num_format, "{:.2f}s", m_total_cuda_time),
+                fmt::format(num_format, "{}x", m_total_samples)));
+
   std::fflush(stdout);
 }
 
-} // namespace detail
+void measure_cold_base::check_skip_time(nvbench::float64_t warmup_time)
+{
+  if (m_skip_time > 0. && warmup_time < m_skip_time)
+  {
+    auto reason = fmt::format(
+      "Warmup time did not meet skip_time limit: "
+      "{} < {}.",
+      fmt::format(fmt::emphasis::bold, "{:0.3f} us", warmup_time * 1e6),
+      fmt::format(fmt::emphasis::bold, "{:0.3f} us", m_skip_time * 1e6));
+
+    m_state.skip(reason);
+    throw std::runtime_error{std::move(reason)};
+  }
+}
 
 } // namespace nvbench::detail

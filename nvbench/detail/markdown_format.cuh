@@ -5,10 +5,7 @@
 #include <memory>
 #include <vector>
 
-namespace nvbench
-{
-
-namespace detail
+namespace nvbench::detail
 {
 
 struct markdown_format
@@ -24,8 +21,6 @@ struct markdown_format
   // Hacked in to just print a basic summary table to stdout. There's lots of
   // room for improvement here.
   void print_benchmark_results(const benchmark_vector &benchmarks);
-
 };
 
-} // namespace detail
-} // namespace nvbench
+} // namespace nvbench::detail

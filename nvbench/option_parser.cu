@@ -332,6 +332,19 @@ void option_parser::parse_impl()
       this->update_axis(cur_arg[1]);
       cur_arg += 2;
     }
+    else if (arg == "--min-samples")
+    {
+      check_params(1);
+      this->update_int64_prop(cur_arg[0], cur_arg[1]);
+      cur_arg += 2;
+    }
+    else if (arg == "--min-time" || arg == "--max-noise" ||
+             arg == "--skip-time" || arg == "--timeout")
+    {
+      check_params(1);
+      this->update_float64_prop(cur_arg[0], cur_arg[1]);
+      cur_arg += 2;
+    }
     else
     {
       NVBENCH_THROW(std::runtime_error,
@@ -564,6 +577,96 @@ void option_parser::update_type_axis(type_axis &axis,
   auto input_values = parse_values<std::string>(value_spec);
 
   axis.set_active_inputs(input_values);
+}
+
+void option_parser::update_int64_prop(const std::string &prop_arg,
+                                      const std::string &prop_val)
+try
+{
+  if (m_benchmarks.empty())
+  {
+    // If only one benchmark present, just add it. Otherwise error out.
+    const auto &mgr = nvbench::benchmark_manager::get();
+    if (mgr.get_benchmarks().size() != 1)
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "`{} {}` must follow `--benchmark <...>`.",
+                    prop_arg,
+                    prop_val);
+    }
+    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
+  }
+  benchmark_base &bench = *m_benchmarks.back();
+
+  nvbench::int64_t value{};
+  ::parse(prop_val, value);
+  if (prop_arg == "--min-samples")
+  {
+    bench.set_min_samples(value);
+  }
+  else
+  {
+    NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
+  }
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error parsing `{} {}`:\n{}",
+                prop_arg,
+                prop_val,
+                e.what());
+}
+
+void option_parser::update_float64_prop(const std::string &prop_arg,
+                                        const std::string &prop_val)
+try
+{
+  if (m_benchmarks.empty())
+  {
+    // If only one benchmark present, just add it. Otherwise error out.
+    const auto &mgr = nvbench::benchmark_manager::get();
+    if (mgr.get_benchmarks().size() != 1)
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "`{} {}` must follow `--benchmark <...>`.",
+                    prop_arg,
+                    prop_val);
+    }
+    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
+  }
+  benchmark_base &bench = *m_benchmarks.back();
+
+  nvbench::float64_t value{};
+  ::parse(prop_val, value);
+  if (prop_arg == "--min-time")
+  {
+    bench.set_min_time(value);
+  }
+  else if (prop_arg == "--max-noise")
+  {
+    bench.set_max_noise(value);
+  }
+  else if (prop_arg == "--skip-time")
+  {
+    bench.set_skip_time(value);
+  }
+  else if (prop_arg == "--timeout")
+  {
+    bench.set_timeout(value);
+  }
+  else
+  {
+    NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
+  }
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error parsing `{} {}`:\n{}",
+                prop_arg,
+                prop_val,
+                e.what());
 }
 
 } // namespace nvbench

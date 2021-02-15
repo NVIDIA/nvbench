@@ -33,9 +33,13 @@ struct option_parser
 
 private:
   void parse_impl();
+
   void print_list() const;
+
   void add_benchmark(const std::string &name);
+
   void update_devices(const std::string &devices);
+
   void update_axis(const std::string &spec);
   static void update_int64_axis(int64_axis &axis,
                                 std::string_view value_spec,
@@ -49,6 +53,11 @@ private:
   static void update_type_axis(type_axis &axis,
                                std::string_view value_spec,
                                std::string_view flag_spec);
+
+  void update_int64_prop(const std::string &prop_arg,
+                         const std::string &prop_val);
+  void update_float64_prop(const std::string &prop_arg,
+                           const std::string &prop_val);
 
   std::vector<std::string> m_args;
   benchmark_vector m_benchmarks;

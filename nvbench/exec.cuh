@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nvbench/state.cuh>
+
 #include <nvbench/detail/measure_cold.cuh>
 #include <nvbench/detail/measure_hot.cuh>
 
@@ -10,6 +12,11 @@ template <typename KernelLauncher>
 void exec(nvbench::state &exec_state, KernelLauncher &&kernel_launcher)
 {
   using KL = std::remove_reference_t<KernelLauncher>;
+
+  if (exec_state.is_skipped())
+  {
+    return;
+  }
 
   {
     nvbench::detail::measure_cold<KL> cold{exec_state, kernel_launcher};

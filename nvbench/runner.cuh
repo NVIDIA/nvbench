@@ -8,8 +8,27 @@
 namespace nvbench
 {
 
+// Non-templated code goes here to reduce instantiation costs:
+struct runner_base
+{
+  explicit runner_base(nvbench::benchmark_base &bench)
+      : m_benchmark{bench}
+  {}
+
+  void generate_states();
+
+  void handle_sampling_exception(const std::exception &e,
+                                 nvbench::state &exec_state) const;
+
+  void announce_state(state &exec_state) const;
+
+  void print_skip_notification(nvbench::state &exec_state) const;
+
+  nvbench::benchmark_base &m_benchmark;
+};
+
 template <typename BenchmarkType>
-struct runner
+struct runner : public runner_base
 {
   using benchmark_type   = BenchmarkType;
   using kernel_generator = typename benchmark_type::kernel_generator;
@@ -18,14 +37,8 @@ struct runner
     benchmark_type::num_type_configs;
 
   explicit runner(benchmark_type &bench)
-      : m_benchmark{bench}
+      : runner_base{bench}
   {}
-
-  void generate_states()
-  {
-    m_benchmark.m_states =
-      nvbench::detail::state_generator::create(m_benchmark);
-  }
 
   void run()
   {
@@ -43,7 +56,6 @@ struct runner
   }
 
 private:
-
   void run_device(const std::optional<nvbench::device_info> &device)
   {
     if (device)
@@ -53,10 +65,10 @@ private:
 
     // Iterate through type_configs:
     std::size_t type_config_index = 0;
-    nvbench::tl::foreach<type_configs>([&states = m_benchmark.m_states,
+    nvbench::tl::foreach<type_configs>([&self   = *this,
+                                        &states = m_benchmark.m_states,
                                         &type_config_index,
                                         &device](auto type_config_wrapper) {
-
       // Get current type_config:
       using type_config = typename decltype(type_config_wrapper)::type;
 
@@ -66,15 +78,25 @@ private:
         if (cur_state.get_device() == device &&
             cur_state.get_type_config_index() == type_config_index)
         {
-          kernel_generator{}(cur_state, type_config{});
+          self.announce_state(cur_state);
+          try
+          {
+            kernel_generator{}(cur_state, type_config{});
+            if (cur_state.is_skipped())
+            {
+              self.print_skip_notification(cur_state);
+            }
+          }
+          catch (std::exception &e)
+          {
+            self.handle_sampling_exception(e, cur_state);
+          }
         }
       }
 
       ++type_config_index;
     });
   }
-
-  benchmark_type &m_benchmark;
 };
 
 } // namespace nvbench

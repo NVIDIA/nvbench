@@ -14,7 +14,7 @@
 namespace nvbench::detail
 {
 
-// non-templated code goes here:
+// non-templated code goes here to keep instantiation cost down:
 struct measure_hot_base
 {
   explicit measure_hot_base(nvbench::state &exec_state);
@@ -36,6 +36,8 @@ protected:
 
   void generate_summaries();
 
+  void check_skip_time(nvbench::float64_t warmup_time);
+
   nvbench::state &m_state;
 
   nvbench::launch m_launch;
@@ -45,6 +47,8 @@ protected:
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_min_time{};
+
+  nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
 
   nvbench::int64_t m_total_samples{};
@@ -72,11 +76,21 @@ struct measure_hot : public measure_hot_base
   }
 
 private:
+  // Run the kernel once, measuring the GPU time. If under skip_time, skip the
+  // measurement.
   void run_warmup()
   {
+    nvbench::blocking_kernel blocker;
+    blocker.block(m_launch.get_stream());
+
     m_cuda_timer.start(m_launch.get_stream());
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
+
+    blocker.unblock();
+    this->sync_stream();
+
+    this->check_skip_time(m_cuda_timer.get_duration());
   }
 
   void run_trials()
@@ -120,7 +134,7 @@ private:
       }
 
       m_cuda_timer.stop(m_launch.get_stream());
-      NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
+      this->sync_stream();
       m_cpu_timer.stop();
 
       m_total_cpu_time += m_cpu_timer.get_duration();
@@ -140,7 +154,7 @@ private:
         break; // Stop iterating
       }
 
-      if (m_total_cuda_time > m_timeout)
+      if (total_time > m_timeout)
       {
         m_max_time_exceeded = true;
         break;
@@ -149,6 +163,11 @@ private:
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
+
+  __forceinline__ void sync_stream() const
+  {
+    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
+  }
 
   KernelLauncher &m_kernel_launcher;
 };

@@ -9,7 +9,7 @@
 
 //==============================================================================
 // Declare a couple benchmarks for testing:
-void DummyBench(nvbench::state &state) { state.skip("Test"); }
+void DummyBench(nvbench::state &state) { state.skip("Skipping for testing."); }
 NVBENCH_CREATE(DummyBench);
 
 using Ts = nvbench::type_list<void, nvbench::int8_t, nvbench::uint8_t>;
@@ -68,9 +68,8 @@ states_to_string(const std::vector<nvbench::state> &states)
 }
 
 // Expects the parser to have a single TestBench benchmark. Runs the benchmark
-// and converts the generated states into a fingerprint string for regression
-// testing.
-[[nodiscard]] std::string parser_to_state_string(nvbench::option_parser &parser)
+// and returns the resulting states.
+[[nodiscard]] const auto& parser_to_states(nvbench::option_parser &parser)
 {
   const auto &benches = parser.get_benchmarks();
   ASSERT(benches.size() == 1);
@@ -78,7 +77,16 @@ states_to_string(const std::vector<nvbench::state> &states)
   ASSERT(bench != nullptr);
 
   bench->run();
-  return states_to_string(bench->get_states());
+
+  return bench->get_states();
+}
+
+// Expects the parser to have a single TestBench benchmark. Runs the benchmark
+// and converts the generated states into a fingerprint string for regression
+// testing.
+[[nodiscard]] std::string parser_to_state_string(nvbench::option_parser &parser)
+{
+  return states_to_string(parser_to_states(parser));
 }
 
 } // namespace
@@ -1147,6 +1155,61 @@ void test_axis_before_benchmark()
   }
 }
 
+void test_min_samples()
+{
+  nvbench::option_parser parser;
+  parser.parse(
+    {"--benchmark", "DummyBench", "--min-samples", "12345"});
+  const auto& states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(states[0].get_min_samples() == 12345);
+}
+
+void test_min_time()
+{
+  nvbench::option_parser parser;
+  parser.parse(
+    {"--benchmark", "DummyBench", "--min-time", "12345e2"});
+  const auto& states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(std::abs(states[0].get_min_time() - 12345e2) < 1.);
+}
+
+void test_max_noise()
+{
+  nvbench::option_parser parser;
+  parser.parse(
+    {"--benchmark", "DummyBench", "--max-noise", "12345e2"});
+  const auto& states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(std::abs(states[0].get_max_noise() - 12345e2) < 1.);
+}
+
+void test_skip_time()
+{
+  nvbench::option_parser parser;
+  parser.parse(
+    {"--benchmark", "DummyBench", "--skip-time", "12345e2"});
+  const auto& states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(std::abs(states[0].get_skip_time() - 12345e2) < 1.);
+}
+
+void test_timeout()
+{
+  nvbench::option_parser parser;
+  parser.parse(
+    {"--benchmark", "DummyBench", "--timeout", "12345e2"});
+  const auto& states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(std::abs(states[0].get_timeout() - 12345e2) < 1.);
+}
+
 int main()
 try
 {
@@ -1176,6 +1239,12 @@ try
   test_multi_axis();
 
   test_axis_before_benchmark();
+
+  test_min_samples();
+  test_min_time();
+  test_max_noise();
+  test_skip_time();
+  test_timeout();
 
   return 0;
 }
