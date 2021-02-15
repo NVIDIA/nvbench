@@ -113,6 +113,67 @@ struct benchmark_base
 
   void run() { this->do_run(); }
 
+  /// Execute at least this many trials per measurement. @{
+  [[nodiscard]] nvbench::int64_t get_min_samples() const
+  {
+    return m_min_samples;
+  }
+  benchmark_base &set_min_samples(nvbench::int64_t min_samples)
+  {
+    m_min_samples = min_samples;
+    return *this;
+  }
+  /// @}
+
+  /// Accumulate at least this many seconds of timing data per measurement. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  benchmark_base &set_min_time(nvbench::float64_t min_time)
+  {
+    m_min_time = min_time;
+    return *this;
+  }
+  /// @}
+
+  /// Specify the maximum amount of noise if a measurement supports noise.
+  /// Noise is the relative standard deviation expressed as a percentage:
+  /// `noise = 100 * (stdev / mean_time)`. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
+  benchmark_base &set_max_noise(nvbench::float64_t max_noise)
+  {
+    m_max_noise = max_noise;
+    return *this;
+  }
+  /// @}
+
+  /// If a warmup run finishes in less than `skip_time`, the measurement will
+  /// be skipped.
+  /// Extremely fast kernels (< 5000 ns) often timeout before they can
+  /// accumulate `min_time` measurements, and are often uninteresting. Setting
+  /// this value can help improve performance by skipping time consuming
+  /// measurement that don't provide much information.
+  /// Default value is 0, which disable the feature.
+  /// @{
+  [[nodiscard]] nvbench::float64_t get_skip_time() const { return m_skip_time; }
+  benchmark_base &set_skip_time(nvbench::float64_t skip_time)
+  {
+    m_skip_time = skip_time;
+    return *this;
+  }
+  /// @}
+
+  /// If a measurement take more than `timeout` seconds to complete, stop the
+  /// measurement early. A warning should be printed if this happens.
+  /// This setting overrides all other termination criteria.
+  /// Note that this is measured in CPU walltime, not sample time.
+  /// @{
+  [[nodiscard]] nvbench::float64_t get_timeout() const { return m_timeout; }
+  benchmark_base &set_timeout(nvbench::float64_t timeout)
+  {
+    m_timeout = timeout;
+    return *this;
+  }
+  /// @}
+
 protected:
   template <typename BenchmarkType>
   friend struct runner;
@@ -121,6 +182,13 @@ protected:
   nvbench::axes_metadata m_axes;
   std::vector<nvbench::device_info> m_devices;
   std::vector<nvbench::state> m_states;
+
+  nvbench::int64_t m_min_samples{10};
+  nvbench::float64_t m_min_time{0.5};
+  nvbench::float64_t m_max_noise{0.5};
+
+  nvbench::float64_t m_skip_time{0.};
+  nvbench::float64_t m_timeout{15.};
 
 private:
   // route these through virtuals so the templated subclass can inject type info

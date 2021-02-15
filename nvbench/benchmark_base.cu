@@ -16,8 +16,16 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   auto result = this->do_clone();
 
   // Do not copy states.
-  result->m_name = m_name;
-  result->m_axes = m_axes;
+  result->m_name    = m_name;
+  result->m_axes    = m_axes;
+  result->m_devices = m_devices;
+
+  result->m_min_samples = m_min_samples;
+  result->m_min_time    = m_min_time;
+  result->m_max_noise   = m_max_noise;
+
+  result->m_skip_time = m_skip_time;
+  result->m_timeout   = m_timeout;
 
   return std::move(result);
 }

@@ -36,35 +36,35 @@ void measure_hot_base::check()
 }
 
 measure_hot_base::measure_hot_base(state &exec_state)
-    : m_state(exec_state)
+    : m_state{exec_state}
+    , m_min_samples{exec_state.get_min_samples()}
+    , m_min_time{exec_state.get_min_time()}
+    , m_timeout{exec_state.get_timeout()}
 {
-  // Since cold measures converge to a stable result, increase the min_iters
+  // Since cold measures converge to a stable result, increase the min_samples
   // to match the cold result if available.
   try
   {
-    nvbench::int64_t cold_iters =
-      m_state.get_summary("Number of Trials (Cold)").get_int64("value");
-    m_min_iters = std::max(m_min_iters, cold_iters);
+    nvbench::int64_t cold_samples =
+      m_state.get_summary("Number of Samples (Cold)").get_int64("value");
+    m_min_samples = std::max(m_min_samples, cold_samples);
   }
   catch (...)
   {
-    // TODO Need state API
-    //    m_min_iters = state.get_min_trials();
-    //
-
-    // Apply the target_time since we don't have noise convergence estimates
-    // from the cold executions:
-    // TODO Need state API. Replace the following line with the commented one
-    const auto target_time = (m_min_time + m_max_time) / 2.;
-    //  const auto target_time = state.get_target_time();
-    m_min_time = std::max(m_min_time, target_time);
+    // If the above threw an exception, we don't have a cold measurement to use.
+    // Estimate a target_time between m_min_time and m_timeout.
+    // Use the average of the min_time and timeout, but don't go over 5x
+    // min_time in case timeout is huge.
+    // We could expose a `target_time` property on benchmark_base/state if
+    // needed.
+    m_min_time = std::min((m_min_time + m_timeout) / 2., m_min_time * 5);
   }
 }
 
 void measure_hot_base::generate_summaries()
 {
-  const auto d_iters       = static_cast<double>(m_total_iters);
-  const auto avg_cuda_time = m_total_cuda_time / d_iters;
+  const auto d_samples     = static_cast<double>(m_total_samples);
+  const auto avg_cuda_time = m_total_cuda_time / d_samples;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Hot)");
     summ.set_string("hint", "duration");
@@ -75,7 +75,7 @@ void measure_hot_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
-  const auto avg_cpu_time = m_total_cpu_time / d_iters;
+  const auto avg_cpu_time = m_total_cpu_time / d_samples;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Hot)");
     summ.set_string("hide",
@@ -89,11 +89,11 @@ void measure_hot_base::generate_summaries()
   }
 
   {
-    auto &summ = m_state.add_summary("Number of Trials (Hot)");
-    summ.set_string("short_name", "Trials");
+    auto &summ = m_state.add_summary("Number of Samples (Hot)");
+    summ.set_string("short_name", "Samples");
     summ.set_string("description",
                     "Number of kernel executions in hot time measurements.");
-    summ.set_int64("value", m_total_iters);
+    summ.set_int64("value", m_total_samples);
   }
 
   if (const auto items = m_state.get_items_processed_per_launch(); items != 0)
@@ -171,15 +171,15 @@ void measure_hot_base::generate_summaries()
              avg_cuda_time * 1e3,
              avg_cpu_time * 1e3,
              m_total_cuda_time,
-             m_total_iters);
+             m_total_samples);
   if (m_max_time_exceeded)
   {
-    if (m_total_iters < m_min_iters)
+    if (m_total_samples < m_min_samples)
     {
       fmt::print("!!!! Previous benchmark exceeded max time before "
                  "accumulating min samples ({} < {})\n",
-                 m_total_iters,
-                 m_min_iters);
+                 m_total_samples,
+                 m_min_samples);
     }
     if (m_total_cuda_time < m_min_time)
     {

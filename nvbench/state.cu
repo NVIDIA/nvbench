@@ -1,5 +1,6 @@
 #include <nvbench/state.cuh>
 
+#include <nvbench/benchmark_base.cuh>
 #include <nvbench/types.cuh>
 
 #include <fmt/format.h>
@@ -10,6 +11,30 @@
 
 namespace nvbench
 {
+
+state::state(const benchmark_base &bench)
+    : m_benchmark{bench}
+    , m_min_samples{bench.get_min_samples()}
+    , m_min_time{bench.get_min_time()}
+    , m_max_noise{bench.get_max_noise()}
+    , m_skip_time{bench.get_skip_time()}
+    , m_timeout{bench.get_timeout()}
+{}
+
+state::state(const benchmark_base &bench,
+             nvbench::named_values values,
+             std::optional<nvbench::device_info> device,
+             std::size_t type_config_index)
+    : m_benchmark{bench}
+    , m_axis_values{std::move(values)}
+    , m_device{std::move(device)}
+    , m_type_config_index{type_config_index}
+    , m_min_samples{bench.get_min_samples()}
+    , m_min_time{bench.get_min_time()}
+    , m_max_noise{bench.get_max_noise()}
+    , m_skip_time{bench.get_skip_time()}
+    , m_timeout{bench.get_timeout()}
+{}
 
 nvbench::int64_t state::get_int64(const std::string &axis_name) const
 {

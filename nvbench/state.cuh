@@ -90,6 +90,50 @@ struct state
     return m_skip_reason;
   }
 
+  /// Execute at least this many trials per measurement. @{
+  [[nodiscard]] nvbench::int64_t get_min_samples() const
+  {
+    return m_min_samples;
+  }
+  void set_min_samples(nvbench::int64_t min_samples)
+  {
+    m_min_samples = min_samples;
+  }
+  /// @}
+
+  /// Accumulate at least this many seconds of timing data per measurement. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
+  /// @}
+
+  /// Specify the maximum amount of noise if a measurement supports noise.
+  /// Noise is the relative standard deviation expressed as a percentage:
+  /// `noise = 100 * (stdev / mean_time)`. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
+  void set_max_noise(nvbench::float64_t max_noise) { m_max_noise = max_noise; }
+  /// @}
+
+  /// If a warmup run finishes in less than `skip_time`, the measurement will
+  /// be skipped.
+  /// Extremely fast kernels (< 5000 ns) often timeout before they can
+  /// accumulate `min_time` measurements, and are often uninteresting. Setting
+  /// this value can help improve performance by skipping time consuming
+  /// measurement that don't provide much information.
+  /// Default value is 0, which disable the feature.
+  /// @{
+  [[nodiscard]] nvbench::float64_t get_skip_time() const { return m_skip_time; }
+  void set_skip_time(nvbench::float64_t skip_time) { m_skip_time = skip_time; }
+  /// @}
+
+  /// If a measurement take more than `timeout` seconds to complete, stop the
+  /// measurement early. A warning should be printed if this happens.
+  /// This setting overrides all other termination criteria.
+  /// Note that this is measured in CPU walltime, not sample time.
+  /// @{
+  [[nodiscard]] nvbench::float64_t get_timeout() const { return m_timeout; }
+  void set_timeout(nvbench::float64_t timeout) { m_timeout = timeout; }
+  /// @}
+
   [[nodiscard]] const named_values &get_axis_values() const
   {
     return m_axis_values;
@@ -111,24 +155,24 @@ private:
   friend struct nvbench::detail::state_generator;
   friend struct nvbench::detail::state_tester;
 
-  explicit state(const benchmark_base &bench)
-      : m_benchmark{bench}
-  {}
+  explicit state(const benchmark_base &bench);
 
   state(const benchmark_base &bench,
         nvbench::named_values values,
         std::optional<nvbench::device_info> device,
-        std::size_t type_config_index)
-      : m_benchmark{bench}
-      , m_axis_values{std::move(values)}
-      , m_device{std::move(device)}
-      , m_type_config_index{type_config_index}
-  {}
+        std::size_t type_config_index);
 
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;
   std::size_t m_type_config_index{};
+
+  nvbench::int64_t m_min_samples;
+  nvbench::float64_t m_min_time;
+  nvbench::float64_t m_max_noise;
+
+  nvbench::float64_t m_skip_time;
+  nvbench::float64_t m_timeout;
 
   std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;

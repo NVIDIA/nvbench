@@ -17,6 +17,14 @@ namespace nvbench
 namespace detail
 {
 
+measure_cold_base::measure_cold_base(state &exec_state)
+    : m_state{exec_state}
+    , m_min_samples{exec_state.get_min_samples()}
+    , m_max_noise{exec_state.get_max_noise()}
+    , m_min_time{exec_state.get_min_time()}
+    , m_timeout{exec_state.get_timeout()}
+{}
+
 void measure_cold_base::check()
 {
   const auto device = m_state.get_device();
@@ -38,8 +46,8 @@ void measure_cold_base::check()
 
 void measure_cold_base::generate_summaries()
 {
-  const auto d_iters       = static_cast<double>(m_total_iters);
-  const auto avg_cuda_time = m_total_cuda_time / d_iters;
+  const auto d_samples     = static_cast<double>(m_total_samples);
+  const auto avg_cuda_time = m_total_cuda_time / d_samples;
   {
     auto &summ = m_state.add_summary("Average GPU Time (Cold)");
     summ.set_string("hint", "duration");
@@ -60,7 +68,7 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", m_cuda_noise);
   }
 
-  const auto avg_cpu_time = m_total_cpu_time / d_iters;
+  const auto avg_cpu_time = m_total_cpu_time / d_samples;
   {
     auto &summ = m_state.add_summary("Average CPU Time (Cold)");
     summ.set_string("hint", "duration");
@@ -82,11 +90,11 @@ void measure_cold_base::generate_summaries()
   }
 
   {
-    auto &summ = m_state.add_summary("Number of Trials (Cold)");
-    summ.set_string("short_name", "Trials");
+    auto &summ = m_state.add_summary("Number of Samples (Cold)");
+    summ.set_string("short_name", "Samples");
     summ.set_string("description",
                     "Number of kernel executions in cold time measurements.");
-    summ.set_int64("value", m_total_iters);
+    summ.set_int64("value", m_total_samples);
   }
 
   // Log to stdout:
@@ -127,7 +135,7 @@ void measure_cold_base::generate_summaries()
              avg_cuda_time * 1e3,
              avg_cpu_time * 1e3,
              m_total_cuda_time,
-             m_total_iters);
+             m_total_samples);
   if (m_max_time_exceeded)
   {
     if (m_cuda_noise > m_max_noise)
@@ -137,12 +145,12 @@ void measure_cold_base::generate_summaries()
                  m_cuda_noise,
                  m_max_noise);
     }
-    if (m_total_iters < m_min_iters)
+    if (m_total_samples < m_min_samples)
     {
       fmt::print("!!!! Previous benchmark exceeded max time before "
                  "accumulating min samples ({} < {})\n",
-                 m_total_iters,
-                 m_min_iters);
+                 m_total_samples,
+                 m_min_samples);
     }
     if (m_total_cuda_time < m_min_time)
     {

@@ -33,7 +33,7 @@ protected:
   {
     m_total_cpu_time    = 0.;
     m_total_cuda_time   = 0.;
-    m_total_iters       = 0;
+    m_total_samples     = 0;
     m_max_time_exceeded = false;
   }
 
@@ -46,12 +46,11 @@ protected:
   nvbench::cpu_timer m_cpu_timer;
   nvbench::cpu_timer m_timeout_timer;
 
-  nvbench::int64_t m_total_iters{};
-  nvbench::int64_t m_min_iters{10};
+  nvbench::int64_t m_min_samples{};
+  nvbench::float64_t m_min_time{};
+  nvbench::float64_t m_timeout{};
 
-  nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_time{5.0};
-
+  nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
 
@@ -102,7 +101,7 @@ private:
       // Block stream until some work is queued.
       // Limit the number of kernel executions while blocked to prevent
       // deadlocks. See warnings on blocking_kernel.
-      const auto blocked_launches = std::min(batch_size, nvbench::int64_t{2});
+      const auto blocked_launches   = std::min(batch_size, nvbench::int64_t{2});
       const auto unblocked_launches = batch_size - blocked_launches;
 
       blocker.block(m_launch.get_stream());
@@ -129,22 +128,22 @@ private:
 
       m_total_cpu_time += m_cpu_timer.get_duration();
       m_total_cuda_time += m_cuda_timer.get_duration();
-      m_total_iters += batch_size;
+      m_total_samples += batch_size;
 
       // Predict number of remaining iterations:
       batch_size = (m_min_time - m_total_cuda_time) /
-                   (m_total_cuda_time / m_total_iters);
+                   (m_total_cuda_time / m_total_samples);
 
       m_timeout_timer.stop();
       const auto total_time = m_timeout_timer.get_duration();
 
       if (m_total_cuda_time > m_min_time && // min time okay
-          m_total_iters > m_min_iters)      // min iters okay
+          m_total_samples > m_min_samples)  // min samples okay
       {
         break; // Stop iterating
       }
 
-      if (m_total_cuda_time > m_max_time)
+      if (m_total_cuda_time > m_timeout)
       {
         m_max_time_exceeded = true;
         break;
