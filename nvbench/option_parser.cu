@@ -4,6 +4,7 @@
 #include <nvbench/range.cuh>
 
 #include <nvbench/detail/markdown_format.cuh>
+#include <nvbench/detail/throw.cuh>
 
 #include <fmt/format.h>
 
@@ -125,11 +126,9 @@ std::vector<T> parse_range_values(std::string_view range_spec,
   // Convert the parsed values into a range:
   if (range_params.size() != 2 && range_params.size() != 3)
   {
-    throw std::runtime_error(fmt::format("{}:{}: Expected 2 or 3 values for "
-                                         "range specification: {}",
-                                         __FILE__,
-                                         __LINE__,
-                                         range_spec));
+    NVBENCH_THROW(std::runtime_error,
+                  "Expected 2 or 3 values for range specification: {}",
+                  range_spec);
   }
 
   const T first  = range_params[0];
@@ -143,11 +142,9 @@ std::vector<T> parse_range_values(std::string_view range_spec,
 std::vector<std::string> parse_range_values(std::string_view range_spec,
                                             nvbench::wrapped_type<std::string>)
 {
-  throw std::runtime_error(fmt::format("{}:{}: Cannot use range syntax for "
-                                       "string axis specification: `{}`.",
-                                       __FILE__,
-                                       __LINE__,
-                                       range_spec));
+  NVBENCH_THROW(std::runtime_error,
+                "Cannot use range syntax for string axis specification: `{}`.",
+                range_spec);
 }
 
 template <typename T>
@@ -217,10 +214,9 @@ std::vector<T> parse_values(std::string_view value_spec)
   }
   else
   {
-    throw std::runtime_error(fmt::format("{}:{}: Invalid axis value spec: {}",
-                                         __FILE__,
-                                         __LINE__,
-                                         value_spec));
+    NVBENCH_THROW(std::runtime_error,
+                  "Invalid axis value spec: {}",
+                  value_spec);
   }
 }
 
@@ -253,8 +249,7 @@ auto parse_axis_key_flag_value_spec(const std::string &spec)
   const std::string_view spec_sv = spec;
   if (!std::regex_search(spec_sv.cbegin(), spec_sv.cend(), match, spec_regex))
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: Bad format.", __FILE__, __LINE__));
+    NVBENCH_THROW(std::runtime_error, "{}", "Bad format.");
   }
 
   // Extract the matches:
@@ -302,13 +297,11 @@ void option_parser::parse_impl()
     const std::size_t rem_args = std::distance(cur_arg, arg_end) - 1;
     if (rem_args < num_params)
     {
-      throw std::runtime_error(fmt::format("{}:{}: Option '{}' requires {} "
-                                           "parameters, {} provided.",
-                                           __FILE__,
-                                           __LINE__,
-                                           *cur_arg,
-                                           num_params,
-                                           rem_args));
+      NVBENCH_THROW(std::runtime_error,
+                    "Option '{}' requires {} parameters, {} provided.",
+                    *cur_arg,
+                    num_params,
+                    rem_args);
     }
   };
 
@@ -341,11 +334,9 @@ void option_parser::parse_impl()
     }
     else
     {
-      throw std::runtime_error(fmt::format("{}:{}: Unrecognized command-line "
-                                           "argument: `{}`.",
-                                           __FILE__,
-                                           __LINE__,
-                                           arg));
+      NVBENCH_THROW(std::runtime_error,
+                    "Unrecognized command-line argument: `{}`.",
+                    arg);
     }
   }
 
@@ -385,12 +376,10 @@ try
 }
 catch (std::exception &e)
 {
-  throw std::runtime_error(fmt::format("{}:{}: Error parsing --benchmark "
-                                       "`{}`:\n{}",
-                                       __FILE__,
-                                       __LINE__,
-                                       name,
-                                       e.what()));
+  NVBENCH_THROW(std::runtime_error,
+                "Error parsing --benchmark `{}`:\n{}",
+                name,
+                e.what());
 }
 
 void option_parser::update_devices(const std::string &devices)
@@ -402,11 +391,9 @@ try
     const auto &mgr = nvbench::benchmark_manager::get();
     if (mgr.get_benchmarks().size() != 1)
     {
-      throw std::runtime_error(fmt::format("{}:{}: \"--axis <...>\" must "
-                                           "follow "
-                                           "\"--benchmark <...>\".",
-                                           __FILE__,
-                                           __LINE__));
+      NVBENCH_THROW(std::runtime_error,
+                    "{}",
+                    "`--devices <...>` must follow `--benchmark <...>`.");
     }
     m_benchmarks.push_back(mgr.get_benchmark(0).clone());
   }
@@ -415,12 +402,10 @@ try
 }
 catch (std::exception &e)
 {
-  throw std::runtime_error(fmt::format("{}:{}: Error parsing --devices "
-                                       "`{}`:\n{}",
-                                       __FILE__,
-                                       __LINE__,
-                                       devices,
-                                       e.what()));
+  NVBENCH_THROW(std::runtime_error,
+                "Error parsing --devices `{}`:\n{}",
+                devices,
+                e.what());
 }
 
 void option_parser::update_axis(const std::string &spec)
@@ -451,11 +436,9 @@ try
     const auto &mgr = nvbench::benchmark_manager::get();
     if (mgr.get_benchmarks().size() != 1)
     {
-      throw std::runtime_error(fmt::format("{}:{}: \"--axis <...>\" must "
-                                           "follow "
-                                           "\"--benchmark <...>\".",
-                                           __FILE__,
-                                           __LINE__));
+      NVBENCH_THROW(std::runtime_error,
+                    "{}",
+                    "`--axis <...>` must follow `--benchmark <...>`.");
     }
     m_benchmarks.push_back(mgr.get_benchmark(0).clone());
   }
@@ -493,21 +476,17 @@ try
 
     default:
       // Internal error, this should never happen:
-      throw std::runtime_error(fmt::format("{}:{}: Internal error: invalid "
-                                           "axis type enum '{}'",
-                                           __FILE__,
-                                           __LINE__,
-                                           static_cast<int>(axis.get_type())));
+      NVBENCH_THROW(std::runtime_error,
+                    "Internal error: invalid axis type enum '{}'",
+                    static_cast<int>(axis.get_type()));
   }
 }
 catch (std::exception &e)
 {
-  throw std::runtime_error(fmt::format("{}:{}: Error parsing --axis "
-                                       "`{}`:\n{}",
-                                       __FILE__,
-                                       __LINE__,
-                                       spec,
-                                       e.what()));
+  NVBENCH_THROW(std::runtime_error,
+                "Error parsing --axis `{}`:\n{}",
+                spec,
+                e.what());
 }
 
 void option_parser::update_int64_axis(int64_axis &axis,
@@ -526,11 +505,9 @@ void option_parser::update_int64_axis(int64_axis &axis,
   }
   else
   {
-    throw std::runtime_error(fmt::format("{}:{}: Invalid flag for int64 axis: "
-                                         "`{}`",
-                                         __FILE__,
-                                         __LINE__,
-                                         flag_spec));
+    NVBENCH_THROW(std::runtime_error,
+                  "Invalid flag for int64 axis: `{}`",
+                  flag_spec);
   }
 
   auto input_values = parse_values<nvbench::int64_t>(value_spec);
@@ -545,11 +522,9 @@ void option_parser::update_float64_axis(float64_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    throw std::runtime_error(fmt::format("{}:{}: Invalid flag for float64 "
-                                         "axis: `{}`",
-                                         __FILE__,
-                                         __LINE__,
-                                         flag_spec));
+    NVBENCH_THROW(std::runtime_error,
+                  "Invalid flag for float64 axis: `{}`",
+                  flag_spec);
   }
 
   auto input_values = parse_values<nvbench::float64_t>(value_spec);
@@ -564,11 +539,9 @@ void option_parser::update_string_axis(string_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    throw std::runtime_error(fmt::format("{}:{}: Invalid flag for string "
-                                         "axis: `{}`",
-                                         __FILE__,
-                                         __LINE__,
-                                         flag_spec));
+    NVBENCH_THROW(std::runtime_error,
+                  "Invalid flag for string axis: `{}`",
+                  flag_spec);
   }
 
   auto input_values = parse_values<std::string>(value_spec);
@@ -583,11 +556,9 @@ void option_parser::update_type_axis(type_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    throw std::runtime_error(fmt::format("{}:{}: Invalid flag for type axis: "
-                                         "`{}`",
-                                         __FILE__,
-                                         __LINE__,
-                                         flag_spec));
+    NVBENCH_THROW(std::runtime_error,
+                  "Invalid flag for type axis: `{}`",
+                  flag_spec);
   }
 
   auto input_values = parse_values<std::string>(value_spec);
