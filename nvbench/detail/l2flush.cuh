@@ -4,9 +4,7 @@
 
 #include <cuda_runtime_api.h>
 
-namespace nvbench
-{
-namespace detail
+namespace nvbench::detail
 {
 
 struct l2flush
@@ -45,5 +43,4 @@ private:
   int *m_l2_buffer;
 };
 
-} // namespace detail
-} // namespace nvbench
+} // namespace nvbench::detail

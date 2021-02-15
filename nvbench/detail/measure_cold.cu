@@ -11,10 +11,7 @@
 #include <stdexcept>
 #include <variant>
 
-namespace nvbench
-{
-
-namespace detail
+namespace nvbench::detail
 {
 
 measure_cold_base::measure_cold_base(state &exec_state)
@@ -165,4 +162,4 @@ void measure_cold_base::generate_summaries()
 
 } // namespace detail
 
-} // namespace nvbench
+} // namespace nvbench::detail

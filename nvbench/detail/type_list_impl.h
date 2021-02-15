@@ -16,10 +16,7 @@ struct wrapped_type
   using type = T;
 };
 
-namespace tl
-{
-
-namespace detail
+namespace tl::detail
 {
 
 template <typename... Ts>
@@ -112,6 +109,5 @@ void foreach (Functor &&f)
   detail::foreach<TypeList>(indices{}, std::forward<Functor>(f));
 }
 
-} // namespace detail
-} // namespace tl
+} // namespace tl::detail
 } // namespace nvbench

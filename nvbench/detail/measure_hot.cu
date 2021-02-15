@@ -10,11 +10,9 @@
 #include <cstdio>
 #include <variant>
 
-namespace nvbench
+namespace nvbench::detail
 {
 
-namespace detail
-{
 
 void measure_hot_base::check()
 {
@@ -194,4 +192,4 @@ void measure_hot_base::generate_summaries()
 
 } // namespace detail
 
-} // namespace nvbench
+} // namespace nvbench::detail

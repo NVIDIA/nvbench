@@ -11,10 +11,7 @@
 
 #include <utility>
 
-namespace nvbench
-{
-
-namespace detail
+namespace nvbench::detail
 {
 
 // non-templated code goes here:
@@ -156,5 +153,4 @@ private:
   KernelLauncher &m_kernel_launcher;
 };
 
-} // namespace detail
-} // namespace nvbench
+} // namespace nvbench::detail

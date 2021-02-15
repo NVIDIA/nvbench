@@ -48,6 +48,11 @@ struct table_builder
 
   std::string to_string()
   {
+    if (m_columns.empty())
+    {
+      return {};
+    }
+
     fmt::memory_buffer buffer;
     this->fix_row_lengths();
     this->print_header(buffer);
@@ -119,9 +124,7 @@ private:
 
 } // namespace
 
-namespace nvbench
-{
-namespace detail
+namespace nvbench::detail
 {
 
 void markdown_format::print_device_info()
@@ -345,6 +348,11 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
 
       for (const auto &cur_state : bench.get_states())
       {
+        if (cur_state.is_skipped())
+        {
+          continue;
+        }
+
         if (cur_state.get_device() == device)
         {
           const auto &axis_values = cur_state.get_axis_values();
@@ -434,10 +442,12 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
         }
       }
 
-      fmt::print("{}", table.to_string());
+      auto table_str = table.to_string();
+      fmt::print("{}",
+                 table_str.empty() ? "No data -- check log.\n"
+                                   : std::move(table_str));
     } // end foreach device_pass
   }
 }
 
-} // namespace detail
-} // namespace nvbench
+} // namespace nvbench::detail

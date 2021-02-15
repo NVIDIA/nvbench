@@ -12,10 +12,7 @@
 #include <functional>
 #include <numeric>
 
-namespace nvbench
-{
-
-namespace detail
+namespace nvbench::detail
 {
 
 // state_iterator ==============================================================
@@ -262,5 +259,4 @@ std::vector<nvbench::state> state_generator::create(const benchmark_base &bench)
   return std::move(sg.m_states);
 }
 
-} // namespace detail
-} // namespace nvbench
+} // namespace nvbench::detail
