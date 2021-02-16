@@ -58,7 +58,7 @@ protected:
   bool m_max_time_exceeded{false};
 };
 
-template <typename KernelLauncher>
+template <typename KernelLauncher, bool DelayEventRecording = true>
 struct measure_hot : public measure_hot_base
 {
   measure_hot(nvbench::state &state, KernelLauncher &kernel_launcher)
@@ -81,13 +81,20 @@ private:
   void run_warmup()
   {
     nvbench::blocking_kernel blocker;
-    blocker.block(m_launch.get_stream());
+
+    if constexpr (DelayEventRecording)
+    {
+      blocker.block(m_launch.get_stream());
+    }
 
     m_cuda_timer.start(m_launch.get_stream());
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
-    blocker.unblock();
+    if constexpr (DelayEventRecording)
+    {
+      blocker.unblock();
+    }
     this->sync_stream();
 
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -109,28 +116,41 @@ private:
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
 
-      // Block stream until some work is queued.
-      // Limit the number of kernel executions while blocked to prevent
-      // deadlocks. See warnings on blocking_kernel.
-      const auto blocked_launches   = std::min(batch_size, nvbench::int64_t{2});
-      const auto unblocked_launches = batch_size - blocked_launches;
-
-      blocker.block(m_launch.get_stream());
-      m_cuda_timer.start(m_launch.get_stream());
-
-      for (nvbench::int64_t i = 0; i < blocked_launches; ++i)
+      if constexpr (DelayEventRecording)
       {
-        // If your benchmark deadlocks in the next launch, reduce the size of
-        // blocked_launches. See note above.
-        this->launch_kernel();
+        // Block stream until some work is queued.
+        // Limit the number of kernel executions while blocked to prevent
+        // deadlocks. See warnings on blocking_kernel.
+        const auto blocked_launches = std::min(batch_size, nvbench::int64_t{2});
+        const auto unblocked_launches = batch_size - blocked_launches;
+
+        blocker.block(m_launch.get_stream());
+        m_cuda_timer.start(m_launch.get_stream());
+
+        for (nvbench::int64_t i = 0; i < blocked_launches; ++i)
+        {
+          // If your benchmark deadlocks in the next launch, reduce the size of
+          // blocked_launches. See note above.
+          this->launch_kernel();
+        }
+
+        m_cpu_timer.start();
+        blocker.unblock(); // Start executing earlier launches
+
+        for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
+        {
+          this->launch_kernel();
+        }
       }
-
-      m_cpu_timer.start();
-      blocker.unblock(); // Start executing earlier launches
-
-      for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
+      else
       {
-        this->launch_kernel();
+        m_cpu_timer.start();
+        m_cuda_timer.start(m_launch.get_stream());
+
+        for (nvbench::int64_t i = 0; i < batch_size; ++i)
+        {
+          this->launch_kernel();
+        }
       }
 
       m_cuda_timer.stop(m_launch.get_stream());

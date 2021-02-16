@@ -75,7 +75,7 @@ protected:
   bool m_max_time_exceeded{};
 };
 
-template <typename KernelLauncher>
+template <typename KernelLauncher, bool DelayEventRecording = true>
 struct measure_cold : public measure_cold_base
 {
   measure_cold(nvbench::state &state, KernelLauncher &kernel_launcher)
@@ -101,13 +101,19 @@ private:
     this->sync_stream();
 
     nvbench::blocking_kernel blocker;
-    blocker.block(m_launch.get_stream());
+    if constexpr (DelayEventRecording)
+    {
+      blocker.block(m_launch.get_stream());
+    }
 
     m_cuda_timer.start(m_launch.get_stream());
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
-    blocker.unblock();
+    if constexpr (DelayEventRecording)
+    {
+      blocker.unblock();
+    }
     this->sync_stream();
 
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -122,13 +128,24 @@ private:
       this->flush_device_l2();
       this->sync_stream();
 
-      blocker.block(m_launch.get_stream());
+      if constexpr (DelayEventRecording)
+      {
+        blocker.block(m_launch.get_stream());
+      }
+      else
+      {
+        m_cpu_timer.start();
+      }
+
       m_cuda_timer.start(m_launch.get_stream());
       this->launch_kernel();
       m_cuda_timer.stop(m_launch.get_stream());
 
-      m_cpu_timer.start();
-      blocker.unblock();
+      if constexpr (DelayEventRecording)
+      {
+        m_cpu_timer.start();
+        blocker.unblock();
+      }
       this->sync_stream();
       m_cpu_timer.stop();
 
