@@ -15,6 +15,7 @@ set(srcs
   state.cu
   string_axis.cu
   type_axis.cu
+  type_strings.cu
 
   detail/markdown_format.cu
   detail/measure_cold.cu

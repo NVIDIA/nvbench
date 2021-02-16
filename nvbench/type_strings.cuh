@@ -8,6 +8,11 @@
 namespace nvbench
 {
 
+namespace detail
+{
+std::string demangle(const std::string &str);
+}
+
 template <typename T>
 struct type_strings
 {
@@ -15,7 +20,10 @@ struct type_strings
 
   // The string used to identify the type in shorthand (e.g. output tables and
   // CLI options):
-  static std::string input_string() { return typeid(T).name(); }
+  static std::string input_string()
+  {
+    return nvbench::detail::demangle(typeid(T).name());
+  }
 
   // A more descriptive identifier for the type, if input_string is not a common
   // identifier. May be blank if `input_string` is obvious.
