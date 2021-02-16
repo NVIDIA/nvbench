@@ -26,7 +26,7 @@ struct l2flush
   {
     if (m_l2_buffer)
     {
-      NVBENCH_CUDA_CALL(cudaFree(m_l2_buffer));
+      NVBENCH_CUDA_CALL_NOEXCEPT(cudaFree(m_l2_buffer));
     }
   }
 
