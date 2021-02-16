@@ -10,7 +10,6 @@ namespace nvbench::detail
 struct l2flush
 {
   __forceinline__ l2flush()
-      : m_l2_buffer{nullptr}
   {
     int dev_id{};
     NVBENCH_CUDA_CALL(cudaGetDevice(&dev_id));
@@ -39,8 +38,8 @@ struct l2flush
   }
 
 private:
-  int m_l2_size;
-  int *m_l2_buffer;
+  int m_l2_size{};
+  int *m_l2_buffer{};
 };
 
 } // namespace nvbench::detail
