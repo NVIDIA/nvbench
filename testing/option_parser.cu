@@ -10,7 +10,7 @@
 //==============================================================================
 // Declare a couple benchmarks for testing:
 void DummyBench(nvbench::state &state) { state.skip("Skipping for testing."); }
-NVBENCH_CREATE(DummyBench).clear_devices();
+NVBENCH_BENCH(DummyBench).clear_devices();
 
 using Ts = nvbench::type_list<void, nvbench::int8_t, nvbench::uint8_t>;
 using Us = nvbench::type_list<bool, nvbench::float32_t, nvbench::float64_t>;
@@ -20,7 +20,7 @@ void TestBench(nvbench::state &state, nvbench::type_list<T, U>)
 {
   DummyBench(state);
 }
-NVBENCH_CREATE_TEMPLATE(TestBench, NVBENCH_TYPE_AXES(Ts, Us))
+NVBENCH_BENCH_TYPES(TestBench, NVBENCH_TYPE_AXES(Ts, Us))
   .set_type_axes_names({"T", "U"})
   .add_int64_axis("Ints", {42})
   .add_int64_power_of_two_axis("PO2s", {3})

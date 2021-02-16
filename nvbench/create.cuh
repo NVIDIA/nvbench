@@ -9,7 +9,7 @@
 
 #define NVBENCH_TYPE_AXES(...) nvbench::type_list<__VA_ARGS__>
 
-#define NVBENCH_CREATE(KernelGenerator)                                        \
+#define NVBENCH_BENCH(KernelGenerator)                                         \
   NVBENCH_DEFINE_UNIQUE_CALLABLE(KernelGenerator);                             \
   nvbench::benchmark_base &NVBENCH_UNIQUE_IDENTIFIER(benchmark) =              \
     nvbench::benchmark_manager::get()                                          \
@@ -17,7 +17,7 @@
            nvbench::benchmark<NVBENCH_UNIQUE_IDENTIFIER(KernelGenerator)>>())  \
       .set_name(#KernelGenerator)
 
-#define NVBENCH_CREATE_TEMPLATE(KernelGenerator, TypeAxes)                     \
+#define NVBENCH_BENCH_TYPES(KernelGenerator, TypeAxes)                         \
   NVBENCH_DEFINE_UNIQUE_CALLABLE_TEMPLATE(KernelGenerator);                    \
   nvbench::benchmark_base &NVBENCH_UNIQUE_IDENTIFIER(benchmark) =              \
     nvbench::benchmark_manager::get()                                          \

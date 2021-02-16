@@ -17,7 +17,7 @@ struct runner;
 
 /**
  * Hold runtime benchmark information and provides public customization API for
- * the `NVBENCH_CREATE` macros.
+ * the `NVBENCH_BENCH` macros.
  *
  * Delegates responsibility to the following classes:
  * - nvbench::axes_metadata: Axis specifications.
