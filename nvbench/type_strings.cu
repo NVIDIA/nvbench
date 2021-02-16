@@ -1,7 +1,5 @@
 #include <nvbench/type_strings.cuh>
 
-#include <cstdlib>
-#include <memory>
 #include <string>
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -10,16 +8,28 @@
 
 #ifdef NVBENCH_CXXABI_DEMANGLE
 #include <cxxabi.h>
-#endif
+
+#include <cstdlib>
+#include <memory>
+
+namespace
+{
+struct free_wrapper
+{
+  void operator()(void* ptr) { std::free(ptr); }
+};
+} // end namespace
+
+#endif // NVBENCH_CXXABI_DEMANGLE
 
 namespace nvbench::detail
 {
 
-std::string nvbench::detail::demangle(const std::string &str)
+std::string demangle(const std::string &str)
 {
 #ifdef NVBENCH_CXXABI_DEMANGLE
-  std::unique_ptr<char, std::free> demangled =
-    abi::__cxx_demangle(str.c_str(), nullptr, nullptr, nullptr);
+  std::unique_ptr<char, free_wrapper> demangled{
+    abi::__cxa_demangle(str.c_str(), nullptr, nullptr, nullptr)};
   return std::string(demangled.get());
 #else
   return str;

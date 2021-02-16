@@ -10,7 +10,7 @@
 //==============================================================================
 // Declare a couple benchmarks for testing:
 void DummyBench(nvbench::state &state) { state.skip("Skipping for testing."); }
-NVBENCH_CREATE(DummyBench);
+NVBENCH_CREATE(DummyBench).clear_devices();
 
 using Ts = nvbench::type_list<void, nvbench::int8_t, nvbench::uint8_t>;
 using Us = nvbench::type_list<bool, nvbench::float32_t, nvbench::float64_t>;
@@ -25,7 +25,8 @@ NVBENCH_CREATE_TEMPLATE(TestBench, NVBENCH_TYPE_AXES(Ts, Us))
   .add_int64_axis("Ints", {42})
   .add_int64_power_of_two_axis("PO2s", {3})
   .add_float64_axis("Floats", {3.14})
-  .add_string_axis("Strings", {"S1"});
+  .add_string_axis("Strings", {"S1"})
+  .clear_devices();
 //==============================================================================
 
 namespace

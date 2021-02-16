@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nvbench/benchmark_base.cuh>
+
 #include <nvbench/detail/state_generator.cuh>
 
 #include <stdexcept>

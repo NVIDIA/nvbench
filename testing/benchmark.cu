@@ -222,6 +222,7 @@ void test_run()
   // More exhaustive testing is in runner.cu. This just tests that the
   // runner is called.
   no_types_bench bench;
+  bench.set_devices(std::vector<int>{});
   ASSERT(bench.get_states().empty());
   bench.run();
   ASSERT(bench.get_states().size() == 1);
@@ -230,6 +231,7 @@ void test_run()
 void test_clone()
 {
   lots_of_types_bench bench;
+  bench.set_devices(std::vector<int>{});
   bench.set_type_axes_names({"Integer", "Float", "Other"});
   bench.add_string_axis("Strings", {"string a", "string b", "string c"});
   bench.add_int64_power_of_two_axis("I64 POT Axis", {10, 20});

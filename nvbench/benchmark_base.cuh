@@ -81,18 +81,26 @@ struct benchmark_base
     return *this;
   }
 
-  void set_devices(std::vector<int> device_ids);
+  benchmark_base &set_devices(std::vector<int> device_ids);
 
-  void set_devices(std::vector<nvbench::device_info> devices)
+  benchmark_base &set_devices(std::vector<nvbench::device_info> devices)
   {
     m_devices = std::move(devices);
+    return *this;
   }
 
-  void add_device(int device_id);
+  benchmark_base &clear_devices()
+  {
+    m_devices.clear();
+    return *this;
+  }
 
-  void add_device(nvbench::device_info device)
+  benchmark_base &add_device(int device_id);
+
+  benchmark_base &add_device(nvbench::device_info device)
   {
     m_devices.push_back(std::move(device));
+    return *this;
   }
 
   [[nodiscard]] const std::vector<nvbench::device_info> &get_devices() const

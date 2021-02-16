@@ -69,6 +69,7 @@ void test_empty()
   using runner_type    = nvbench::runner<benchmark_type>;
 
   benchmark_type bench;
+  bench.set_devices(std::vector<int>{});
   runner_type runner{bench};
 
   runner.generate_states();
@@ -85,6 +86,7 @@ void test_non_types()
   using runner_type    = nvbench::runner<benchmark_type>;
 
   benchmark_type bench;
+  bench.set_devices(std::vector<int>{});
   bench.add_int64_axis("Int", {1, 2, 3});
   bench.add_float64_axis("Float", {11.0, 12.0, 13.0});
   bench.add_string_axis("String", {"One", "Two", "Three"});
