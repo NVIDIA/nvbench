@@ -313,6 +313,10 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
     }
   };
 
+  auto format_sample_size = [](nvbench::int64_t size) {
+    return fmt::format("{}x", size);
+  };
+
   auto format_percentage = [](nvbench::float64_t percentage) {
     return fmt::format("{:.2f}%", percentage);
   };
@@ -421,6 +425,13 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
                              key,
                              header,
                              format_byte_rate(summ.get_float64("value")));
+            }
+            else if (hint == "sample_size")
+            {
+              table.add_cell(row,
+                             key,
+                             header,
+                             format_sample_size(summ.get_int64("value")));
             }
             else if (hint == "percentage")
             {
