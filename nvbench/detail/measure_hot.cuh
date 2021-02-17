@@ -4,14 +4,19 @@
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
-#include <nvbench/state.cuh>
 
 #include <cuda_runtime.h>
 
 #include <utility>
 
-namespace nvbench::detail
+namespace nvbench
+{
+
+struct state;
+
+namespace detail
 {
 
 // non-templated code goes here to keep instantiation cost down:
@@ -58,9 +63,16 @@ protected:
   bool m_max_time_exceeded{false};
 };
 
-template <typename KernelLauncher, bool DelayEventRecording = true>
+template <typename KernelLauncher, nvbench::detail::exec_flag ExecTagModifiers>
 struct measure_hot : public measure_hot_base
 {
+  static constexpr bool needs_timer_wrapper =
+    (ExecTagModifiers & nvbench::detail::exec_flag::timer) ==
+    nvbench::detail::exec_flag::none;
+  static constexpr bool use_blocking_kernel =
+    (ExecTagModifiers & nvbench::detail::exec_flag::no_block) ==
+    nvbench::detail::exec_flag::none;
+
   measure_hot(nvbench::state &state, KernelLauncher &kernel_launcher)
       : measure_hot_base(state)
       , m_kernel_launcher{kernel_launcher}
@@ -82,7 +94,7 @@ private:
   {
     nvbench::blocking_kernel blocker;
 
-    if constexpr (DelayEventRecording)
+    if constexpr (use_blocking_kernel)
     {
       blocker.block(m_launch.get_stream());
     }
@@ -91,7 +103,7 @@ private:
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
-    if constexpr (DelayEventRecording)
+    if constexpr (use_blocking_kernel)
     {
       blocker.unblock();
     }
@@ -116,7 +128,7 @@ private:
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
 
-      if constexpr (DelayEventRecording)
+      if constexpr (use_blocking_kernel)
       {
         // Block stream until some work is queued.
         // Limit the number of kernel executions while blocked to prevent
@@ -192,4 +204,5 @@ private:
   KernelLauncher &m_kernel_launcher;
 };
 
-} // namespace nvbench::detail
+} // namespace detail
+} // namespace nvbench

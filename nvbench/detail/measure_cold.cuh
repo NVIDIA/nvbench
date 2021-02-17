@@ -5,8 +5,8 @@
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
 #include <nvbench/device_info.cuh>
+#include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
-#include <nvbench/state.cuh>
 
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/statistics.cuh>
@@ -17,7 +17,12 @@
 #include <utility>
 #include <vector>
 
-namespace nvbench::detail
+namespace nvbench
+{
+
+struct state;
+
+namespace detail
 {
 
 // non-templated code goes here:
@@ -75,9 +80,16 @@ protected:
   bool m_max_time_exceeded{};
 };
 
-template <typename KernelLauncher, bool DelayEventRecording = true>
+template <typename KernelLauncher, nvbench::detail::exec_flag ExecTagModifiers>
 struct measure_cold : public measure_cold_base
 {
+  static constexpr bool needs_timer_wrapper =
+    (ExecTagModifiers & nvbench::detail::exec_flag::timer) ==
+    nvbench::detail::exec_flag::none;
+  static constexpr bool use_blocking_kernel =
+    (ExecTagModifiers & nvbench::detail::exec_flag::no_block) ==
+    nvbench::detail::exec_flag::none;
+
   measure_cold(nvbench::state &state, KernelLauncher &kernel_launcher)
       : measure_cold_base(state)
       , m_kernel_launcher{kernel_launcher}
@@ -101,7 +113,7 @@ private:
     this->sync_stream();
 
     nvbench::blocking_kernel blocker;
-    if constexpr (DelayEventRecording)
+    if constexpr (use_blocking_kernel)
     {
       blocker.block(m_launch.get_stream());
     }
@@ -110,7 +122,7 @@ private:
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
-    if constexpr (DelayEventRecording)
+    if constexpr (use_blocking_kernel)
     {
       blocker.unblock();
     }
@@ -128,7 +140,7 @@ private:
       this->flush_device_l2();
       this->sync_stream();
 
-      if constexpr (DelayEventRecording)
+      if constexpr (use_blocking_kernel)
       {
         blocker.block(m_launch.get_stream());
       }
@@ -141,7 +153,7 @@ private:
       this->launch_kernel();
       m_cuda_timer.stop(m_launch.get_stream());
 
-      if constexpr (DelayEventRecording)
+      if constexpr (use_blocking_kernel)
       {
         m_cpu_timer.start();
         blocker.unblock();
@@ -195,4 +207,5 @@ private:
   KernelLauncher &m_kernel_launcher;
 };
 
-} // namespace nvbench::detail
+} // namespace detail
+} // namespace nvbench

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nvbench/device_info.cuh>
+#include <nvbench/exec_tag.cuh>
 #include <nvbench/named_values.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
@@ -158,6 +159,18 @@ struct state
   /// ```
   [[nodiscard]] std::string get_short_description() const;
 
+  // TODO This will need detailed docs and include a reference to an appropriate
+  // section of the user's guide
+  template <typename ExecTags, typename KernelLauncher>
+  void exec(ExecTags, KernelLauncher &&kernel_launcher);
+
+  template <typename KernelLauncher>
+  void exec(KernelLauncher &&kernel_launcher)
+  {
+    this->exec(nvbench::exec_tag::default_tag,
+               std::forward<KernelLauncher>(kernel_launcher));
+  }
+
 private:
   friend struct nvbench::detail::state_generator;
   friend struct nvbench::detail::state_tester;
@@ -188,3 +201,7 @@ private:
 };
 
 } // namespace nvbench
+
+#define NVBENCH_STATE_EXEC_GUARD
+#include <nvbench/detail/state_exec.cuh>
+#undef NVBENCH_STATE_EXEC_GUARD
