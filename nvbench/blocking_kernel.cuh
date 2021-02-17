@@ -58,7 +58,12 @@ struct blocking_kernel
   ~blocking_kernel();
 
   void block(const nvbench::cuda_stream &stream);
-  void unblock();
+
+  __forceinline__ void unblock()
+  {
+    volatile int& flag = m_host_flag;
+    flag = 1;
+  }
 
   // move-only
   blocking_kernel(const blocking_kernel &) = delete;
