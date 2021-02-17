@@ -13,16 +13,15 @@ enum class exec_flag
   none = 0x0,
 
   // Modifiers:
-  timer    = 0x1, // KernelLauncher uses manual timing
-  no_block = 0x2, // Disables use of `blocking_kernel`. Needed when KL syncs.
+  timer    = 0x01, // KernelLauncher uses manual timing
+  no_block = 0x02, // Disables use of `blocking_kernel`.
+  sync     = 0x04, // KernelLauncher has indicated that it will sync
+  modifier_mask = timer | no_block | sync,
 
   // Measurement types:
-  cold = 0x4,  // measure_hot
-  hot  = 0x8,  // measure_cold
-  cpu  = 0x10, // measure_cpu
-
-  // Masks:
-  modifier_mask = timer | no_block,
+  cold = 0x0100, // measure_hot
+  hot  = 0x0200, // measure_cold
+  cpu  = 0x0400, // measure_cpu
   measure_mask  = cold | hot | cpu
 };
 
@@ -76,6 +75,7 @@ struct tag
 using none_t          = tag<nvbench::detail::exec_flag::none>;
 using timer_t         = tag<nvbench::detail::exec_flag::timer>;
 using no_block_t      = tag<nvbench::detail::exec_flag::no_block>;
+using sync_t          = tag<nvbench::detail::exec_flag::sync>;
 using hot_t           = tag<nvbench::detail::exec_flag::hot>;
 using cold_t          = tag<nvbench::detail::exec_flag::cold>;
 using cpu_t           = tag<nvbench::detail::exec_flag::cpu>;
@@ -85,6 +85,7 @@ using measure_mask_t  = tag<nvbench::detail::exec_flag::measure_mask>;
 constexpr inline none_t none;
 constexpr inline timer_t timer;
 constexpr inline no_block_t no_block;
+constexpr inline sync_t sync;
 constexpr inline cold_t cold;
 constexpr inline hot_t hot;
 constexpr inline cpu_t cpu;
@@ -99,7 +100,8 @@ constexpr inline auto timer = nvbench::exec_tag::impl::timer;
 
 /// Modifier used to indicate that the KernelGenerator will perform CUDA
 /// synchronizations. Without this flag such benchmarks will deadlock.
-constexpr inline auto sync = nvbench::exec_tag::impl::no_block;
+constexpr inline auto sync = nvbench::exec_tag::impl::no_block |
+                             nvbench::exec_tag::impl::sync;
 
 /// Request Cold measurements.
 constexpr inline auto cold = nvbench::exec_tag::impl::cold;
@@ -114,6 +116,6 @@ constexpr inline auto cpu = nvbench::exec_tag::impl::cpu;
 constexpr inline auto cuda = hot | cold;
 
 /// The default tag; used when none specified.
-constexpr inline auto default_tag = cuda;
+constexpr inline auto default_measurements = cuda;
 
 } // namespace nvbench::exec_tag

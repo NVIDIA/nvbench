@@ -33,7 +33,6 @@ protected:
 
   void initialize()
   {
-    m_total_cpu_time    = 0.;
     m_total_cuda_time   = 0.;
     m_total_samples     = 0;
     m_max_time_exceeded = false;
@@ -47,7 +46,6 @@ protected:
 
   nvbench::launch m_launch;
   nvbench::cuda_timer m_cuda_timer;
-  nvbench::cpu_timer m_cpu_timer;
   nvbench::cpu_timer m_timeout_timer;
 
   nvbench::int64_t m_min_samples{};
@@ -58,21 +56,13 @@ protected:
 
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
-  nvbench::float64_t m_total_cpu_time{};
 
   bool m_max_time_exceeded{false};
 };
 
-template <typename KernelLauncher, nvbench::detail::exec_flag ExecTagModifiers>
+template <typename KernelLauncher, bool use_blocking_kernel>
 struct measure_hot : public measure_hot_base
 {
-  static constexpr bool needs_timer_wrapper =
-    (ExecTagModifiers & nvbench::detail::exec_flag::timer) ==
-    nvbench::detail::exec_flag::none;
-  static constexpr bool use_blocking_kernel =
-    (ExecTagModifiers & nvbench::detail::exec_flag::no_block) ==
-    nvbench::detail::exec_flag::none;
-
   measure_hot(nvbench::state &state, KernelLauncher &kernel_launcher)
       : measure_hot_base(state)
       , m_kernel_launcher{kernel_launcher}
@@ -146,7 +136,6 @@ private:
           this->launch_kernel();
         }
 
-        m_cpu_timer.start();
         blocker.unblock(); // Start executing earlier launches
 
         for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
@@ -156,7 +145,6 @@ private:
       }
       else
       {
-        m_cpu_timer.start();
         m_cuda_timer.start(m_launch.get_stream());
 
         for (nvbench::int64_t i = 0; i < batch_size; ++i)
@@ -167,9 +155,7 @@ private:
 
       m_cuda_timer.stop(m_launch.get_stream());
       this->sync_stream();
-      m_cpu_timer.stop();
 
-      m_total_cpu_time += m_cpu_timer.get_duration();
       m_total_cuda_time += m_cuda_timer.get_duration();
       m_total_samples += batch_size;
 

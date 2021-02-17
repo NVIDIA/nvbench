@@ -1,6 +1,7 @@
 #include <nvbench/detail/measure_hot.cuh>
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/device_info.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
@@ -9,6 +10,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <stdexcept>
 #include <variant>
 
 namespace nvbench::detail
@@ -71,69 +73,20 @@ void measure_hot_base::generate_summaries()
   {
     auto &summ = m_state.add_summary("Average GPU Time (Hot)");
     summ.set_string("hint", "duration");
-    summ.set_string("short_name", "Hot GPU");
+    summ.set_string("short_name", "Batched GPU");
     summ.set_string("description",
                     "Average back-to-back kernel execution time as measured "
                     "by CUDA events.");
     summ.set_float64("value", avg_cuda_time);
   }
 
-  const auto avg_cpu_time = m_total_cpu_time / d_samples;
-  {
-    auto &summ = m_state.add_summary("Average CPU Time (Hot)");
-    summ.set_string("hide",
-                    "Usually not interesting; too similar to hot GPU times.");
-    summ.set_string("hint", "duration");
-    summ.set_string("short_name", "Hot CPU");
-    summ.set_string("description",
-                    "Average back-to-back kernel execution time observed "
-                    "from host.");
-    summ.set_float64("value", avg_cpu_time);
-  }
-
   {
     auto &summ = m_state.add_summary("Number of Samples (Hot)");
-    summ.set_string("short_name", "Hot N");
+    summ.set_string("hint", "sample_size");
+    summ.set_string("short_name", "Batch");
     summ.set_string("description",
                     "Number of kernel executions in hot time measurements.");
     summ.set_int64("value", m_total_samples);
-  }
-
-  if (const auto items = m_state.get_items_processed_per_launch(); items != 0)
-  {
-    auto &summ = m_state.add_summary("Item Throughput");
-    summ.set_string("hint", "item_rate");
-    summ.set_string("short_name", "Item Rate");
-    summ.set_string("description", "Number of input items handled per second.");
-    summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
-  }
-
-  if (const auto bytes = m_state.get_global_bytes_accessed_per_launch();
-      bytes != 0)
-  {
-    const auto avg_used_gmem_bw = static_cast<double>(bytes) / avg_cuda_time;
-    {
-      auto &summ = m_state.add_summary("Average Global Memory Throughput");
-      summ.set_string("hint", "byte_rate");
-      summ.set_string("short_name", "GlobalMemUse");
-      summ.set_string("description",
-                      "Number of bytes read/written per second to the CUDA "
-                      "device's global memory.");
-      summ.set_float64("value", avg_used_gmem_bw);
-    }
-
-    {
-      const auto peak_gmem_bw = static_cast<double>(
-        m_state.get_device()->get_global_memory_bus_bandwidth());
-
-      auto &summ = m_state.add_summary("Percent Peak Global Memory Throughput");
-      summ.set_string("hint", "percentage");
-      summ.set_string("short_name", "PeakGMem");
-      summ.set_string("description",
-                      "Global device memory throughput as a percentage of the "
-                      "device's peak bandwidth.");
-      summ.set_float64("value", avg_used_gmem_bw / peak_gmem_bw * 100.);
-    }
   }
 
   const auto num_format = fmt::emphasis::bold;
@@ -174,9 +127,8 @@ void measure_hot_base::generate_summaries()
   fmt::print(
     "{} {}\n",
     fmt::format(log_format, "{:5}", "Hot:"),
-    fmt::format("{} GPU, {} CPU, {} total GPU, {}",
+    fmt::format("{} GPU, {} total GPU, {}",
                 fmt::format(num_format, "{:0.6f}ms", avg_cuda_time * 1e3),
-                fmt::format(num_format, "{:0.6f}ms", avg_cpu_time * 1e3),
                 fmt::format(num_format, "{:.2f}s", m_total_cuda_time),
                 fmt::format(num_format, "{}x", m_total_samples)));
 

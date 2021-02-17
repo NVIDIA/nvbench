@@ -8,6 +8,7 @@
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
 
+#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/statistics.cuh>
 
@@ -35,6 +36,9 @@ struct measure_cold_base
   measure_cold_base &operator=(measure_cold_base &&) = delete;
 
 protected:
+  template <bool use_blocking_kernel>
+  struct kernel_launch_timer;
+
   void check();
 
   void initialize()
@@ -53,6 +57,23 @@ protected:
 
   void check_skip_time(nvbench::float64_t warmup_time);
 
+  __forceinline__ void flush_device_l2()
+  {
+    m_l2flush.flush(m_launch.get_stream());
+  }
+
+  __forceinline__ void sync_stream() const
+  {
+    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
+  }
+
+  __forceinline__ void block_stream()
+  {
+    m_blocker.block(m_launch.get_stream());
+  }
+
+  __forceinline__ void unblock_stream() { m_blocker.unblock(); }
+
   nvbench::state &m_state;
 
   nvbench::launch m_launch;
@@ -60,6 +81,7 @@ protected:
   nvbench::cpu_timer m_cpu_timer;
   nvbench::cpu_timer m_timeout_timer;
   nvbench::detail::l2flush m_l2flush;
+  nvbench::blocking_kernel m_blocker;
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_max_noise{}; // % rel stdev
@@ -80,16 +102,43 @@ protected:
   bool m_max_time_exceeded{};
 };
 
-template <typename KernelLauncher, nvbench::detail::exec_flag ExecTagModifiers>
+template <bool use_blocking_kernel>
+struct measure_cold_base::kernel_launch_timer
+{
+  kernel_launch_timer(measure_cold_base &measure)
+      : m_measure{measure}
+  {}
+
+  __forceinline__ void start()
+  {
+    m_measure.flush_device_l2();
+    m_measure.sync_stream();
+    if constexpr (use_blocking_kernel)
+    {
+      m_measure.block_stream();
+    }
+    m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
+    m_measure.m_cpu_timer.start();
+  }
+
+  __forceinline__ void stop()
+  {
+    m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
+    if constexpr (use_blocking_kernel)
+    {
+      m_measure.unblock_stream();
+    }
+    m_measure.sync_stream();
+    m_measure.m_cpu_timer.stop();
+  }
+
+private:
+  measure_cold_base &m_measure;
+};
+
+template <typename KernelLauncher, bool use_blocking_kernel>
 struct measure_cold : public measure_cold_base
 {
-  static constexpr bool needs_timer_wrapper =
-    (ExecTagModifiers & nvbench::detail::exec_flag::timer) ==
-    nvbench::detail::exec_flag::none;
-  static constexpr bool use_blocking_kernel =
-    (ExecTagModifiers & nvbench::detail::exec_flag::no_block) ==
-    nvbench::detail::exec_flag::none;
-
   measure_cold(nvbench::state &state, KernelLauncher &kernel_launcher)
       : measure_cold_base(state)
       , m_kernel_launcher{kernel_launcher}
@@ -109,57 +158,19 @@ private:
   // measurement.
   void run_warmup()
   {
-    this->flush_device_l2();
-    this->sync_stream();
-
-    nvbench::blocking_kernel blocker;
-    if constexpr (use_blocking_kernel)
-    {
-      blocker.block(m_launch.get_stream());
-    }
-
-    m_cuda_timer.start(m_launch.get_stream());
-    this->launch_kernel();
-    m_cuda_timer.stop(m_launch.get_stream());
-
-    if constexpr (use_blocking_kernel)
-    {
-      blocker.unblock();
-    }
-    this->sync_stream();
-
+    kernel_launch_timer<use_blocking_kernel> timer(*this);
+    this->launch_kernel(timer);
     this->check_skip_time(m_cuda_timer.get_duration());
   }
 
   void run_trials()
   {
     m_timeout_timer.start();
-    nvbench::blocking_kernel blocker;
+    kernel_launch_timer<use_blocking_kernel> timer(*this);
+
     do
     {
-      this->flush_device_l2();
-      this->sync_stream();
-
-      if constexpr (use_blocking_kernel)
-      {
-        blocker.block(m_launch.get_stream());
-      }
-      else
-      {
-        m_cpu_timer.start();
-      }
-
-      m_cuda_timer.start(m_launch.get_stream());
-      this->launch_kernel();
-      m_cuda_timer.stop(m_launch.get_stream());
-
-      if constexpr (use_blocking_kernel)
-      {
-        m_cpu_timer.start();
-        blocker.unblock();
-      }
-      this->sync_stream();
-      m_cpu_timer.stop();
+      this->launch_kernel(timer);
 
       const auto cur_cuda_time = m_cuda_timer.get_duration();
       const auto cur_cpu_time  = m_cpu_timer.get_duration();
@@ -192,16 +203,10 @@ private:
     m_cpu_noise = nvbench::detail::compute_noise(m_cpu_times, m_total_cpu_time);
   }
 
-  __forceinline__ void flush_device_l2()
+  template <typename TimerT>
+  __forceinline__ void launch_kernel(TimerT &timer)
   {
-    m_l2flush.flush(m_launch.get_stream());
-  }
-
-  __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
-
-  __forceinline__ void sync_stream() const
-  {
-    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
+    m_kernel_launcher(m_launch, timer);
   }
 
   KernelLauncher &m_kernel_launcher;
