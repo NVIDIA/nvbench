@@ -239,77 +239,77 @@ void markdown_format::print_benchmark_results(const benchmark_vector &benchmarks
   auto format_duration = [](nvbench::float64_t seconds) {
     if (seconds >= 1.) // 1+ sec
     {
-      return fmt::format("{:.2f} s", seconds);
+      return fmt::format("{:0.3f} s", seconds);
     }
-    else if (seconds >= 1e-2) // 10+ ms.
+    else if (seconds >= 1e-3) // 1+ ms.
     {
-      return fmt::format("{:.2f} ms", seconds * 1e3);
+      return fmt::format("{:0.3f} ms", seconds * 1e3);
     }
-    else if (seconds >= 1e-5) // 10+ us.
+    else if (seconds >= 1e-6) // 1+ us.
     {
-      return fmt::format("{:.2f} us", seconds * 1e6);
+      return fmt::format("{:0.3f} us", seconds * 1e6);
     }
     else
     {
-      return fmt::format("{:.2f} ns", seconds * 1e9);
+      return fmt::format("{:0.3f} ns", seconds * 1e9);
     }
   };
 
   auto format_item_rate = [](nvbench::float64_t items_per_second) {
     if (items_per_second >= 1e9)
     {
-      return fmt::format("{:0.2f} GHz", items_per_second * 1e-9);
+      return fmt::format("{:0.3f}b", items_per_second * 1e-9);
     }
     else if (items_per_second >= 1e6)
     {
-      return fmt::format("{:0.2f} MHz", items_per_second * 1e-6);
+      return fmt::format("{:0.3f}m", items_per_second * 1e-6);
     }
     else if (items_per_second >= 1e3)
     {
-      return fmt::format("{:0.2f} KHz", items_per_second * 1e-3);
+      return fmt::format("{:0.3f}k", items_per_second * 1e-3);
     }
     else
     {
-      return fmt::format("{:0.2f} Hz", items_per_second);
+      return fmt::format("{:0.3f}", items_per_second);
     }
   };
 
   auto format_bytes = [](nvbench::int64_t bytes) {
-    if (bytes >= 10. * 1024. * 1024. * 1024.) // 10 GiB
+    if (bytes >= 1024. * 1024. * 1024.) // 1 GiB
     {
-      return fmt::format("{:.2f} GiB", bytes / (1024. * 1024. * 1024.));
+      return fmt::format("{:0.3f} GiB", bytes / (1024. * 1024. * 1024.));
     }
-    else if (bytes >= 10. * 1024. * 1024.) // 10 MiB
+    else if (bytes >= 1024. * 1024.) // 1 MiB
     {
-      return fmt::format("{:.2f} MiB", bytes / (1024. * 1024.));
+      return fmt::format("{:0.3f} MiB", bytes / (1024. * 1024.));
     }
-    else if (bytes >= 10 * 1024) // 10 KiB.
+    else if (bytes >= 1024) // 1 KiB.
     {
-      return fmt::format("{:.2f} KiB", bytes / 1024.);
+      return fmt::format("{:0.3f} KiB", bytes / 1024.);
     }
     else
     {
-      return fmt::format("{:.2f} B", static_cast<nvbench::float64_t>(bytes));
+      return fmt::format("{:0.3f} B", static_cast<nvbench::float64_t>(bytes));
     }
   };
 
   auto format_byte_rate = [](nvbench::float64_t bytes_per_second) {
-    if (bytes_per_second >= 10. * 1024. * 1024. * 1024.) // 10 GiB/s
+    if (bytes_per_second >= 1024. * 1024. * 1024.) // 1 GiB/s
     {
-      return fmt::format("{:.2f} GiB/s",
+      return fmt::format("{:0.3f} GiB/s",
                          bytes_per_second / (1024. * 1024. * 1024.));
     }
-    else if (bytes_per_second >= 10. * 1024. * 1024.) // 10 MiB/s
+    else if (bytes_per_second >= 1024. * 1024.) // 1 MiB/s
     {
-      return fmt::format("{:.2f} MiB/s", bytes_per_second / (1024. * 1024.));
+      return fmt::format("{:0.3f} MiB/s", bytes_per_second / (1024. * 1024.));
     }
-    else if (bytes_per_second >= 10. * 1024.) // 10 KiB/s.
+    else if (bytes_per_second >= 1024.) // 1 KiB/s.
     {
-      return fmt::format("{:.2f} KiB/s", bytes_per_second / 1024.);
+      return fmt::format("{:0.3f} KiB/s", bytes_per_second / 1024.);
     }
     else
     {
-      return fmt::format("{:.2f} B/s", bytes_per_second);
+      return fmt::format("{:0.3f} B/s", bytes_per_second);
     }
   };
 

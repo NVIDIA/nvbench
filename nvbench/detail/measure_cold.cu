@@ -100,10 +100,10 @@ void measure_cold_base::generate_summaries()
 
   if (const auto items = m_state.get_items_processed_per_launch(); items != 0)
   {
-    auto &summ = m_state.add_summary("Item Throughput");
+    auto &summ = m_state.add_summary("Element Throughput");
     summ.set_string("hint", "item_rate");
-    summ.set_string("short_name", "Item Rate");
-    summ.set_string("description", "Number of input items handled per second.");
+    summ.set_string("short_name", "Elem/s");
+    summ.set_string("description", "Number of input elements handled per second.");
     summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
   }
 
@@ -114,7 +114,7 @@ void measure_cold_base::generate_summaries()
     {
       auto &summ = m_state.add_summary("Average Global Memory Throughput");
       summ.set_string("hint", "byte_rate");
-      summ.set_string("short_name", "GMemBWUse");
+      summ.set_string("short_name", "GlobalMem BW");
       summ.set_string("description",
                       "Number of bytes read/written per second to the CUDA "
                       "device's global memory.");
@@ -127,7 +127,7 @@ void measure_cold_base::generate_summaries()
 
       auto &summ = m_state.add_summary("Percent Peak Global Memory Throughput");
       summ.set_string("hint", "percentage");
-      summ.set_string("short_name", "GMemBWPeak");
+      summ.set_string("short_name", "BWPeak");
       summ.set_string("description",
                       "Global device memory throughput as a percentage of the "
                       "device's peak bandwidth.");

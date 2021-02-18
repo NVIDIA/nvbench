@@ -73,7 +73,7 @@ void measure_hot_base::generate_summaries()
   {
     auto &summ = m_state.add_summary("Average GPU Time (Hot)");
     summ.set_string("hint", "duration");
-    summ.set_string("short_name", "Batched GPU");
+    summ.set_string("short_name", "Batch GPU");
     summ.set_string("description",
                     "Average back-to-back kernel execution time as measured "
                     "by CUDA events.");
