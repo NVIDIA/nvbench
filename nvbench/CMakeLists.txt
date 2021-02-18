@@ -28,5 +28,4 @@ add_library(nvbench STATIC ${srcs})
 # TODO generator expressions for installed paths
 target_include_directories(nvbench PUBLIC "${nvbench_SOURCE_DIR}")
 target_link_libraries(nvbench PRIVATE fmt::fmt)
-target_link_libraries(nvbench INTERFACE benchmark_main)
 target_compile_features(nvbench PUBLIC cuda_std_17)
