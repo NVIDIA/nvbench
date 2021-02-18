@@ -66,22 +66,40 @@ struct state
   [[nodiscard]] const std::string &
   get_string(const std::string &axis_name) const;
 
-  void set_items_processed_per_launch(nvbench::int64_t items)
+  void add_element_count(std::size_t elements, std::string column_name = {});
+
+  void set_element_count(nvbench::int64_t elements)
   {
-    m_items_processed_per_launch = items;
+    m_element_count = elements;
   }
-  [[nodiscard]] nvbench::int64_t get_items_processed_per_launch() const
+  [[nodiscard]] nvbench::int64_t get_element_count() const
   {
-    return m_items_processed_per_launch;
+    return m_element_count;
   }
 
-  void set_global_bytes_accessed_per_launch(nvbench::int64_t bytes)
+  template <typename ElementType>
+  void add_global_memory_reads(std::size_t count, std::string column_name = {})
   {
-    m_global_bytes_accessed_per_launch = bytes;
+    this->add_global_memory_reads(count * sizeof(ElementType),
+                                  std::move(column_name));
   }
-  [[nodiscard]] nvbench::int64_t get_global_bytes_accessed_per_launch() const
+  void add_global_memory_reads(std::size_t bytes, std::string column_name);
+
+  template <typename ElementType>
+  void add_global_memory_writes(std::size_t count, std::string column_name = {})
   {
-    return m_global_bytes_accessed_per_launch;
+    this->add_global_memory_writes(count * sizeof(ElementType),
+                                   std::move(column_name));
+  }
+  void add_global_memory_writes(std::size_t bytes, std::string column_name);
+
+  void set_global_memory_rw_bytes(nvbench::int64_t bytes)
+  {
+    m_global_memory_rw_bytes = bytes;
+  }
+  [[nodiscard]] nvbench::int64_t get_global_memory_rw_bytes() const
+  {
+    return m_global_memory_rw_bytes;
   }
 
   void skip(std::string reason) { m_skip_reason = std::move(reason); }
@@ -196,8 +214,8 @@ private:
 
   std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;
-  nvbench::int64_t m_items_processed_per_launch{};
-  nvbench::int64_t m_global_bytes_accessed_per_launch{};
+  nvbench::int64_t m_element_count{};
+  nvbench::int64_t m_global_memory_rw_bytes{};
 };
 
 } // namespace nvbench

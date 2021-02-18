@@ -46,7 +46,7 @@ void measure_cold_base::check()
 
 void measure_cold_base::generate_summaries()
 {
-  const auto d_samples    = static_cast<double>(m_total_samples);
+  const auto d_samples = static_cast<double>(m_total_samples);
   {
     auto &summ = m_state.add_summary("Number of Samples (Cold)");
     summ.set_string("hint", "sample_size");
@@ -98,17 +98,17 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", m_cuda_noise);
   }
 
-  if (const auto items = m_state.get_items_processed_per_launch(); items != 0)
+  if (const auto items = m_state.get_element_count(); items != 0)
   {
     auto &summ = m_state.add_summary("Element Throughput");
     summ.set_string("hint", "item_rate");
     summ.set_string("short_name", "Elem/s");
-    summ.set_string("description", "Number of input elements handled per second.");
+    summ.set_string("description",
+                    "Number of input elements handled per second.");
     summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
   }
 
-  if (const auto bytes = m_state.get_global_bytes_accessed_per_launch();
-    bytes != 0)
+  if (const auto bytes = m_state.get_global_memory_rw_bytes(); bytes != 0)
   {
     const auto avg_used_gmem_bw = static_cast<double>(bytes) / avg_cuda_time;
     {
