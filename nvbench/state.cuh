@@ -68,11 +68,11 @@ struct state
 
   void add_element_count(std::size_t elements, std::string column_name = {});
 
-  void set_element_count(nvbench::int64_t elements)
+  void set_element_count(std::size_t elements)
   {
     m_element_count = elements;
   }
-  [[nodiscard]] nvbench::int64_t get_element_count() const
+  [[nodiscard]] std::size_t get_element_count() const
   {
     return m_element_count;
   }
@@ -93,11 +93,11 @@ struct state
   }
   void add_global_memory_writes(std::size_t bytes, std::string column_name);
 
-  void set_global_memory_rw_bytes(nvbench::int64_t bytes)
+  void set_global_memory_rw_bytes(std::size_t bytes)
   {
     m_global_memory_rw_bytes = bytes;
   }
-  [[nodiscard]] nvbench::int64_t get_global_memory_rw_bytes() const
+  [[nodiscard]] std::size_t get_global_memory_rw_bytes() const
   {
     return m_global_memory_rw_bytes;
   }
@@ -214,8 +214,8 @@ private:
 
   std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;
-  nvbench::int64_t m_element_count{};
-  nvbench::int64_t m_global_memory_rw_bytes{};
+  std::size_t m_element_count{};
+  std::size_t m_global_memory_rw_bytes{};
 };
 
 } // namespace nvbench

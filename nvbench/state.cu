@@ -152,7 +152,7 @@ std::string state::get_short_description() const
 void state::add_element_count(std::size_t elements,
                               std::string column_name)
 {
-  m_element_count += static_cast<nvbench::int64_t>(elements);
+  m_element_count += elements;
   if (!column_name.empty())
   {
     auto &summ = this->add_summary("Element count: " + column_name);
@@ -163,7 +163,7 @@ void state::add_element_count(std::size_t elements,
 
 void state::add_global_memory_reads(std::size_t bytes, std::string column_name)
 {
-  m_global_memory_rw_bytes += static_cast<nvbench::int64_t>(bytes);
+  m_global_memory_rw_bytes += bytes;
   if (!column_name.empty())
   {
     auto &summ = this->add_summary("Input Buffer Size: " + column_name);
@@ -175,7 +175,7 @@ void state::add_global_memory_reads(std::size_t bytes, std::string column_name)
 
 void state::add_global_memory_writes(std::size_t bytes, std::string column_name)
 {
-  m_global_memory_rw_bytes += static_cast<nvbench::int64_t>(bytes);
+  m_global_memory_rw_bytes += bytes;
   if (!column_name.empty())
   {
     auto &summ = this->add_summary("Output Buffer Size: " + column_name);
