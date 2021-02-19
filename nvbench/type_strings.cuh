@@ -11,18 +11,19 @@ namespace nvbench
 namespace detail
 {
 std::string demangle(const std::string &str);
+
+template <typename T>
+std::string demangle() { return demangle(typeid(T).name()); }
 }
 
 template <typename T>
 struct type_strings
 {
-  // TODO demangle on GCC/Clang
-
   // The string used to identify the type in shorthand (e.g. output tables and
   // CLI options):
   static std::string input_string()
   {
-    return nvbench::detail::demangle(typeid(T).name());
+    return nvbench::detail::demangle<T>();
   }
 
   // A more descriptive identifier for the type, if input_string is not a common
