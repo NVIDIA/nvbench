@@ -1,13 +1,7 @@
 #include <nvbench/benchmark_base.cuh>
 
-#include <nvbench/device_manager.cuh>
-
 namespace nvbench
 {
-
-benchmark_base::benchmark_base()
-    : m_devices(nvbench::device_manager::get().get_devices())
-{}
 
 benchmark_base::~benchmark_base() = default;
 

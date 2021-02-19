@@ -2,6 +2,7 @@
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/device_info.cuh>
+#include <nvbench/device_manager.cuh>
 #include <nvbench/state.cuh>
 
 #include <memory>
@@ -24,7 +25,12 @@ struct runner;
  */
 struct benchmark_base
 {
-  benchmark_base();
+  template <typename TypeAxes>
+  explicit benchmark_base(TypeAxes type_axes)
+      : m_axes(type_axes)
+      , m_devices(nvbench::device_manager::get().get_devices())
+  {}
+
   virtual ~benchmark_base();
 
   /**

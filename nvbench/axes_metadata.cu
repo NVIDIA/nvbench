@@ -1,6 +1,9 @@
 #include <nvbench/axes_metadata.cuh>
 
+#include <nvbench/detail/throw.cuh>
+
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <stdexcept>
@@ -26,6 +29,38 @@ axes_metadata &axes_metadata::operator=(const axes_metadata &other)
     m_axes.push_back(axis->clone());
   }
   return *this;
+}
+
+void axes_metadata::set_type_axes_names(std::vector<std::string> names)
+try
+{
+  if (names.size() < m_axes.size())
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Number of names exceeds number of axes ({}).",
+                  m_axes.size());
+  }
+
+  for (std::size_t i = 0; i < names.size(); ++i)
+  {
+    auto &axis = *m_axes[i];
+    if (axis.get_type() != nvbench::axis_type::type)
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "Number of names exceeds number of type axes ({})",
+                    i);
+    }
+
+    axis.set_name(std::move(names[i]));
+  }
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error in set_type_axes_names:\n{}\n"
+                "TypeAxesNames: {}",
+                e.what(),
+                names);
 }
 
 void axes_metadata::add_float64_axis(std::string name,
@@ -203,6 +238,34 @@ axis_base &axes_metadata::get_axis(std::string_view name,
                                          axis.get_type()));
   }
   return axis;
+}
+
+std::vector<std::string>
+axes_metadata::generate_default_type_axis_names(std::size_t num_type_axes)
+{
+  switch (num_type_axes)
+  {
+    case 0:
+      return {};
+    case 1:
+      return {"T"};
+    case 2:
+      return {"T", "U"};
+    case 3:
+      return {"T", "U", "V"};
+    case 4:
+      return {"T", "U", "V", "W"};
+    default:
+      break;
+  }
+
+  std::vector<std::string> result;
+  result.reserve(num_type_axes);
+  for (std::size_t i = 0; i < num_type_axes; ++i)
+  {
+    result.emplace_back(fmt::format("T{}", i));
+  }
+  return result;
 }
 
 } // namespace nvbench

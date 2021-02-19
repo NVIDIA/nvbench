@@ -25,6 +25,7 @@ struct axis_base
   [[nodiscard]] std::unique_ptr<axis_base> clone() const;
 
   [[nodiscard]] const std::string &get_name() const { return m_name; }
+  void set_name(std::string name) { m_name = std::move(name); }
 
   [[nodiscard]] axis_type get_type() const { return m_type; }
 

@@ -20,6 +20,9 @@ struct axes_metadata
 {
   using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
 
+  template <typename... TypeAxes>
+  explicit axes_metadata(nvbench::type_list<TypeAxes...>);
+
   axes_metadata()                 = default;
   axes_metadata(axes_metadata &&) = default;
   axes_metadata &operator=(axes_metadata &&) = default;
@@ -27,7 +30,6 @@ struct axes_metadata
   axes_metadata(const axes_metadata &);
   axes_metadata &operator=(const axes_metadata &);
 
-  template <typename type_axes>
   void set_type_axes_names(std::vector<std::string> names);
 
   void add_int64_axis(std::string name,
@@ -68,32 +70,37 @@ struct axes_metadata
   [[nodiscard]] nvbench::axis_base &get_axis(std::string_view name,
                                              nvbench::axis_type type);
 
+  [[nodiscard]] static std::vector<std::string>
+  generate_default_type_axis_names(std::size_t num_type_axes);
+
 private:
   axes_type m_axes;
 };
 
-template <typename type_axes>
-void axes_metadata::set_type_axes_names(std::vector<std::string> names)
+template <typename ...TypeAxes>
+axes_metadata::axes_metadata(nvbench::type_list<TypeAxes...>)
+    : axes_metadata{}
 {
-  if (names.size() != nvbench::tl::size<type_axes>::value)
-  { // TODO Find a way to get a better error message w/o bringing fmt
-    // into this header.
-    throw std::runtime_error("set_type_axes_names(): len(names) != "
-                             "len(type_axes)");
-  }
-  std::size_t axis_index = 0;
-  auto names_iter        = names.begin(); // contents will be moved from
-  nvbench::tl::foreach<type_axes>([&axes = m_axes, &names_iter, &axis_index](
-                                    [[maybe_unused]] auto wrapped_type) {
-    // Note:
-    // The word "type" appears 6 times in the next line.
-    // Every. Single. Token.
-    typedef typename decltype(wrapped_type)::type type_list;
-    auto axis = std::make_unique<nvbench::type_axis>(std::move(*names_iter++),
-                                                     axis_index++);
-    axis->set_inputs<type_list>();
-    axes.push_back(std::move(axis));
-  });
+  using type_axes = nvbench::type_list<TypeAxes...>;
+  constexpr auto num_type_axes = nvbench::tl::size<type_axes>::value;
+  auto names = axes_metadata::generate_default_type_axis_names(num_type_axes);
+
+  auto names_iter = names.begin(); // contents will be moved from
+  nvbench::tl::foreach<type_axes>(
+    [&axes = m_axes, &names_iter]([[maybe_unused]] auto wrapped_type) {
+      // This is always called before other axes are added, so the length of the
+      // axes vector will be the type axis index:
+      const std::size_t type_axis_index = axes.size();
+
+      // Note:
+      // The word "type" appears 6 times in the next line.
+      // Every. Single. Token.
+      typedef typename decltype(wrapped_type)::type type_list;
+      auto axis = std::make_unique<nvbench::type_axis>(std::move(*names_iter++),
+                                                       type_axis_index);
+      axis->set_inputs<type_list>();
+      axes.push_back(std::move(axis));
+    });
 }
 
 } // namespace nvbench

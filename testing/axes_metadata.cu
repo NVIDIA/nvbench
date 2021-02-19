@@ -24,10 +24,81 @@ using three_type_axes = nvbench::type_list<int_list, float_list, misc_list>;
 
 using no_types = nvbench::type_list<>;
 
+void test_default_type_axes_names()
+{
+  using TL = nvbench::type_list<int>;
+
+  {
+    nvbench::axes_metadata axes{};
+    ASSERT(axes.get_axes().size() == 0);
+  }
+
+  {
+    nvbench::axes_metadata axes{nvbench::type_list<>{}};
+    ASSERT(axes.get_axes().size() == 0);
+  }
+
+  {
+    nvbench::axes_metadata axes{nvbench::type_list<TL>{}};
+    ASSERT(axes.get_axes().size() == 1);
+    ASSERT(axes.get_type_axis(0).get_name() == "T");
+    ASSERT(axes.get_type_axis(0).get_axis_index() == 0);
+  }
+
+  {
+    nvbench::axes_metadata axes{nvbench::type_list<TL, TL>{}};
+    ASSERT(axes.get_axes().size() == 2);
+    ASSERT(axes.get_type_axis(0).get_name() == "T");
+    ASSERT(axes.get_type_axis(0).get_axis_index() == 0);
+    ASSERT(axes.get_type_axis(1).get_name() == "U");
+    ASSERT(axes.get_type_axis(1).get_axis_index() == 1);
+  }
+
+  {
+    nvbench::axes_metadata axes{nvbench::type_list<TL, TL, TL>{}};
+    ASSERT(axes.get_axes().size() == 3);
+    ASSERT(axes.get_type_axis(0).get_name() == "T");
+    ASSERT(axes.get_type_axis(0).get_axis_index() == 0);
+    ASSERT(axes.get_type_axis(1).get_name() == "U");
+    ASSERT(axes.get_type_axis(1).get_axis_index() == 1);
+    ASSERT(axes.get_type_axis(2).get_name() == "V");
+    ASSERT(axes.get_type_axis(2).get_axis_index() == 2);
+  }
+
+  {
+    nvbench::axes_metadata axes{nvbench::type_list<TL, TL, TL, TL>{}};
+    ASSERT(axes.get_axes().size() == 4);
+    ASSERT(axes.get_type_axis(0).get_name() == "T");
+    ASSERT(axes.get_type_axis(0).get_axis_index() == 0);
+    ASSERT(axes.get_type_axis(1).get_name() == "U");
+    ASSERT(axes.get_type_axis(1).get_axis_index() == 1);
+    ASSERT(axes.get_type_axis(2).get_name() == "V");
+    ASSERT(axes.get_type_axis(2).get_axis_index() == 2);
+    ASSERT(axes.get_type_axis(3).get_name() == "W");
+    ASSERT(axes.get_type_axis(3).get_axis_index() == 3);
+  }
+
+  {
+    nvbench::axes_metadata axes{nvbench::type_list<TL, TL, TL, TL, TL>{}};
+    ASSERT(axes.get_axes().size() == 5);
+    ASSERT(axes.get_type_axis(0).get_name() == "T0");
+    ASSERT(axes.get_type_axis(0).get_axis_index() == 0);
+    ASSERT(axes.get_type_axis(1).get_name() == "T1");
+    ASSERT(axes.get_type_axis(1).get_axis_index() == 1);
+    ASSERT(axes.get_type_axis(2).get_name() == "T2");
+    ASSERT(axes.get_type_axis(2).get_axis_index() == 2);
+    ASSERT(axes.get_type_axis(3).get_name() == "T3");
+    ASSERT(axes.get_type_axis(3).get_axis_index() == 3);
+    ASSERT(axes.get_type_axis(4).get_name() == "T4");
+    ASSERT(axes.get_type_axis(4).get_axis_index() == 4);
+  }
+
+}
+
 void test_type_axes()
 {
-  nvbench::axes_metadata axes;
-  axes.set_type_axes_names<three_type_axes>({"Integer", "Float", "Other"});
+  nvbench::axes_metadata axes{three_type_axes{}};
+  axes.set_type_axes_names({"Integer", "Float", "Other"});
 
   ASSERT(axes.get_type_axis("Integer").get_name() == "Integer");
   ASSERT(axes.get_type_axis("Float").get_name() == "Float");
@@ -143,6 +214,7 @@ void test_string_axes()
 
 int main()
 {
+  test_default_type_axes_names();
   test_type_axes();
   test_float64_axes();
   test_int64_axes();

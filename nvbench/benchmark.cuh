@@ -3,8 +3,8 @@
 #include <nvbench/benchmark_base.cuh>
 
 #include <nvbench/axes_metadata.cuh>
-#include <nvbench/type_list.cuh>
 #include <nvbench/runner.cuh>
+#include <nvbench/type_list.cuh>
 
 #include <string>
 #include <vector>
@@ -42,7 +42,9 @@ struct benchmark final : public benchmark_base
   static constexpr std::size_t num_type_configs =
     nvbench::tl::size<type_configs>{};
 
-  using benchmark_base::benchmark_base;
+  benchmark::benchmark()
+      : benchmark_base(type_axes{})
+  {}
 
   // Note that this inline virtual dtor may cause vtable issues if linking
   // benchmark TUs together. That's not a likely scenario, so we'll deal with
@@ -57,7 +59,7 @@ private:
 
   void do_set_type_axes_names(std::vector<std::string> names) final
   {
-    m_axes.template set_type_axes_names<type_axes>(std::move(names));
+    m_axes.set_type_axes_names(std::move(names));
   }
 
   void do_run() final
