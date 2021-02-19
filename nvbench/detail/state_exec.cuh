@@ -20,7 +20,7 @@ namespace nvbench
 template <typename ExecTags, typename KernelLauncher>
 void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
 {
-  using KL = std::remove_reference_t<KernelLauncher>;
+  using KL = typename std::remove_reference<KernelLauncher>::type;
   using namespace nvbench::exec_tag::impl;
   static_assert(is_exec_tag_v<ExecTags>,
                 "`ExecTags` argument must be a member (or combination of "
@@ -68,7 +68,8 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
       using wrapper_t = nvbench::detail::kernel_launch_timer_wrapper<KL>;
       using measure_t =
         nvbench::detail::measure_cold<wrapper_t, use_blocking_kernel>;
-      measure_t measure(*this, wrapper_t{kernel_launcher});
+      wrapper_t wrapper{kernel_launcher};
+      measure_t measure(*this, wrapper);
       measure();
     }
   }
