@@ -284,30 +284,46 @@ void option_parser::parse(std::vector<std::string> args)
 
 void option_parser::parse_impl()
 {
-  auto cur_arg       = m_args.cbegin();
-  const auto arg_end = m_args.cend();
+  m_global_args.clear();
 
-  // The first arg may be the executable name:
-  if (cur_arg != arg_end && !cur_arg->empty() && cur_arg->front() != '-')
+  this->parse_range(m_args.cbegin(), m_args.cend());
+
+  if (m_benchmarks.empty())
   {
-    cur_arg++;
+    // If no benchmarks were specified, add all:
+    const auto &benches = nvbench::benchmark_manager::get().get_benchmarks();
+    for (const auto &bench_ptr : benches)
+    {
+      m_benchmarks.push_back(bench_ptr->clone());
+      this->replay_global_args();
+    }
+  }
+}
+
+void option_parser::parse_range(option_parser::arg_iterator_t first,
+                                option_parser::arg_iterator_t last)
+{
+  // The first arg may be the executable name:
+  if (first != last && !first->empty() && first->front() != '-')
+  {
+    first++;
   }
 
-  auto check_params = [&cur_arg, &arg_end](std::size_t num_params) {
-    const std::size_t rem_args = std::distance(cur_arg, arg_end) - 1;
+  auto check_params = [&first, &last](std::size_t num_params) {
+    const std::size_t rem_args = std::distance(first, last) - 1;
     if (rem_args < num_params)
     {
       NVBENCH_THROW(std::runtime_error,
                     "Option '{}' requires {} parameters, {} provided.",
-                    *cur_arg,
+                    *first,
                     num_params,
                     rem_args);
     }
   };
 
-  while (cur_arg < arg_end)
+  while (first < last)
   {
-    const auto &arg = *cur_arg;
+    const auto &arg = *first;
 
     if (arg == "--list" || arg == "-l")
     {
@@ -317,33 +333,33 @@ void option_parser::parse_impl()
     else if (arg == "--benchmark" || arg == "-b")
     {
       check_params(1);
-      this->add_benchmark(cur_arg[1]);
-      cur_arg += 2;
+      this->add_benchmark(first[1]);
+      first += 2;
     }
     else if (arg == "--devices" || arg == "-d" || arg == "--device")
     {
       check_params(1);
-      this->update_devices(cur_arg[1]);
-      cur_arg += 2;
+      this->update_devices(first[1]);
+      first += 2;
     }
     else if (arg == "--axis" || arg == "-a")
     {
       check_params(1);
-      this->update_axis(cur_arg[1]);
-      cur_arg += 2;
+      this->update_axis(first[1]);
+      first += 2;
     }
     else if (arg == "--min-samples")
     {
       check_params(1);
-      this->update_int64_prop(cur_arg[0], cur_arg[1]);
-      cur_arg += 2;
+      this->update_int64_prop(first[0], first[1]);
+      first += 2;
     }
     else if (arg == "--min-time" || arg == "--max-noise" ||
              arg == "--skip-time" || arg == "--timeout")
     {
       check_params(1);
-      this->update_float64_prop(cur_arg[0], cur_arg[1]);
-      cur_arg += 2;
+      this->update_float64_prop(first[0], first[1]);
+      first += 2;
     }
     else
     {
@@ -351,13 +367,6 @@ void option_parser::parse_impl()
                     "Unrecognized command-line argument: `{}`.",
                     arg);
     }
-  }
-
-  if (m_benchmarks.empty())
-  {
-    // If no benchmarks were specified, run all:
-    const auto &mgr = nvbench::benchmark_manager::get();
-    m_benchmarks    = mgr.clone_benchmarks();
   }
 }
 
@@ -386,6 +395,9 @@ try
 
   m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(idx).clone()
                                   : mgr.get_benchmark(name).clone());
+
+  // Initialize the new benchmark with any global arguments:
+  this->replay_global_args();
 }
 catch (std::exception &e)
 {
@@ -395,21 +407,22 @@ catch (std::exception &e)
                 e.what());
 }
 
+void option_parser::replay_global_args()
+{
+  this->parse_range(m_global_args.cbegin(), m_global_args.cend());
+}
+
 void option_parser::update_devices(const std::string &devices)
 try
 {
+  // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    // If only one benchmark present, just add it. Otherwise error out.
-    const auto &mgr = nvbench::benchmark_manager::get();
-    if (mgr.get_benchmarks().size() != 1)
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "{}",
-                    "`--devices <...>` must follow `--benchmark <...>`.");
-    }
-    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
+    m_global_args.push_back("-devices");
+    m_global_args.push_back(devices);
+    return;
   }
+
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_devices(parse_values<nvbench::int32_t>(devices));
 }
@@ -442,19 +455,14 @@ try
   // Value spec: "[<start> : <stop>]" <- Range, inclusive start/stop
   // Value spec: "[<start> : <stop> : <stride>]" <- Range, explicit stride
 
-  // Check that an active benchmark exists:
+  // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    // If only one benchmark present, just add it. Otherwise error out.
-    const auto &mgr = nvbench::benchmark_manager::get();
-    if (mgr.get_benchmarks().size() != 1)
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "{}",
-                    "`--axis <...>` must follow `--benchmark <...>`.");
-    }
-    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
+    m_global_args.push_back("--axis");
+    m_global_args.push_back(spec);
+    return;
   }
+
   benchmark_base &bench = *m_benchmarks.back();
 
   const auto [name, flags, values] = parse_axis_key_flag_value_spec(spec);
@@ -583,19 +591,14 @@ void option_parser::update_int64_prop(const std::string &prop_arg,
                                       const std::string &prop_val)
 try
 {
+  // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    // If only one benchmark present, just add it. Otherwise error out.
-    const auto &mgr = nvbench::benchmark_manager::get();
-    if (mgr.get_benchmarks().size() != 1)
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "`{} {}` must follow `--benchmark <...>`.",
-                    prop_arg,
-                    prop_val);
-    }
-    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
+    m_global_args.push_back(prop_arg);
+    m_global_args.push_back(prop_val);
+    return;
   }
+
   benchmark_base &bench = *m_benchmarks.back();
 
   nvbench::int64_t value{};
@@ -622,19 +625,14 @@ void option_parser::update_float64_prop(const std::string &prop_arg,
                                         const std::string &prop_val)
 try
 {
+  // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    // If only one benchmark present, just add it. Otherwise error out.
-    const auto &mgr = nvbench::benchmark_manager::get();
-    if (mgr.get_benchmarks().size() != 1)
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "`{} {}` must follow `--benchmark <...>`.",
-                    prop_arg,
-                    prop_val);
-    }
-    m_benchmarks.push_back(mgr.get_benchmark(0).clone());
+    m_global_args.push_back(prop_arg);
+    m_global_args.push_back(prop_val);
+    return;
   }
+
   benchmark_base &bench = *m_benchmarks.back();
 
   nvbench::float64_t value{};

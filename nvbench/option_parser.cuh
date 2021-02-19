@@ -34,9 +34,13 @@ struct option_parser
 private:
   void parse_impl();
 
+  using arg_iterator_t = std::vector<std::string>::const_iterator;
+  void parse_range(arg_iterator_t first, arg_iterator_t last);
+
   void print_list() const;
 
   void add_benchmark(const std::string &name);
+  void replay_global_args();
 
   void update_devices(const std::string &devices);
 
@@ -59,7 +63,12 @@ private:
   void update_float64_prop(const std::string &prop_arg,
                            const std::string &prop_val);
 
+  // less gross argv:
   std::vector<std::string> m_args;
+
+  // Store benchmark modifiers passed in before any benchmarks are requested as
+  // "global args". Replay them after every benchmark.
+  std::vector<std::string> m_global_args;
   benchmark_vector m_benchmarks;
 };
 
