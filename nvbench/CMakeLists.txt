@@ -9,6 +9,7 @@ set(srcs
   device_manager.cu
   float64_axis.cu
   int64_axis.cu
+  markdown_format.cu
   named_values.cu
   option_parser.cu
   runner.cu
@@ -17,7 +18,6 @@ set(srcs
   type_axis.cu
   type_strings.cu
 
-  detail/markdown_format.cu
   detail/measure_cold.cu
   detail/measure_hot.cu
   detail/state_generator.cu

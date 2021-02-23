@@ -3,13 +3,14 @@
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/range.cuh>
 
-#include <nvbench/detail/markdown_format.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/markdown_format.cuh>
 
 #include <fmt/format.h>
 
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <iterator>
 #include <regex>
 #include <stdexcept>
@@ -372,10 +373,11 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
 
 void option_parser::print_list() const
 {
-  using printer         = nvbench::detail::markdown_format;
   const auto &bench_mgr = nvbench::benchmark_manager::get();
-  printer::print_device_info();
-  printer::print_benchmark_summaries(bench_mgr.get_benchmarks());
+
+  nvbench::markdown_format printer{std::cout};
+  printer.print_device_info();
+  printer.print_benchmark_list(bench_mgr.get_benchmarks());
 }
 
 void option_parser::add_benchmark(const std::string &name)
