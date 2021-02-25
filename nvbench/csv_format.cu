@@ -1,0 +1,173 @@
+#include <nvbench/csv_format.cuh>
+
+#include <nvbench/axes_metadata.cuh>
+#include <nvbench/benchmark_base.cuh>
+#include <nvbench/device_info.cuh>
+#include <nvbench/summary.cuh>
+
+#include <nvbench/internal/table_builder.cuh>
+
+#include <fmt/format.h>
+
+#include <cstdint>
+#include <string>
+#include <variant>
+#include <vector>
+
+namespace nvbench
+{
+
+void csv_format::do_print_benchmark_results(const benchmark_vector &benches)
+{
+  auto format_visitor = [](const auto &v) {
+    using T = std::decay_t<decltype(v)>;
+    if constexpr (std::is_same_v<T, std::string>)
+    {
+      return v;
+    }
+    return fmt::format("{}", v);
+  };
+
+  // Prepare table:
+  nvbench::internal::table_builder table;
+  std::size_t row = 0;
+  for (const auto &bench_ptr : benches)
+  {
+    const auto &bench = *bench_ptr;
+    const auto &axes  = bench.get_axes();
+
+    const auto &bench_name = bench.get_name();
+
+    for (const auto &cur_state : bench.get_states())
+    {
+      std::optional<nvbench::device_info> device = cur_state.get_device();
+
+      std::string device_id   = device ? fmt::to_string(device->get_id())
+                                       : std::string{};
+      std::string device_name = device ? std::string{device->get_name()}
+                                       : std::string{};
+
+      table.add_cell(row, "_bench_name", "Benchmark", bench_name);
+      table.add_cell(row, "_device_id", "Device", std::move(device_id));
+      table.add_cell(row, "_device_name", "Device Name", std::move(device_name));
+
+      const auto &axis_values = cur_state.get_axis_values();
+      for (const auto &name : axis_values.get_names())
+      {
+        // Handle power-of-two int64 axes differently:
+        if (axis_values.get_type(name) == named_values::type::int64 &&
+            axes.get_int64_axis(name).is_power_of_two())
+        {
+          const nvbench::int64_t value    = axis_values.get_int64(name);
+          const nvbench::int64_t exponent = int64_axis::compute_log2(value);
+          table.add_cell(row,
+                         name + "_axis_pow2_pretty",
+                         name + " (pow2)",
+                         fmt::format("2^{}", exponent));
+          table.add_cell(row,
+                         name + "_axis_plain",
+                         fmt::format("{}", name),
+                         fmt::to_string(value));
+        }
+        else
+        {
+          std::string value = std::visit(format_visitor,
+                                         axis_values.get_value(name));
+          table.add_cell(row, name + "_axis", name, std::move(value));
+        }
+      }
+
+      if (cur_state.is_skipped())
+      {
+        table.add_cell(row, "_skip_reason", "Skipped", "Yes");
+        row++;
+        continue;
+      }
+
+      table.add_cell(row, "_skip_reason", "Skipped", "No");
+
+      for (const auto &summ : cur_state.get_summaries())
+      {
+        if (summ.has_value("hide"))
+        {
+          continue;
+        }
+        const std::string &key    = summ.get_name();
+        const std::string &header = summ.has_value("short_name")
+                                      ? summ.get_string("short_name")
+                                      : key;
+
+        const std::string hint = summ.has_value("hint")
+                                   ? summ.get_string("hint")
+                                   : std::string{};
+        std::string value = std::visit(format_visitor, summ.get_value("value"));
+        if (hint == "duration")
+        {
+          table.add_cell(row, key, header + " (sec)", std::move(value));
+        }
+        else if (hint == "item_rate")
+        {
+          table.add_cell(row, key, header + " (elem/sec)", std::move(value));
+        }
+        else if (hint == "bytes")
+        {
+          table.add_cell(row, key, header + " (bytes)", std::move(value));
+        }
+        else if (hint == "byte_rate")
+        {
+          table.add_cell(row, key, header + " (bytes/sec)", std::move(value));
+        }
+        else if (hint == "sample_size")
+        {
+          table.add_cell(row, key, header, std::move(value));
+        }
+        else if (hint == "percentage")
+        {
+          table.add_cell(row, key, header + " (%)", std::move(value));
+        }
+        else
+        {
+          table.add_cell(row, key, header, std::move(value));
+        }
+      }
+      row++;
+    }
+  }
+
+  if (table.m_columns.empty())
+  { // No data.
+    return;
+  }
+
+  // Pad with empty strings if needed.
+  table.fix_row_lengths();
+
+  fmt::memory_buffer buffer;
+  { // Headers:
+    std::size_t remaining = table.m_columns.size();
+    for (const auto &col : table.m_columns)
+    {
+      fmt::format_to(buffer, "{}{}", col.header, (--remaining == 0) ? "" : ",");
+    }
+    fmt::format_to(buffer, "\n");
+  }
+
+  { // Rows
+    for (std::size_t i = 0; i < table.m_num_rows; ++i)
+    {
+      std::size_t remaining = table.m_columns.size();
+      for (const auto &col : table.m_columns)
+      {
+        fmt::format_to(buffer,
+                       "{}{}",
+                       col.rows[i],
+                       (--remaining == 0) ? "" : ",");
+      }
+      fmt::format_to(buffer, "\n");
+    }
+  }
+
+  m_ostream << fmt::to_string(buffer);
+}
+
+} // namespace nvbench

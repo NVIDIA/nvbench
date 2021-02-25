@@ -4,6 +4,7 @@ set(srcs
   benchmark_base.cu
   benchmark_manager.cu
   blocking_kernel.cu
+  csv_format.cu
   cuda_call.cu
   device_info.cu
   device_manager.cu
