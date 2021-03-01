@@ -13,6 +13,7 @@ set(srcs
   markdown_format.cu
   named_values.cu
   option_parser.cu
+  output_multiplex.cu
   runner.cu
   state.cu
   string_axis.cu
