@@ -27,6 +27,12 @@ struct output_format
   explicit output_format(std::ostream &ostream);
   ~output_format();
 
+  // move-only
+  output_format(const output_format &) = delete;
+  output_format(output_format &&)      = default;
+  output_format &operator=(const output_format &) = delete;
+  output_format &operator=(output_format &&) = default;
+
   /*!
    * Print a summary of all detected devices, if supported.
    *
