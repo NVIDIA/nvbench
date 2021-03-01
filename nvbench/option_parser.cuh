@@ -1,13 +1,21 @@
 #pragma once
 
-#include <nvbench/benchmark_base.cuh>
+#include <nvbench/output_multiplex.cuh>
 
+#include <iosfwd>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace nvbench
 {
+
+struct benchmark_base;
+struct float64_axis;
+struct int64_axis;
+struct output_format;
+struct string_axis;
+struct type_axis;
 
 /**
  * Parses command-line args into a set of benchmarks.
@@ -16,6 +24,9 @@ struct option_parser
 {
   using benchmark_vector =
     std::vector<std::unique_ptr<nvbench::benchmark_base>>;
+
+  option_parser();
+  ~option_parser();
 
   void parse(int argc, char const *const argv[]);
   void parse(std::vector<std::string> args);
@@ -31,11 +42,28 @@ struct option_parser
     return m_args;
   }
 
+  /*!
+   * Returns the output format requested by the parse options.
+   *
+   * If no output format requested, markdown + stdout are used.
+   *
+   * If multiple formats requested, an output_multiple is used.
+   *
+   * The returned object is only valid for the lifetime of this option_parser.
+   */
+  // output_format has no useful const API, so no const overload.
+  [[nodiscard]] nvbench::output_format &get_printer();
+
 private:
   void parse_impl();
 
   using arg_iterator_t = std::vector<std::string>::const_iterator;
   void parse_range(arg_iterator_t first, arg_iterator_t last);
+
+  void add_markdown_format(const std::string &spec);
+  void add_csv_format(const std::string &spec);
+
+  std::ostream &output_format_spec_to_ostream(const std::string &spec);
 
   void print_list() const;
 
@@ -70,6 +98,11 @@ private:
   // "global args". Replay them after every benchmark.
   std::vector<std::string> m_global_args;
   benchmark_vector m_benchmarks;
+
+  // Manages lifetimes of any ofstreams opened for m_printer.
+  std::vector<std::unique_ptr<std::ofstream>> m_ofstream_storage;
+
+  nvbench::output_multiplex m_printer;
 };
 
 } // namespace nvbench

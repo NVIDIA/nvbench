@@ -3,8 +3,8 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/cuda_call.cuh>
-#include <nvbench/markdown_format.cuh>
 #include <nvbench/option_parser.cuh>
+#include <nvbench/output_format.cuh>
 
 #include <iostream>
 
@@ -32,8 +32,8 @@
   {                                                                            \
     nvbench::option_parser parser;                                             \
     parser.parse(argc, argv);                                                  \
+    auto &printer = parser.get_printer();                                      \
                                                                                \
-    nvbench::markdown_format printer(std::cout);                               \
     printer.print_device_info();                                               \
     printer.print_log_preamble();                                              \
     auto &benchmarks = parser.get_benchmarks();                                \

@@ -1,17 +1,22 @@
 #include <nvbench/option_parser.cuh>
 
+#include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
+#include <nvbench/csv_format.cuh>
+#include <nvbench/markdown_format.cuh>
+#include <nvbench/output_format.cuh>
 #include <nvbench/range.cuh>
 
 #include <nvbench/detail/throw.cuh>
-#include <nvbench/markdown_format.cuh>
 
 #include <fmt/format.h>
 
 #include <cassert>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <regex>
 #include <stdexcept>
 #include <string>
@@ -265,6 +270,10 @@ auto parse_axis_key_flag_value_spec(const std::string &spec)
 namespace nvbench
 {
 
+// Defined here to avoid including <fstream> in the header.
+option_parser::option_parser() = default;
+option_parser::~option_parser() = default;
+
 void option_parser::parse(int argc, char const *const *argv)
 {
   m_args.clear();
@@ -331,6 +340,18 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->print_list();
       std::exit(0);
     }
+    else if (arg == "--markdown"  || arg == "--md")
+    {
+      check_params(1);
+      this->add_markdown_format(first[1]);
+      first += 2;
+    }
+    else if (arg == "--csv")
+    {
+      check_params(1);
+      this->add_csv_format(first[1]);
+      first += 2;
+    }
     else if (arg == "--benchmark" || arg == "-b")
     {
       check_params(1);
@@ -368,6 +389,67 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
                     "Unrecognized command-line argument: `{}`.",
                     arg);
     }
+  }
+}
+
+void option_parser::add_markdown_format(const std::string &spec)
+try
+{
+  std::ostream &stream = this->output_format_spec_to_ostream(spec);
+  m_printer.emplace<nvbench::markdown_format>(stream);
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error while adding markdown output for `{}`:\n{}",
+                spec,
+                e.what());
+}
+
+void option_parser::add_csv_format(const std::string &spec)
+try
+{
+  std::ostream &stream = this->output_format_spec_to_ostream(spec);
+  m_printer.emplace<nvbench::csv_format>(stream);
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error while adding csv output for `{}`:\n{}",
+                spec,
+                e.what());
+}
+
+std::ostream &
+option_parser::output_format_spec_to_ostream(const std::string &spec)
+{
+  if (spec == "stdout")
+  {
+    return std::cout;
+  }
+  else if (spec == "stderr")
+  {
+    return std::cerr;
+  }
+  else
+  {
+    m_ofstream_storage.push_back(std::make_unique<std::ofstream>());
+    auto &file_stream = *m_ofstream_storage.back();
+
+    // Throw if file can't open
+    file_stream.exceptions(file_stream.exceptions() | std::ios::failbit);
+
+    try
+    {
+      file_stream.open(spec);
+    }
+    catch (...)
+    {
+      m_ofstream_storage.pop_back();
+      throw;
+    }
+
+    return file_stream;
   }
 }
 
@@ -667,6 +749,15 @@ catch (std::exception &e)
                 prop_arg,
                 prop_val,
                 e.what());
+}
+
+nvbench::output_format &option_parser::get_printer()
+{
+  if (m_printer.get_output_count() == 0)
+  {
+    this->add_markdown_format("stdout");
+  }
+  return m_printer;
 }
 
 } // namespace nvbench
