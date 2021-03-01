@@ -23,6 +23,11 @@ struct output_multiplex : nvbench::output_format
     return static_cast<Format &>(*m_formats.back());
   }
 
+  [[nodiscard]] std::size_t get_output_count() const
+  {
+    return m_formats.size();
+  }
+
 private:
   void do_print_device_info();
   void do_print_log_preamble();
