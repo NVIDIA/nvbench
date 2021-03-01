@@ -1,7 +1,7 @@
 #pragma once
 
+#include <iosfwd>
 #include <memory>
-#include <ostream>
 #include <vector>
 
 namespace nvbench
@@ -24,9 +24,8 @@ struct output_format
   /*!
    * Construct a new output_format that will write to ostream.
    */
-  explicit output_format(std::ostream &ostream)
-      : m_ostream{ostream}
-  {}
+  explicit output_format(std::ostream &ostream);
+  ~output_format();
 
   /*!
    * Print a summary of all detected devices, if supported.
@@ -67,9 +66,8 @@ private:
   virtual void do_print_device_info() {}
   virtual void do_print_log_preamble() {}
   virtual void do_print_log_epilogue() {}
-  virtual void do_print_benchmark_list(const benchmark_vector &) {};
+  virtual void do_print_benchmark_list(const benchmark_vector &){};
   virtual void do_print_benchmark_results(const benchmark_vector &benches) = 0;
-
 };
 
 } // namespace nvbench

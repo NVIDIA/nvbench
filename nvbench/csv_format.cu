@@ -10,6 +10,7 @@
 #include <fmt/format.h>
 
 #include <cstdint>
+#include <ostream>
 #include <string>
 #include <variant>
 #include <vector>

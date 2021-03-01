@@ -2,6 +2,8 @@
 
 #include <nvbench/output_format.cuh>
 
+#include <string>
+
 namespace nvbench
 {
 

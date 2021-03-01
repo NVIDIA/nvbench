@@ -13,6 +13,7 @@
 
 #include <functional>
 #include <numeric>
+#include <ostream>
 #include <string>
 #include <type_traits>
 #include <vector>
