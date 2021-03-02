@@ -96,7 +96,7 @@ private:
 
   // Store benchmark modifiers passed in before any benchmarks are requested as
   // "global args". Replay them after every benchmark.
-  std::vector<std::string> m_global_args;
+  std::vector<std::string> m_global_benchmark_args;
   benchmark_vector m_benchmarks;
 
   // Manages lifetimes of any ofstreams opened for m_printer.

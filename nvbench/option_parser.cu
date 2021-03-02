@@ -294,7 +294,13 @@ void option_parser::parse(std::vector<std::string> args)
 
 void option_parser::parse_impl()
 {
-  m_global_args.clear();
+  m_global_benchmark_args.clear();
+
+  // Initialize color variable based on env var:
+  {
+    const char *var           = std::getenv("NVBENCH_COLOR");
+    m_color_md_stdout_printer = var && var[0] == '1';
+  }
 
   this->parse_range(m_args.cbegin(), m_args.cend());
 
@@ -515,7 +521,8 @@ catch (std::exception &e)
 
 void option_parser::replay_global_args()
 {
-  this->parse_range(m_global_args.cbegin(), m_global_args.cend());
+  this->parse_range(m_global_benchmark_args.cbegin(),
+                    m_global_benchmark_args.cend());
 }
 
 void option_parser::update_devices(const std::string &devices)
@@ -524,8 +531,8 @@ try
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    m_global_args.push_back("-devices");
-    m_global_args.push_back(devices);
+    m_global_benchmark_args.push_back("-devices");
+    m_global_benchmark_args.push_back(devices);
     return;
   }
 
@@ -564,8 +571,8 @@ try
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    m_global_args.push_back("--axis");
-    m_global_args.push_back(spec);
+    m_global_benchmark_args.push_back("--axis");
+    m_global_benchmark_args.push_back(spec);
     return;
   }
 
@@ -700,8 +707,8 @@ try
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    m_global_args.push_back(prop_arg);
-    m_global_args.push_back(prop_val);
+    m_global_benchmark_args.push_back(prop_arg);
+    m_global_benchmark_args.push_back(prop_val);
     return;
   }
 
@@ -734,8 +741,8 @@ try
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    m_global_args.push_back(prop_arg);
-    m_global_args.push_back(prop_val);
+    m_global_benchmark_args.push_back(prop_arg);
+    m_global_benchmark_args.push_back(prop_val);
     return;
   }
 
