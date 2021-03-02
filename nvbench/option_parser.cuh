@@ -60,10 +60,10 @@ private:
   using arg_iterator_t = std::vector<std::string>::const_iterator;
   void parse_range(arg_iterator_t first, arg_iterator_t last);
 
-  void add_markdown_format(const std::string &spec);
-  void add_csv_format(const std::string &spec);
+  void add_markdown_printer(const std::string &spec);
+  void add_csv_printer(const std::string &spec);
 
-  std::ostream &output_format_spec_to_ostream(const std::string &spec);
+  std::ostream &printer_spec_to_ostream(const std::string &spec);
 
   void print_list() const;
 

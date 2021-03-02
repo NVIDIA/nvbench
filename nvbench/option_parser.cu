@@ -312,7 +312,7 @@ void option_parser::parse_impl()
   // Make sure there's a default printer if needed:
   if (!m_have_stdout_printer)
   {
-    this->add_markdown_format("stdout");
+    this->add_markdown_printer("stdout");
   }
 }
 
@@ -361,13 +361,13 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     else if (arg == "--markdown" || arg == "--md")
     {
       check_params(1);
-      this->add_markdown_format(first[1]);
+      this->add_markdown_printer(first[1]);
       first += 2;
     }
     else if (arg == "--csv")
     {
       check_params(1);
-      this->add_csv_format(first[1]);
+      this->add_csv_printer(first[1]);
       first += 2;
     }
     else if (arg == "--benchmark" || arg == "-b")
@@ -410,10 +410,10 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
   }
 }
 
-void option_parser::add_markdown_format(const std::string &spec)
+void option_parser::add_markdown_printer(const std::string &spec)
 try
 {
-  std::ostream &stream = this->output_format_spec_to_ostream(spec);
+  std::ostream &stream = this->printer_spec_to_ostream(spec);
   auto &printer        = m_printer.emplace<nvbench::markdown_printer>(stream);
   if (spec == "stdout")
   {
@@ -428,10 +428,10 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::add_csv_format(const std::string &spec)
+void option_parser::add_csv_printer(const std::string &spec)
 try
 {
-  std::ostream &stream = this->output_format_spec_to_ostream(spec);
+  std::ostream &stream = this->printer_spec_to_ostream(spec);
   m_printer.emplace<nvbench::csv_printer>(stream);
 }
 catch (std::exception &e)
@@ -442,8 +442,7 @@ catch (std::exception &e)
                 e.what());
 }
 
-std::ostream &
-option_parser::output_format_spec_to_ostream(const std::string &spec)
+std::ostream &option_parser::printer_spec_to_ostream(const std::string &spec)
 {
   if (spec == "stdout")
   {
