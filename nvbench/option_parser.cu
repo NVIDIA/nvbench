@@ -3,7 +3,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_format.cuh>
-#include <nvbench/markdown_format.cuh>
+#include <nvbench/markdown_printer.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
 
@@ -414,7 +414,7 @@ void option_parser::add_markdown_format(const std::string &spec)
 try
 {
   std::ostream &stream = this->output_format_spec_to_ostream(spec);
-  auto &printer        = m_printer.emplace<nvbench::markdown_format>(stream);
+  auto &printer        = m_printer.emplace<nvbench::markdown_printer>(stream);
   if (spec == "stdout")
   {
     printer.set_color(m_color_md_stdout_printer);
@@ -480,7 +480,7 @@ void option_parser::print_list() const
 {
   const auto &bench_mgr = nvbench::benchmark_manager::get();
 
-  nvbench::markdown_format printer{std::cout};
+  nvbench::markdown_printer printer{std::cout};
   printer.print_device_info();
   printer.print_benchmark_list(bench_mgr.get_benchmarks());
 }

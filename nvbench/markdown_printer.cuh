@@ -15,7 +15,7 @@ struct summary;
  *
  * Includes customization points to modify numeric formatting.
  */
-struct markdown_format : nvbench::printer_base
+struct markdown_printer : nvbench::printer_base
 {
   using printer_base::printer_base;
 

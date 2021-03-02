@@ -15,7 +15,7 @@ namespace nvbench::internal
 {
 
 /*!
- * Implementation detail for markdown_format.
+ * Implementation detail for markdown_printer.
  *
  * Usage:
  *

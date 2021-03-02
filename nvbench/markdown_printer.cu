@@ -1,4 +1,4 @@
-#include <nvbench/markdown_format.cuh>
+#include <nvbench/markdown_printer.cuh>
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/device_manager.cuh>
@@ -22,7 +22,7 @@
 namespace nvbench
 {
 
-void markdown_format::do_print_device_info()
+void markdown_printer::do_print_device_info()
 {
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "# Devices\n\n");
@@ -77,11 +77,14 @@ void markdown_format::do_print_device_info()
   m_ostream << fmt::to_string(buffer);
 }
 
-void markdown_format::do_print_log_preamble() { m_ostream << "# Log\n\n```\n"; }
+void markdown_printer::do_print_log_preamble()
+{
+  m_ostream << "# Log\n\n```\n";
+}
 
-void markdown_format::do_print_log_epilogue() { m_ostream << "```\n\n"; }
+void markdown_printer::do_print_log_epilogue() { m_ostream << "```\n\n"; }
 
-void markdown_format::do_log(nvbench::log_level level, const std::string &msg)
+void markdown_printer::do_log(nvbench::log_level level, const std::string &msg)
 {
   const fmt::text_style no_style;
   const auto bg_bold = bg(fmt::color::black) | fmt::emphasis::bold;
@@ -121,12 +124,12 @@ void markdown_format::do_log(nvbench::log_level level, const std::string &msg)
   m_ostream << tag << " " << msg << std::endl;
 }
 
-void markdown_format::do_log_run_state(const nvbench::state &exec_state)
+void markdown_printer::do_log_run_state(const nvbench::state &exec_state)
 {
   this->log(nvbench::log_level::Run, exec_state.get_short_description(m_color));
 }
 
-void markdown_format::do_print_benchmark_list(
+void markdown_printer::do_print_benchmark_list(
   const printer_base::benchmark_vector &benches)
 {
   fmt::memory_buffer buffer;
@@ -182,7 +185,7 @@ void markdown_format::do_print_benchmark_list(
   m_ostream << fmt::to_string(buffer);
 }
 
-void markdown_format::do_print_benchmark_results(
+void markdown_printer::do_print_benchmark_results(
   const printer_base::benchmark_vector &benches)
 {
   auto format_visitor = [](const auto &v) {
@@ -326,7 +329,7 @@ void markdown_format::do_print_benchmark_results(
   m_ostream << fmt::to_string(buffer);
 }
 
-std::string markdown_format::do_format_default(const summary &data)
+std::string markdown_printer::do_format_default(const summary &data)
 {
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
@@ -344,7 +347,7 @@ std::string markdown_format::do_format_default(const summary &data)
   return std::visit(format_visitor, data.get_value("value"));
 }
 
-std::string markdown_format::do_format_duration(const summary &data)
+std::string markdown_printer::do_format_duration(const summary &data)
 {
   const auto seconds = data.get_float64("value");
   if (seconds >= 1.) // 1+ sec
@@ -365,7 +368,7 @@ std::string markdown_format::do_format_duration(const summary &data)
   }
 }
 
-std::string markdown_format::do_format_item_rate(const summary &data)
+std::string markdown_printer::do_format_item_rate(const summary &data)
 {
   const auto items_per_second = data.get_float64("value");
   if (items_per_second >= 1e9)
@@ -386,7 +389,7 @@ std::string markdown_format::do_format_item_rate(const summary &data)
   }
 }
 
-std::string markdown_format::do_format_bytes(const summary &data)
+std::string markdown_printer::do_format_bytes(const summary &data)
 {
   const auto bytes = data.get_int64("value");
   if (bytes >= 1024. * 1024. * 1024.) // 1 GiB
@@ -407,7 +410,7 @@ std::string markdown_format::do_format_bytes(const summary &data)
   }
 }
 
-std::string markdown_format::do_format_byte_rate(const summary &data)
+std::string markdown_printer::do_format_byte_rate(const summary &data)
 {
   const auto bytes_per_second = data.get_float64("value");
   if (bytes_per_second >= 1024. * 1024. * 1024.) // 1 GiB/s
@@ -429,13 +432,13 @@ std::string markdown_format::do_format_byte_rate(const summary &data)
   }
 }
 
-std::string markdown_format::do_format_sample_size(const summary &data)
+std::string markdown_printer::do_format_sample_size(const summary &data)
 {
   const auto count = data.get_int64("value");
   return fmt::format("{}x", count);
 }
 
-std::string markdown_format::do_format_percentage(const summary &data)
+std::string markdown_printer::do_format_percentage(const summary &data)
 {
   const auto percentage = data.get_float64("value");
   return fmt::format("{:.2f}%", percentage);

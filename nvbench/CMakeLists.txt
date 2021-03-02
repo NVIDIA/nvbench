@@ -10,7 +10,7 @@ set(srcs
   device_manager.cu
   float64_axis.cu
   int64_axis.cu
-  markdown_format.cu
+  markdown_printer.cu
   named_values.cu
   option_parser.cu
   output_multiplex.cu
