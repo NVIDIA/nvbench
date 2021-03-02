@@ -102,11 +102,14 @@ private:
   // Manages lifetimes of any ofstreams opened for m_printer.
   std::vector<std::unique_ptr<std::ofstream>> m_ofstream_storage;
 
+  // The main printer to use:
+  nvbench::output_multiplex m_printer;
+
   // Use color on any stdout markdown printers.
   bool m_color_md_stdout_printer{false};
 
-  // The main printer to use:
-  nvbench::output_multiplex m_printer;
+  // True if any stdout printers have been added to m_printer.
+  bool m_have_stdout_printer{false};
 };
 
 } // namespace nvbench

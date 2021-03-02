@@ -308,6 +308,12 @@ void option_parser::parse_impl()
       this->replay_global_args();
     }
   }
+
+  // Make sure there's a default printer if needed:
+  if (!m_have_stdout_printer)
+  {
+    this->add_markdown_format("stdout");
+  }
 }
 
 void option_parser::parse_range(option_parser::arg_iterator_t first,
@@ -339,6 +345,13 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     {
       this->print_list();
       std::exit(0);
+    }
+    else if (arg == "--quiet" | arg == "-q")
+    {
+      // Setting this flag prevents the default stdout printer from being
+      // added.
+      m_have_stdout_printer = true;
+      first += 1;
     }
     else if (arg == "--color")
     {
@@ -434,6 +447,7 @@ option_parser::output_format_spec_to_ostream(const std::string &spec)
 {
   if (spec == "stdout")
   {
+    m_have_stdout_printer = true;
     return std::cout;
   }
   else if (spec == "stderr")
@@ -762,10 +776,6 @@ catch (std::exception &e)
 
 nvbench::output_format &option_parser::get_printer()
 {
-  if (m_printer.get_output_count() == 0)
-  {
-    this->add_markdown_format("stdout");
-  }
   return m_printer;
 }
 
