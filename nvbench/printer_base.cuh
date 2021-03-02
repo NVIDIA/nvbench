@@ -30,21 +30,21 @@ enum class log_level
  * Interactive terminal output formats should implement the logging functions so
  * users have some feedback.
  */
-struct output_format
+struct printer_base
 {
   using benchmark_vector = std::vector<std::unique_ptr<benchmark_base>>;
 
   /*!
-   * Construct a new output_format that will write to ostream.
+   * Construct a new printer_base that will write to ostream.
    */
-  explicit output_format(std::ostream &ostream);
-  ~output_format();
+  explicit printer_base(std::ostream &ostream);
+  ~printer_base();
 
   // move-only
-  output_format(const output_format &) = delete;
-  output_format(output_format &&)      = default;
-  output_format &operator=(const output_format &) = delete;
-  output_format &operator=(output_format &&) = default;
+  printer_base(const printer_base &) = delete;
+  printer_base(printer_base &&)      = default;
+  printer_base &operator=(const printer_base &) = delete;
+  printer_base &operator=(printer_base &&) = default;
 
   /*!
    * Print a summary of all detected devices, if supported.

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nvbench/output_format.cuh>
+#include <nvbench/printer_base.cuh>
 
 #include <string>
 
@@ -15,9 +15,9 @@ struct summary;
  *
  * Includes customization points to modify numeric formatting.
  */
-struct markdown_format : nvbench::output_format
+struct markdown_format : nvbench::printer_base
 {
-  using output_format::output_format;
+  using printer_base::printer_base;
 
   /*!
    * Enable / disable color in the output.
@@ -33,7 +33,7 @@ struct markdown_format : nvbench::output_format
   /*!@}*/
 
 private:
-  // Virtual API from output_format:
+  // Virtual API from printer_base:
   void do_print_device_info() override;
   void do_print_log_preamble() override;
   void do_print_log_epilogue() override;

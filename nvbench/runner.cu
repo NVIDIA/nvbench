@@ -1,7 +1,7 @@
 #include <nvbench/runner.cuh>
 
 #include <nvbench/benchmark_base.cuh>
-#include <nvbench/output_format.cuh>
+#include <nvbench/printer_base.cuh>
 #include <nvbench/state.cuh>
 
 #include <fmt/format.h>

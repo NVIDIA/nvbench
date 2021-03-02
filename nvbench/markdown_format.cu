@@ -127,7 +127,7 @@ void markdown_format::do_log_run_state(const nvbench::state &exec_state)
 }
 
 void markdown_format::do_print_benchmark_list(
-  const output_format::benchmark_vector &benches)
+  const printer_base::benchmark_vector &benches)
 {
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "# Benchmarks\n\n");
@@ -183,7 +183,7 @@ void markdown_format::do_print_benchmark_list(
 }
 
 void markdown_format::do_print_benchmark_results(
-  const output_format::benchmark_vector &benches)
+  const printer_base::benchmark_vector &benches)
 {
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;

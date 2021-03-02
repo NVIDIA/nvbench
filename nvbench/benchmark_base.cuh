@@ -13,7 +13,7 @@
 namespace nvbench
 {
 
-struct output_format;
+struct printer_base;
 struct runner_base;
 
 template <typename BenchmarkType>
@@ -135,12 +135,12 @@ struct benchmark_base
 
   void run() { this->do_run(); }
 
-  void set_printer(optional_ref<nvbench::output_format> printer)
+  void set_printer(optional_ref<nvbench::printer_base> printer)
   {
     m_printer = printer;
   }
 
-  [[nodiscard]] optional_ref<nvbench::output_format> get_printer() const
+  [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const
   {
     return m_printer;
   }
@@ -217,7 +217,7 @@ protected:
   std::vector<nvbench::device_info> m_devices;
   std::vector<nvbench::state> m_states;
 
-  optional_ref<nvbench::output_format> m_printer;
+  optional_ref<nvbench::printer_base> m_printer;
 
   nvbench::int64_t m_min_samples{10};
   nvbench::float64_t m_min_time{0.5};

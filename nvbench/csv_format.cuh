@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nvbench/output_format.cuh>
+#include <nvbench/printer_base.cuh>
 
 namespace nvbench
 {
@@ -8,12 +8,12 @@ namespace nvbench
 /*!
  * CSV output format.
  */
-struct csv_format : nvbench::output_format
+struct csv_format : nvbench::printer_base
 {
-  using output_format::output_format;
+  using printer_base::printer_base;
 
 private:
-  // Virtual API from output_format:
+  // Virtual API from printer_base:
   void do_print_benchmark_results(const benchmark_vector &benches) override;
 };
 

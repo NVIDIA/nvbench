@@ -4,7 +4,7 @@
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_format.cuh>
 #include <nvbench/markdown_format.cuh>
-#include <nvbench/output_format.cuh>
+#include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
 
 #include <nvbench/detail/throw.cuh>
@@ -774,9 +774,6 @@ catch (std::exception &e)
                 e.what());
 }
 
-nvbench::output_format &option_parser::get_printer()
-{
-  return m_printer;
-}
+nvbench::printer_base &option_parser::get_printer() { return m_printer; }
 
 } // namespace nvbench

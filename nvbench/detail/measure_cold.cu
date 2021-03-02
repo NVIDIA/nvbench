@@ -2,7 +2,7 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/device_info.cuh>
-#include <nvbench/output_format.cuh>
+#include <nvbench/printer_base.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 

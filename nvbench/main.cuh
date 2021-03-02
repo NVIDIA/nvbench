@@ -4,11 +4,11 @@
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/option_parser.cuh>
-#include <nvbench/output_format.cuh>
+#include <nvbench/printer_base.cuh>
 
 #include <functional> // std::ref
-#include <optional> // std::nullopt
 #include <iostream>
+#include <optional> // std::nullopt
 
 #define NVBENCH_MAIN                                                           \
   int main(int argc, char const *const *argv)                                  \

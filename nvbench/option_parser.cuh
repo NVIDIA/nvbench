@@ -13,7 +13,7 @@ namespace nvbench
 struct benchmark_base;
 struct float64_axis;
 struct int64_axis;
-struct output_format;
+struct printer_base;
 struct string_axis;
 struct type_axis;
 
@@ -51,8 +51,8 @@ struct option_parser
    *
    * The returned object is only valid for the lifetime of this option_parser.
    */
-  // output_format has no useful const API, so no const overload.
-  [[nodiscard]] nvbench::output_format &get_printer();
+  // printer_base has no useful const API, so no const overload.
+  [[nodiscard]] nvbench::printer_base &get_printer();
 
 private:
   void parse_impl();
