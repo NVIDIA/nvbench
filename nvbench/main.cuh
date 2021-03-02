@@ -6,6 +6,8 @@
 #include <nvbench/option_parser.cuh>
 #include <nvbench/output_format.cuh>
 
+#include <functional> // std::ref
+#include <optional> // std::nullopt
 #include <iostream>
 
 #define NVBENCH_MAIN                                                           \
@@ -39,7 +41,9 @@
     auto &benchmarks = parser.get_benchmarks();                                \
     for (auto &bench_ptr : benchmarks)                                         \
     {                                                                          \
+      bench_ptr->set_printer(std::ref(printer));                               \
       bench_ptr->run();                                                        \
+      bench_ptr->set_printer(std::nullopt);                                    \
     }                                                                          \
     printer.print_log_epilogue();                                              \
     printer.print_benchmark_results(benchmarks);                               \

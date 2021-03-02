@@ -2,10 +2,10 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/device_info.cuh>
+#include <nvbench/output_format.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
-#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -135,71 +135,66 @@ void measure_cold_base::generate_summaries()
     }
   }
 
-  const auto num_format = fmt::emphasis::bold;
-  const auto log_format = bg(fmt::color::black) | fg(fmt::color::dark_green) |
-                          fmt::emphasis::bold;
-  const auto warning_format = // bold yellow-on-black
-    bg(fmt::color::black) | fg(fmt::rgb{160, 135, 0}) | fmt::emphasis::bold;
-
-  if (m_max_time_exceeded)
+  // Log if a printer exists:
+  if (auto printer_opt_ref = m_state.get_benchmark().get_printer();
+      printer_opt_ref.has_value())
   {
-    const auto timeout = m_timeout_timer.get_duration();
+    auto &printer = printer_opt_ref.value().get();
 
-    if (m_cuda_noise > m_max_noise)
+    if (m_max_time_exceeded)
     {
-      fmt::print("{} {}\n",
-                 fmt::format(warning_format, "{:5}", "Warn:"),
-                 fmt::format("Current measurement timed out ({}) while over "
-                             "noise threshold ({} < {})",
-                             fmt::format(num_format, "{:.2f}s", timeout),
-                             fmt::format(num_format, "{:0.2f}%", m_cuda_noise),
-                             fmt::format(num_format, "{:0.2f}%", m_max_noise)));
+      const auto timeout = m_timeout_timer.get_duration();
+
+      if (m_cuda_noise > m_max_noise)
+      {
+        printer.log(nvbench::log_level::Warn,
+                    fmt::format("Current measurement timed out ({:0.2f}s) "
+                                "while over noise threshold ({:0.2f}% > "
+                                "{:0.2f}%)",
+                                timeout,
+                                m_cuda_noise,
+                                m_max_noise));
+      }
+      if (m_total_samples < m_min_samples)
+      {
+        printer.log(nvbench::log_level::Warn,
+                    fmt::format("Current measurement timed out ({:0.2f}s) "
+                                "before accumulating min_samples ({} < {})",
+                                timeout,
+                                m_total_samples,
+                                m_min_samples));
+      }
+      if (m_total_cuda_time < m_min_time)
+      {
+        printer.log(nvbench::log_level::Warn,
+                    fmt::format("Current measurement timed out ({:0.2f}s) "
+                                "before accumulating min_time ({:0.2f}s < "
+                                "{:0.2f}s)",
+                                timeout,
+                                m_total_cuda_time,
+                                m_min_time));
+      }
     }
-    if (m_total_samples < m_min_samples)
-    {
-      fmt::print("{} {}\n",
-                 fmt::format(warning_format, "{:5}", "Warn:"),
-                 fmt::format("Current measurement timed out ({}) before "
-                             "accumulating min_samples ({} < {})",
-                             fmt::format(num_format, "{:.2f}s", timeout),
-                             fmt::format(num_format, "{}", m_total_samples),
-                             fmt::format(num_format, "{}", m_min_samples)));
-    }
-    if (m_total_cuda_time < m_min_time)
-    {
-      fmt::print(
-        "{} {}\n",
-        fmt::format(warning_format, "{:5}", "Warn:"),
-        fmt::format("Current measurement timed out ({}) before accumulating "
-                    "min_time ({} < {})",
-                    fmt::format(num_format, "{:.2f}s", timeout),
-                    fmt::format(num_format, "{:0.2}s", m_total_cuda_time),
-                    fmt::format(num_format, "{:0.2}s", m_min_time)));
-    }
+
+    // Log to stdout:
+    printer.log(nvbench::log_level::Pass,
+                fmt::format("Cold: {:0.6f}ms GPU, {:0.6f}ms CPU, {:0.2f}s "
+                            "total GPU, {}x",
+                            avg_cuda_time * 1e3,
+                            avg_cpu_time * 1e3,
+                            m_total_cuda_time,
+                            m_total_samples));
   }
-
-  // Log to stdout:
-  fmt::print(
-    "{} {}\n",
-    fmt::format(log_format, "{:5}", "Cold:"),
-    fmt::format("{} GPU, {} CPU, {} total GPU, {}",
-                fmt::format(num_format, "{:.6f}ms", avg_cuda_time * 1e3),
-                fmt::format(num_format, "{:.6f}ms", avg_cpu_time * 1e3),
-                fmt::format(num_format, "{:.2f}s", m_total_cuda_time),
-                fmt::format(num_format, "{}x", m_total_samples)));
-
-  std::fflush(stdout);
 }
 
 void measure_cold_base::check_skip_time(nvbench::float64_t warmup_time)
 {
   if (m_skip_time > 0. && warmup_time < m_skip_time)
   {
-    auto reason = fmt::format(
-      "Warmup time did not meet skip_time limit: "
-      "{} < {}.",
-      fmt::format(fmt::emphasis::bold, "{:0.3f} us", warmup_time * 1e6),
-      fmt::format(fmt::emphasis::bold, "{:0.3f} us", m_skip_time * 1e6));
+    auto reason = fmt::format("Warmup time did not meet skip_time limit: "
+                              "{:0.3f}us < {:0.3f}us.",
+                              warmup_time * 1e6,
+                              m_skip_time * 1e6);
 
     m_state.skip(reason);
     throw std::runtime_error{std::move(reason)};

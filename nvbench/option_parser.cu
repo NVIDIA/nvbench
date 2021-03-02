@@ -271,7 +271,7 @@ namespace nvbench
 {
 
 // Defined here to avoid including <fstream> in the header.
-option_parser::option_parser() = default;
+option_parser::option_parser()  = default;
 option_parser::~option_parser() = default;
 
 void option_parser::parse(int argc, char const *const *argv)
@@ -340,7 +340,12 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->print_list();
       std::exit(0);
     }
-    else if (arg == "--markdown"  || arg == "--md")
+    else if (arg == "--color")
+    {
+      m_color_md_stdout_printer = true;
+      first += 1;
+    }
+    else if (arg == "--markdown" || arg == "--md")
     {
       check_params(1);
       this->add_markdown_format(first[1]);
@@ -396,7 +401,11 @@ void option_parser::add_markdown_format(const std::string &spec)
 try
 {
   std::ostream &stream = this->output_format_spec_to_ostream(spec);
-  m_printer.emplace<nvbench::markdown_format>(stream);
+  auto &printer        = m_printer.emplace<nvbench::markdown_format>(stream);
+  if (spec == "stdout")
+  {
+    printer.set_color(m_color_md_stdout_printer);
+  }
 }
 catch (std::exception &e)
 {

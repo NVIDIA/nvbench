@@ -29,11 +29,13 @@ struct output_multiplex : nvbench::output_format
   }
 
 private:
-  void do_print_device_info();
-  void do_print_log_preamble();
-  void do_print_log_epilogue();
-  void do_print_benchmark_list(const benchmark_vector &benches);
-  void do_print_benchmark_results(const benchmark_vector &benches);
+  void do_print_device_info() override;
+  void do_print_log_preamble() override;
+  void do_print_log_epilogue() override;
+  void do_log(nvbench::log_level, const std::string &) override;
+  void do_log_run_state(const nvbench::state &) override;
+  void do_print_benchmark_list(const benchmark_vector &benches) override;
+  void do_print_benchmark_results(const benchmark_vector &benches) override;
 
   std::vector<std::unique_ptr<nvbench::output_format>> m_formats;
 };

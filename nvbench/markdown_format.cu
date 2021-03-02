@@ -9,6 +9,7 @@
 
 #include <nvbench/internal/markdown_table.cuh>
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include <functional>
@@ -79,6 +80,51 @@ void markdown_format::do_print_device_info()
 void markdown_format::do_print_log_preamble() { m_ostream << "# Log\n\n```\n"; }
 
 void markdown_format::do_print_log_epilogue() { m_ostream << "```\n\n"; }
+
+void markdown_format::do_log(nvbench::log_level level, const std::string &msg)
+{
+  const fmt::text_style no_style;
+  const auto bg_bold = bg(fmt::color::black) | fmt::emphasis::bold;
+
+  const auto run_color  = bg_bold | fg(fmt::color::white);
+  const auto pass_color = bg_bold | fg(fmt::color::dark_green);
+  const auto fail_color = bg_bold | fg(fmt::color::red);
+  const auto skip_color = bg_bold | fg(fmt::color::steel_blue);
+  const auto warn_color = bg_bold | fg(fmt::rgb{160, 135, 0}); // yellow
+  const auto info_color = bg_bold | fg(fmt::color::light_gray);
+
+  std::string tag;
+  switch (level)
+  {
+    case log_level::Run:
+      tag = fmt::format(m_color ? run_color : no_style, "{:<5}", "Run:");
+      break;
+    case log_level::Pass:
+      tag = fmt::format(m_color ? pass_color : no_style, "{:<5}", "Pass:");
+      break;
+    case log_level::Fail:
+      tag = fmt::format(m_color ? fail_color : no_style, "{:<5}", "Fail:");
+      break;
+    case log_level::Skip:
+      tag = fmt::format(m_color ? skip_color : no_style, "{:<5}", "Skip:");
+      break;
+    case log_level::Warn:
+      tag = fmt::format(m_color ? warn_color : no_style, "{:<5}", "Warn:");
+      break;
+    case log_level::Info:
+      tag = fmt::format(m_color ? info_color : no_style, "{:<5}", "Info:");
+      break;
+  }
+
+  // Flush each time; this is the only user-visible indication that a benchmark
+  // is running.
+  m_ostream << tag << " " << msg << std::endl;
+}
+
+void markdown_format::do_log_run_state(const nvbench::state &exec_state)
+{
+  this->log(nvbench::log_level::Run, exec_state.get_short_description(m_color));
+}
 
 void markdown_format::do_print_benchmark_list(
   const output_format::benchmark_vector &benches)

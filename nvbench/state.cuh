@@ -175,7 +175,7 @@ struct state
   /// ```
   /// <bench_name> [<parameters>]
   /// ```
-  [[nodiscard]] std::string get_short_description() const;
+  [[nodiscard]] std::string get_short_description(bool color = false) const;
 
   // TODO This will need detailed docs and include a reference to an appropriate
   // section of the user's guide

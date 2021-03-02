@@ -5,12 +5,15 @@
 #include <nvbench/device_manager.cuh>
 #include <nvbench/state.cuh>
 
+#include <functional> // reference_wrapper
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace nvbench
 {
 
+struct output_format;
 struct runner_base;
 
 template <typename BenchmarkType>
@@ -25,6 +28,9 @@ struct runner;
  */
 struct benchmark_base
 {
+  template <typename T>
+  using optional_ref = std::optional<std::reference_wrapper<T>>;
+
   template <typename TypeAxes>
   explicit benchmark_base(TypeAxes type_axes)
       : m_axes(type_axes)
@@ -129,6 +135,16 @@ struct benchmark_base
 
   void run() { this->do_run(); }
 
+  void set_printer(optional_ref<nvbench::output_format> printer)
+  {
+    m_printer = printer;
+  }
+
+  [[nodiscard]] optional_ref<nvbench::output_format> get_printer() const
+  {
+    return m_printer;
+  }
+
   /// Execute at least this many trials per measurement. @{
   [[nodiscard]] nvbench::int64_t get_min_samples() const
   {
@@ -200,6 +216,8 @@ protected:
   nvbench::axes_metadata m_axes;
   std::vector<nvbench::device_info> m_devices;
   std::vector<nvbench::state> m_states;
+
+  optional_ref<nvbench::output_format> m_printer;
 
   nvbench::int64_t m_min_samples{10};
   nvbench::float64_t m_min_time{0.5};

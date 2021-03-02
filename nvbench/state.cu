@@ -94,29 +94,28 @@ const std::vector<summary> &state::get_summaries() const { return m_summaries; }
 
 std::vector<summary> &state::get_summaries() { return m_summaries; }
 
-std::string state::get_short_description() const
+std::string state::get_short_description(bool color) const
 {
+  // Returns fmt_style if color is true, otherwise no style flags.
+  auto style = [&color](auto fmt_style) {
+    const fmt::text_style no_style;
+    return color ? fmt_style : no_style;
+  };
+
+  // Create a Key=Value list of all parameters:
   fmt::memory_buffer buffer;
 
-  fmt::format_to(
-    buffer,
-    "{}",
-    fmt::format(fmt::emphasis::bold, "{}", m_benchmark.get().get_name()));
-
-  buffer.push_back(' ');
-  buffer.push_back('[');
-
-  auto append_key_value = [&buffer](const std::string &key,
-                                    const auto &value,
-                                    std::string value_fmtstr = "{}") {
+  auto append_key_value = [&buffer, &style](const std::string &key,
+                                            const auto &value,
+                                            std::string value_fmtstr = "{}") {
     constexpr auto key_format   = fmt::emphasis::italic;
     constexpr auto value_format = fmt::emphasis::bold;
 
     fmt::format_to(buffer,
                    "{}{}={}",
                    buffer.size() == 0 ? "" : " ",
-                   fmt::format(key_format, "{}", key),
-                   fmt::format(value_format, value_fmtstr, value));
+                   fmt::format(style(key_format), "{}", key),
+                   fmt::format(style(value_format), value_fmtstr, value));
   };
 
   if (m_device)
@@ -144,13 +143,13 @@ std::string state::get_short_description() const
     }
   }
 
-  buffer.push_back(']');
-
-  return fmt::to_string(buffer);
+  return fmt::format(
+    "{} [{}]",
+    fmt::format(style(fmt::emphasis::bold), "{}", m_benchmark.get().get_name()),
+    fmt::to_string(buffer));
 }
 
-void state::add_element_count(std::size_t elements,
-                              std::string column_name)
+void state::add_element_count(std::size_t elements, std::string column_name)
 {
   m_element_count += elements;
   if (!column_name.empty())
