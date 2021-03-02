@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nvbench/output_multiplex.cuh>
+#include <nvbench/printer_multiplex.cuh>
 
 #include <iosfwd>
 #include <memory>
@@ -103,7 +103,7 @@ private:
   std::vector<std::unique_ptr<std::ofstream>> m_ofstream_storage;
 
   // The main printer to use:
-  nvbench::output_multiplex m_printer;
+  nvbench::printer_multiplex m_printer;
 
   // Use color on any stdout markdown printers.
   bool m_color_md_stdout_printer{false};

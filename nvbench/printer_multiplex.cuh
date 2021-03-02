@@ -11,10 +11,10 @@ namespace nvbench
 /*!
  * An nvbench::printer_base that just forwards calls to other `printer_base`s.
  */
-struct output_multiplex : nvbench::printer_base
+struct printer_multiplex : nvbench::printer_base
 {
 
-  output_multiplex();
+  printer_multiplex();
 
   template <typename Format, typename... Ts>
   Format &emplace(Ts &&...ts)
@@ -23,7 +23,7 @@ struct output_multiplex : nvbench::printer_base
     return static_cast<Format &>(*m_printers.back());
   }
 
-  [[nodiscard]] std::size_t get_output_count() const
+  [[nodiscard]] std::size_t get_printer_count() const
   {
     return m_printers.size();
   }

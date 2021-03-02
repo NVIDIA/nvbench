@@ -13,8 +13,8 @@ set(srcs
   markdown_printer.cu
   named_values.cu
   option_parser.cu
-  output_multiplex.cu
   printer_base.cu
+  printer_multiplex.cu
   runner.cu
   state.cu
   string_axis.cu
