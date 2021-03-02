@@ -2,7 +2,7 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
-#include <nvbench/csv_format.cuh>
+#include <nvbench/csv_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
@@ -432,7 +432,7 @@ void option_parser::add_csv_format(const std::string &spec)
 try
 {
   std::ostream &stream = this->output_format_spec_to_ostream(spec);
-  m_printer.emplace<nvbench::csv_format>(stream);
+  m_printer.emplace<nvbench::csv_printer>(stream);
 }
 catch (std::exception &e)
 {

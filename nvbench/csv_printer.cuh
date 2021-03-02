@@ -8,7 +8,7 @@ namespace nvbench
 /*!
  * CSV output format.
  */
-struct csv_format : nvbench::printer_base
+struct csv_printer : nvbench::printer_base
 {
   using printer_base::printer_base;
 

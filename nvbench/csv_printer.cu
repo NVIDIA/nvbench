@@ -1,4 +1,4 @@
-#include <nvbench/csv_format.cuh>
+#include <nvbench/csv_printer.cuh>
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/benchmark_base.cuh>
@@ -18,7 +18,7 @@
 namespace nvbench
 {
 
-void csv_format::do_print_benchmark_results(const benchmark_vector &benches)
+void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
 {
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
