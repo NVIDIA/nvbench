@@ -321,7 +321,7 @@ void sync_example(nvbench::state& state)
     /* Benchmark that implicitly syncs here. */
   });
 }
-NVBENCH_BENCH(timer_example);
+NVBENCH_BENCH(sync_example);
 ```
 
 ## Explicit timer mode: `nvbench::exec_tag::timer`
