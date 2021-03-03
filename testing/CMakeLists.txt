@@ -16,8 +16,6 @@ set(test_srcs
   type_list.cu
 )
 
-enable_testing()
-
 foreach(test_src IN LISTS test_srcs)
   get_filename_component(test_name "${test_src}" NAME_WLE)
   string(PREPEND test_name "nvbench.test.")
@@ -25,5 +23,10 @@ foreach(test_src IN LISTS test_srcs)
   target_include_directories(${test_name} PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
   target_link_libraries(${test_name} PRIVATE nvbench::nvbench fmt)
   set_target_properties(${test_name} PROPERTIES COMPILE_FEATURES cuda_std_17)
+  set_target_properties(${test_name} PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
+  )
   add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:${test_name}>")
 endforeach()
