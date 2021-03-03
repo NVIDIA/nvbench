@@ -3,10 +3,10 @@
 This project is a work-in-progress. Everything is subject to change.
 
 NVBench is a C++17 library designed to simplify CUDA kernel benchmarking.
-Simultaneous parameter sweeps across multiple axes is supported, including
-template parameters. Various timings are reported, including "cold" execution
-(clear device L2, single run per timed region) and "batch" execution (launch
-multiple kernels within a single timed region).
+It allows simultaneous parameter sweeps across multiple axes, including template
+parameters. Various timings are reported, including "cold" execution time
+(single run per timed region) and "batch" execution time
+(launch multiple kernels within a single timed region).
 
 ## Scope and Related Tools
 
