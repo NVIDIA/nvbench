@@ -42,7 +42,7 @@ struct benchmark final : public benchmark_base
   static constexpr std::size_t num_type_configs =
     nvbench::tl::size<type_configs>{};
 
-  benchmark::benchmark()
+  benchmark()
       : benchmark_base(type_axes{})
   {}
 
