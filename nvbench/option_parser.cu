@@ -531,7 +531,7 @@ try
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    m_global_benchmark_args.push_back("-devices");
+    m_global_benchmark_args.push_back("--devices");
     m_global_benchmark_args.push_back(devices);
     return;
   }
