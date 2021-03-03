@@ -30,14 +30,14 @@ void my_benchmark(nvbench::state& state) {
     my_kernel<<<num_blocks, 256, 0, launch.get_stream()>>>();
   });
 }
-NVBENCH_CREATE(my_benchmark);
+NVBENCH_BENCH(my_benchmark);
 ```
 
 There are three main components in the definition of a benchmark:
 
 - A `KernelGenerator` callable (`my_benchmark` above)
 - A `KernelLauncher` callable (the lambda passed to `nvbench::exec`), and
-- A `BenchmarkDeclaration` using `NVBENCH_CREATE` or similar macros.
+- A `BenchmarkDeclaration` using `NVBENCH_BENCH` or similar macros.
 
 The `KernelGenerator` is called with an `nvbench::state` object that provides
 configuration information, as shown in later sections. The generator is
@@ -46,21 +46,21 @@ responsible for configuring and instantiating a `KernelLauncher`, which is
 only the minimum amount of code necessary to start the CUDA kernel,
 since `nvbench::exec` will execute it repeatedly to gather timing information.
 An `nvbench::launch` object is provided to the launcher to specify kernel
-execution details, such as the CUDA stream to use. `NVBENCH_CREATE` registers
+execution details, such as the CUDA stream to use. `NVBENCH_BENCH` registers
 the benchmark with NVBench and initializes various attributes, including its
 name and parameter axes.
 
 # Benchmark Name
 
 By default, a benchmark is named by converting the first argument
-of `NVBENCH_CREATE` into a string.
+of `NVBENCH_BENCH` into a string.
 
 This can be changed to something more descriptive if desired.
-The `NVBENCH_CREATE` macro produces a customization object that allows such
+The `NVBENCH_BENCH` macro produces a customization object that allows such
 attributes to be modified.
 
 ```cpp
-NVBENCH_CREATE(my_benchmark).set_name("my_kernel<<<num_blocks, 256>>>");
+NVBENCH_BENCH(my_benchmark).set_name("my_kernel<<<num_blocks, 256>>>");
 ```
 
 # Parameter Axes
@@ -91,7 +91,7 @@ void benchmark(nvbench::state& state)
     my_kernel<<<blocks, threads, 0, launch.get_stream()>>>(data.begin(), data.end());
   });
 }
-NVBENCH_CREATE(benchmark).add_int64_axis("NumInputs", {16, 64, 256, 1024, 4096});
+NVBENCH_BENCH(benchmark).add_int64_axis("NumInputs", {16, 64, 256, 1024, 4096});
 ```
 
 NVBench will run the `benchmark` kernel generator once for each specified value
@@ -107,11 +107,11 @@ integer exponents, but the benchmark will be run with the computed 2^N value.
 
 ```cpp
 // Equivalent to above, {16, 64, 256, 1024, 4096} = {2^4, 2^6, 2^8, 2^10, 2^12}
-NVBENCH_CREATE(benchmark).add_int64_power_of_two_axis("NumInputs",
-                                                      {4, 6, 8, 10, 12});
+NVBENCH_BENCH(benchmark).add_int64_power_of_two_axis("NumInputs",
+                                                     {4, 6, 8, 10, 12});
 // Or, as shown in a later section:
-NVBENCH_CREATE(benchmark).add_int64_power_of_two_axis("NumInputs",
-                                                      nvbench::range(4, 12, 2});
+NVBENCH_BENCH(benchmark).add_int64_power_of_two_axis("NumInputs",
+                                                     nvbench::range(4, 12, 2});
 ```
 
 ## Float64 Axes
@@ -128,7 +128,7 @@ void benchmark(nvbench::state& state)
     my_kernel<<<blocks, threads, 0, launch.get_stream()>>>(quality);
   });
 }
-NVBENCH_CREATE(benchmark).add_float64_axis("Quality", {0.05, 0.1, 0.25, 0.5, 0.75, 1.});
+NVBENCH_BENCH(benchmark).add_float64_axis("Quality", {0.05, 0.1, 0.25, 0.5, 0.75, 1.});
 ```
 
 ## String Axes
@@ -147,7 +147,7 @@ void benchmark(nvbench::state& state)
     my_kernel<<<blocks, threads, 0, launch.get_stream()>>>(data.begin(), data.end());
   });
 }
-NVBENCH_CREATE(benchmark).add_string_axis("RNG Distribution", {"Uniform", "Gaussian"});
+NVBENCH_BENCH(benchmark).add_string_axis("RNG Distribution", {"Uniform", "Gaussian"});
 ```
 
 ## Type Axes
@@ -174,7 +174,7 @@ void my_benchmark(nvbench::state& state, nvbench::type_list<T>)
   });
 }
 using my_types = nvbench::type_list<int, float, double>;
-NVBENCH_CREATE_TEMPLATE(my_benchmark, NVBENCH_TYPE_AXES(my_types))
+NVBENCH_BENCH_TEMPLATE(my_benchmark, NVBENCH_TYPE_AXES(my_types))
   .set_type_axis_names({"ValueType"});
 ```
 
@@ -213,7 +213,7 @@ int64 axis, and one float64 axis:
 
 using input_types = nvbench::type_list<char, int, unsigned int>;
 using output_types = nvbench::type_list<float, double>;
-NVBENCH_CREATE_TEMPLATE(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
+NVBENCH_BENCH_TEMPLATE(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
   .set_type_axes_names({"InputType", "OutputType"})
   .add_int64_power_of_two_axis("NumInputs", nvbench::range(10, 30, 10))
   .add_float64_axis("Quality", {0.5, 1.0});
@@ -280,7 +280,7 @@ void my_benchmark(nvbench::state& state,
 }
 using Ts = nvbench::type_list<...>;
 using Us = nvbench::type_list<...>;
-NVBENCH_CREATE_TEMPLATE(my_benchmark, NVBENCH_TYPE_AXES(Ts, Us));
+NVBENCH_BENCH_TEMPLATE(my_benchmark, NVBENCH_TYPE_AXES(Ts, Us));
 ```
 
 # Execution Tags For Special Cases
@@ -321,7 +321,7 @@ void sync_example(nvbench::state& state)
     /* Benchmark that implicitly syncs here. */
   });
 }
-NVBENCH_CREATE(timer_example);
+NVBENCH_BENCH(timer_example);
 ```
 
 ## Explicit timer mode: `nvbench::exec_tag::timer`
@@ -359,7 +359,7 @@ void timer_example(nvbench::state& state)
       timer.stop();
     });
 }
-NVBENCH_CREATE(timer_example);
+NVBENCH_BENCH(timer_example);
 ```
 
 # Beware: Combinatorial Explosion Is Lurking
@@ -378,11 +378,11 @@ using op_types = nvbench::type_list<thrust::plus<>,
                                     thrust::multiplies<>,
                                     thrust::maximum<>>;
 
-NVBENCH_CREATE_TEMPLATE(my_benchmark,
-                        NVBENCH_TYPE_AXES(value_types,
-                                          value_types,
-                                          value_types,
-                                          op_types>))
+NVBENCH_BENCH_TEMPLATE(my_benchmark,
+                       NVBENCH_TYPE_AXES(value_types,
+                                         value_types,
+                                         value_types,
+                                         op_types>))
   .set_type_axes_names({"T", "U", "V", "Op"})
   .add_int64_power_of_two_axis("NumInputs", nvbench::range(10, 30, 5));
 ```
