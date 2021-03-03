@@ -286,11 +286,11 @@ NVBENCH_BENCH_TEMPLATE(my_benchmark, NVBENCH_TYPE_AXES(Ts, Us));
 # Execution Tags For Special Cases
 
 By default, NVBench assumes that the entire execution time of the
-`KernelLauncher` should be measured, and that no syncs are performed (
-e.g. `cudaDeviceSynchronize`, `cudaStreamSynchronize`, `cudaEventSynchronize`,
-etc).
+`KernelLauncher` should be measured, and that no syncs are performed
+(e.g. `cudaDeviceSynchronize`, `cudaStreamSynchronize`, `cudaEventSynchronize`,
+etc. are not called).
 
-Execution tags may be passed to `state.exec` when this these assumptions are not
+Execution tags may be passed to `state.exec` when these assumptions are not
 true:
 
 - `nvbench::exec_tag::sync` tells NVBench that the kernel launcher will
@@ -305,13 +305,13 @@ state.exec(nvbench::exec_tag::sync | nvbench::exec_tag::timer,
            [](nvbench::launch &launch, auto& timer) { /*...*/ });
 ```
 
-The following sections provide more detail.
+The following sections provide more details on these features.
 
 ## Benchmarks that sync: `nvbench::exec_tag::sync`
 
 If a `KernelLauncher` synchronizes the CUDA device internally without passing
-this tag, the benchmark will deadlock at runtime. Passing the `sync` tag will
-fix this. Note that the `sync` exec tag will disable batch measurements.
+this tag, **the benchmark will deadlock at runtime**. Passing the `sync` tag
+will fix this issue. Note that this disables batch measurements.
 
 ```cpp
 void sync_example(nvbench::state& state)
