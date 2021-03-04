@@ -8,6 +8,11 @@ parameters. Various timings are reported, including "cold" execution time
 (single run per timed region) and "batch" execution time
 (launch multiple kernels within a single timed region).
 
+# Example Sandbox Project
+
+See [NVBench Demo](https://github.com/allisonvacanti/nvbench_demo) for a simple
+CMake project that builds an example benchmark using NVBench.
+
 ## Scope and Related Tools
 
 NVBench will measure the CPU and CUDA GPU execution time of a ***single
