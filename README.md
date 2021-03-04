@@ -174,7 +174,7 @@ void my_benchmark(nvbench::state& state, nvbench::type_list<T>)
   });
 }
 using my_types = nvbench::type_list<int, float, double>;
-NVBENCH_BENCH_TEMPLATE(my_benchmark, NVBENCH_TYPE_AXES(my_types))
+NVBENCH_BENCH_TYPES(my_benchmark, NVBENCH_TYPE_AXES(my_types))
   .set_type_axis_names({"ValueType"});
 ```
 
@@ -213,7 +213,7 @@ int64 axis, and one float64 axis:
 
 using input_types = nvbench::type_list<char, int, unsigned int>;
 using output_types = nvbench::type_list<float, double>;
-NVBENCH_BENCH_TEMPLATE(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
+NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
   .set_type_axes_names({"InputType", "OutputType"})
   .add_int64_power_of_two_axis("NumInputs", nvbench::range(10, 30, 10))
   .add_float64_axis("Quality", {0.5, 1.0});
@@ -280,7 +280,7 @@ void my_benchmark(nvbench::state& state,
 }
 using Ts = nvbench::type_list<...>;
 using Us = nvbench::type_list<...>;
-NVBENCH_BENCH_TEMPLATE(my_benchmark, NVBENCH_TYPE_AXES(Ts, Us));
+NVBENCH_BENCH_TYPES(my_benchmark, NVBENCH_TYPE_AXES(Ts, Us));
 ```
 
 # Execution Tags For Special Cases
@@ -378,11 +378,11 @@ using op_types = nvbench::type_list<thrust::plus<>,
                                     thrust::multiplies<>,
                                     thrust::maximum<>>;
 
-NVBENCH_BENCH_TEMPLATE(my_benchmark,
-                       NVBENCH_TYPE_AXES(value_types,
-                                         value_types,
-                                         value_types,
-                                         op_types>))
+NVBENCH_BENCH_TYPES(my_benchmark,
+                    NVBENCH_TYPE_AXES(value_types,
+                                      value_types,
+                                      value_types,
+                                      op_types>))
   .set_type_axes_names({"T", "U", "V", "Op"})
   .add_int64_power_of_two_axis("NumInputs", nvbench::range(10, 30, 5));
 ```
