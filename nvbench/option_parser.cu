@@ -27,6 +27,8 @@
 
 #include <nvbench/detail/throw.cuh>
 
+#include <nvbench/internal/help_strings.cuh>
+
 #include <fmt/format.h>
 
 #include <cassert>
@@ -365,7 +367,17 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
   {
     const auto &arg = *first;
 
-    if (arg == "--list" || arg == "-l")
+    if (arg == "--help" || arg == "-h")
+    {
+      this->print_help();
+      std::exit(0);
+    }
+    else if (arg == "--help-axes" || arg == "--help-axis")
+    {
+      this->print_help_axis();
+      std::exit(0);
+    }
+    else if (arg == "--list" || arg == "-l")
     {
       this->print_list();
       std::exit(0);
@@ -495,6 +507,18 @@ void option_parser::print_list() const
   nvbench::markdown_printer printer{std::cout};
   printer.print_device_info();
   printer.print_benchmark_list(bench_mgr.get_benchmarks());
+}
+
+void option_parser::print_help() const
+{
+  fmt::print("{}\n{}\n",
+             nvbench::internal::help_text,
+             nvbench::internal::help_axis_text);
+}
+
+void option_parser::print_help_axis() const
+{
+  fmt::print("{}\n", nvbench::internal::help_axis_text);
 }
 
 void option_parser::add_benchmark(const std::string &name)

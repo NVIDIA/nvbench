@@ -84,6 +84,8 @@ private:
   std::ostream &printer_spec_to_ostream(const std::string &spec);
 
   void print_list() const;
+  void print_help() const;
+  void print_help_axis() const;
 
   void add_benchmark(const std::string &name);
   void replay_global_args();
