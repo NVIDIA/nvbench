@@ -9,25 +9,43 @@ namespace nvbench
 {
 
 /**
- * A named set of key/value pairs associated with a measurement.
+ * A named set of key/value pairs associated with a benchmark result.
  *
- * The key/value pair functionality is implemented by the `named_values` base
- * class.
+ * The summary name is the unabbreviated name for the measurement.
+ * An abbreviated name for column headings can be suggested in a "short_name"
+ * entry (see below).
  *
  * Some keys have standard meanings that output formats may use to produce
- * better representations of the summary.
- * @todo TODO fill this out as the format writers develop. These are some ideas:
- * - "hint": {"duration", "bandwidth", "bytes", "etc}
- * - "fmt_string": "{:9.5f}"
- * - "short_name": "%PeakMBW" (Abbreviated name for table headings)
- * - "description": "Average global device memory throughput as a percentage of
- * the device's peak bandwidth."
+ * more readable representations of the result:
+ *
+ * - "hint": Formatting hints (see below)
+ * - "short_name": Abbreviated name for table headings.
+ * - "description": Longer description of result.
+ * - "value": Actual value.
  *
  * Hints:
- * - "hint" unset: Arbitrary value is stored in a key named "value".
- * - "hint" == "duration":
- *   - "value" is a float64_t with the mean elapsed time in seconds.
- *   - Additional optional float64_t keys: "min", "max", "stdev"
+ * - unset: Arbitrary value is stored in "value".
+ * - "duration": "value" is a float64_t time duration in seconds.
+ * - "item_rate": "value" is a float64_t item rate in elements / second.
+ * - "bytes": "value" is an int64_t number of bytes.
+ * - "byte_rate": "value" is a float64_t byte rate in bytes / second.
+ * - "sample_size": "value" is an int64_t number of samples in a measurement.
+ * - "percentage": "value" is a float64_t percentage.
+ *
+ * The key/value pair functionality is implemented by the
+ * `nvbench::named_values` base class.
+ *
+ * Example: Adding a new summary to an nvbench::state object:
+ *
+ * ```
+ * auto &summ = state.add_summary("Average GPU Time (Batch)");
+ * summ.set_string("hint", "duration");
+ * summ.set_string("short_name", "Batch GPU");
+ * summ.set_string("description",
+ *                 "Average back-to-back kernel execution time as measured "
+ *                 "by CUDA events.");
+ * summ.set_float64("value", avg_batch_gpu_time);
+ * ```
  */
 struct summary : public nvbench::named_values
 {
