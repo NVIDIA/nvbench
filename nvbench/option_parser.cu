@@ -162,7 +162,7 @@ std::vector<T> parse_values(std::string_view value_spec)
                                      "\\s*"     // Whitespace
                                      "("        // Start value capture
                                      "[^\\]]+?" // One or more "not ]"
-                                     ","        // Literal '.'
+                                     ","        // Literal ','
                                      "[^\\]]+?" // One or more "not ]"
                                      ")"        // End value capture
                                      "\\s*"     // Whitespace
@@ -184,7 +184,7 @@ std::vector<T> parse_values(std::string_view value_spec)
 
   // Match a single value, e.g. "XXX" or "[XXX]"
   static const std::regex single_regex{"^"          // Start of string
-                                       "\\[?"       // Literal `[`
+                                       "\\[?"       // Optional Literal `[`
                                        "\\s*"       // Whitespace
                                        "("          // Start value capture
                                        "[^,\\]:]+?" // One or more "not ,]:"
@@ -459,25 +459,14 @@ std::ostream &option_parser::printer_spec_to_ostream(const std::string &spec)
   {
     return std::cerr;
   }
-  else
+  else // spec is a filename:
   {
-    m_ofstream_storage.push_back(std::make_unique<std::ofstream>());
-    auto &file_stream = *m_ofstream_storage.back();
-
+    auto file_stream = std::make_unique<std::ofstream>();
     // Throw if file can't open
-    file_stream.exceptions(file_stream.exceptions() | std::ios::failbit);
-
-    try
-    {
-      file_stream.open(spec);
-    }
-    catch (...)
-    {
-      m_ofstream_storage.pop_back();
-      throw;
-    }
-
-    return file_stream;
+    file_stream->exceptions(file_stream->exceptions() | std::ios::failbit);
+    file_stream->open(spec);
+    m_ofstream_storage.push_back(std::move(file_stream));
+    return *m_ofstream_storage.back();
   }
 }
 
