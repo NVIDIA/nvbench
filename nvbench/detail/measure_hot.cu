@@ -71,7 +71,7 @@ void measure_hot_base::generate_summaries()
   const auto d_samples     = static_cast<double>(m_total_samples);
   const auto avg_cuda_time = m_total_cuda_time / d_samples;
   {
-    auto &summ = m_state.add_summary("Average GPU Time (Hot)");
+    auto &summ = m_state.add_summary("Average GPU Time (Batch)");
     summ.set_string("hint", "duration");
     summ.set_string("short_name", "Batch GPU");
     summ.set_string("description",
@@ -81,7 +81,7 @@ void measure_hot_base::generate_summaries()
   }
 
   {
-    auto &summ = m_state.add_summary("Number of Samples (Hot)");
+    auto &summ = m_state.add_summary("Number of Samples (Batch)");
     summ.set_string("hint", "sample_size");
     summ.set_string("short_name", "Batch");
     summ.set_string("description",
