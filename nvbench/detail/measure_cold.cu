@@ -147,7 +147,7 @@ void measure_cold_base::generate_summaries()
 
       if (m_cuda_noise > m_max_noise)
       {
-        printer.log(nvbench::log_level::Warn,
+        printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
@@ -157,7 +157,7 @@ void measure_cold_base::generate_summaries()
       }
       if (m_total_samples < m_min_samples)
       {
-        printer.log(nvbench::log_level::Warn,
+        printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "before accumulating min_samples ({} < {})",
                                 timeout,
@@ -166,7 +166,7 @@ void measure_cold_base::generate_summaries()
       }
       if (m_total_cuda_time < m_min_time)
       {
-        printer.log(nvbench::log_level::Warn,
+        printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "before accumulating min_time ({:0.2f}s < "
                                 "{:0.2f}s)",
@@ -177,7 +177,7 @@ void measure_cold_base::generate_summaries()
     }
 
     // Log to stdout:
-    printer.log(nvbench::log_level::Pass,
+    printer.log(nvbench::log_level::pass,
                 fmt::format("Cold: {:0.6f}ms GPU, {:0.6f}ms CPU, {:0.2f}s "
                             "total GPU, {}x",
                             avg_cuda_time * 1e3,

@@ -34,7 +34,7 @@ void runner_base::handle_sampling_exception(const std::exception &e,
         printer_opt_ref.has_value())
     {
       auto &printer = printer_opt_ref.value().get();
-      printer.log(nvbench::log_level::Fail, reason);
+      printer.log(nvbench::log_level::fail, reason);
     }
 
     exec_state.skip(reason);
@@ -58,7 +58,7 @@ void runner_base::print_skip_notification(state &exec_state) const
       printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
-    printer.log(nvbench::log_level::Skip, exec_state.get_skip_reason());
+    printer.log(nvbench::log_level::skip, exec_state.get_skip_reason());
   }
 }
 

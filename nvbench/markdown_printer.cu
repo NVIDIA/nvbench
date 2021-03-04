@@ -99,22 +99,22 @@ void markdown_printer::do_log(nvbench::log_level level, const std::string &msg)
   std::string tag;
   switch (level)
   {
-    case log_level::Run:
+    case log_level::run:
       tag = fmt::format(m_color ? run_color : no_style, "{:<5}", "Run:");
       break;
-    case log_level::Pass:
+    case log_level::pass:
       tag = fmt::format(m_color ? pass_color : no_style, "{:<5}", "Pass:");
       break;
-    case log_level::Fail:
+    case log_level::fail:
       tag = fmt::format(m_color ? fail_color : no_style, "{:<5}", "Fail:");
       break;
-    case log_level::Skip:
+    case log_level::skip:
       tag = fmt::format(m_color ? skip_color : no_style, "{:<5}", "Skip:");
       break;
-    case log_level::Warn:
+    case log_level::warn:
       tag = fmt::format(m_color ? warn_color : no_style, "{:<5}", "Warn:");
       break;
-    case log_level::Info:
+    case log_level::info:
       tag = fmt::format(m_color ? info_color : no_style, "{:<5}", "Info:");
       break;
   }
@@ -126,7 +126,7 @@ void markdown_printer::do_log(nvbench::log_level level, const std::string &msg)
 
 void markdown_printer::do_log_run_state(const nvbench::state &exec_state)
 {
-  this->log(nvbench::log_level::Run, exec_state.get_short_description(m_color));
+  this->log(nvbench::log_level::run, exec_state.get_short_description(m_color));
 }
 
 void markdown_printer::do_print_benchmark_list(

@@ -102,7 +102,7 @@ void measure_hot_base::generate_summaries()
 
       if (m_total_samples < m_min_samples)
       {
-        printer.log(nvbench::log_level::Warn,
+        printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "before accumulating min_samples ({} < {})",
                                 timeout,
@@ -111,7 +111,7 @@ void measure_hot_base::generate_summaries()
       }
       if (m_total_cuda_time < m_min_time)
       {
-        printer.log(nvbench::log_level::Warn,
+        printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "before accumulating min_time ({:0.2f}s < "
                                 "{:0.2f}s)",
@@ -122,7 +122,7 @@ void measure_hot_base::generate_summaries()
     }
 
     // Log to stdout:
-    printer.log(nvbench::log_level::Pass,
+    printer.log(nvbench::log_level::pass,
                 fmt::format("Batch: {:0.6f}ms GPU, {:0.2f}s total GPU, {}x",
                             avg_cuda_time * 1e3,
                             m_total_cuda_time,

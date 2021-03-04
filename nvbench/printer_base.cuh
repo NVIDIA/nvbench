@@ -13,12 +13,12 @@ struct state;
 
 enum class log_level
 {
-  Run,
-  Pass,
-  Fail,
-  Skip,
-  Warn,
-  Info
+  run,
+  pass,
+  fail,
+  skip,
+  warn,
+  info
 };
 
 /*!
@@ -71,7 +71,7 @@ struct printer_base
 
   /*!
    * Called before running the measurements associated with state.
-   * Implementations are expected to call `log(log_level::Run, ...)`.
+   * Implementations are expected to call `log(log_level::run, ...)`.
    */
   void log_run_state(const nvbench::state &exec_state)
   {
