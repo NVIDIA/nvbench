@@ -176,6 +176,11 @@ struct state
     return m_axis_values;
   }
 
+  /*!
+   * Return a string of "axis_name1=input_string1 axis_name2=input_string2 ..."
+   */
+  [[nodiscard]] std::string get_axis_values_as_string(bool color = false) const;
+
   [[nodiscard]] const benchmark_base &get_benchmark() const
   {
     return m_benchmark;

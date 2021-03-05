@@ -182,7 +182,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         auto &st               = states[state_index];
 
         st["index"]             = state_index;
-        st["description"]       = exec_state.get_short_description();
+        st["description"]       = exec_state.get_axis_values_as_string();
         st["device"]            = exec_state.get_device()->get_id();
         st["type_config_index"] = exec_state.get_type_config_index();
 

@@ -112,7 +112,7 @@ const std::vector<summary> &state::get_summaries() const { return m_summaries; }
 
 std::vector<summary> &state::get_summaries() { return m_summaries; }
 
-std::string state::get_short_description(bool color) const
+std::string state::get_axis_values_as_string(bool color) const
 {
   // Returns fmt_style if color is true, otherwise no style flags.
   auto style = [&color](auto fmt_style) {
@@ -161,10 +161,21 @@ std::string state::get_short_description(bool color) const
     }
   }
 
+  return fmt::to_string(buffer);
+}
+
+std::string state::get_short_description(bool color) const
+{
+  // Returns fmt_style if color is true, otherwise no style flags.
+  auto style = [&color](auto fmt_style) {
+    const fmt::text_style no_style;
+    return color ? fmt_style : no_style;
+  };
+
   return fmt::format(
     "{} [{}]",
     fmt::format(style(fmt::emphasis::bold), "{}", m_benchmark.get().get_name()),
-    fmt::to_string(buffer));
+    this->get_axis_values_as_string(color));
 }
 
 void state::add_element_count(std::size_t elements, std::string column_name)
