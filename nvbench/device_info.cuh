@@ -210,6 +210,7 @@ __global__ void noop_kernel()
 inline const auto noop_kernel_ptr = &noop_kernel<void>;
 
 [[nodiscard]] inline int get_ptx_version(int dev_id)
+try
 {
   nvbench::detail::device_scope _{dev_id};
   cudaFuncAttributes attr{};
@@ -217,6 +218,11 @@ inline const auto noop_kernel_ptr = &noop_kernel<void>;
     cudaFuncGetAttributes(&attr, nvbench::detail::noop_kernel_ptr));
   return attr.ptxVersion * 10;
 }
+catch(...)
+{ // Fail gracefully when no appropriate PTX is found for this device.
+  return -1;
+}
+
 } // namespace detail
 
 } // namespace nvbench
