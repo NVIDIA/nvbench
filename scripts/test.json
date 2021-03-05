@@ -1,0 +1,3836 @@
+{
+  "devices": [
+    {
+      "id": 0,
+      "name": "GeForce MX150",
+      "sm_version": 610,
+      "ptx_version": 610,
+      "sm_default_clock_rate": 1531500000,
+      "number_of_sms": 3,
+      "max_blocks_per_sm": 32,
+      "max_threads_per_sm": 2048,
+      "max_threads_per_block": 1024,
+      "registers_per_sm": 65536,
+      "registers_per_block": 65536,
+      "global_memory_size": 2147483648,
+      "global_memory_bus_peak_clock_rate": 3004000000,
+      "global_memory_bus_width": 64,
+      "global_memory_bus_bandwidth": 48064000000,
+      "l2_cache_size": 524288,
+      "shared_memory_per_sm": 98304,
+      "shared_memory_per_block": 49152,
+      "ecc_state": false
+    }
+  ],
+  "benchmarks": [
+    {
+      "index": 0,
+      "name": "cub::DeviceScan::ExclusiveSum (mixed types)",
+      "min_samples": 10,
+      "min_time": 0.5,
+      "max_noise": 0.5,
+      "skip_time": 0.0001,
+      "timeout": 2.0,
+      "devices": [
+        0
+      ],
+      "axes": [
+        {
+          "index": 0,
+          "name": "In",
+          "type": "type",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "I32",
+              "description": "int32_t",
+              "is_active": true
+            },
+            {
+              "input_string": "F32",
+              "description": "float",
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "name": "Out",
+          "type": "type",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "I32",
+              "description": "int32_t",
+              "is_active": true
+            },
+            {
+              "input_string": "F32",
+              "description": "float",
+              "is_active": true
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "name": "Elements",
+          "type": "int64",
+          "flags": "pow2",
+          "values": [
+            {
+              "input_string": "16",
+              "description": "2^16 = 65536",
+              "value": 65536
+            },
+            {
+              "input_string": "18",
+              "description": "2^18 = 262144",
+              "value": 262144
+            },
+            {
+              "input_string": "20",
+              "description": "2^20 = 1048576",
+              "value": 1048576
+            },
+            {
+              "input_string": "22",
+              "description": "2^22 = 4194304",
+              "value": 4194304
+            },
+            {
+              "input_string": "24",
+              "description": "2^24 = 16777216",
+              "value": 16777216
+            },
+            {
+              "input_string": "26",
+              "description": "2^26 = 67108864",
+              "value": 67108864
+            },
+            {
+              "input_string": "28",
+              "description": "2^28 = 268435456",
+              "value": 268435456
+            },
+            {
+              "input_string": "30",
+              "description": "2^30 = 1073741824",
+              "value": 1073741824
+            },
+            {
+              "input_string": "32",
+              "description": "2^32 = 4294967296",
+              "value": 4294967296
+            }
+          ]
+        }
+      ],
+      "states": [
+        {
+          "index": 0,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^16",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 65536
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 1,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^18",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 262144
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 2,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^20",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1048576
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 3,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^22",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4194304
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 4,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^24",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 16777216
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 5,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^26",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 67108864
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 6,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^28",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 268435456
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 7,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^30",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1073741824
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 8,
+          "description": "Device=0 In=I32 Out=I32 Elements=2^32",
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4294967296
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 9,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^16",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 65536
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 262144
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 262144
+                }
+              ]
+            }
+          ],
+          "is_skipped": true,
+          "skip_reason": "Warmup time did not meet skip_time limit: 23.552us < 100.000us."
+        },
+        {
+          "index": 10,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^18",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 262144
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 1048576
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 1048576
+                }
+              ]
+            }
+          ],
+          "is_skipped": true,
+          "skip_reason": "Warmup time did not meet skip_time limit: 58.528us < 100.000us."
+        },
+        {
+          "index": 11,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^20",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1048576
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 4194304
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 4194304
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 3992
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.00031090746492985993
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 169.02444628979083
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0002039839102511483
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.5549663359621547
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5140483868.109873
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41123870944.87898
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 85.56065026814036
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.00020578032539821485
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 3993
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 12,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^22",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4194304
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 16777216
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 16777216
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 623
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0010056439807383639
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 158.63268087736353
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0008036327342925834
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.1739115327587887
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5219180131.695524
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41753441053.56419
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 86.87050818401339
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0008074545517084609
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 653
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 13,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^24",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 16777216
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 67108864
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 67108864
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 157
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.004856869426751593
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 98.9662221505226
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0032047625772512614
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.060884867266032476
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5235088589.429889
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41880708715.43911
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 87.13529609570388
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.003207667653153582
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 164
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 14,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^26",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 67108864
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 268435456
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 268435456
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 40
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.013656947500000002
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 14.982641968937907
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.012809965538978577
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.025417588724917655
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5238801290.745005
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41910410325.96004
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 87.19709205634162
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.012812636956935975
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 41
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 15,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^28",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 268435456
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: bad allocation: cudaErrorMemoryAllocation: out of memory"
+        },
+        {
+          "index": 16,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^30",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1073741824
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: bad allocation: cudaErrorMemoryAllocation: out of memory"
+        },
+        {
+          "index": 17,
+          "description": "Device=0 In=I32 Out=F32 Elements=2^32",
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4294967296
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: bad allocation: cudaErrorMemoryAllocation: out of memory"
+        },
+        {
+          "index": 18,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^16",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 65536
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 262144
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 262144
+                }
+              ]
+            }
+          ],
+          "is_skipped": true,
+          "skip_reason": "Warmup time did not meet skip_time limit: 22.528us < 100.000us."
+        },
+        {
+          "index": 19,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^18",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 262144
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 1048576
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 1048576
+                }
+              ]
+            }
+          ],
+          "is_skipped": true,
+          "skip_reason": "Warmup time did not meet skip_time limit: 56.320us < 100.000us."
+        },
+        {
+          "index": 20,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^20",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1048576
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 4194304
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 4194304
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 5131
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.00027560013642564783
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 254.23803576858268
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.00020365439679766425
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.5520172900855731
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5148801187.149358
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41190409497.19486
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 85.69908766893072
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.00020401344780207216
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 5132
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 21,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^22",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4194304
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 16777216
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 16777216
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 623
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0008926802568218293
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 108.14136324508267
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0008035837319077119
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.16365330766442432
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5219498396.318578
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41755987170.54862
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 86.87580553126793
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.0008054661889536275
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 653
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 22,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^24",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 16777216
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 67108864
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 67108864
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 157
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.003263502547770701
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.5802344112591985
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.003204832687499415
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.06378859692136664
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5234974064.46216
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41879792515.69728
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 87.1333898878522
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.003204988805259146
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 164
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 23,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^26",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 67108864
+            }
+          ],
+          "summaries": [
+            {
+              "index": 0,
+              "name": "Input Buffer Size: InputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "InputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 268435456
+                }
+              ]
+            },
+            {
+              "index": 1,
+              "name": "Output Buffer Size: OutputSize",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "bytes"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "OutputSize"
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 268435456
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Number of Samples (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Samples"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in cold time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 40
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Average CPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "CPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time observed from host."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.012881732499999998
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "CPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold CPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.14225771044561916
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "name": "Average GPU Time (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GPU Time"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average isolated kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.012808554363250735
+                }
+              ]
+            },
+            {
+              "index": 6,
+              "name": "GPU Relative Standard Deviation (Cold)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Noise"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Relative standard deviation of the cold GPU execution time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.030156536927754603
+                }
+              ]
+            },
+            {
+              "index": 7,
+              "name": "Element Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "item_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Elem/s"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of input elements handled per second."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 5239378472.916765
+                }
+              ]
+            },
+            {
+              "index": 8,
+              "name": "Average Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "byte_rate"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "GlobalMem BW"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of bytes read/written per second to the CUDA device's global memory."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 41915027783.33412
+                }
+              ]
+            },
+            {
+              "index": 9,
+              "name": "Percent Peak Global Memory Throughput",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "percentage"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "BWPeak"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 87.20669895001274
+                }
+              ]
+            },
+            {
+              "index": 10,
+              "name": "Average GPU Time (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "duration"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch GPU"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Average back-to-back kernel execution time as measured by CUDA events."
+                },
+                {
+                  "name": "value",
+                  "type": "float64",
+                  "value": 0.012813586723513721
+                }
+              ]
+            },
+            {
+              "index": 11,
+              "name": "Number of Samples (Batch)",
+              "values": [
+                {
+                  "name": "hint",
+                  "type": "string",
+                  "value": "sample_size"
+                },
+                {
+                  "name": "short_name",
+                  "type": "string",
+                  "value": "Batch"
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "value": "Number of kernel executions in hot time measurements."
+                },
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "value": 41
+                }
+              ]
+            }
+          ],
+          "is_skipped": false
+        },
+        {
+          "index": 24,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^28",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 268435456
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: bad allocation: cudaErrorMemoryAllocation: out of memory"
+        },
+        {
+          "index": 25,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^30",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1073741824
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: bad allocation: cudaErrorMemoryAllocation: out of memory"
+        },
+        {
+          "index": 26,
+          "description": "Device=0 In=F32 Out=I32 Elements=2^32",
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "I32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4294967296
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: bad allocation: cudaErrorMemoryAllocation: out of memory"
+        },
+        {
+          "index": 27,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^16",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 65536
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 28,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^18",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 262144
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 29,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^20",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1048576
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 30,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^22",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4194304
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 31,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^24",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 16777216
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 32,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^26",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 67108864
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 33,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^28",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 268435456
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 34,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^30",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 1073741824
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        },
+        {
+          "index": 35,
+          "description": "Device=0 In=F32 Out=F32 Elements=2^32",
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.5,
+          "skip_time": 0.0001,
+          "timeout": 2.0,
+          "axis_values": [
+            {
+              "name": "In",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Out",
+              "type": "string",
+              "value": "F32"
+            },
+            {
+              "name": "Elements",
+              "type": "int64",
+              "value": 4294967296
+            }
+          ],
+          "summaries": null,
+          "is_skipped": true,
+          "skip_reason": "Types are not mixed."
+        }
+      ]
+    }
+  ]
+}
