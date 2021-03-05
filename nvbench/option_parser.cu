@@ -28,7 +28,9 @@
 
 #include <nvbench/detail/throw.cuh>
 
-#include <nvbench/internal/help_strings.cuh>
+// These are generated from the markdown docs by CMake in the build directory:
+#include "cli_help.cuh"
+#include "cli_help_axis.cuh"
 
 #include <fmt/format.h>
 
@@ -532,14 +534,12 @@ void option_parser::print_list() const
 
 void option_parser::print_help() const
 {
-  fmt::print("{}\n{}\n",
-             nvbench::internal::help_text,
-             nvbench::internal::help_axis_text);
+  fmt::print("{}\n{}\n", ::cli_help_text, ::cli_help_axis_text);
 }
 
 void option_parser::print_help_axis() const
 {
-  fmt::print("{}\n", nvbench::internal::help_axis_text);
+  fmt::print("{}\n", ::cli_help_axis_text);
 }
 
 void option_parser::add_benchmark(const std::string &name)

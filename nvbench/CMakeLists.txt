@@ -27,11 +27,25 @@ set(srcs
   detail/state_generator.cu
 )
 
+# Generate doc strings from md files:
+include("../cmake/FileToString.cmake")
+file_to_string("../docs/cli_help.md"
+  "${CMAKE_CURRENT_BINARY_DIR}/cli_help.cuh"
+  ""
+  cli_help_text
+)
+file_to_string("../docs/cli_help_axis.md"
+  "${CMAKE_CURRENT_BINARY_DIR}/cli_help_axis.cuh"
+  ""
+  cli_help_axis_text
+)
+
 add_library(nvbench STATIC ${srcs})
 add_library(nvbench::nvbench ALIAS nvbench)
 
 # TODO generator expressions for installed paths
 target_include_directories(nvbench PUBLIC "${NVBench_SOURCE_DIR}")
+target_include_directories(nvbench PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(nvbench PRIVATE fmt::fmt nvbench_json)
 target_compile_features(nvbench PUBLIC cuda_std_17)
 set_target_properties(nvbench PROPERTIES
