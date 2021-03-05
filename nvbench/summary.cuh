@@ -79,7 +79,7 @@ struct summary : public nvbench::named_values
   summary &operator=(summary &&) = default;
 
   void set_name(std::string name) { m_name = std::move(name); }
-  const std::string &get_name() const { return m_name; }
+  [[nodiscard]] const std::string &get_name() const { return m_name; }
 
 private:
   std::string m_name;
