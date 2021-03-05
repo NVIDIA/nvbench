@@ -200,7 +200,7 @@ NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
 This would generate a total of 36 configurations and instantiate the benchmark 6
 times. Keep the rapid growth of these combinations in mind when choosing the
 number of values in an axis. See the section about combinatorial explosion for
-more example and information.
+more examples and information.
 
 # Throughput Measurements
 
