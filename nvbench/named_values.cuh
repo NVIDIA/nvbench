@@ -72,7 +72,7 @@ private:
     std::string name;
     value_type value;
   };
-  // TODO this should just be an unordered_map<string, value_type>.
+  // Use a vector to preserve order:
   using storage_type = std::vector<named_value>;
 
   storage_type m_storage;

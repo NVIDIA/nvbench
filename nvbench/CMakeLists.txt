@@ -10,6 +10,7 @@ set(srcs
   device_manager.cu
   float64_axis.cu
   int64_axis.cu
+  json_printer.cu
   markdown_printer.cu
   named_values.cu
   option_parser.cu
@@ -31,7 +32,7 @@ add_library(nvbench::nvbench ALIAS nvbench)
 
 # TODO generator expressions for installed paths
 target_include_directories(nvbench PUBLIC "${NVBench_SOURCE_DIR}")
-target_link_libraries(nvbench PRIVATE fmt::fmt)
+target_link_libraries(nvbench PRIVATE fmt::fmt nvbench_json)
 target_compile_features(nvbench PUBLIC cuda_std_17)
 set_target_properties(nvbench PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"

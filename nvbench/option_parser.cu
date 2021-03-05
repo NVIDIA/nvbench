@@ -21,6 +21,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_printer.cuh>
+#include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
@@ -406,6 +407,12 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->add_csv_printer(first[1]);
       first += 2;
     }
+    else if (arg == "--json")
+    {
+      check_params(1);
+      this->add_json_printer(first[1]);
+      first += 2;
+    }
     else if (arg == "--benchmark" || arg == "-b")
     {
       check_params(1);
@@ -474,6 +481,20 @@ catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
                 "Error while adding csv output for `{}`:\n{}",
+                spec,
+                e.what());
+}
+
+void option_parser::add_json_printer(const std::string &spec)
+try
+{
+  std::ostream &stream = this->printer_spec_to_ostream(spec);
+  m_printer.emplace<nvbench::json_printer>(stream);
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error while adding json output for `{}`:\n{}",
                 spec,
                 e.what());
 }
