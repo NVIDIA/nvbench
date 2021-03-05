@@ -14,6 +14,9 @@
 * `--csv <filename/stream>`
   * Write CSV output to a file, or "stdout" / "stderr".
 
+* `--json <filename/stream>`
+  * Write JSON output to a file, or "stdout" / "stderr".
+
 * `--markdown <filename/stream>`, `--md <filename/stream>`
   * Write markdown output to a file, or "stdout" / "stderr".
   * Markdown is written to "stdout" by default.
