@@ -208,7 +208,7 @@ struct state
   template <typename KernelLauncher>
   void exec(KernelLauncher &&kernel_launcher)
   {
-    this->exec(nvbench::exec_tag::default_measurements,
+    this->exec(nvbench::exec_tag::none,
                std::forward<KernelLauncher>(kernel_launcher));
   }
 

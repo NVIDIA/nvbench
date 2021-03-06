@@ -52,12 +52,11 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     if constexpr (modifier_tags & (timer | sync))
     { // Can't do hot timings with manual timer or sync; whole point is to not
       // sync in between executions.
-      this->exec((nvbench::exec_tag::default_measurements & ~hot) | tags,
-                 std::forward<KernelLauncher>(kernel_launcher));
+      this->exec(cold | tags, std::forward<KernelLauncher>(kernel_launcher));
     }
     else
     {
-      this->exec(nvbench::exec_tag::default_measurements | tags,
+      this->exec(cold | hot | tags,
                  std::forward<KernelLauncher>(kernel_launcher));
     }
     return;
@@ -67,8 +66,6 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
   {
     return;
   }
-
-  static_assert(!(tags & cpu), "CPU-only measurements not implemented.");
 
   // Each measurement is deliberately isolated in constexpr branches to
   // avoid instantiating unused measurements.

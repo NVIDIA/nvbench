@@ -39,8 +39,7 @@ enum class exec_flag
   // Measurement types:
   cold = 0x0100, // measure_hot
   hot  = 0x0200, // measure_cold
-  cpu  = 0x0400, // measure_cpu
-  measure_mask  = cold | hot | cpu
+  measure_mask  = cold | hot
 };
 
 } // namespace nvbench::detail
@@ -96,7 +95,6 @@ using no_block_t      = tag<nvbench::detail::exec_flag::no_block>;
 using sync_t          = tag<nvbench::detail::exec_flag::sync>;
 using hot_t           = tag<nvbench::detail::exec_flag::hot>;
 using cold_t          = tag<nvbench::detail::exec_flag::cold>;
-using cpu_t           = tag<nvbench::detail::exec_flag::cpu>;
 using modifier_mask_t = tag<nvbench::detail::exec_flag::modifier_mask>;
 using measure_mask_t  = tag<nvbench::detail::exec_flag::measure_mask>;
 
@@ -106,11 +104,12 @@ constexpr inline no_block_t no_block;
 constexpr inline sync_t sync;
 constexpr inline cold_t cold;
 constexpr inline hot_t hot;
-constexpr inline cpu_t cpu;
 constexpr inline modifier_mask_t modifier_mask;
 constexpr inline measure_mask_t measure_mask;
 
 } // namespace impl
+
+constexpr inline auto none = nvbench::exec_tag::impl::none;
 
 /// Modifier used when only a portion of the KernelLauncher needs to be timed.
 /// Useful for resetting state in-between timed kernel launches.
@@ -120,20 +119,5 @@ constexpr inline auto timer = nvbench::exec_tag::impl::timer;
 /// synchronizations. Without this flag such benchmarks will deadlock.
 constexpr inline auto sync = nvbench::exec_tag::impl::no_block |
                              nvbench::exec_tag::impl::sync;
-
-/// Request Cold measurements.
-constexpr inline auto cold = nvbench::exec_tag::impl::cold;
-
-/// Request Hot measurements.
-constexpr inline auto hot = nvbench::exec_tag::impl::hot;
-
-/// Request CPU-only measurements.
-constexpr inline auto cpu = nvbench::exec_tag::impl::cpu;
-
-/// Requests hot and cold CUDA measurements with no modifiers.
-constexpr inline auto cuda = hot | cold;
-
-/// The default tag; used when none specified.
-constexpr inline auto default_measurements = cuda;
 
 } // namespace nvbench::exec_tag
