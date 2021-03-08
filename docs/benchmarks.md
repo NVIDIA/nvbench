@@ -53,6 +53,8 @@ processed. These parameter axes are used to customize a `KernelGenerator` with
 static and runtime configurations. There are four supported types of parameters:
 int64, float64, string, and type.
 
+More examples can found in [examples/axes.cu](../examples/axes.cu).
+
 ## Int64 Axes
 
 A common example of a parameter axis is to vary the number of input values a
