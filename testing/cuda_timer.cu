@@ -19,9 +19,9 @@
 #include <nvbench/cuda_timer.cuh>
 
 #include <nvbench/cuda_stream.cuh>
+#include <nvbench/test_kernels.cuh>
 #include <nvbench/types.cuh>
 
-#include "sleep_kernel.cuh"
 #include "test_asserts.cuh"
 
 #include <fmt/format.h>
@@ -35,7 +35,7 @@ void test_basic(cudaStream_t time_stream,
   NVBENCH_CUDA_CALL(cudaDeviceSynchronize());
 
   timer.start(time_stream);
-  sleep_kernel<<<1, 1, 0, exec_stream>>>(0.25);
+  nvbench::sleep_kernel<<<1, 1, 0, exec_stream>>>(0.25);
   timer.stop(time_stream);
 
   NVBENCH_CUDA_CALL(cudaDeviceSynchronize());

@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.18.3)
 project(NVBench CUDA CXX)
 
 option(NVBench_ENABLE_TESTING "Build NVBench testing suite." OFF)
+option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
 
 # Setup some vars for CPM packages:
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
@@ -44,7 +45,14 @@ endif()
 
 add_subdirectory(nvbench)
 
-if (NVBench_ENABLE_TESTING)
+if (NVBench_ENABLE_EXAMPLES OR NVBench_ENABLE_TESTING)
   enable_testing()
+endif()
+
+if (NVBench_ENABLE_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
+if (NVBench_ENABLE_TESTING)
   add_subdirectory(testing)
 endif()
