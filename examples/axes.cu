@@ -79,9 +79,10 @@ void copy_sweep_grid_shape(nvbench::state &state)
      num_values,
      in_ptr  = thrust::raw_pointer_cast(in.data()),
      out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
-      nvbench::copy_kernel<<<num_blocks, block_size>>>(in_ptr,
-                                                       out_ptr,
-                                                       num_values);
+      nvbench::copy_kernel<<<num_blocks, block_size, 0, launch.get_stream()>>>(
+        in_ptr,
+        out_ptr,
+        num_values);
     });
 }
 NVBENCH_BENCH(copy_sweep_grid_shape)
@@ -111,7 +112,9 @@ void copy_type_sweep(nvbench::state &state, nvbench::type_list<ValueType>)
     [num_values,
      in_ptr  = thrust::raw_pointer_cast(in.data()),
      out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
-      nvbench::copy_kernel<<<256, 256>>>(in_ptr, out_ptr, num_values);
+      nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(in_ptr,
+                                                                 out_ptr,
+                                                                 num_values);
     });
 }
 // Define a type_list to use for the type axis:
@@ -155,7 +158,9 @@ void copy_type_conversion_sweep(nvbench::state &state,
     [num_values,
      in_ptr  = thrust::raw_pointer_cast(in.data()),
      out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
-      nvbench::copy_kernel<<<256, 256>>>(in_ptr, out_ptr, num_values);
+      nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(in_ptr,
+                                                                 out_ptr,
+                                                                 num_values);
     });
 }
 // Optional: Skip when InputType == OutputType. This approach avoids
