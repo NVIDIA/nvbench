@@ -144,13 +144,19 @@ std::string state::get_axis_values_as_string(bool color) const
   const axes_metadata &axes = m_benchmark.get().get_axes();
   for (const auto &name : m_axis_values.get_names())
   {
+    const auto axis_type = m_axis_values.get_type(name);
+
     // Handle power-of-two int64 axes differently:
-    if (m_axis_values.get_type(name) == named_values::type::int64 &&
+    if (axis_type == named_values::type::int64 &&
         axes.get_int64_axis(name).is_power_of_two())
     {
       const nvbench::uint64_t value    = m_axis_values.get_int64(name);
       const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
       append_key_value(name, exponent, "2^{}");
+    }
+    else if (axis_type == named_values::type::float64)
+    {
+      append_key_value(name, m_axis_values.get_float64(name), "{:.5g}");
     }
     else
     {
