@@ -223,8 +223,12 @@ state.add_global_memory_reads<InputType>(size);
 state.add_global_memory_writes<OutputType>(size);
 ```
 
-For meaningful results, specify the input element count, and include all reads
-and writes to global memory.
+In general::
+- Add only the input element count (no outputs).
+- Add all reads and writes to global memory.
+
+More examples can found in [examples/throughput.cu](../examples/throughput.cu).
+
 
 # Skip Uninteresting / Invalid Benchmarks
 
@@ -262,6 +266,8 @@ using Ts = nvbench::type_list<...>;
 using Us = nvbench::type_list<...>;
 NVBENCH_BENCH_TYPES(my_benchmark, NVBENCH_TYPE_AXES(Ts, Us));
 ```
+
+More examples can found in [examples/skip.cu](../examples/skip.cu).
 
 # Execution Tags For Special Cases
 
@@ -304,6 +310,9 @@ void sync_example(nvbench::state& state)
 NVBENCH_BENCH(sync_example);
 ```
 
+See [examples/exec_tag_sync.cu](../examples/exec_tag_sync.cu) for a complete
+example.
+
 ## Explicit timer mode: `nvbench::exec_tag::timer`
 
 For some kernels, the working data may need to be reset between launches. This
@@ -341,6 +350,9 @@ void timer_example(nvbench::state& state)
 }
 NVBENCH_BENCH(timer_example);
 ```
+
+See [examples/exec_tag_timer.cu](../examples/exec_tag_timer.cu) for a complete
+example.
 
 # Beware: Combinatorial Explosion Is Lurking
 

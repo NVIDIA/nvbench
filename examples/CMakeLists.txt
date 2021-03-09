@@ -1,5 +1,9 @@
 set(example_srcs
   axes.cu
+  exec_tag_sync.cu
+  exec_tag_timer.cu
+  skip.cu
+  throughput.cu
 )
 
 foreach(example_src IN LISTS example_srcs)

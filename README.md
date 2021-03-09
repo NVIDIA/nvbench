@@ -51,13 +51,22 @@ command-line options for configuring benchmark execution at runtime. See the
 [CLI overview](docs/cli_help.md)
 and [CLI axis specification](docs/cli_help_axis.md) for more information.
 
-## Example Sandbox Project
+## Examples
 
-To get started with NVBench, consider trying out
-the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo). This
-repository contains a simple CMake project that uses NVBench to build an example
-benchmark. It's a great way to experiment with the library without a lot of
-investment.
+This repository provides a number of [examples](examples/) that demonstrate
+various NVBench features and usecases:
+
+- [Runtime and compile-time parameter sweeps](examples/axes.cu)
+- [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
+- [Skipping benchmark configurations](examples/skip.cu)
+- [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)
+- [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_sync.cu)
+
+To get started using NVBench with your own kernels, consider trying out
+the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo)
+. `nvbench_demo` provides a simple CMake project that uses NVBench to build an
+example benchmark. It's a great way to experiment with the library without a lot
+of investment.
 
 # License
 

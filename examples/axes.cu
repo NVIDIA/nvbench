@@ -24,8 +24,6 @@
 // Thrust vectors simplify memory management:
 #include <thrust/device_vector.h>
 
-#include <type_traits>
-
 //==============================================================================
 // Simple benchmark with no parameter axes:
 void simple(nvbench::state &state)

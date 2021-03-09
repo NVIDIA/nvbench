@@ -25,6 +25,8 @@
 /*!
  * @file test_kernels.cuh
  * A collection of simple kernels for testing purposes.
+ *
+ * Note that these kernels are written to be short and simple, not performant.
  */
 
 namespace nvbench
@@ -59,6 +61,21 @@ __global__ void copy_kernel(const T* in, U* out, std::size_t n)
   for (auto i = init; i < n; i += step)
   {
     out[i] = static_cast<U>(in[i]);
+  }
+}
+
+/*!
+ * For `i <- [0,n)`, `out[i] = in[i] % 2`.
+ */
+template <typename T, typename U>
+__global__ void mod2_kernel(const T* in, U* out, std::size_t n)
+{
+  const auto init = blockIdx.x * blockDim.x + threadIdx.x;
+  const auto step = blockDim.x * gridDim.x;
+
+  for (auto i = init; i < n; i += step)
+  {
+    out[i] = static_cast<U>(in[i] % 2);
   }
 }
 
