@@ -138,6 +138,7 @@ void copy_type_conversion_sweep(nvbench::state &state,
   if (sizeof(InputType) > sizeof(OutputType))
   {
     state.skip("Narrowing conversion: sizeof(InputType) > sizeof(OutputType).");
+    return;
   }
 
   // Number of InputTypes in 64 MiB:
