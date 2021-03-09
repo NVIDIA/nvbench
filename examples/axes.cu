@@ -53,7 +53,7 @@ NVBENCH_BENCH(single_float64_axis)
 
 //==============================================================================
 // Multiple parameters:
-// Varies block_size and num_blocks while invoking a naive copy of 256 GiB worth
+// Varies block_size and num_blocks while invoking a naive copy of 256 MiB worth
 // of int32_t.
 void copy_sweep_grid_shape(nvbench::state &state)
 {
@@ -61,7 +61,7 @@ void copy_sweep_grid_shape(nvbench::state &state)
   const int block_size = static_cast<int>(state.get_int64("BlockSize"));
   const int num_blocks = static_cast<int>(state.get_int64("NumBlocks"));
 
-  // Number of int32's in 256 MB:
+  // Number of int32s in 256 MiB:
   const std::size_t num_values = 256 * 1024 * 1024 / sizeof(nvbench::int32_t);
 
   // Report throughput stats:
@@ -86,7 +86,7 @@ void copy_sweep_grid_shape(nvbench::state &state)
     });
 }
 NVBENCH_BENCH(copy_sweep_grid_shape)
-  // Alternating powers of two between 64->1024
+  // Every second power of two from  64->1024:
   .add_int64_power_of_two_axis("BlockSize", nvbench::range(6, 10, 2))
   .add_int64_power_of_two_axis("NumBlocks", nvbench::range(6, 10, 2));
 
@@ -96,7 +96,7 @@ NVBENCH_BENCH(copy_sweep_grid_shape)
 template <typename ValueType>
 void copy_type_sweep(nvbench::state &state, nvbench::type_list<ValueType>)
 {
-  // Number of ValueType's in 256 MB:
+  // Number of ValueTypes in 256 MiB:
   const std::size_t num_values = 256 * 1024 * 1024 / sizeof(ValueType);
 
   // Report throughput stats:
@@ -135,14 +135,12 @@ void copy_type_conversion_sweep(nvbench::state &state,
                                 nvbench::type_list<InputType, OutputType>)
 {
   // Optional: Skip narrowing conversions.
-  // - Still run for lossy same-size int->float.
-  // - This could be done at compile-time with SFINAE to avoid instantiation.
   if (sizeof(InputType) > sizeof(OutputType))
   {
     state.skip("Narrowing conversion: sizeof(InputType) > sizeof(OutputType).");
   }
 
-  // Number of InputType's in 64 MB:
+  // Number of InputTypes in 64 MiB:
   const std::size_t num_values = 64 * 1024 * 1024 / sizeof(InputType);
 
   // Report throughput stats:
