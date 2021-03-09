@@ -6,6 +6,9 @@ set(example_srcs
   throughput.cu
 )
 
+# Metatarget for all examples:
+add_custom_target(nvbench.example.all)
+
 foreach(example_src IN LISTS example_srcs)
   get_filename_component(example_name "${example_src}" NAME_WLE)
   string(PREPEND example_name "nvbench.example.")
@@ -19,4 +22,6 @@ foreach(example_src IN LISTS example_srcs)
     RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
   )
   add_test(NAME ${example_name} COMMAND "$<TARGET_FILE:${example_name}>")
+
+  add_dependencies(nvbench.example.all ${example_name})
 endforeach()
