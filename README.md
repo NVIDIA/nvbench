@@ -60,7 +60,7 @@ various NVBench features and usecases:
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
 - [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)
-- [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_sync.cu)
+- [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_timer.cu)
 
 To get started using NVBench with your own kernels, consider trying out
 the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo)
