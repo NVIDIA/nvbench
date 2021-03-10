@@ -21,10 +21,9 @@
 // Grab some testing kernels from NVBench:
 #include <nvbench/test_kernels.cuh>
 
-// Thrust vectors simplify memory management:
+// Thrust simplifies memory management, etc:
+#include <thrust/copy.h>
 #include <thrust/device_vector.h>
-
-// Used to initialize input data:
 #include <thrust/sequence.h>
 
 // mod2_inplace performs an in-place mod2 over every element in `data`. `data`
@@ -55,7 +54,10 @@ void mod2_inplace(nvbench::state &state)
              // Lambda now takes a `timer` argument:
              [&input, &data, num_values](nvbench::launch &launch, auto &timer) {
                // Reset working data:
-               data = input;
+               thrust::copy(thrust::device.on(launch.get_stream()),
+                            input.cbegin(),
+                            input.cend(),
+                            data.begin());
 
                // Start timer:
                timer.start();
