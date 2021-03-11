@@ -91,7 +91,7 @@ NVBENCH_BENCH(benchmark).add_int64_power_of_two_axis("NumInputs",
                                                      {4, 6, 8, 10, 12});
 // Or, as shown in a later section:
 NVBENCH_BENCH(benchmark).add_int64_power_of_two_axis("NumInputs",
-                                                     nvbench::range(4, 12, 2});
+                                                     nvbench::range(4, 12, 2));
 ```
 
 ## Float64 Axes
@@ -254,7 +254,7 @@ void my_benchmark(nvbench::state& state, nvbench::type_list<T, U>)
   /* ... */
 };
 
-// Skip benchmarks are compile time -- for example, always skip when T == U
+// Skip benchmarks at compile time -- for example, always skip when T == U
 // (Note that the `type_list` argument defines the same type twice).
 template <typename SameType>
 void my_benchmark(nvbench::state& state, 
@@ -280,7 +280,7 @@ Execution tags may be passed to `state.exec` when these assumptions are not
 true:
 
 - `nvbench::exec_tag::sync` tells NVBench that the kernel launcher will
-  synchronize internally, and
+  synchronize internally.
 - `nvbench::exec_tag::timer` requests a timer object that can be used to
   restrict the timed region.
 
