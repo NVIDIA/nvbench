@@ -85,10 +85,7 @@ protected:
     NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
   }
 
-  __forceinline__ void block_stream()
-  {
-    m_blocker.block(m_launch.get_stream());
-  }
+  void block_stream();
 
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
 

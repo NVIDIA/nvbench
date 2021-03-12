@@ -18,11 +18,12 @@
 
 #pragma once
 
+#include <nvbench/types.cuh>
+
 namespace nvbench
 {
 
 struct cuda_stream;
-
 
 /**
  * Blocks a CUDA stream -- many sharp edges, read docs carefully.
@@ -59,6 +60,12 @@ struct cuda_stream;
  * The work submitted after `blocker.block(stream)` will not execute until
  * `blocker.unblock()` is called.
  *
+ * ## Timeout
+ *
+ * The `block` method takes a `timeout` argument. If this is greater than 0,
+ * the blocking kernel will print an error message and unblock after `timeout`
+ * seconds.
+ *
  * ## Caveats and warnings
  *
  * - Every call to `block()` must be followed by a call to `unblock()`.
@@ -75,12 +82,18 @@ struct blocking_kernel
   blocking_kernel();
   ~blocking_kernel();
 
-  void block(const nvbench::cuda_stream &stream);
+  void block(const nvbench::cuda_stream &stream, nvbench::float64_t timeout);
 
   __forceinline__ void unblock()
   {
-    volatile int& flag = m_host_flag;
-    flag = 1;
+    volatile nvbench::int32_t &flag = m_host_flag;
+    flag                            = 1;
+
+    const volatile nvbench::int32_t &timeout_flag = m_host_timeout_flag;
+    if (timeout_flag)
+    {
+      blocking_kernel::timeout_detected();
+    }
   }
 
   // move-only
@@ -90,8 +103,12 @@ struct blocking_kernel
   blocking_kernel &operator=(blocking_kernel &&) = default;
 
 private:
-  int m_host_flag{};
-  int *m_device_flag{};
+  nvbench::int32_t m_host_flag{};
+  nvbench::int32_t m_host_timeout_flag{};
+  nvbench::int32_t *m_device_flag{};
+  nvbench::int32_t *m_device_timeout_flag{};
+
+  static void timeout_detected();
 };
 
 } // namespace nvbench

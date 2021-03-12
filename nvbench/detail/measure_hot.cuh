@@ -104,7 +104,8 @@ private:
 
     if constexpr (use_blocking_kernel)
     {
-      blocker.block(m_launch.get_stream());
+      blocker.block(m_launch.get_stream(),
+                    m_state.get_blocking_kernel_timeout());
     }
 
     m_cuda_timer.start(m_launch.get_stream());
@@ -144,7 +145,8 @@ private:
         const auto blocked_launches = std::min(batch_size, nvbench::int64_t{2});
         const auto unblocked_launches = batch_size - blocked_launches;
 
-        blocker.block(m_launch.get_stream());
+        blocker.block(m_launch.get_stream(),
+                      m_state.get_blocking_kernel_timeout());
         m_cuda_timer.start(m_launch.get_stream());
 
         for (nvbench::int64_t i = 0; i < blocked_launches; ++i)

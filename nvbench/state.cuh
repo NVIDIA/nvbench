@@ -168,6 +168,22 @@ struct state
   void set_timeout(nvbench::float64_t timeout) { m_timeout = timeout; }
   /// @}
 
+  /// If a `KernelLauncher` syncs and `nvbench::exec_tag::sync` is not passed
+  /// to `state.exec(...)`, a deadlock may occur. If a `blocking_kernel` blocks
+  /// for more than `blocking_kernel_timeout` seconds, an error will be printed
+  /// and the kernel will unblock to prevent deadlocks.
+  /// A negative value disables the timeout.
+  /// @{
+  [[nodiscard]] nvbench::float64_t get_blocking_kernel_timeout() const
+  {
+    return m_blocking_kernel_timeout;
+  }
+  void set_blocking_kernel_timeout(nvbench::float64_t timeout)
+  {
+    m_blocking_kernel_timeout = timeout;
+  }
+  ///@}
+
   [[nodiscard]] const named_values &get_axis_values() const
   {
     return m_axis_values;
@@ -231,6 +247,9 @@ private:
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
+
+  // Deadlock protection. See blocking_kernel's class doc for details.
+  nvbench::float64_t m_blocking_kernel_timeout{30.0};
 
   std::vector<nvbench::summary> m_summaries;
   std::string m_skip_reason;
