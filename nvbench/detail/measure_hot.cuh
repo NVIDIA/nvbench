@@ -60,11 +60,16 @@ protected:
 
   void check_skip_time(nvbench::float64_t warmup_time);
 
+  void block_stream();
+
+  __forceinline__ void unblock_stream() { m_blocker.unblock(); }
+
   nvbench::state &m_state;
 
   nvbench::launch m_launch;
   nvbench::cuda_timer m_cuda_timer;
   nvbench::cpu_timer m_timeout_timer;
+  nvbench::blocking_kernel m_blocker;
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_min_time{};
@@ -100,12 +105,9 @@ private:
   // measurement.
   void run_warmup()
   {
-    nvbench::blocking_kernel blocker;
-
     if constexpr (use_blocking_kernel)
     {
-      blocker.block(m_launch.get_stream(),
-                    m_state.get_blocking_kernel_timeout());
+      this->block_stream();
     }
 
     m_cuda_timer.start(m_launch.get_stream());
@@ -114,7 +116,7 @@ private:
 
     if constexpr (use_blocking_kernel)
     {
-      blocker.unblock();
+      this->unblock_stream();
     }
     this->sync_stream();
 
@@ -131,8 +133,6 @@ private:
     const auto time_estimate = m_cuda_timer.get_duration() * 0.95;
     auto batch_size = static_cast<nvbench::int64_t>(m_min_time / time_estimate);
 
-    nvbench::blocking_kernel blocker;
-
     do
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
@@ -145,8 +145,7 @@ private:
         const auto blocked_launches = std::min(batch_size, nvbench::int64_t{2});
         const auto unblocked_launches = batch_size - blocked_launches;
 
-        blocker.block(m_launch.get_stream(),
-                      m_state.get_blocking_kernel_timeout());
+        this->block_stream();
         m_cuda_timer.start(m_launch.get_stream());
 
         for (nvbench::int64_t i = 0; i < blocked_launches; ++i)
@@ -156,7 +155,7 @@ private:
           this->launch_kernel();
         }
 
-        blocker.unblock(); // Start executing earlier launches
+        this->unblock_stream(); // Start executing earlier launches
 
         for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
         {

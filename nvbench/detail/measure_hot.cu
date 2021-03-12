@@ -162,4 +162,10 @@ void measure_hot_base::check_skip_time(nvbench::float64_t warmup_time)
   }
 }
 
+void measure_hot_base::block_stream()
+{
+  m_blocker.block(m_launch.get_stream(),
+                  m_state.get_blocking_kernel_timeout());
+}
+
 } // namespace nvbench::detail
