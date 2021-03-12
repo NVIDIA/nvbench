@@ -125,6 +125,7 @@ void blocking_kernel::block(const nvbench::cuda_stream &stream,
 void blocking_kernel::timeout_detected()
 {
   NVBENCH_THROW(std::runtime_error,
+                "{}",
                 "Deadlock detected -- missing nvbench::exec_tag::sync? "
                 "See stdout for details.");
 }
