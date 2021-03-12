@@ -86,10 +86,7 @@ struct state
 
   void add_element_count(std::size_t elements, std::string column_name = {});
 
-  void set_element_count(std::size_t elements)
-  {
-    m_element_count = elements;
-  }
+  void set_element_count(std::size_t elements) { m_element_count = elements; }
   [[nodiscard]] std::size_t get_element_count() const
   {
     return m_element_count;

@@ -41,8 +41,9 @@ namespace nvbench
 
 blocking_kernel::blocking_kernel()
 {
-  NVBENCH_CUDA_CALL(
-    cudaHostRegister(&m_host_flag, sizeof(m_host_flag), cudaHostRegisterMapped));
+  NVBENCH_CUDA_CALL(cudaHostRegister(&m_host_flag,
+                                     sizeof(m_host_flag),
+                                     cudaHostRegisterMapped));
   NVBENCH_CUDA_CALL(cudaHostGetDevicePointer(&m_device_flag, &m_host_flag, 0));
 }
 
