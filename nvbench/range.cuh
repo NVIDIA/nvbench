@@ -38,6 +38,10 @@ template <typename InT,
           typename OutT = nvbench::detail::range_output_t<InT>>
 auto range(InT start, InT end, InT stride = InT{1})
 {
+  if constexpr (std::is_floating_point_v<InT>)
+  { // Pad end to account for floating point errors:
+    end += (stride / InT{2});
+  }
   using result_t = std::vector<OutT>;
   result_t result;
   for (; start <= end; start += stride)

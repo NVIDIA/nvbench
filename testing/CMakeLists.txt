@@ -9,6 +9,7 @@ set(test_srcs
   int64_axis.cu
   named_values.cu
   option_parser.cu
+  range.cu
   runner.cu
   state.cu
   state_generator.cu
