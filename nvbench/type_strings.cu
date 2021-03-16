@@ -18,6 +18,8 @@
 
 #include <nvbench/type_strings.cuh>
 
+#include <fmt/format.h>
+
 #include <string>
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -34,13 +36,15 @@ namespace
 {
 struct free_wrapper
 {
-  void operator()(void* ptr) { std::free(ptr); }
+  void operator()(void *ptr) { std::free(ptr); }
 };
 } // end namespace
 
 #endif // NVBENCH_CXXABI_DEMANGLE
 
-namespace nvbench::detail
+namespace nvbench
+{
+namespace detail
 {
 
 std::string demangle(const std::string &str)
@@ -54,4 +58,6 @@ std::string demangle(const std::string &str)
 #endif
 };
 
-} // namespace nvbench::detail
+} // namespace detail
+
+} // namespace nvbench

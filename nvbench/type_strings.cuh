@@ -21,6 +21,7 @@
 #include <nvbench/types.cuh>
 
 #include <string>
+#include <type_traits>
 #include <typeinfo>
 
 namespace nvbench
@@ -49,8 +50,26 @@ struct type_strings
   static std::string description() { return {}; }
 };
 
+template <typename T, T Value>
+struct type_strings<std::integral_constant<T, Value>>
+{
+  // The string used to identify the type in shorthand (e.g. output tables and
+  // CLI options):
+  static std::string input_string() { return std::to_string(Value); }
+
+  // A more descriptive identifier for the type, if input_string is not a common
+  // identifier. May be blank if `input_string` is obvious.
+  static std::string description()
+  {
+    return nvbench::detail::demangle<std::integral_constant<T, Value>>();
+  }
+};
+
 } // namespace nvbench
 
+/*!
+ * Declare an `input_string` and `description` to use with a specific `type`.
+ */
 #define NVBENCH_DECLARE_TYPE_STRINGS(Type, InputString, Description)           \
   namespace nvbench                                                            \
   {                                                                            \

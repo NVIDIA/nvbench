@@ -57,6 +57,7 @@ This repository provides a number of [examples](examples/) that demonstrate
 various NVBench features and usecases:
 
 - [Runtime and compile-time parameter sweeps](examples/axes.cu)
+- [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
 - [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)

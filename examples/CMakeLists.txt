@@ -1,5 +1,6 @@
 set(example_srcs
   axes.cu
+  enums.cu
   exec_tag_sync.cu
   exec_tag_timer.cu
   skip.cu

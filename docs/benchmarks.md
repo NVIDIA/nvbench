@@ -130,6 +130,9 @@ void benchmark(nvbench::state& state)
 NVBENCH_BENCH(benchmark).add_string_axis("RNG Distribution", {"Uniform", "Gaussian"});
 ```
 
+A common use for string axes is to encode enum values, as shown in
+[examples/enums.cu](../examples/enums.cu).
+
 ## Type Axes
 
 Another common situation involves benchmarking a templated kernel with multiple
@@ -160,6 +163,10 @@ NVBENCH_BENCH_TYPES(my_benchmark, NVBENCH_TYPE_AXES(my_types))
 
 The `NVBENCH_TYPE_AXES` macro is unfortunately necessary to prevent commas in
 the `type_list<...>` from breaking macro parsing.
+
+Type axes can be used to encode compile-time enum and integral constants using
+the `nvbench::enum_type_list` helper. See
+[examples/enums.cu](../examples/enums.cu) for detail.
 
 ## `nvbench::range`
 

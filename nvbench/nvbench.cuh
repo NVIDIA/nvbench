@@ -27,6 +27,7 @@
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_stream.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/enum_type_list.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
 #include <nvbench/main.cuh>
