@@ -60,14 +60,50 @@ nvbench::int64_t state::get_int64(const std::string &axis_name) const
   return m_axis_values.get_int64(axis_name);
 }
 
+nvbench::int64_t
+state::get_int64_or_default(const std::string &axis_name,
+                            nvbench::int64_t default_value) const
+try
+{
+  return this->get_int64(axis_name);
+}
+catch (...)
+{
+  return default_value;
+}
+
 nvbench::float64_t state::get_float64(const std::string &axis_name) const
 {
   return m_axis_values.get_float64(axis_name);
 }
 
+nvbench::float64_t
+state::get_float64_or_default(const std::string &axis_name,
+                              nvbench::float64_t default_value) const
+try
+{
+  return this->get_float64(axis_name);
+}
+catch (...)
+{
+  return default_value;
+}
+
 const std::string &state::get_string(const std::string &axis_name) const
 {
   return m_axis_values.get_string(axis_name);
+}
+
+const std::string &
+state::get_string_or_default(const std::string &axis_name,
+                             const std::string &default_value) const
+try
+{
+  return this->get_string(axis_name);
+}
+catch (...)
+{
+  return default_value;
 }
 
 summary &state::add_summary(std::string summary_name)

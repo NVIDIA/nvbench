@@ -98,8 +98,19 @@ void test_summaries()
   ASSERT(state.get_summary("Test Summary2").get_size() == 0);
 }
 
+void test_defaults()
+{
+  dummy_bench bench;
+  state_tester state{bench};
+
+  ASSERT(state.get_int64_or_default("Foo", 42) == 42);
+  ASSERT(state.get_float64_or_default("Baz", 42.4) == 42.4);
+  ASSERT(state.get_string_or_default("Bar", "Kramble") == "Kramble");
+}
+
 int main()
 {
   test_params();
   test_summaries();
+  test_defaults();
 }

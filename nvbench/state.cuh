@@ -77,12 +77,21 @@ struct state
   }
 
   [[nodiscard]] nvbench::int64_t get_int64(const std::string &axis_name) const;
+  [[nodiscard]] nvbench::int64_t
+  get_int64_or_default(const std::string &axis_name,
+                       nvbench::int64_t default_value) const;
 
   [[nodiscard]] nvbench::float64_t
   get_float64(const std::string &axis_name) const;
+  [[nodiscard]] nvbench::float64_t
+  get_float64_or_default(const std::string &axis_name,
+                         nvbench::float64_t default_value) const;
 
   [[nodiscard]] const std::string &
   get_string(const std::string &axis_name) const;
+  [[nodiscard]] const std::string &
+  get_string_or_default(const std::string &axis_name,
+                        const std::string &default_value) const;
 
   void add_element_count(std::size_t elements, std::string column_name = {});
 
