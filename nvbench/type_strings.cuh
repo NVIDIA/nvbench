@@ -27,13 +27,10 @@
 namespace nvbench
 {
 
-namespace detail
-{
 std::string demangle(const std::string &str);
 
 template <typename T>
 std::string demangle() { return demangle(typeid(T).name()); }
-}
 
 template <typename T>
 struct type_strings
@@ -42,7 +39,7 @@ struct type_strings
   // CLI options):
   static std::string input_string()
   {
-    return nvbench::detail::demangle<T>();
+    return nvbench::demangle<T>();
   }
 
   // A more descriptive identifier for the type, if input_string is not a common
@@ -61,7 +58,7 @@ struct type_strings<std::integral_constant<T, Value>>
   // identifier. May be blank if `input_string` is obvious.
   static std::string description()
   {
-    return nvbench::detail::demangle<std::integral_constant<T, Value>>();
+    return nvbench::demangle<std::integral_constant<T, Value>>();
   }
 };
 

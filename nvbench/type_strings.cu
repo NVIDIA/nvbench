@@ -44,8 +44,6 @@ struct free_wrapper
 
 namespace nvbench
 {
-namespace detail
-{
 
 std::string demangle(const std::string &str)
 {
@@ -57,7 +55,5 @@ std::string demangle(const std::string &str)
   return str;
 #endif
 };
-
-} // namespace detail
 
 } // namespace nvbench
