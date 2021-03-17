@@ -107,7 +107,7 @@ struct state
     this->add_global_memory_reads(count * sizeof(ElementType),
                                   std::move(column_name));
   }
-  void add_global_memory_reads(std::size_t bytes, std::string column_name);
+  void add_global_memory_reads(std::size_t bytes, std::string column_name = {});
 
   template <typename ElementType>
   void add_global_memory_writes(std::size_t count, std::string column_name = {})
@@ -115,7 +115,8 @@ struct state
     this->add_global_memory_writes(count * sizeof(ElementType),
                                    std::move(column_name));
   }
-  void add_global_memory_writes(std::size_t bytes, std::string column_name);
+  void add_global_memory_writes(std::size_t bytes,
+                                std::string column_name = {});
 
   void set_global_memory_rw_bytes(std::size_t bytes)
   {
