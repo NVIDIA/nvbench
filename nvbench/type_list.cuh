@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "detail/type_list_impl.h"
+#include "detail/type_list_impl.cuh"
 
 #include <tuple>
 #include <type_traits>
