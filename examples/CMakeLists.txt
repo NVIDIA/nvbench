@@ -23,7 +23,9 @@ foreach(example_src IN LISTS example_srcs)
     LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
   )
-  add_test(NAME ${example_name} COMMAND "$<TARGET_FILE:${example_name}>")
+  add_test(NAME ${example_name}
+    COMMAND "$<TARGET_FILE:${example_name}>" --timeout 1
+  )
 
   add_dependencies(nvbench.example.all ${example_name})
 endforeach()
