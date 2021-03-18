@@ -42,7 +42,6 @@ file_to_string("../docs/cli_help_axis.md"
 
 add_library(nvbench STATIC ${srcs})
 add_library(nvbench::nvbench ALIAS nvbench)
-
 # TODO generator expressions for installed paths
 target_include_directories(nvbench PUBLIC "${NVBench_SOURCE_DIR}")
 target_include_directories(nvbench PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
@@ -53,6 +52,7 @@ set_target_properties(nvbench PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
   RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
 )
+add_dependencies(nvbench.all nvbench)
 
 add_library(nvbench_main OBJECT main.cu)
 add_library(nvbench::main ALIAS nvbench_main)
@@ -62,3 +62,4 @@ set_target_properties(nvbench PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
   RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
 )
+add_dependencies(nvbench.all nvbench_main)

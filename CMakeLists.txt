@@ -43,6 +43,9 @@ if(nlohmann_json_ADDED)
   )
 endif()
 
+# Builds all NVBench targets (libs, tests, examples, etc).
+add_custom_target(nvbench.all)
+
 add_subdirectory(nvbench)
 
 if (NVBench_ENABLE_EXAMPLES OR NVBench_ENABLE_TESTING)

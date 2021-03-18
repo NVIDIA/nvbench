@@ -20,6 +20,7 @@ set(test_srcs
 
 # Metatarget for all examples:
 add_custom_target(nvbench.test.all)
+add_dependencies(nvbench.all nvbench.test.all)
 
 foreach(test_src IN LISTS test_srcs)
   get_filename_component(test_name "${test_src}" NAME_WLE)
