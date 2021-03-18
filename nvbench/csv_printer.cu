@@ -142,7 +142,7 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
         }
         else if (hint == "percentage")
         {
-          table.add_cell(row, key, header + " (%)", std::move(value));
+          table.add_cell(row, key, header, std::move(value));
         }
         else
         {

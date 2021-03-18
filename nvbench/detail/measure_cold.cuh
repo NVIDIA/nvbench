@@ -99,7 +99,7 @@ protected:
   nvbench::blocking_kernel m_blocker;
 
   nvbench::int64_t m_min_samples{};
-  nvbench::float64_t m_max_noise{}; // % rel stdev
+  nvbench::float64_t m_max_noise{}; // rel stdev
   nvbench::float64_t m_min_time{};
 
   nvbench::float64_t m_skip_time{};
@@ -108,8 +108,8 @@ protected:
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
-  nvbench::float64_t m_cuda_noise{}; // % rel stdev
-  nvbench::float64_t m_cpu_noise{};  // % rel stdev
+  nvbench::float64_t m_cuda_noise{}; // rel stdev
+  nvbench::float64_t m_cpu_noise{};  // rel stdev
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;

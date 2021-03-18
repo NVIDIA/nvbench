@@ -151,8 +151,8 @@ struct state
   /// @}
 
   /// Specify the maximum amount of noise if a measurement supports noise.
-  /// Noise is the relative standard deviation expressed as a percentage:
-  /// `noise = 100 * (stdev / mean_time)`. @{
+  /// Noise is the relative standard deviation:
+  /// `noise = stdev / mean_time`. @{
   [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
   void set_max_noise(nvbench::float64_t max_noise) { m_max_noise = max_noise; }
   /// @}

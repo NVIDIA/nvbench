@@ -149,7 +149,7 @@ void measure_cold_base::generate_summaries()
       summ.set_string("description",
                       "Global device memory throughput as a percentage of the "
                       "device's peak bandwidth.");
-      summ.set_float64("value", avg_used_gmem_bw / peak_gmem_bw * 100.);
+      summ.set_float64("value", avg_used_gmem_bw / peak_gmem_bw);
     }
   }
 
@@ -170,8 +170,8 @@ void measure_cold_base::generate_summaries()
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                m_cuda_noise,
-                                m_max_noise));
+                                m_cuda_noise * 100,
+                                m_max_noise * 100));
       }
       if (m_total_samples < m_min_samples)
       {
@@ -221,8 +221,7 @@ void measure_cold_base::check_skip_time(nvbench::float64_t warmup_time)
 
 void measure_cold_base::block_stream()
 {
-  m_blocker.block(m_launch.get_stream(),
-                  m_state.get_blocking_kernel_timeout());
+  m_blocker.block(m_launch.get_stream(), m_state.get_blocking_kernel_timeout());
 }
 
 } // namespace nvbench::detail

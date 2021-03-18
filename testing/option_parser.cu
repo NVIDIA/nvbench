@@ -1200,11 +1200,11 @@ void test_max_noise()
 {
   nvbench::option_parser parser;
   parser.parse(
-    {"--benchmark", "DummyBench", "--max-noise", "12345e2"});
+    {"--benchmark", "DummyBench", "--max-noise", "50.3"});
   const auto& states = parser_to_states(parser);
 
   ASSERT(states.size() == 1);
-  ASSERT(std::abs(states[0].get_max_noise() - 12345e2) < 1.);
+  ASSERT(std::abs(states[0].get_max_noise() - 0.503) < 1.-4);
 }
 
 void test_skip_time()

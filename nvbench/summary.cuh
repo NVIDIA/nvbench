@@ -48,7 +48,8 @@ namespace nvbench
  * - "bytes": "value" is an int64_t number of bytes.
  * - "byte_rate": "value" is a float64_t byte rate in bytes / second.
  * - "sample_size": "value" is an int64_t number of samples in a measurement.
- * - "percentage": "value" is a float64_t percentage.
+ * - "percentage": "value" is a float64_t percentage (stored as a ratio, 1. =
+ *    100%).
  *
  * The key/value pair functionality is implemented by the
  * `nvbench::named_values` base class.

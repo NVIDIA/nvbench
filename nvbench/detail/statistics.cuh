@@ -33,7 +33,7 @@ namespace nvbench::detail
  * vector, return a measure of the noise in the samples.
  *
  * The noise metric is the relative unbiased sample standard deviation
- * expressed as a percentage: (std_dev / mean) * 100.
+ * (std_dev / mean).
  */
 inline nvbench::float64_t
 compute_noise(const std::vector<nvbench::float64_t> &data,
@@ -58,8 +58,7 @@ compute_noise(const std::vector<nvbench::float64_t> &data,
                                       }) /
     (num - 1);
   const auto abs_stdev = std::sqrt(variance);
-  const auto rel_stdev = abs_stdev / mean;
-  return rel_stdev * 100.;
+  return abs_stdev / mean;
 }
 
 } // namespace nvbench::detail

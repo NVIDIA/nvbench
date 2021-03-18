@@ -459,7 +459,7 @@ std::string markdown_printer::do_format_sample_size(const summary &data)
 std::string markdown_printer::do_format_percentage(const summary &data)
 {
   const auto percentage = data.get_float64("value");
-  return fmt::format("{:.2f}%", percentage);
+  return fmt::format("{:.2f}%", percentage * 100.);
 }
 
 } // namespace nvbench

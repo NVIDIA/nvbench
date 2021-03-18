@@ -807,8 +807,8 @@ try
     bench.set_min_time(value);
   }
   else if (prop_arg == "--max-noise")
-  {
-    bench.set_max_noise(value);
+  { // Specified as percentage, stored as ratio:
+    bench.set_max_noise(value / 100.);
   }
   else if (prop_arg == "--skip-time")
   {
