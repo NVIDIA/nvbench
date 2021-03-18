@@ -27,13 +27,49 @@ namespace nvbench
 {
 
 /*!
+ * Convert an enum to a type, allowing it to be used as a compile-time
+ * parameter.
+ *
+ * See the enums.cu example for usage.
+ *
+ * \relatesalso enum_type_list
+ * \relatesalso NVBENCH_DECLARE_ENUM_TYPE_STRINGS
+ */
+template <auto Value, typename T = decltype(Value)>
+struct enum_type : std::integral_constant<T, Value>
+{};
+
+/*!
  * \brief Helper utility that generates a `type_list` of
  * `std::integral_constant`s.
  *
+ * See the enums.cu example for usage.
+ *
+ * \relatesalso enum_type
  * \relatesalso NVBENCH_DECLARE_ENUM_TYPE_STRINGS
  */
-template <typename T, T... Ts>
-using enum_type_list = nvbench::type_list<std::integral_constant<T, Ts>...>;
+template <auto... Ts>
+using enum_type_list = nvbench::type_list<enum_type<Ts>...>;
+
+// Specialize nvbench::type_strings for generic `enum_type<...>`:
+template <typename T, T Value>
+struct type_strings<nvbench::enum_type<Value, T>>
+{
+  static std::string input_string()
+  {
+    if constexpr (std::is_enum_v<T>)
+    {
+      return std::to_string(static_cast<std::underlying_type_t<T>>(Value));
+    }
+    return std::to_string(Value);
+  }
+
+  static std::string description()
+  {
+    return nvbench::demangle<nvbench::enum_type<Value, T>>();
+  }
+};
+
 } // namespace nvbench
 
 /*!
@@ -45,6 +81,9 @@ using enum_type_list = nvbench::type_list<std::integral_constant<T, Ts>...>;
  *
  * Must be used from global namespace scope.
  *
+ * See the enums.cu example for usage.
+ *
+ * \relatesalso enum_type_list
  * \relatesalso nvbench::enum_type_list
  */
 #define NVBENCH_DECLARE_ENUM_TYPE_STRINGS(T,                                   \
@@ -53,7 +92,7 @@ using enum_type_list = nvbench::type_list<std::integral_constant<T, Ts>...>;
   namespace nvbench                                                            \
   {                                                                            \
   template <T Value>                                                           \
-  struct type_strings<std::integral_constant<T, Value>>                        \
+  struct type_strings<enum_type<Value, T>>                                     \
   {                                                                            \
     static std::string input_string() { return input_generator(Value); }       \
     static std::string description() { return description_generator(Value); }  \

@@ -126,8 +126,10 @@ NVBENCH_BENCH(runtime_enum_sweep_int64)
 //   * `C` (MyEnum::ValueC)
 // ```
 
+// Optional:
 // Tell NVBench how to turn your enum into strings for display, commandline
 // args, `--list` output, tables, etc.
+// Reasonable defaults will be used if omitted.
 NVBENCH_DECLARE_ENUM_TYPE_STRINGS(
   // Enum type:
   MyEnum,
@@ -170,7 +172,7 @@ NVBENCH_DECLARE_ENUM_TYPE_STRINGS(
 template <MyEnum EnumValue>
 void compile_time_enum_sweep(
   nvbench::state &state,
-  nvbench::type_list<std::integral_constant<MyEnum, EnumValue>>)
+  nvbench::type_list<nvbench::enum_type<EnumValue>>)
 {
   // Use EnumValue in compile-time contexts.
   // Template parameters, static dispatch, etc.
@@ -181,7 +183,7 @@ void compile_time_enum_sweep(
   });
 }
 using MyEnumList =
-  nvbench::enum_type_list<MyEnum, MyEnum::ValueA, MyEnum::ValueB, MyEnum::ValueC>;
+  nvbench::enum_type_list<MyEnum::ValueA, MyEnum::ValueB, MyEnum::ValueC>;
 NVBENCH_BENCH_TYPES(compile_time_enum_sweep, NVBENCH_TYPE_AXES(MyEnumList))
   .set_type_axes_names({"MyEnum"});
 
@@ -199,7 +201,7 @@ NVBENCH_BENCH_TYPES(compile_time_enum_sweep, NVBENCH_TYPE_AXES(MyEnumList))
 template <nvbench::int32_t IntValue>
 void compile_time_int_sweep(
   nvbench::state &state,
-  nvbench::type_list<std::integral_constant<nvbench::int32_t, IntValue>>)
+  nvbench::type_list<nvbench::enum_type<IntValue>>)
 {
   // Use IntValue in compile time contexts.
   // Template parameters, static dispatch, etc.
@@ -209,6 +211,6 @@ void compile_time_int_sweep(
     nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3);
   });
 }
-using MyInts = nvbench::enum_type_list<nvbench::int32_t, 0, 16, 4096, -12>;
+using MyInts = nvbench::enum_type_list<0, 16, 4096, -12>;
 NVBENCH_BENCH_TYPES(compile_time_int_sweep, NVBENCH_TYPE_AXES(MyInts))
   .set_type_axes_names({"SomeInts"});

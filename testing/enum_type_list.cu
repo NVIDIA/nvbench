@@ -96,59 +96,47 @@ NVBENCH_DECLARE_ENUM_TYPE_STRINGS(
 
 void test_int()
 {
-  ASSERT((std::is_same_v<nvbench::enum_type_list<int>, nvbench::type_list<>>));
-  ASSERT((std::is_same_v<nvbench::enum_type_list<int, 0>,
-                         nvbench::type_list<std::integral_constant<int, 0>>>));
-  ASSERT((std::is_same_v<nvbench::enum_type_list<int, 0, 1, 2, 3, 4>,
-                         nvbench::type_list<std::integral_constant<int, 0>,
-                                            std::integral_constant<int, 1>,
-                                            std::integral_constant<int, 2>,
-                                            std::integral_constant<int, 3>,
-                                            std::integral_constant<int, 4>>>));
+  ASSERT((std::is_same_v<nvbench::enum_type_list<>, nvbench::type_list<>>));
+  ASSERT((std::is_same_v<nvbench::enum_type_list<0>,
+                         nvbench::type_list<nvbench::enum_type<0>>>));
+  ASSERT((std::is_same_v<nvbench::enum_type_list<0, 1, 2, 3, 4>,
+                         nvbench::type_list<nvbench::enum_type<0>,
+                                            nvbench::enum_type<1>,
+                                            nvbench::enum_type<2>,
+                                            nvbench::enum_type<3>,
+                                            nvbench::enum_type<4>>>));
 }
 
 void test_scoped_enum()
 {
   ASSERT((
-    std::is_same_v<nvbench::enum_type_list<scoped_enum>, nvbench::type_list<>>));
+    std::is_same_v<nvbench::enum_type_list<scoped_enum::val_1>,
+                   nvbench::type_list<nvbench::enum_type<scoped_enum::val_1>>>));
   ASSERT((
-    std::is_same_v<nvbench::enum_type_list<scoped_enum, scoped_enum::val_1>,
-                   nvbench::type_list<
-                     std::integral_constant<scoped_enum, scoped_enum::val_1>>>));
-  ASSERT((
-    std::is_same_v<nvbench::enum_type_list<scoped_enum,
-                                           scoped_enum::val_1,
+    std::is_same_v<nvbench::enum_type_list<scoped_enum::val_1,
                                            scoped_enum::val_2,
                                            scoped_enum::val_3>,
-                   nvbench::type_list<
-                     std::integral_constant<scoped_enum, scoped_enum::val_1>,
-                     std::integral_constant<scoped_enum, scoped_enum::val_2>,
-                     std::integral_constant<scoped_enum, scoped_enum::val_3>>>));
+                   nvbench::type_list<nvbench::enum_type<scoped_enum::val_1>,
+                                      nvbench::enum_type<scoped_enum::val_2>,
+                                      nvbench::enum_type<scoped_enum::val_3>>>));
 }
 
 void test_unscoped_enum()
 {
-  ASSERT((std::is_same_v<nvbench::enum_type_list<unscoped_enum>,
-                         nvbench::type_list<>>));
   ASSERT(
-    (std::is_same_v<nvbench::enum_type_list<unscoped_enum, unscoped_val_1>,
-                    nvbench::type_list<
-                      std::integral_constant<unscoped_enum, unscoped_val_1>>>));
+    (std::is_same_v<nvbench::enum_type_list<unscoped_val_1>,
+                    nvbench::type_list<nvbench::enum_type<unscoped_val_1>>>));
   ASSERT(
-    (std::is_same_v<nvbench::enum_type_list<unscoped_enum,
-                                            unscoped_val_1,
-                                            unscoped_val_2,
-                                            unscoped_val_3>,
-                    nvbench::type_list<
-                      std::integral_constant<unscoped_enum, unscoped_val_1>,
-                      std::integral_constant<unscoped_enum, unscoped_val_2>,
-                      std::integral_constant<unscoped_enum, unscoped_val_3>>>));
+    (std::is_same_v<
+      nvbench::enum_type_list<unscoped_val_1, unscoped_val_2, unscoped_val_3>,
+      nvbench::type_list<nvbench::enum_type<unscoped_val_1>,
+                         nvbench::enum_type<unscoped_val_2>,
+                         nvbench::enum_type<unscoped_val_3>>>));
 }
 
 void test_scoped_enum_type_strings()
 {
-  using values = nvbench::enum_type_list<scoped_enum,
-                                         scoped_enum::val_1,
+  using values = nvbench::enum_type_list<scoped_enum::val_1,
                                          scoped_enum::val_2,
                                          scoped_enum::val_3>;
   using val_1  = nvbench::tl::get<0, values>;
@@ -164,8 +152,7 @@ void test_scoped_enum_type_strings()
 
 void test_unscoped_enum_type_strings()
 {
-  using values = nvbench::enum_type_list<unscoped_enum,
-                                         unscoped_enum::unscoped_val_1,
+  using values = nvbench::enum_type_list<unscoped_enum::unscoped_val_1,
                                          unscoped_enum::unscoped_val_2,
                                          unscoped_enum::unscoped_val_3>;
   using val_1  = nvbench::tl::get<0, values>;
