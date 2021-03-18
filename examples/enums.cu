@@ -108,15 +108,16 @@ NVBENCH_BENCH(runtime_enum_sweep_int64)
                    static_cast<nvbench::int64_t>(MyEnum::ValueC)});
 
 //==============================================================================
-// Sweep through enum values at compile time using an `enum_type_axis`.
+// Sweep through enum values at compile time using an `enum_type_list`.
 //
 // If an enum value needs to be available at compile time (for example, if it's
-// used as a template parameter), the `nvbench::enum_type_axis` helper can be
-// used to create a type axis of `std::integral_constant<Enum, Value>` types.
+// used as a template parameter), the `nvbench::enum_type_list` helper can be
+// used to create a type axis of `nvbench::enum_type<Value>`s.
 //
 // The `NVBENCH_DECLARE_ENUM_TYPE_STRINGS(T, InputGenerator, DescGenerator)`
-// utility configures an `nvbench::type_strings` specialization for the integral
-// constants, improving readability of input/output, as shown below.
+// utility configures an `nvbench::type_strings<nvbench::enum_type<...>>`
+// specialization for the integral constants, improving readability of
+// input/output, as shown below.
 //
 // `--list` output:
 // ```
@@ -170,9 +171,8 @@ NVBENCH_DECLARE_ENUM_TYPE_STRINGS(
 
 // The actual compile-time enum sweep benchmark:
 template <MyEnum EnumValue>
-void compile_time_enum_sweep(
-  nvbench::state &state,
-  nvbench::type_list<nvbench::enum_type<EnumValue>>)
+void compile_time_enum_sweep(nvbench::state &state,
+                             nvbench::type_list<nvbench::enum_type<EnumValue>>)
 {
   // Use EnumValue in compile-time contexts.
   // Template parameters, static dispatch, etc.
@@ -199,9 +199,8 @@ NVBENCH_BENCH_TYPES(compile_time_enum_sweep, NVBENCH_TYPE_AXES(MyEnumList))
 //  * `-12` (struct std::integral_constant<int,-12>)
 // ```
 template <nvbench::int32_t IntValue>
-void compile_time_int_sweep(
-  nvbench::state &state,
-  nvbench::type_list<nvbench::enum_type<IntValue>>)
+void compile_time_int_sweep(nvbench::state &state,
+                            nvbench::type_list<nvbench::enum_type<IntValue>>)
 {
   // Use IntValue in compile time contexts.
   // Template parameters, static dispatch, etc.
