@@ -118,6 +118,11 @@ struct state
   void add_global_memory_writes(std::size_t bytes,
                                 std::string column_name = {});
 
+  void add_buffer_size(std::size_t num_bytes,
+                       std::string summary_name,
+                       std::string column_name = {},
+                       std::string description = {});
+
   void set_global_memory_rw_bytes(std::size_t bytes)
   {
     m_global_memory_rw_bytes = bytes;

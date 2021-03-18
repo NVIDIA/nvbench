@@ -236,10 +236,9 @@ void state::add_global_memory_reads(std::size_t bytes, std::string column_name)
   m_global_memory_rw_bytes += bytes;
   if (!column_name.empty())
   {
-    auto &summ = this->add_summary("Input Buffer Size: " + column_name);
-    summ.set_string("hint", "bytes");
-    summ.set_string("short_name", std::move(column_name));
-    summ.set_int64("value", static_cast<nvbench::int64_t>(bytes));
+    this->add_buffer_size(bytes,
+                          "Input Buffer Size: " + column_name,
+                          std::move(column_name));
   }
 }
 
@@ -248,11 +247,29 @@ void state::add_global_memory_writes(std::size_t bytes, std::string column_name)
   m_global_memory_rw_bytes += bytes;
   if (!column_name.empty())
   {
-    auto &summ = this->add_summary("Output Buffer Size: " + column_name);
-    summ.set_string("hint", "bytes");
-    summ.set_string("short_name", std::move(column_name));
-    summ.set_int64("value", static_cast<nvbench::int64_t>(bytes));
+    this->add_buffer_size(bytes,
+                          "Output Buffer Size: " + column_name,
+                          std::move(column_name));
   }
+}
+
+void state::add_buffer_size(std::size_t num_bytes,
+                            std::string summary_name,
+                            std::string column_name,
+                            std::string description)
+{
+  auto &summ = this->add_summary(std::move(summary_name));
+  summ.set_string("hint", "bytes");
+
+  if (!column_name.empty())
+  {
+    summ.set_string("short_name", std::move(column_name));
+  }
+  if (!description.empty())
+  {
+    summ.set_string("description", std::move(description));
+  }
+  summ.set_int64("value", static_cast<nvbench::int64_t>(num_bytes));
 }
 
 } // namespace nvbench
