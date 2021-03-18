@@ -142,10 +142,11 @@ void copy_type_conversion_sweep(nvbench::state &state,
   // Number of InputTypes in 64 MiB:
   const std::size_t num_values = 64 * 1024 * 1024 / sizeof(InputType);
 
-  // Report throughput stats:
-  state.add_element_count(num_values);
-  state.add_global_memory_reads<InputType>(num_values);
-  state.add_global_memory_writes<OutputType>(num_values);
+  // Report throughput stats: Passing an optional string adds a column to the
+  // output with the number of items/bytes.
+  state.add_element_count(num_values, "Items");
+  state.add_global_memory_reads<InputType>(num_values, "InSize");
+  state.add_global_memory_writes<OutputType>(num_values, "OutSize");
 
   // Allocate device memory:
   thrust::device_vector<InputType> in(num_values, 0);
