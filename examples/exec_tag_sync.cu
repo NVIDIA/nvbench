@@ -45,8 +45,8 @@ void sequence_bench(nvbench::state &state)
   thrust::device_vector<nvbench::int32_t> data(num_values);
 
   // Provide throughput information:
-  state.add_element_count(num_values);
-  state.add_global_memory_writes<nvbench::int32_t>(num_values);
+  state.add_element_count(num_values, "Items");
+  state.add_global_memory_writes<nvbench::int32_t>(num_values, "Size");
 
   // nvbench::exec_tag::sync indicates that this will implicitly sync:
   state.exec(nvbench::exec_tag::sync, [&data](nvbench::launch &launch) {
