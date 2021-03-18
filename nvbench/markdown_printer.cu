@@ -389,17 +389,25 @@ std::string markdown_printer::do_format_duration(const summary &data)
 std::string markdown_printer::do_format_item_rate(const summary &data)
 {
   const auto items_per_second = data.get_float64("value");
+  if (items_per_second >= 1e15)
+  {
+    return fmt::format("{:0.3f}P", items_per_second * 1e-15);
+  }
+  if (items_per_second >= 1e12)
+  {
+    return fmt::format("{:0.3f}T", items_per_second * 1e-12);
+  }
   if (items_per_second >= 1e9)
   {
-    return fmt::format("{:0.3f}b", items_per_second * 1e-9);
+    return fmt::format("{:0.3f}G", items_per_second * 1e-9);
   }
   else if (items_per_second >= 1e6)
   {
-    return fmt::format("{:0.3f}m", items_per_second * 1e-6);
+    return fmt::format("{:0.3f}M", items_per_second * 1e-6);
   }
   else if (items_per_second >= 1e3)
   {
-    return fmt::format("{:0.3f}k", items_per_second * 1e-3);
+    return fmt::format("{:0.3f}K", items_per_second * 1e-3);
   }
   else
   {
