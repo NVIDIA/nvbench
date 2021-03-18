@@ -1204,7 +1204,7 @@ void test_max_noise()
   const auto& states = parser_to_states(parser);
 
   ASSERT(states.size() == 1);
-  ASSERT(std::abs(states[0].get_max_noise() - 0.503) < 1.-4);
+  ASSERT(std::abs(states[0].get_max_noise() - 0.503) < 1.e-4);
 }
 
 void test_skip_time()
