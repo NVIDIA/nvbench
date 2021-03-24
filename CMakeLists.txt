@@ -28,20 +28,33 @@ CPMAddPackage(
 
 # Following recipe from
 # http://github.com/cpm-cmake/CPM.cmake/blob/master/examples/json/CMakeLists.txt
+# Download the zips because the repo takes an excessively long time to clone.
 CPMAddPackage(
   NAME nlohmann_json
+
+  # I'm waiting for https://github.com/nlohmann/json/issues/2676 to be fixed,
+  # leave this in to simplify testing patches as they come out. Update the
+  # `nvbench_json` target too when switching branches.
+  # Development version:
+#  VERSION develop
+#  URL https://github.com/nlohmann/json/archive/refs/heads/develop.zip
+#  OPTIONS JSON_MultipleHeaders ON
+
+  # Latest release headers:
   VERSION 3.9.1
-  # not using the repo as it takes forever to clone
   URL https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
   URL_HASH SHA256=6bea5877b1541d353bd77bdfbdb2696333ae5ed8f9e8cc22df657192218cad91
 )
 
-if(nlohmann_json_ADDED)
-  add_library(nvbench_json INTERFACE)
-  target_include_directories(nvbench_json SYSTEM INTERFACE
-    "${nlohmann_json_SOURCE_DIR}/include"
-  )
-endif()
+# Development branch:
+#add_library(nvbench_json INTERFACE)
+#target_link_libraries(nvbench_json INTERFACE nlohmann_json)
+
+# Release headers
+add_library(nvbench_json INTERFACE)
+target_include_directories(nvbench_json SYSTEM INTERFACE
+  "${nlohmann_json_SOURCE_DIR}/include"
+)
 
 # Builds all NVBench targets (libs, tests, examples, etc).
 add_custom_target(nvbench.all)
