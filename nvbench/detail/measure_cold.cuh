@@ -133,7 +133,10 @@ struct measure_cold_base::kernel_launch_timer
       m_measure.block_stream();
     }
     m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
-    m_measure.m_cpu_timer.start();
+    if constexpr (!use_blocking_kernel)
+    {
+      m_measure.m_cpu_timer.start();
+    }
   }
 
   __forceinline__ void stop()
@@ -141,6 +144,7 @@ struct measure_cold_base::kernel_launch_timer
     m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
     if constexpr (use_blocking_kernel)
     {
+      m_measure.m_cpu_timer.start();
       m_measure.unblock_stream();
     }
     m_measure.sync_stream();
