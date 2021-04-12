@@ -63,7 +63,7 @@ restrictions:
 | Axis Type | Example                         | Example Result               |
 |-----------|---------------------------------|------------------------------|
 | Int64     | `-a InputSize=[2:10:2]`         | 2, 4, 6, 8, 10               |
-| Int64Pow2 | `-a InputSize[pow2]=[2:10:2]`   | 4, 16, 64, 128, 256, 1024    |
+| Int64Pow2 | `-a InputSize[pow2]=[2:10:2]`   | 4, 16, 64, 256, 1024         |
 | Float64   | `-a Quality=[.5:1:.1]`          | 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 |
 | String    | [Not supported]                 |                              |
 | Type      | [Not supported]                 |                              |
