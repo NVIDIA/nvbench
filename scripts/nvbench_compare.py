@@ -4,6 +4,8 @@ import json
 import keyword
 import sys
 
+import tabulate
+
 if len(sys.argv) != 3:
     print("Usage: %s reference.json compare.json\n" % sys.argv[0])
     sys.exit(1)
@@ -47,43 +49,46 @@ def find_summary(name, summaries):
     # Summary inherits named_values:
     return find_named_value(name, summaries)
 
+def get_row(cmp_benches, ref_benches):
+    for cmp_bench in cmp_benches:
+        ref_bench = find_matching_bench(cmp_bench, ref_benches)
 
-for cmp_bench in cmp_benches:
-    ref_bench = find_matching_bench(cmp_bench, ref_benches)
-    if not ref_bench:
-        continue
-
-    print(cmp_bench["name"])
-
-    for cmp_state in cmp_bench["states"]:
-        ref_state = find_matching_state(cmp_state, ref_bench["states"])
-        if not ref_state:
+        if not ref_bench:
             continue
 
-        # TODO this should just be the parameterization. Refactor NVBench lib so
-        # this can happen.
-        state_description = cmp_state["description"]
+        for cmp_state in cmp_bench["states"]:
+            ref_state = find_matching_state(cmp_state, ref_bench["states"])
+            if not ref_state:
+                continue
 
-        cmp_summaries = cmp_state["summaries"]
-        ref_summaries = ref_state["summaries"]
+            # TODO this should just be the parameterization. Refactor NVBench lib so
+            # this can happen.
+            state_description = cmp_state["description"]
 
-        if not ref_summaries or not cmp_summaries:
-            continue
+            cmp_summaries = cmp_state["summaries"]
+            ref_summaries = ref_state["summaries"]
 
-        cmp_time_summary = find_summary("Average GPU Time (Cold)", cmp_summaries)
-        ref_time_summary = find_summary("Average GPU Time (Cold)", ref_summaries)
-        cmp_noise_summary = find_summary("GPU Relative Standard Deviation (Cold)", cmp_summaries)
-        ref_noise_summary = find_summary("GPU Relative Standard Deviation (Cold)", ref_summaries)
+            if not ref_summaries or not cmp_summaries:
+                continue
 
-        if not cmp_time_summary or not ref_time_summary or \
-                not cmp_noise_summary or not ref_noise_summary:
-            continue
+            cmp_time_summary = find_summary("Average GPU Time (Cold)", cmp_summaries)
+            ref_time_summary = find_summary("Average GPU Time (Cold)", ref_summaries)
+            cmp_noise_summary = find_summary("GPU Relative Standard Deviation (Cold)", cmp_summaries)
+            ref_noise_summary = find_summary("GPU Relative Standard Deviation (Cold)", ref_summaries)
 
-        # TODO Ugly. The JSON needs to be changed to let us look up names directly.
-        # Change arrays to maps.
-        cmp_time = find_named_value("value", cmp_time_summary["values"])["value"]
-        ref_time = find_named_value("value", ref_time_summary["values"])["value"]
-        cmp_noise = find_named_value("value", cmp_noise_summary["values"])["value"]
-        ref_noise = find_named_value("value", ref_noise_summary["values"])["value"]
+            if not cmp_time_summary or not ref_time_summary or \
+                    not cmp_noise_summary or not ref_noise_summary:
+                continue
 
-        print(f"{state_description} {cmp_time:0.6f} {ref_time:0.6f} {cmp_noise:0.6f}% {ref_noise:0.6f}%\n")
+            # TODO Ugly. The JSON needs to be changed to let us look up names directly.
+            # Change arrays to maps.
+            cmp_time = find_named_value("value", cmp_time_summary["values"])["value"]
+            ref_time = find_named_value("value", ref_time_summary["values"])["value"]
+            cmp_noise = find_named_value("value", cmp_noise_summary["values"])["value"]
+            ref_noise = find_named_value("value", ref_noise_summary["values"])["value"]
+
+            yield f"{state_description} {cmp_time:0.6f} {ref_time:0.6f} {cmp_noise:0.6f}% {ref_noise:0.6f}%\n".split()
+
+
+print(tabulate.tabulate(row for row in get_row(cmp_benches, ref_benches)))
+    
