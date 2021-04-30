@@ -86,5 +86,4 @@ for cmp_bench in cmp_benches:
         cmp_noise = find_named_value("value", cmp_noise_summary["values"])["value"]
         ref_noise = find_named_value("value", ref_noise_summary["values"])["value"]
 
-        print(
-            "%s %f %f %f%% %f%%\n" % (state_description, cmp_time, ref_time, cmp_noise, ref_noise))
+        print(f"{state_description} {cmp_time:0.6f} {ref_time:0.6f} {cmp_noise:0.6f}% {ref_noise:0.6f}%\n")
