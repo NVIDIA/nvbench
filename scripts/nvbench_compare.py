@@ -73,6 +73,8 @@ def get_row(cmp_benches, ref_benches):
 
 
 print(tabulate.tabulate((row for row in get_row(cmp_benches, ref_benches)),
+                        # TODO: Reduce precision once we have really different
+                        # numbers for comparison.
                         floatfmt="0.12f",
                         headers=("Name", "Parameters", "Old - New", "New Time", "Old Time", "New Std", "Old Std"),
                         ))
