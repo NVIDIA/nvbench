@@ -32,13 +32,6 @@ def find_matching_bench(needle, haystack):
     return None
 
 
-def find_matching_state(needle, haystack):
-    for hay in haystack:
-        if hay["description"] == needle["description"]:
-            return hay
-    return None
-
-
 def find_named_value(name, named_values):
     for named_value in named_values:
         if named_value["name"] == name:
@@ -52,14 +45,10 @@ def get_row(cmp_benches, ref_benches):
         if not ref_bench:
             continue
 
-        for cmp_state in cmp_bench["states"]:
-            ref_state = find_matching_state(cmp_state, ref_bench["states"])
+        for cmp_state_description, cmp_state in cmp_bench["states"].items():
+            ref_state = ref_bench["states"].get(cmp_state_description)
             if not ref_state:
                 continue
-
-            # TODO this should just be the parameterization. Refactor NVBench lib so
-            # this can happen.
-            state_description = cmp_state["description"]
 
             cmp_summaries = cmp_state["summaries"]
             ref_summaries = ref_state["summaries"]
@@ -86,7 +75,7 @@ def get_row(cmp_benches, ref_benches):
             ref_noise = find_named_value("value", ref_noise_summary["values"])["value"]
 
             # Relative time comparison
-            yield [cmp_bench['name'], state_description] + f"{cmp_time - ref_time} {cmp_time} {ref_time} {cmp_noise:0.6f}% {ref_noise:0.6f}%\n".split()
+            yield [cmp_bench['name'], cmp_state_description] + f"{cmp_time - ref_time} {cmp_time} {ref_time} {cmp_noise:0.6f}% {ref_noise:0.6f}%\n".split()
 
 
 print(tabulate.tabulate((row for row in get_row(cmp_benches, ref_benches)),

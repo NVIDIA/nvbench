@@ -175,11 +175,11 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       auto &states = bench["states"];
       for (const auto &exec_state : bench_ptr->get_states())
       {
-        const auto state_index = states.size();
-        auto &st               = states[state_index];
+        auto &st               = states[exec_state.get_axis_values_as_string()];
 
-        st["index"]             = state_index;
-        st["description"]       = exec_state.get_axis_values_as_string();
+        // TODO: Determine if these need to be part of the state key as well
+        // for uniqueness. The device already is, but the type config index is
+        // not.
         st["device"]            = exec_state.get_device()->get_id();
         st["type_config_index"] = exec_state.get_type_config_index();
 
