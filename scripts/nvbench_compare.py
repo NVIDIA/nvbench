@@ -45,10 +45,6 @@ def find_named_value(name, named_values):
             return named_value
 
 
-def find_summary(name, summaries):
-    # Summary inherits named_values:
-    return find_named_value(name, summaries)
-
 def get_row(cmp_benches, ref_benches):
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
@@ -71,13 +67,15 @@ def get_row(cmp_benches, ref_benches):
             if not ref_summaries or not cmp_summaries:
                 continue
 
-            cmp_time_summary = find_summary("Average GPU Time (Cold)", cmp_summaries)
-            ref_time_summary = find_summary("Average GPU Time (Cold)", ref_summaries)
-            cmp_noise_summary = find_summary("GPU Relative Standard Deviation (Cold)", cmp_summaries)
-            ref_noise_summary = find_summary("GPU Relative Standard Deviation (Cold)", ref_summaries)
+            cmp_time_summary = cmp_summaries.get("Average GPU Time (Cold)")
+            ref_time_summary = ref_summaries.get("Average GPU Time (Cold)")
+            cmp_noise_summary = cmp_summaries.get("GPU Relative Standard Deviation (Cold)")
+            ref_noise_summary = ref_summaries.get("GPU Relative Standard Deviation (Cold)")
 
-            if not cmp_time_summary or not ref_time_summary or \
-                    not cmp_noise_summary or not ref_noise_summary:
+            # TODO: Determine whether empty outputs could be present based on
+            # user requests not to perform certain timings.
+            if cmp_time_summary is None or ref_time_summary is None or \
+                    cmp_noise_summary is None or ref_noise_summary is None:
                 continue
 
             # TODO Ugly. The JSON needs to be changed to let us look up names directly.

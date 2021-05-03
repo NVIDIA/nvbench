@@ -131,11 +131,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       auto &axes = bench["axes"];
       for (const auto &axis_ptr : bench_ptr->get_axes().get_axes())
       {
-        const auto axis_index = axes.size();
-        auto &axis            = axes[axis_index];
+        auto &axis = axes[axis_ptr->get_name()];
 
-        axis["index"] = axis_index;
-        axis["name"]  = axis_ptr->get_name();
         axis["type"]  = axis_ptr->get_type_as_string();
         axis["flags"] = axis_ptr->get_flags_as_string();
 
@@ -197,12 +194,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         auto &summaries = st["summaries"];
         for (const auto &exec_summ : exec_state.get_summaries())
         {
-          const auto summ_index = summaries.size();
-          auto &summ            = summaries[summ_index];
-
-          summ["index"] = summ_index;
-          summ["name"]  = exec_summ.get_name();
-
+          auto &summ            = summaries[exec_summ.get_name()];
           ::write_named_values(summ["values"], exec_summ);
         }
 
