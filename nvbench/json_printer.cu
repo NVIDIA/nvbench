@@ -40,10 +40,7 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
   const auto value_names = values.get_names();
   for (const auto &value_name : value_names)
   {
-    const auto value_index = node.size();
-    auto &value            = node[value_index];
-
-    value["name"] = value_name;
+    auto &value            = node[value_name];
 
     const auto type = values.get_type(value_name);
     switch (type)
@@ -195,7 +192,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         for (const auto &exec_summ : exec_state.get_summaries())
         {
           auto &summ            = summaries[exec_summ.get_name()];
-          ::write_named_values(summ["values"], exec_summ);
+          ::write_named_values(summ, exec_summ);
         }
 
         st["is_skipped"] = exec_state.is_skipped();

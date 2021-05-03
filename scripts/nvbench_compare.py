@@ -32,12 +32,6 @@ def find_matching_bench(needle, haystack):
     return None
 
 
-def find_named_value(name, named_values):
-    for named_value in named_values:
-        if named_value["name"] == name:
-            return named_value
-
-
 def get_row(cmp_benches, ref_benches):
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
@@ -69,10 +63,10 @@ def get_row(cmp_benches, ref_benches):
 
             # TODO Ugly. The JSON needs to be changed to let us look up names directly.
             # Change arrays to maps.
-            cmp_time = find_named_value("value", cmp_time_summary["values"])["value"]
-            ref_time = find_named_value("value", ref_time_summary["values"])["value"]
-            cmp_noise = find_named_value("value", cmp_noise_summary["values"])["value"]
-            ref_noise = find_named_value("value", ref_noise_summary["values"])["value"]
+            cmp_time = cmp_time_summary["value"]["value"]
+            ref_time = ref_time_summary["value"]["value"]
+            cmp_noise = cmp_noise_summary["value"]["value"]
+            ref_noise = ref_noise_summary["value"]["value"]
 
             # Relative time comparison
             yield [cmp_bench['name'], cmp_state_description] + f"{cmp_time - ref_time} {cmp_time} {ref_time} {cmp_noise:0.6f}% {ref_noise:0.6f}%\n".split()
