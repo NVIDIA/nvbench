@@ -71,6 +71,11 @@ def get_row(cmp_benches, ref_benches):
             ref_noise = ref_noise_summary["value"]["value"]
 
             # pass/fail status
+            # TODO: Currently we're using a very rough metric to determine
+            # failure by simply adding the standard deviations of the reference
+            # and sample distributions. Ideally we would use something like
+            # KL divergence to capture the differences, but that's out of scope
+            # at this stage.
             failed = (cmp_noise - ref_noise) > 2 * (((cmp_noise / 100.) * cmp_time) + ((ref_noise  / 100.) * ref_time))
             status = (Fore.RED + "FAIL" if failed else Fore.GREEN + "PASS") + Fore.RESET
 
