@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-from colorama import Style, Fore
+from colorama import Fore
 import json
 import sys
-
-
 
 import tabulate
 
@@ -63,8 +61,8 @@ def get_row(cmp_benches, ref_benches):
                     cmp_noise_summary is None or ref_noise_summary is None:
                 continue
 
-            # TODO Ugly. The JSON needs to be changed to let us look up names directly.
-            # Change arrays to maps.
+            # TODO Ugly. The JSON needs to be changed to let us look up names
+            # directly.  Change arrays to maps.
             cmp_time = cmp_time_summary["value"]["value"]
             ref_time = ref_time_summary["value"]["value"]
             cmp_noise = cmp_noise_summary["value"]["value"]
@@ -80,13 +78,19 @@ def get_row(cmp_benches, ref_benches):
             status = (Fore.RED + "FAIL" if failed else Fore.GREEN + "PASS") + Fore.RESET
 
             # Relative time comparison
-            yield [cmp_bench['name'], cmp_state_description] + f"{cmp_time - ref_time} {cmp_time} {ref_time} {cmp_noise:0.6f}% {ref_noise:0.6f}% {status}\n".split()
+            yield ([cmp_bench['name'], cmp_state_description] + f"{cmp_time - ref_time} {cmp_time} {ref_time} {cmp_noise:0.6f}% {ref_noise:0.6f}% {status}\n".split(), failed)
 
 
+rows, faileds = zip(*get_row(cmp_benches, ref_benches))
 
-print(tabulate.tabulate((row for row in get_row(cmp_benches, ref_benches)),
+print(tabulate.tabulate(rows,
                         # TODO: Reduce precision once we have really different
                         # numbers for comparison.
                         floatfmt="0.12f",
                         headers=("Name", "Parameters", "Old - New", "New Time", "Old Time", "New Std", "Old Std", "Status"),
-                        ))
+                        # TODO: Choose appropriate format (or expose a
+                        # command-line argument to let the user choose)
+                        tablefmt="github",
+))
+
+exit(any(faileds))
