@@ -108,6 +108,7 @@ def get_row(cmp_benches, ref_benches):
 
 rows, faileds = zip(*get_row(cmp_benches, ref_benches))
 
+print()
 print(
     tabulate.tabulate(
         rows,
@@ -129,5 +130,6 @@ print(
         tablefmt="github",
     )
 )
+print()
 
 sys.exit(any(faileds))
