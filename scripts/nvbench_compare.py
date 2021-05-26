@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+from colorama import Style, Fore
 import json
-import keyword
 import sys
+
+
 
 import tabulate
 
@@ -68,13 +70,18 @@ def get_row(cmp_benches, ref_benches):
             cmp_noise = cmp_noise_summary["value"]["value"]
             ref_noise = ref_noise_summary["value"]["value"]
 
+            # pass/fail status
+            failed = (cmp_noise - ref_noise) > 2 * (((cmp_noise / 100.) * cmp_time) + ((ref_noise  / 100.) * ref_time))
+            status = (Fore.RED + "FAIL" if failed else Fore.GREEN + "PASS") + Fore.RESET
+
             # Relative time comparison
-            yield [cmp_bench['name'], cmp_state_description] + f"{cmp_time - ref_time} {cmp_time} {ref_time} {cmp_noise:0.6f}% {ref_noise:0.6f}%\n".split()
+            yield [cmp_bench['name'], cmp_state_description] + f"{cmp_time - ref_time} {cmp_time} {ref_time} {cmp_noise:0.6f}% {ref_noise:0.6f}% {status}\n".split()
+
 
 
 print(tabulate.tabulate((row for row in get_row(cmp_benches, ref_benches)),
                         # TODO: Reduce precision once we have really different
                         # numbers for comparison.
                         floatfmt="0.12f",
-                        headers=("Name", "Parameters", "Old - New", "New Time", "Old Time", "New Std", "Old Std"),
+                        headers=("Name", "Parameters", "Old - New", "New Time", "Old Time", "New Std", "Old Std", "Status"),
                         ))
