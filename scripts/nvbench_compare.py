@@ -2,6 +2,7 @@
 
 from colorama import Fore
 import json
+import math
 import sys
 
 import tabulate
@@ -21,8 +22,11 @@ if ref_root["devices"] != cmp_root["devices"]:
     print("Device sections do not match.")
     sys.exit(1)
 
-ref_benches = ref_root["benchmarks"]
-cmp_benches = cmp_root["benchmarks"]
+all_devices = cmp_root["devices"]
+config_count = 0
+unknown_count = 0
+failure_count = 0
+pass_count = 0
 
 
 def find_matching_bench(needle, haystack):
@@ -32,104 +36,209 @@ def find_matching_bench(needle, haystack):
     return None
 
 
-def get_row(cmp_benches, ref_benches):
+def find_device_by_id(device_id):
+    for device in all_devices:
+        if device["id"] == device_id:
+            return device
+    return None
+
+
+def format_int64_axis_value(axis_name, axis_value, axes):
+    axis_def = axes[axis_name]
+    axis_flags = axis_def["flags"]
+    value = axis_value["value"]
+    if axis_flags == "pow2":
+        value = math.log2(value)
+        return "2^%d" % value
+    return "%d" % value
+
+
+def format_float64_axis_value(axis_name, axis_value, axes):
+    return "%.5g" % axis_value["value"]
+
+
+def format_type_axis_value(axis_name, axis_value, axes):
+    return "%s" % axis_value["value"]
+
+
+def format_string_axis_value(axis_name, axis_value, axes):
+    return "%s" % axis_value["value"]
+
+
+def format_axis_value(axis_name, axis_value, axes):
+    axis_def = axes[axis_name]
+    axis_type = axis_def["type"]
+    if axis_type == "int64":
+        return format_int64_axis_value(axis_name, axis_value, axes)
+    elif axis_type == "float64":
+        return format_float64_axis_value(axis_name, axis_value, axes)
+    elif axis_type == "type":
+        return format_type_axis_value(axis_name, axis_value, axes)
+    elif axis_type == "string":
+        return format_string_axis_value(axis_name, axis_value, axes)
+
+
+def format_duration(seconds):
+    if seconds >= 1:
+        multiplier = 1.0
+        units = "s"
+    elif seconds >= 1e-3:
+        multiplier = 1e3
+        units = "ms"
+    elif seconds >= 1e-6:
+        multiplier = 1e6
+        units = "us"
+    else:
+        multiplier = 1e6
+        units = "us"
+    return "%0.3f %s" % (seconds * multiplier, units)
+
+
+def format_percentage(percentage):
+    # When there aren't enough samples for a meaningful noise measurement,
+    # the noise is recorded as infinity. Unfortunately, JSON spec doesn't
+    # allow for inf, so these get turned into null.
+    if not percentage:
+        return "inf"
+    return "%0.2f%%" % (percentage * 100.0)
+
+
+def compare_benches(ref_benches, cmp_benches):
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
-
         if not ref_bench:
             continue
 
-        for cmp_state_description, cmp_state in cmp_bench["states"].items():
-            ref_state = ref_bench["states"].get(cmp_state_description)
-            if not ref_state:
-                continue
+        print("# %s\n" % (cmp_bench["name"]))
 
-            cmp_summaries = cmp_state["summaries"]
-            ref_summaries = ref_state["summaries"]
+        device_ids = cmp_bench["devices"]
+        axes = cmp_bench["axes"]
+        ref_states = ref_bench["states"]
+        cmp_states = cmp_bench["states"]
 
-            if not ref_summaries or not cmp_summaries:
-                continue
+        headers = list(axes.keys())
+        colalign = ["center"] * len(headers)
 
-            cmp_time_summary = cmp_summaries.get("Average GPU Time (Cold)")
-            ref_time_summary = ref_summaries.get("Average GPU Time (Cold)")
-            cmp_noise_summary = cmp_summaries.get(
-                "GPU Relative Standard Deviation (Cold)"
-            )
-            ref_noise_summary = ref_summaries.get(
-                "GPU Relative Standard Deviation (Cold)"
-            )
+        headers.append("Ref Time")
+        colalign.append("right")
+        headers.append("Ref Noise")
+        colalign.append("right")
+        headers.append("Cmp Time")
+        colalign.append("right")
+        headers.append("Cmp Noise")
+        colalign.append("right")
+        headers.append("Diff")
+        colalign.append("right")
+        headers.append("%Diff")
+        colalign.append("right")
+        headers.append("Status")
+        colalign.append("center")
 
-            # TODO: Determine whether empty outputs could be present based on
-            # user requests not to perform certain timings.
-            if (
-                cmp_time_summary is None
-                or ref_time_summary is None
-                or cmp_noise_summary is None
-                or ref_noise_summary is None
-            ):
-                continue
+        for device_id in device_ids:
+            device = find_device_by_id(device_id)
+            print("## [%d] %s\n" % (device["id"], device["name"]))
 
-            # TODO Ugly. The JSON needs to be changed to let us look up names
-            # directly.  Change arrays to maps.
-            cmp_time = cmp_time_summary["value"]["value"]
-            ref_time = ref_time_summary["value"]["value"]
-            cmp_noise = cmp_noise_summary["value"]["value"]
-            ref_noise = ref_noise_summary["value"]["value"]
+            rows = []
+            for cmp_state_name in cmp_states:
+                cmp_state = cmp_states[cmp_state_name]
+                ref_state = ref_states[cmp_state_name]
+                if not ref_state:
+                    continue
 
-            # pass/fail status
-            # TODO: Currently we're using a very rough metric to determine
-            # failure by simply adding the standard deviations of the reference
-            # and sample distributions. Ideally we would use something like
-            # KL divergence to capture the differences, but that's out of scope
-            # at this stage.
-            cmp_abs_std = (cmp_noise / 100.0) * cmp_time
-            ref_abs_std = (ref_noise / 100.0) * ref_time
-            num_stds_fail = 2
-            failed = (cmp_noise - ref_noise) > (
-                num_stds_fail * (cmp_abs_std + ref_abs_std)
-            )
-            status = (Fore.RED + "FAIL" if failed else Fore.GREEN + "PASS") + Fore.RESET
+                axis_values = cmp_state["axis_values"]
+                row = []
+                for axis_value_name in axis_values:
+                    axis_value = axis_values[axis_value_name]
+                    row.append(format_axis_value(axis_value_name,
+                                                 axis_value,
+                                                 axes))
 
-            # Relative time comparison
-            yield (
-                [
-                    cmp_bench["name"],
-                    cmp_state_description,
-                    cmp_time - ref_time,
-                    cmp_time,
-                    ref_time,
-                    f"{cmp_noise:0.6f}%",
-                    f"{ref_noise:0.6f}%",
-                    status,
-                ],
-                failed,
-            )
+                cmp_summaries = cmp_state["summaries"]
+                ref_summaries = ref_state["summaries"]
+
+                if not ref_summaries or not cmp_summaries:
+                    continue
+
+                cmp_time_summary = cmp_summaries.get("Average GPU Time (Cold)")
+                ref_time_summary = ref_summaries.get("Average GPU Time (Cold)")
+                cmp_noise_summary = cmp_summaries.get(
+                    "GPU Relative Standard Deviation (Cold)"
+                )
+                ref_noise_summary = ref_summaries.get(
+                    "GPU Relative Standard Deviation (Cold)"
+                )
+
+                # TODO: Use other timings, too. Maybe multiple rows, with a
+                # "Timing" column + values "CPU/GPU/Batch"?
+                if not all([cmp_time_summary,
+                            ref_time_summary,
+                            cmp_noise_summary,
+                            ref_noise_summary]):
+                    continue
+
+                cmp_time = cmp_time_summary["value"]["value"]
+                ref_time = ref_time_summary["value"]["value"]
+                cmp_noise = cmp_noise_summary["value"]["value"]
+                ref_noise = ref_noise_summary["value"]["value"]
+                diff = cmp_time - ref_time
+                frac_diff = diff / ref_time
+
+                # Convert string encoding to expected numerics:
+                cmp_time = float(cmp_time)
+                ref_time = float(ref_time)
+
+                if ref_noise and cmp_noise:
+                    ref_noise = float(ref_noise)
+                    cmp_noise = float(cmp_noise)
+                    min_noise = min(ref_noise, cmp_noise)
+                elif ref_noise:
+                    ref_noise = float(ref_noise)
+                    min_noise = ref_noise
+                elif cmp_noise:
+                    cmp_noise = float(cmp_noise)
+                    min_noise = cmp_noise
+                else:
+                    min_noise = None  # Noise is inf
+
+                global config_count
+                global unknown_count
+                global pass_count
+                global failure_count
+
+                config_count += 1
+                if not min_noise:
+                    unknown_count += 1
+                    status = Fore.YELLOW + "????" + Fore.RESET
+                elif abs(frac_diff) <= min_noise:
+                    pass_count += 1
+                    status = Fore.GREEN + "PASS" + Fore.RESET
+                else:
+                    failure_count += 1
+                    status = Fore.RED + "FAIL" + Fore.RESET
+
+                row.append(format_duration(ref_time))
+                row.append(format_percentage(ref_noise))
+                row.append(format_duration(cmp_time))
+                row.append(format_percentage(cmp_noise))
+                row.append(format_duration(diff))
+                row.append(format_percentage(frac_diff))
+                row.append(status)
+
+                rows.append(row)
+
+            print(tabulate.tabulate(rows,
+                                    headers=headers,
+                                    colalign=colalign,
+                                    tablefmt="github"))
+            print("")
 
 
-rows, faileds = zip(*get_row(cmp_benches, ref_benches))
+compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"])
 
-print()
-print(
-    tabulate.tabulate(
-        rows,
-        # TODO: Reduce precision once we have really different
-        # numbers for comparison.
-        floatfmt="0.12f",
-        headers=(
-            "Name",
-            "Parameters",
-            "Old - New",
-            "New Time",
-            "Old Time",
-            "New Std",
-            "Old Std",
-            "Status",
-        ),
-        # TODO: Choose appropriate format (or expose a
-        # command-line argument to let the user choose)
-        tablefmt="github",
-    )
-)
-print()
+print("# Summary\n")
+print("- Total Matches: %d" % config_count)
+print("  - Pass    (diff <= min_noise): %d" % pass_count)
+print("  - Unknown (infinite noise):    %d" % unknown_count)
+print("  - Failure (diff > min_noise):  %d" % failure_count)
 
-sys.exit(any(faileds))
+sys.exit(failure_count)
