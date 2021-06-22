@@ -24,6 +24,8 @@
 #include <nvbench/device_manager.cuh>
 #include <nvbench/summary.cuh>
 
+#include <fmt/format.h>
+
 #include <nlohmann/json.hpp>
 
 #include <cstdint>
@@ -47,12 +49,15 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
     {
       case nvbench::named_values::type::int64:
         value["type"]  = "int64";
-        value["value"] = values.get_int64(value_name);
+        // Write as a string; JSON encodes all numbers as double-precision
+        // floats, which would truncate int64s.
+        value["value"] = fmt::to_string(values.get_int64(value_name));
         break;
 
       case nvbench::named_values::type::float64:
         value["type"]  = "float64";
-        value["value"] = values.get_float64(value_name);
+        // Write as a string for consistency with int64.
+        value["value"] = fmt::to_string(values.get_float64(value_name));
         break;
 
       case nvbench::named_values::type::string:
