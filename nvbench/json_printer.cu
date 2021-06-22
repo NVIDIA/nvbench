@@ -24,6 +24,8 @@
 #include <nvbench/device_manager.cuh>
 #include <nvbench/summary.cuh>
 
+#include <fmt/format.h>
+
 #include <nlohmann/json.hpp>
 
 #include <cstdint>
@@ -40,22 +42,22 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
   const auto value_names = values.get_names();
   for (const auto &value_name : value_names)
   {
-    const auto value_index = node.size();
-    auto &value            = node[value_index];
-
-    value["name"] = value_name;
+    auto &value            = node[value_name];
 
     const auto type = values.get_type(value_name);
     switch (type)
     {
       case nvbench::named_values::type::int64:
         value["type"]  = "int64";
-        value["value"] = values.get_int64(value_name);
+        // Write as a string; JSON encodes all numbers as double-precision
+        // floats, which would truncate int64s.
+        value["value"] = fmt::to_string(values.get_int64(value_name));
         break;
 
       case nvbench::named_values::type::float64:
         value["type"]  = "float64";
-        value["value"] = values.get_float64(value_name);
+        // Write as a string for consistency with int64.
+        value["value"] = fmt::to_string(values.get_float64(value_name));
         break;
 
       case nvbench::named_values::type::string:
@@ -131,11 +133,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       auto &axes = bench["axes"];
       for (const auto &axis_ptr : bench_ptr->get_axes().get_axes())
       {
-        const auto axis_index = axes.size();
-        auto &axis            = axes[axis_index];
+        auto &axis = axes[axis_ptr->get_name()];
 
-        axis["index"] = axis_index;
-        axis["name"]  = axis_ptr->get_name();
         axis["type"]  = axis_ptr->get_type_as_string();
         axis["flags"] = axis_ptr->get_flags_as_string();
 
@@ -178,11 +177,11 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       auto &states = bench["states"];
       for (const auto &exec_state : bench_ptr->get_states())
       {
-        const auto state_index = states.size();
-        auto &st               = states[state_index];
+        auto &st               = states[exec_state.get_axis_values_as_string()];
 
-        st["index"]             = state_index;
-        st["description"]       = exec_state.get_axis_values_as_string();
+        // TODO: Determine if these need to be part of the state key as well
+        // for uniqueness. The device already is, but the type config index is
+        // not.
         st["device"]            = exec_state.get_device()->get_id();
         st["type_config_index"] = exec_state.get_type_config_index();
 
@@ -197,13 +196,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         auto &summaries = st["summaries"];
         for (const auto &exec_summ : exec_state.get_summaries())
         {
-          const auto summ_index = summaries.size();
-          auto &summ            = summaries[summ_index];
-
-          summ["index"] = summ_index;
-          summ["name"]  = exec_summ.get_name();
-
-          ::write_named_values(summ["values"], exec_summ);
+          auto &summ            = summaries[exec_summ.get_name()];
+          ::write_named_values(summ, exec_summ);
         }
 
         st["is_skipped"] = exec_state.is_skipped();
