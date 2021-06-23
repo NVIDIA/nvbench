@@ -23,7 +23,7 @@
 #include <nvbench/device_manager.cuh>
 #include <nvbench/state.cuh>
 
-#include <functional> // reference_wrapper
+#include <functional> // reference_wrapper, ref
 #include <memory>
 #include <optional>
 #include <vector>
@@ -153,9 +153,14 @@ struct benchmark_base
 
   void run() { this->do_run(); }
 
-  void set_printer(optional_ref<nvbench::printer_base> printer)
+  void set_printer(nvbench::printer_base& printer)
   {
-    m_printer = printer;
+    m_printer = std::ref(printer);
+  }
+
+  void clear_printer()
+  {
+    m_printer = std::nullopt;
   }
 
   [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const

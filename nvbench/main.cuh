@@ -24,9 +24,7 @@
 #include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 
-#include <functional> // std::ref
 #include <iostream>
-#include <optional> // std::nullopt
 
 #define NVBENCH_MAIN                                                           \
   int main(int argc, char const *const *argv)                                  \
@@ -59,9 +57,9 @@
     auto &benchmarks = parser.get_benchmarks();                                \
     for (auto &bench_ptr : benchmarks)                                         \
     {                                                                          \
-      bench_ptr->set_printer(std::ref(printer));                               \
+      bench_ptr->set_printer(printer);                                         \
       bench_ptr->run();                                                        \
-      bench_ptr->set_printer(std::nullopt);                                    \
+      bench_ptr->clear_printer();                                              \
     }                                                                          \
     printer.print_log_epilogue();                                              \
     printer.print_benchmark_results(benchmarks);                               \
