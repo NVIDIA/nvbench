@@ -42,8 +42,11 @@ file_to_string("../docs/cli_help_axis.md"
 
 add_library(nvbench STATIC ${srcs})
 add_library(nvbench::nvbench ALIAS nvbench)
-# TODO generator expressions for installed paths
-target_include_directories(nvbench PUBLIC "${NVBench_SOURCE_DIR}")
+
+target_include_directories(nvbench PUBLIC
+  "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+)
 target_include_directories(nvbench PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(nvbench PRIVATE fmt::fmt nvbench_json)
 target_compile_features(nvbench PUBLIC cuda_std_17)

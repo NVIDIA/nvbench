@@ -14,9 +14,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
 
-# TODO this probably should use GNUInstallDirs or something.
-set(NVBench_LIBRARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/lib")
-set(NVBench_EXECUTABLE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
+include(GNUInstallDirs)
+set(NVBench_LIBRARY_OUTPUT_DIR "${CMAKE_INSTALL_LIBDIR}")
+set(NVBench_EXECUTABLE_OUTPUT_DIR "${CMAKE_INSTALL_BINDIR}")
 
 include(CPM)
 
@@ -72,3 +72,24 @@ endif()
 if (NVBench_ENABLE_TESTING)
   add_subdirectory(testing)
 endif()
+
+install(
+  TARGETS
+    nvbench
+    nvbench_main
+    nvbench_json
+  EXPORT
+    nvbench_config
+  DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(
+  DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/nvbench"
+  TYPE INCLUDE
+  FILES_MATCHING PATTERN "*.cuh"
+)
+
+install(
+  EXPORT nvbench_config NAMESPACE nvbench:: DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/nvbench"
+)
