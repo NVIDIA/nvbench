@@ -46,7 +46,7 @@ def find_device_by_id(device_id):
 def format_int64_axis_value(axis_name, axis_value, axes):
     axis_def = axes[axis_name]
     axis_flags = axis_def["flags"]
-    value = axis_value["value"]
+    value = int(axis_value["value"])
     if axis_flags == "pow2":
         value = math.log2(value)
         return "2^%d" % value
@@ -54,7 +54,7 @@ def format_int64_axis_value(axis_name, axis_value, axes):
 
 
 def format_float64_axis_value(axis_name, axis_value, axes):
-    return "%.5g" % axis_value["value"]
+    return "%.5g" % float(axis_value["value"])
 
 
 def format_type_axis_value(axis_name, axis_value, axes):
@@ -180,12 +180,13 @@ def compare_benches(ref_benches, cmp_benches):
                 ref_time = ref_time_summary["value"]["value"]
                 cmp_noise = cmp_noise_summary["value"]["value"]
                 ref_noise = ref_noise_summary["value"]["value"]
-                diff = cmp_time - ref_time
-                frac_diff = diff / ref_time
 
                 # Convert string encoding to expected numerics:
                 cmp_time = float(cmp_time)
                 ref_time = float(ref_time)
+
+                diff = cmp_time - ref_time
+                frac_diff = diff / ref_time
 
                 if ref_noise and cmp_noise:
                     ref_noise = float(ref_noise)
