@@ -7,6 +7,12 @@ import sys
 
 import tabulate
 
+# Parse version string into tuple, "x.y.z" -> (x, y, z)
+def version_tuple(v):
+    return tuple(map(int, (v.split("."))))
+
+tabulate_version = version_tuple(tabulate.__version__)
+
 if len(sys.argv) != 3:
     print("Usage: %s reference.json compare.json\n" % sys.argv[0])
     sys.exit(1)
@@ -230,10 +236,17 @@ def compare_benches(ref_benches, cmp_benches):
 
                 rows.append(row)
 
-            print(tabulate.tabulate(rows,
-                                    headers=headers,
-                                    colalign=colalign,
-                                    tablefmt="github"))
+            # colalign and github format require tabulate 0.8.3
+            if tabulate_version >= (0, 8, 3):
+                print(tabulate.tabulate(rows,
+                                        headers=headers,
+                                        colalign=colalign,
+                                        tablefmt="github"))
+            else:
+                print(tabulate.tabulate(rows,
+                                        headers=headers,
+                                        tablefmt="markdown"))
+
             print("")
 
 
