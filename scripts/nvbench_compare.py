@@ -116,7 +116,7 @@ def compare_benches(ref_benches, cmp_benches):
         ref_states = ref_bench["states"]
         cmp_states = cmp_bench["states"]
 
-        headers = list(axes.keys())
+        headers = list(axes.keys()) if axes else []
         colalign = ["center"] * len(headers)
 
         headers.append("Ref Time")
@@ -146,6 +146,9 @@ def compare_benches(ref_benches, cmp_benches):
                     continue
 
                 axis_values = cmp_state["axis_values"]
+                if not axis_values:
+                    axis_values = []
+
                 row = []
                 for axis_value_name in axis_values:
                     axis_value = axis_values[axis_value_name]
