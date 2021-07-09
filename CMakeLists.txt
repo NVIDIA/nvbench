@@ -44,6 +44,9 @@ CPMAddPackage(
   VERSION 3.9.1
   URL https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
   URL_HASH SHA256=6bea5877b1541d353bd77bdfbdb2696333ae5ed8f9e8cc22df657192218cad91
+  PATCH_COMMAND
+    # Work around compiler bug in nvcc 11.0, see NVIDIA/NVBench#18
+    ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/nlohmann_json.hpp" "./include/nlohmann/json.hpp"
 )
 
 # Development branch:
