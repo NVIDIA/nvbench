@@ -8761,6 +8761,7 @@ if no parse error occurred.
 
 @since version 1.0.0
 */
+// Work around compiler bug in nvcc 11.0, see NVIDIA/NVBench#18
 #if defined(__NVCC__) && \
     __cplusplus >= 201703L && \
     __CUDACC_VER_MAJOR__ == 11 && \
