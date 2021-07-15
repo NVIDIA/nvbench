@@ -116,7 +116,7 @@ axes_metadata::axes_metadata(nvbench::type_list<TypeAxes...>)
       typedef typename decltype(wrapped_type)::type type_list;
       auto axis = std::make_unique<nvbench::type_axis>(std::move(*names_iter++),
                                                        type_axis_index);
-      axis->set_inputs<type_list>();
+      axis->template set_inputs<type_list>();
       axes.push_back(std::move(axis));
     });
 }

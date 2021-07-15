@@ -10,7 +10,6 @@ set(srcs
   device_manager.cu
   float64_axis.cu
   int64_axis.cu
-  json_printer.cu
   markdown_printer.cu
   named_values.cu
   option_parser.cu
@@ -27,6 +26,16 @@ set(srcs
   detail/state_generator.cu
 )
 
+# CUDA 11.0 can't compile json_printer without crashing
+# So for that version fall back to C++ with degraded
+# output ( no PTX version info )
+if(CMAKE_CUDA_COMPILER_ID STREQUAL NVIDIA AND
+   CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.1)
+  list(APPEND srcs json_printer.cxx)
+else()
+  list(APPEND srcs json_printer.cu)
+endif()
+
 # Generate doc strings from md files:
 include("../cmake/FileToString.cmake")
 file_to_string("../docs/cli_help.md"
@@ -40,13 +49,16 @@ file_to_string("../docs/cli_help_axis.md"
   cli_help_axis_text
 )
 
+find_package(CUDAToolkit)
+
 add_library(nvbench STATIC ${srcs})
 add_library(nvbench::nvbench ALIAS nvbench)
 # TODO generator expressions for installed paths
 target_include_directories(nvbench PUBLIC "${NVBench_SOURCE_DIR}")
 target_include_directories(nvbench PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(nvbench PRIVATE "${CUDAToolkit_INCLUDE_DIRS}")
 target_link_libraries(nvbench PRIVATE fmt::fmt nvbench_json)
-target_compile_features(nvbench PUBLIC cuda_std_17)
+target_compile_features(nvbench PUBLIC cuda_std_17 PRIVATE cxx_std_17)
 set_target_properties(nvbench PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
   LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"

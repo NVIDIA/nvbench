@@ -35,7 +35,8 @@ struct l2flush
       cudaDeviceGetAttribute(&m_l2_size, cudaDevAttrL2CacheSize, dev_id));
     if (m_l2_size > 0)
     {
-      NVBENCH_CUDA_CALL(cudaMalloc(&m_l2_buffer, m_l2_size));
+      void* buffer = m_l2_buffer;
+      NVBENCH_CUDA_CALL(cudaMalloc(&buffer, m_l2_size));
     }
   }
 

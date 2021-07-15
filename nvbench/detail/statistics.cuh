@@ -20,6 +20,7 @@
 
 #include <nvbench/detail/transform_reduce.cuh>
 
+#include <cmath>
 #include <functional>
 #include <limits>
 #include <numeric>

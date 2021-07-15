@@ -215,7 +215,7 @@ try
   nvbench::detail::device_scope _{dev_id};
   cudaFuncAttributes attr{};
   NVBENCH_CUDA_CALL(
-    cudaFuncGetAttributes(&attr, nvbench::detail::noop_kernel_ptr));
+    cudaFuncGetAttributes(&attr, ((const void*)nvbench::detail::noop_kernel_ptr) ));
   return attr.ptxVersion * 10;
 }
 catch(...)
