@@ -37,6 +37,7 @@ struct l2flush
     {
       void* buffer = m_l2_buffer;
       NVBENCH_CUDA_CALL(cudaMalloc(&buffer, m_l2_size));
+      m_l2_buffer = reinterpret_cast<int*>(buffer);
     }
   }
 
