@@ -1,29 +1,29 @@
 set(srcs
-  axes_metadata.cu
-  axis_base.cu
-  benchmark_base.cu
-  benchmark_manager.cu
+  axes_metadata.cxx
+  axis_base.cxx
+  benchmark_base.cxx
+  benchmark_manager.cxx
   blocking_kernel.cu
   csv_printer.cu
   cuda_call.cu
   device_info.cu
   device_manager.cu
-  float64_axis.cu
-  int64_axis.cu
+  float64_axis.cxx
+  int64_axis.cxx
   markdown_printer.cu
-  named_values.cu
-  option_parser.cu
-  printer_base.cu
-  printer_multiplex.cu
-  runner.cu
-  state.cu
-  string_axis.cu
-  type_axis.cu
-  type_strings.cu
+  named_values.cxx
+  option_parser.cxx
+  printer_base.cxx
+  printer_multiplex.cxx
+  runner.cxx
+  state.cxx
+  string_axis.cxx
+  type_axis.cxx
+  type_strings.cxx
 
   detail/measure_cold.cu
   detail/measure_hot.cu
-  detail/state_generator.cu
+  detail/state_generator.cxx
 )
 
 # CUDA 11.0 can't compile json_printer without crashing
