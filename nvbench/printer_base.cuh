@@ -121,10 +121,10 @@ private:
   virtual void do_print_device_info() {}
   virtual void do_print_log_preamble() {}
   virtual void do_print_log_epilogue() {}
-  virtual void do_log(nvbench::log_level, const std::string &) {}
-  virtual void do_log_run_state(const nvbench::state &) {}
-  virtual void do_print_benchmark_list(const benchmark_vector &) {}
-  virtual void do_print_benchmark_results(const benchmark_vector &benches) {}
+  virtual void do_log([[maybe_unused]] nvbench::log_level, const std::string &) {}
+  virtual void do_log_run_state([[maybe_unused]] const nvbench::state &) {}
+  virtual void do_print_benchmark_list([[maybe_unused]] const benchmark_vector &) {}
+  virtual void do_print_benchmark_results([[maybe_unused]] const benchmark_vector &benches) {}
 };
 
 } // namespace nvbench
