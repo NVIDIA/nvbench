@@ -124,7 +124,7 @@ private:
   virtual void do_log(nvbench::log_level, const std::string &) {}
   virtual void do_log_run_state(const nvbench::state &) {}
   virtual void do_print_benchmark_list(const benchmark_vector &) {}
-  virtual void do_print_benchmark_results(const benchmark_vector &benches) {}
+  virtual void do_print_benchmark_results(const benchmark_vector &) {}
 };
 
 } // namespace nvbench

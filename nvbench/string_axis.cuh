@@ -55,7 +55,7 @@ private:
   {
     return m_values[i];
   }
-  std::string do_get_description(std::size_t i) const final { return {}; }
+  std::string do_get_description(std::size_t) const final { return {}; }
 
   std::vector<std::string> m_values;
 };
