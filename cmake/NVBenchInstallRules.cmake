@@ -39,6 +39,14 @@ if (NVBench_ENABLE_NVML)
   )
 endif()
 
+if (NVBench_ENABLE_CUPTI)
+  install(
+    FILES
+      "${NVBench_SOURCE_DIR}/cmake/NVBenchCUPTI.cmake"
+    DESTINATION "${config_install_location}"
+  )
+endif()
+
 # Call with a list of library targets to generate install rules:
 function(nvbench_install_libraries)
   install(TARGETS ${ARGN}

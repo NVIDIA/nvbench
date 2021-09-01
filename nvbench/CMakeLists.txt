@@ -26,6 +26,10 @@ set(srcs
   detail/state_generator.cxx
 )
 
+if (NVBench_ENABLE_CUPTI)
+  list(APPEND srcs detail/measure_cupti.cu cupti_profiler.cxx)
+endif()
+
 if (NVBench_ENABLE_NVML)
   list(APPEND srcs internal/nvml.cxx)
 endif()

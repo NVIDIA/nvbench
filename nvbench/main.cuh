@@ -20,6 +20,7 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
+#include <nvbench/config.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
@@ -45,9 +46,16 @@
     return 1;                                                                  \
   }
 
+#ifdef NVBENCH_HAS_CUPTI
+#define NVBENCH_INITIALIZE_DRIVER_API NVBENCH_DRIVER_API_CALL(cuInit(0));
+#else
+#define NVBENCH_INITIALIZE_DRIVER_API
+#endif
+
 #define NVBENCH_MAIN_BODY(argc, argv)                                          \
   do                                                                           \
   {                                                                            \
+    NVBENCH_INITIALIZE_DRIVER_API                                              \
     nvbench::option_parser parser;                                             \
     parser.parse(argc, argv);                                                  \
     auto &printer = parser.get_printer();                                      \

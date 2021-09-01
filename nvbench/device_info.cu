@@ -144,4 +144,20 @@ catch (nvml::call_failed &e)
 }
 #endif // NVBENCH_HAS_NVML
 
+#ifdef NVBENCH_HAS_CUPTI
+[[nodiscard]] CUcontext device_info::get_context() const
+{
+  if (!is_active())
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "{}",
+                  "get_context is called for inactive device");
+  }
+
+  CUcontext cu_context;
+  NVBENCH_DRIVER_API_CALL(cuCtxGetCurrent(&cu_context));
+  return cu_context;
+}
+#endif
+
 } // namespace nvbench

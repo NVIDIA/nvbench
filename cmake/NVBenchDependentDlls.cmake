@@ -23,7 +23,9 @@ endif()
 function(nvbench_setup_dep_dlls target_name)
   # The custom command below fails when there aren't any runtime DLLs to copy,
   # so only enable it when a relevant dependency is enabled:
-  if (NVBench_ADD_DEPENDENT_DLLS_TO_BUILD AND NVBench_ENABLE_NVML)
+  if (NVBench_ADD_DEPENDENT_DLLS_TO_BUILD AND
+      (NVBench_ENABLE_NVML OR
+       NVBench_ENABLE_CUPTI))
     add_custom_command(TARGET ${target_name}
       POST_BUILD
       COMMAND

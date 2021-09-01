@@ -221,6 +221,51 @@ struct state
     return m_benchmark;
   }
 
+  void collect_l1_hit_rates() { m_collect_l1_hit_rates = true; }
+  void collect_l2_hit_rates() { m_collect_l2_hit_rates = true; }
+  void collect_stores_efficiency() { m_collect_stores_efficiency = true; }
+  void collect_loads_efficiency() { m_collect_loads_efficiency = true; }
+  void collect_dram_throughput() { m_collect_dram_throughput = true; }
+
+  void collect_cupti_metrics()
+  {
+    collect_l1_hit_rates();
+    collect_l2_hit_rates();
+    collect_stores_efficiency();
+    collect_loads_efficiency();
+    collect_dram_throughput();
+  }
+
+  [[nodiscard]] bool is_l1_hit_rate_collected() const
+  {
+    return m_collect_l1_hit_rates;
+  }
+  [[nodiscard]] bool is_l2_hit_rate_collected() const
+  {
+    return m_collect_l2_hit_rates;
+  }
+  [[nodiscard]] bool is_stores_efficiency_collected() const
+  {
+    return m_collect_stores_efficiency;
+  }
+  [[nodiscard]] bool is_loads_efficiency_collected() const
+  {
+    return m_collect_loads_efficiency;
+  }
+  [[nodiscard]] bool is_dram_throughput_collected() const
+  {
+    return m_collect_dram_throughput;
+  }
+
+  [[nodiscard]] bool is_cupti_required() const
+  {
+    return is_l2_hit_rate_collected()
+        || is_l1_hit_rate_collected()
+        || is_stores_efficiency_collected()
+        || is_loads_efficiency_collected()
+        || is_dram_throughput_collected();
+  }
+
   summary &add_summary(std::string summary_name);
   summary &add_summary(summary s);
   [[nodiscard]] const summary &get_summary(std::string_view name) const;
@@ -279,6 +324,12 @@ private:
   std::string m_skip_reason;
   std::size_t m_element_count{};
   std::size_t m_global_memory_rw_bytes{};
+
+  bool m_collect_l1_hit_rates{};
+  bool m_collect_l2_hit_rates{};
+  bool m_collect_stores_efficiency{};
+  bool m_collect_loads_efficiency{};
+  bool m_collect_dram_throughput{};
 };
 
 } // namespace nvbench

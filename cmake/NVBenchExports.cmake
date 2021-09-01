@@ -11,6 +11,15 @@ macro(nvbench_generate_exports)
     )
   endif()
 
+  if (NVBench_ENABLE_CUPTI)
+    string(APPEND nvbench_build_export_code_block
+      "include(\"${NVBench_SOURCE_DIR}/cmake/NVBenchCUPTI.cmake\")\n"
+    )
+    string(APPEND nvbench_install_export_code_block
+      "include(\"\${CMAKE_CURRENT_LIST_DIR}/NVBenchCUPTI.cmake\")\n"
+    )
+  endif()
+
   rapids_export(BUILD NVBench
     EXPORT_SET nvbench-targets
     NAMESPACE "nvbench::"

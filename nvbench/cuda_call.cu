@@ -17,6 +17,7 @@
  */
 
 #include <nvbench/cuda_call.cuh>
+#include <nvbench/config.cuh>
 
 #include <fmt/format.h>
 
@@ -43,6 +44,34 @@ void throw_error(const std::string &filename,
                                        cudaGetErrorString(error_code),
                                        command));
 }
+
+#ifdef NVBENCH_HAS_CUPTI
+void throw_error(const std::string &filename,
+                 std::size_t lineno,
+                 const std::string &command,
+                 CUresult error_code)
+{
+  const char *name = nullptr;
+  cuGetErrorName(error_code, &name);
+
+  const char *string = nullptr;
+  cuGetErrorString(error_code, &string);
+
+  throw std::runtime_error(fmt::format("{}:{}: Driver API call returned error: "
+                                       "{}: {}\nCommand: '{}'",
+                                       filename,
+                                       lineno,
+                                       name,
+                                       string,
+                                       command));
+}
+#else
+void throw_error(const std::string &,
+                 std::size_t,
+                 const std::string &,
+                 CUresult)
+{}
+#endif
 
 void exit_error(const std::string &filename,
                 std::size_t lineno,

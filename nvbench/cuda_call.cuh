@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cuda_runtime_api.h>
+#include <cuda.h>
 
 #include <string>
 
@@ -28,6 +29,20 @@
   {                                                                            \
     const cudaError_t nvbench_cuda_call_error = call;                          \
     if (nvbench_cuda_call_error != cudaSuccess)                                \
+    {                                                                          \
+      nvbench::cuda_call::throw_error(__FILE__,                                \
+                                      __LINE__,                                \
+                                      #call,                                   \
+                                      nvbench_cuda_call_error);                \
+    }                                                                          \
+  } while (false)
+
+/// Throws a std::runtime_error if `call` doesn't return `CUDA_SUCCESS`.
+#define NVBENCH_DRIVER_API_CALL(call)                                          \
+  do                                                                           \
+  {                                                                            \
+    const CUresult nvbench_cuda_call_error = call;                             \
+    if (nvbench_cuda_call_error != CUDA_SUCCESS)                               \
     {                                                                          \
       nvbench::cuda_call::throw_error(__FILE__,                                \
                                       __LINE__,                                \
@@ -58,6 +73,11 @@ void throw_error(const std::string &filename,
                  std::size_t lineno,
                  const std::string &call,
                  cudaError_t error);
+
+void throw_error(const std::string &filename,
+                 std::size_t lineno,
+                 const std::string &call,
+                 CUresult error);
 
 void exit_error(const std::string &filename,
                 std::size_t lineno,

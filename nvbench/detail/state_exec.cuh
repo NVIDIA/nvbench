@@ -23,10 +23,14 @@
        "Do not include it directly."
 #endif // NVBENCH_STATE_EXEC_GUARD
 
+#include <nvbench/config.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/state.cuh>
 
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
+#ifdef NVBENCH_HAS_CUPTI
+#include <nvbench/detail/measure_cupti.cuh>
+#endif // NVBENCH_HAS_CUPTI
 #include <nvbench/detail/measure_cold.cuh>
 #include <nvbench/detail/measure_hot.cuh>
 
@@ -83,6 +87,19 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     constexpr bool use_blocking_kernel = !(tags & no_block);
     if constexpr (tags & timer)
     {
+      // Estimate bandwidth here
+      #ifdef NVBENCH_HAS_CUPTI
+      if constexpr (!(modifier_tags & run_once))
+      {
+        if (this->is_cupti_required())
+        {
+          using measure_t = nvbench::detail::measure_cupti<KL>;
+          measure_t measure{*this, kernel_launcher};
+          measure();
+        }
+      }
+      #endif
+
       using measure_t = nvbench::detail::measure_cold<KL, use_blocking_kernel>;
       measure_t measure{*this, kernel_launcher};
       measure();
@@ -90,9 +107,23 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     else
     { // Need to wrap the kernel launcher with a timer wrapper:
       using wrapper_t = nvbench::detail::kernel_launch_timer_wrapper<KL>;
+      wrapper_t wrapper{kernel_launcher};
+
+      // Estimate bandwidth here
+      #ifdef NVBENCH_HAS_CUPTI
+      if constexpr (!(modifier_tags & run_once))
+      {
+        if (this->is_cupti_required())
+        {
+          using measure_t = nvbench::detail::measure_cupti<wrapper_t>;
+          measure_t measure{*this, wrapper};
+          measure();
+        }
+      }
+      #endif
+
       using measure_t =
         nvbench::detail::measure_cold<wrapper_t, use_blocking_kernel>;
-      wrapper_t wrapper{kernel_launcher};
       measure_t measure(*this, wrapper);
       measure();
     }
