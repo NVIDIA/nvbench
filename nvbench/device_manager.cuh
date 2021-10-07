@@ -37,16 +37,26 @@ struct device_manager
    */
   [[nodiscard]] static device_manager &get();
 
+  /**
+   * @return The total number of detected CUDA devices.
+   */
   [[nodiscard]] int get_number_of_devices() const
   {
     return static_cast<int>(m_devices.size());
   }
 
+  /**
+   * @return The device_info object corresponding to `id`.
+   */
   [[nodiscard]] const nvbench::device_info &get_device(int id)
   {
     return m_devices.at(id);
   }
 
+  /**
+   * @return A vector containing device_info objects for all detected CUDA
+   * devices.
+   */
   [[nodiscard]] const device_info_vector &get_devices() const
   {
     return m_devices;
