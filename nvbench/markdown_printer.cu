@@ -45,7 +45,10 @@ void markdown_printer::do_print_device_info()
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "# Devices\n\n");
 
-  const auto &devices = nvbench::device_manager::get().get_devices();
+  const auto &device_mgr = nvbench::device_manager::get();
+  const auto &devices    = device_mgr.get_number_of_used_devices() > 0
+                             ? device_mgr.get_used_devices()
+                             : device_mgr.get_devices();
   for (const auto &device : devices)
   {
     const auto [gmem_free, gmem_used] = device.get_global_memory_usage();
