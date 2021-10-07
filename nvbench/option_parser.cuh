@@ -114,6 +114,8 @@ private:
   void update_float64_prop(const std::string &prop_arg,
                            const std::string &prop_val);
 
+  void update_used_device_state() const;
+
   // less gross argv:
   std::vector<std::string> m_args;
 
