@@ -181,6 +181,10 @@ struct device_info
     return m_prop;
   }
 
+  [[nodiscard]] bool operator<(const device_info &o) const
+  {
+    return m_id < o.m_id;
+  }
   [[nodiscard]] bool operator==(const device_info &o) const
   {
     return m_id == o.m_id;

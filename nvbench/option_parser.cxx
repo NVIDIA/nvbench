@@ -34,6 +34,7 @@
 
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
@@ -343,6 +344,8 @@ void option_parser::parse_impl()
   {
     this->add_markdown_printer("stdout");
   }
+
+  this->update_used_device_state();
 }
 
 void option_parser::parse_range(option_parser::arg_iterator_t first,
@@ -848,6 +851,22 @@ catch (std::exception &e)
                 prop_arg,
                 prop_val,
                 e.what());
+}
+
+void option_parser::update_used_device_state() const
+{
+  device_manager::device_info_vector devices;
+  for (const auto &bench : m_benchmarks)
+  {
+    const auto &bench_devs = bench->get_devices();
+    devices.insert(devices.end(), bench_devs.cbegin(), bench_devs.cend());
+  }
+
+  std::sort(devices.begin(), devices.end());
+  auto last = std::unique(devices.begin(), devices.end());
+  devices.erase(last, devices.end());
+
+  device_manager::get().set_used_devices(devices);
 }
 
 nvbench::printer_base &option_parser::get_printer() { return m_printer; }
