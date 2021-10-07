@@ -153,15 +153,12 @@ struct benchmark_base
 
   void run() { this->do_run(); }
 
-  void set_printer(nvbench::printer_base& printer)
+  void set_printer(nvbench::printer_base &printer)
   {
     m_printer = std::ref(printer);
   }
 
-  void clear_printer()
-  {
-    m_printer = std::nullopt;
-  }
+  void clear_printer() { m_printer = std::nullopt; }
 
   [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const
   {
