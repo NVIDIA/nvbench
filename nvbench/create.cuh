@@ -29,7 +29,7 @@
 
 #define NVBENCH_BENCH(KernelGenerator)                                         \
   NVBENCH_DEFINE_UNIQUE_CALLABLE(KernelGenerator);                             \
-  nvbench::benchmark_base &NVBENCH_UNIQUE_IDENTIFIER(benchmark) =              \
+  nvbench::benchmark_base &NVBENCH_UNIQUE_IDENTIFIER(obj_##KernelGenerator) =  \
     nvbench::benchmark_manager::get()                                          \
       .add(std::make_unique<                                                   \
            nvbench::benchmark<NVBENCH_UNIQUE_IDENTIFIER(KernelGenerator)>>())  \
@@ -37,7 +37,7 @@
 
 #define NVBENCH_BENCH_TYPES(KernelGenerator, TypeAxes)                         \
   NVBENCH_DEFINE_UNIQUE_CALLABLE_TEMPLATE(KernelGenerator);                    \
-  nvbench::benchmark_base &NVBENCH_UNIQUE_IDENTIFIER(benchmark) =              \
+  nvbench::benchmark_base &NVBENCH_UNIQUE_IDENTIFIER(obj_##KernelGenerator) =  \
     nvbench::benchmark_manager::get()                                          \
       .add(std::make_unique<                                                   \
            nvbench::benchmark<NVBENCH_UNIQUE_IDENTIFIER(KernelGenerator),      \
