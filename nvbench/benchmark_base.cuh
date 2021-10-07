@@ -153,15 +153,12 @@ struct benchmark_base
 
   void run() { this->do_run(); }
 
-  void set_printer(nvbench::printer_base& printer)
+  void set_printer(nvbench::printer_base &printer)
   {
     m_printer = std::ref(printer);
   }
 
-  void clear_printer()
-  {
-    m_printer = std::nullopt;
-  }
+  void clear_printer() { m_printer = std::nullopt; }
 
   [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const
   {
@@ -176,6 +173,17 @@ struct benchmark_base
   benchmark_base &set_min_samples(nvbench::int64_t min_samples)
   {
     m_min_samples = min_samples;
+    return *this;
+  }
+  /// @}
+
+  /// If true, the benchmark is only run once, skipping all warmup runs and only
+  /// executing a single non-batched measurement. This is intended for use with
+  /// external profiling tools. @{
+  [[nodiscard]] bool get_run_once() const { return m_run_once; }
+  benchmark_base &set_run_once(bool v)
+  {
+    m_run_once = v;
     return *this;
   }
   /// @}
@@ -241,6 +249,8 @@ protected:
   std::vector<nvbench::state> m_states;
 
   optional_ref<nvbench::printer_base> m_printer;
+
+  bool m_run_once{false};
 
   nvbench::int64_t m_min_samples{10};
   nvbench::float64_t m_min_time{0.5};

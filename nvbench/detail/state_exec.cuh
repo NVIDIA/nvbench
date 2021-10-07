@@ -44,11 +44,20 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
                 "`ExecTags` argument must be a member (or combination of "
                 "members) from nvbench::exec_tag.");
 
-  // If no measurements selected, pick some defaults based on the modifiers:
   constexpr auto measure_tags = tags & measure_mask;
+  constexpr auto modifier_tags = tags & modifier_mask;
+
+  // "run once" is handled by the cold measurement:
+  if (!(modifier_tags & run_once) && this->get_run_once())
+  {
+    constexpr auto run_once_tags = modifier_tags | cold | run_once;
+    this->exec(run_once_tags, std::forward<KernelLauncher>(kernel_launcher));
+    return;
+  }
+
+  // If no measurements selected, pick some defaults based on the modifiers:
   if constexpr (!measure_tags)
   {
-    constexpr auto modifier_tags = tags & modifier_mask;
     if constexpr (modifier_tags & (timer | sync))
     { // Can't do hot timings with manual timer or sync; whole point is to not
       // sync in between executions.

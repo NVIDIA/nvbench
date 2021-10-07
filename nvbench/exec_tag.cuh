@@ -34,7 +34,8 @@ enum class exec_flag
   timer    = 0x01, // KernelLauncher uses manual timing
   no_block = 0x02, // Disables use of `blocking_kernel`.
   sync     = 0x04, // KernelLauncher has indicated that it will sync
-  modifier_mask = timer | no_block | sync,
+  run_once = 0x08, // Only run the benchmark once (for profiling).
+  modifier_mask = timer | no_block | sync | run_once,
 
   // Measurement types:
   cold = 0x0100, // measure_hot
@@ -93,6 +94,7 @@ using none_t          = tag<nvbench::detail::exec_flag::none>;
 using timer_t         = tag<nvbench::detail::exec_flag::timer>;
 using no_block_t      = tag<nvbench::detail::exec_flag::no_block>;
 using sync_t          = tag<nvbench::detail::exec_flag::sync>;
+using run_once_t      = tag<nvbench::detail::exec_flag::run_once>;
 using hot_t           = tag<nvbench::detail::exec_flag::hot>;
 using cold_t          = tag<nvbench::detail::exec_flag::cold>;
 using modifier_mask_t = tag<nvbench::detail::exec_flag::modifier_mask>;
@@ -102,6 +104,7 @@ constexpr inline none_t none;
 constexpr inline timer_t timer;
 constexpr inline no_block_t no_block;
 constexpr inline sync_t sync;
+constexpr inline run_once_t run_once;
 constexpr inline cold_t cold;
 constexpr inline hot_t hot;
 constexpr inline modifier_mask_t modifier_mask;

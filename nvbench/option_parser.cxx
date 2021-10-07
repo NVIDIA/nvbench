@@ -385,6 +385,11 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->print_list();
       std::exit(0);
     }
+    else if (arg == "--run-once")
+    {
+      this->enable_run_once();
+      first += 1;
+    }
     else if (arg == "--quiet" | arg == "-q")
     {
       // Setting this flag prevents the default stdout printer from being
@@ -540,6 +545,19 @@ void option_parser::print_help() const
 void option_parser::print_help_axis() const
 {
   fmt::print("{}\n", ::cli_help_axis_text);
+}
+
+void option_parser::enable_run_once()
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--run-once");
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_run_once(true);
 }
 
 void option_parser::add_benchmark(const std::string &name)

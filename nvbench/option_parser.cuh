@@ -88,6 +88,8 @@ private:
   void print_help() const;
   void print_help_axis() const;
 
+  void enable_run_once();
+
   void add_benchmark(const std::string &name);
   void replay_global_args();
 
