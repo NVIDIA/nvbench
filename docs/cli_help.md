@@ -94,3 +94,10 @@
     noise).
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
+
+* `--run-once`
+  * Only run the benchmark once, skipping any warmup runs and batched
+    measurements.
+  * Intended for use with external profiling tools.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.

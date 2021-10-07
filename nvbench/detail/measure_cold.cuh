@@ -98,6 +98,8 @@ protected:
   nvbench::detail::l2flush m_l2flush;
   nvbench::blocking_kernel m_blocker;
 
+  bool m_run_once{false};
+
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_max_noise{}; // rel stdev
   nvbench::float64_t m_min_time{};
@@ -177,6 +179,11 @@ private:
   // measurement.
   void run_warmup()
   {
+    if (m_run_once)
+    { // Skip warmups
+      return;
+    }
+
     kernel_launch_timer<use_blocking_kernel> timer(*this);
     this->launch_kernel(timer);
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -205,6 +212,11 @@ private:
 
       m_timeout_timer.stop();
       const auto total_time = m_timeout_timer.get_duration();
+
+      if (m_run_once)
+      {
+        break;
+      }
 
       if (m_total_cuda_time > m_min_time &&  // Min time okay
           m_total_samples > m_min_samples && // Min samples okay

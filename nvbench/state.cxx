@@ -33,6 +33,7 @@ namespace nvbench
 
 state::state(const benchmark_base &bench)
     : m_benchmark{bench}
+    , m_run_once{bench.get_run_once()}
     , m_min_samples{bench.get_min_samples()}
     , m_min_time{bench.get_min_time()}
     , m_max_noise{bench.get_max_noise()}
@@ -48,6 +49,7 @@ state::state(const benchmark_base &bench,
     , m_axis_values{std::move(values)}
     , m_device{std::move(device)}
     , m_type_config_index{type_config_index}
+    , m_run_once{bench.get_run_once()}
     , m_min_samples{bench.get_min_samples()}
     , m_min_time{bench.get_min_time()}
     , m_max_noise{bench.get_max_noise()}

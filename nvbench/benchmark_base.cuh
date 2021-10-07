@@ -177,6 +177,17 @@ struct benchmark_base
   }
   /// @}
 
+  /// If true, the benchmark is only run once, skipping all warmup runs and only
+  /// executing a single non-batched measurement. This is intended for use with
+  /// external profiling tools. @{
+  [[nodiscard]] bool get_run_once() const { return m_run_once; }
+  benchmark_base &set_run_once(bool v)
+  {
+    m_run_once = v;
+    return *this;
+  }
+  /// @}
+
   /// Accumulate at least this many seconds of timing data per measurement. @{
   [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
   benchmark_base &set_min_time(nvbench::float64_t min_time)
@@ -238,6 +249,8 @@ protected:
   std::vector<nvbench::state> m_states;
 
   optional_ref<nvbench::printer_base> m_printer;
+
+  bool m_run_once{false};
 
   nvbench::int64_t m_min_samples{10};
   nvbench::float64_t m_min_time{0.5};
