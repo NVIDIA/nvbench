@@ -118,8 +118,7 @@ Pass: Batch: 0.261963ms GPU, 7.18s total GPU, 27394x
 ## Demo Project
 
 To get started using NVBench with your own kernels, consider trying out
-the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo)
-. 
+the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo). 
 
 `nvbench_demo` provides a simple CMake project that uses NVBench to build an
 example benchmark. It's a great way to experiment with the library without a lot
@@ -148,10 +147,8 @@ make test
 ```
 or 
 ```
-ctest build/bin
+ctest
 ```
-
-
 # License
 
 NVBench is released under the Apache 2.0 License with LLVM exceptions.
