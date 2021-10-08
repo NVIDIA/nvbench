@@ -866,7 +866,7 @@ void option_parser::update_used_device_state() const
   auto last = std::unique(devices.begin(), devices.end());
   devices.erase(last, devices.end());
 
-  device_manager::get().set_used_devices(devices);
+  device_manager::get().set_used_devices(std::move(devices));
 }
 
 nvbench::printer_base &option_parser::get_printer() { return m_printer; }
