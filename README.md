@@ -63,11 +63,94 @@ various NVBench features and usecases:
 - [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)
 - [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_timer.cu)
 
+### Building Examples
+
+To build the examples:
+```
+mkdir -p build
+cd build
+cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURE=70.. && make
+```
+Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on. 
+
+Examples are built by default into `build/bin` and are prefixed with `nvbench.example`.
+
+<details>
+  <summary>Example output from `nvbench.example.throughput`</summary>
+
+```
+# Devices
+
+## [0] `Quadro GV100`
+* SM Version: 700 (PTX Version: 700)
+* Number of SMs: 80
+* SM Default Clock Rate: 1627 MHz
+* Global Memory: 32163 MiB Free / 32508 MiB Total
+* Global Memory Bus Peak: 870 GiB/sec (4096-bit DDR @850MHz)
+* Max Shared Memory: 96 KiB/SM, 48 KiB/Block
+* L2 Cache Size: 6144 KiB
+* Maximum Active Blocks: 32/SM
+* Maximum Active Threads: 2048/SM, 1024/Block
+* Available Registers: 65536/SM, 65536/Block
+* ECC Enabled: No
+
+# Log
+
+Run:  throughput_bench [Device=0]
+Warn: Current measurement timed out (15.00s) while over noise threshold (1.26% > 0.50%)
+Pass: Cold: 0.262392ms GPU, 0.267860ms CPU, 7.19s total GPU, 27393x
+Pass: Batch: 0.261963ms GPU, 7.18s total GPU, 27394x
+
+# Benchmark Results
+
+## throughput_bench
+
+### [0] Quadro GV100
+
+| NumElements |  DataSize  | Samples |  CPU Time  | Noise |  GPU Time  | Noise | Elem/s  | GlobalMem BW  | BWPeak | Batch GPU  | Batch  |
+|-------------|------------|---------|------------|-------|------------|-------|---------|---------------|--------|------------|--------|
+|    16777216 | 64.000 MiB |  27393x | 267.860 us | 1.25% | 262.392 us | 1.26% | 63.940G | 476.387 GiB/s | 58.77% | 261.963 us | 27394x |
+```
+
+</details>
+
+
+## Demo Project
+
 To get started using NVBench with your own kernels, consider trying out
 the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo)
-. `nvbench_demo` provides a simple CMake project that uses NVBench to build an
+. 
+
+`nvbench_demo` provides a simple CMake project that uses NVBench to build an
 example benchmark. It's a great way to experiment with the library without a lot
 of investment.
+
+# Contributing
+
+Contributions are welcome!
+
+For current issues, see the [issue board](https://github.com/NVIDIA/nvbench/issues). Issues labeled with [![](https://img.shields.io/github/labels/NVIDIA/nvbench/good%20first%20issue)](https://github.com/NVIDIA/nvbench/labels/good%20first%20issue) are good for first time contributors. 
+
+## Tests
+
+To build `nvbench` tests:
+```
+mkdir -p build
+cd build
+cmake -DNVBench_ENABLE_TESTING=ON .. && make
+```
+
+Tests are built by default into `build/bin` and prefixed with `nvbench.test`.
+
+To run all tests:
+```
+make test
+```
+or 
+```
+ctest build/bin
+```
+
 
 # License
 
