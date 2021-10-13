@@ -12,7 +12,7 @@ set(srcs
   int64_axis.cxx
   markdown_printer.cu
   named_values.cxx
-  option_parser.cxx
+  option_parser.cu
   printer_base.cxx
   printer_multiplex.cxx
   runner.cxx
