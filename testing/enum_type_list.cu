@@ -159,11 +159,16 @@ void test_unscoped_enum_type_strings()
   using val_2  = nvbench::tl::get<1, values>;
   using val_3  = nvbench::tl::get<2, values>;
   ASSERT((nvbench::type_strings<val_1>::input_string() == "1"));
-  ASSERT((nvbench::type_strings<val_1>::description() == "unscoped_val_1"));
   ASSERT((nvbench::type_strings<val_2>::input_string() == "2"));
-  ASSERT((nvbench::type_strings<val_2>::description() == "unscoped_val_2"));
   ASSERT((nvbench::type_strings<val_3>::input_string() == "3"));
+
+  // There's a gcc bug (fixed in gcc8) that causes these templates to resolve
+  // incorrectly. See NVIDIA/nvbench#39 and NVBug 3404609 for details.
+#if defined(__GNUC__) && __GNUC_ > 7
+  ASSERT((nvbench::type_strings<val_1>::description() == "unscoped_val_1"));
+  ASSERT((nvbench::type_strings<val_2>::description() == "unscoped_val_2"));
   ASSERT((nvbench::type_strings<val_3>::description() == "unscoped_val_3"));
+#endif
 }
 
 int main()
