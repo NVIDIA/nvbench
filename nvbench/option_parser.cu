@@ -29,8 +29,8 @@
 #include <nvbench/detail/throw.cuh>
 
 // These are generated from the markdown docs by CMake in the build directory:
-#include "cli_help.cuh"
-#include "cli_help_axis.cuh"
+#include <nvbench/internal/cli_help.cuh>
+#include <nvbench/internal/cli_help_axis.cuh>
 
 #include <fmt/format.h>
 

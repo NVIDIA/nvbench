@@ -39,39 +39,42 @@ endif()
 # Generate doc strings from md files:
 include("../cmake/FileToString.cmake")
 file_to_string("../docs/cli_help.md"
-  "${CMAKE_CURRENT_BINARY_DIR}/cli_help.cuh"
+  "${NVBench_BINARY_DIR}/nvbench/internal/cli_help.cuh"
   ""
   cli_help_text
 )
 file_to_string("../docs/cli_help_axis.md"
-  "${CMAKE_CURRENT_BINARY_DIR}/cli_help_axis.cuh"
+  "${NVBench_BINARY_DIR}/nvbench/internal/cli_help_axis.cuh"
   ""
   cli_help_axis_text
 )
 
-find_package(CUDAToolkit)
-
-add_library(nvbench STATIC ${srcs})
-add_library(nvbench::nvbench ALIAS nvbench)
-# TODO generator expressions for installed paths
-target_include_directories(nvbench PUBLIC "${NVBench_SOURCE_DIR}")
-target_include_directories(nvbench PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_include_directories(nvbench PRIVATE "${CUDAToolkit_INCLUDE_DIRS}")
-target_link_libraries(nvbench PRIVATE fmt::fmt nvbench_json)
-target_compile_features(nvbench PUBLIC cuda_std_17 PRIVATE cxx_std_17)
-set_target_properties(nvbench PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
-  LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
-  RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
+# nvbench (nvbench::nvbench)
+add_library(nvbench SHARED ${srcs})
+target_include_directories(nvbench PUBLIC
+  "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
+  "$<BUILD_INTERFACE:${NVBench_BINARY_DIR}>"
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
+target_link_libraries(nvbench PUBLIC ${ctk_libraries})
+target_link_libraries(nvbench PRIVATE
+  fmt::fmt
+  nvbench_json
+  nvbench_git_revision
+)
+nvbench_config_target(nvbench)
+target_compile_features(nvbench PUBLIC cuda_std_17 PRIVATE cxx_std_17)
 add_dependencies(nvbench.all nvbench)
 
+# nvbench_main (nvbench::main)
 add_library(nvbench_main OBJECT main.cu)
-add_library(nvbench::main ALIAS nvbench_main)
+nvbench_config_target(nvbench_main)
 target_link_libraries(nvbench_main PUBLIC nvbench)
-set_target_properties(nvbench PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
-  LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
-  RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
-)
+set_target_properties(nvbench_main PROPERTIES EXPORT_NAME main)
 add_dependencies(nvbench.all nvbench_main)
+
+# Support add_subdirectory:
+add_library(nvbench::nvbench ALIAS nvbench)
+add_library(nvbench::main ALIAS nvbench_main)
+
+nvbench_install_libraries(nvbench nvbench_main)
