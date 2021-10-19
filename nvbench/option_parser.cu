@@ -21,10 +21,12 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_printer.cuh>
+#include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
+#include <nvbench/version.cuh>
 
 #include <nvbench/detail/throw.cuh>
 
@@ -383,6 +385,11 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->print_help_axis();
       std::exit(0);
     }
+    else if (arg == "--version")
+    {
+      this->print_version();
+      std::exit(0);
+    }
     else if (arg == "--list" || arg == "-l")
     {
       this->print_list();
@@ -529,6 +536,17 @@ std::ostream &option_parser::printer_spec_to_ostream(const std::string &spec)
     m_ofstream_storage.push_back(std::move(file_stream));
     return *m_ofstream_storage.back();
   }
+}
+
+void option_parser::print_version() const
+{
+  fmt::print("NVBench v{}.{}.{} ({}:{})\n",
+             NVBENCH_VERSION_MAJOR,
+             NVBENCH_VERSION_MINOR,
+             NVBENCH_VERSION_PATCH,
+             NVBENCH_GIT_BRANCH,
+             NVBENCH_GIT_VERSION);
+  std::exit(0);
 }
 
 void option_parser::print_list() const
