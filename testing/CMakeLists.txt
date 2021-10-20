@@ -34,3 +34,5 @@ foreach(test_src IN LISTS test_srcs)
 
   add_dependencies(nvbench.test.all ${test_name})
 endforeach()
+
+add_subdirectory(cmake)

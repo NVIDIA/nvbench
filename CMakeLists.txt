@@ -1,6 +1,10 @@
 # 3.20.1 required for rapids-cmake
 cmake_minimum_required(VERSION 3.20.1)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 include(cmake/NVBenchRapidsCMake.cmake)
 nvbench_load_rapids_cmake()
 
@@ -15,11 +19,9 @@ include(cmake/NVBenchConfigTarget.cmake)
 include(cmake/NVBenchDependencies.cmake)
 include(cmake/NVBenchExports.cmake)
 include(cmake/NVBenchInstallRules.cmake)
+include(cmake/NVBenchUtilities.cmake)
 
 message(STATUS "NVBench CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CUDA_STANDARD 17)
 
 option(NVBench_ENABLE_TESTING "Build NVBench testing suite." OFF)
 option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
