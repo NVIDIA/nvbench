@@ -26,6 +26,10 @@ set(srcs
   detail/state_generator.cxx
 )
 
+if (NVBench_ENABLE_NVML)
+  list(APPEND srcs internal/nvml.cxx)
+endif()
+
 # CUDA 11.0 can't compile json_printer without crashing
 # So for that version fall back to C++ with degraded
 # output ( no PTX version info )
@@ -48,6 +52,8 @@ file_to_string("../docs/cli_help_axis.md"
   ""
   cli_help_axis_text
 )
+
+nvbench_write_config_header("${NVBench_BINARY_DIR}/nvbench/config.cuh")
 
 # nvbench (nvbench::nvbench)
 add_library(nvbench SHARED ${srcs})
@@ -77,4 +83,5 @@ add_dependencies(nvbench.all nvbench_main)
 add_library(nvbench::nvbench ALIAS nvbench)
 add_library(nvbench::main ALIAS nvbench_main)
 
+nvbench_setup_dep_dlls(nvbench)
 nvbench_install_libraries(nvbench nvbench_main)

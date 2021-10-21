@@ -1,4 +1,5 @@
 # 3.20.1 required for rapids-cmake
+# 3.21.0 required for NVBench_ADD_DEPENDENT_DLLS_TO_* (MSVC only)
 cmake_minimum_required(VERSION 3.20.1)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -15,16 +16,20 @@ project(NVBench
 
 nvbench_init_rapids_cmake()
 
+option(NVBench_ENABLE_NVML "Build with NVML support from the Cuda Toolkit." ON)
+
+option(NVBench_ENABLE_TESTING "Build NVBench testing suite." OFF)
+option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
+
 include(cmake/NVBenchConfigTarget.cmake)
-include(cmake/NVBenchDependencies.cmake)
+include(cmake/NVBenchDependentDlls.cmake)
 include(cmake/NVBenchExports.cmake)
+include(cmake/NVBenchWriteConfigHeader.cmake)
+include(cmake/NVBenchDependencies.cmake)
 include(cmake/NVBenchInstallRules.cmake)
 include(cmake/NVBenchUtilities.cmake)
 
 message(STATUS "NVBench CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
-
-option(NVBench_ENABLE_TESTING "Build NVBench testing suite." OFF)
-option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
 
 add_subdirectory(nvbench)
 

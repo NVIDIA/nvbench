@@ -252,6 +252,24 @@ std::vector<T> parse_values(std::string_view value_spec)
   }
 }
 
+std::vector<nvbench::device_info> parse_devices(std::string_view devices)
+{
+  auto &dev_mgr = nvbench::device_manager::get();
+
+  if (devices == "all")
+  {
+    return dev_mgr.get_devices();
+  }
+
+  std::vector<nvbench::device_info> result;
+  auto dev_ids = parse_values<nvbench::int32_t>(devices);
+  for (nvbench::int32_t dev_id : dev_ids)
+  {
+    result.push_back(dev_mgr.get_device(dev_id));
+  }
+  return result;
+}
+
 // Parse an axis specification into a 3-tuple of string_views containing the
 // axis name, flags, and values.
 auto parse_axis_key_flag_value_spec(const std::string &spec)
@@ -322,6 +340,9 @@ void option_parser::parse_impl()
 {
   m_global_benchmark_args.clear();
 
+  // Initialize to all devices:
+  m_recent_devices = nvbench::device_manager::get().get_devices();
+
   // Initialize color variable based on env var:
   {
     const char *var           = std::getenv("NVBENCH_COLOR");
@@ -329,6 +350,11 @@ void option_parser::parse_impl()
   }
 
   this->parse_range(m_args.cbegin(), m_args.cend());
+
+  if (m_exit_after_parsing)
+  {
+    std::exit(0);
+  }
 
   if (m_benchmarks.empty())
   {
@@ -396,6 +422,18 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     {
       this->print_list();
       std::exit(0);
+    }
+    else if (arg == "--persistence-mode" || arg == "--pm")
+    {
+      check_params(1);
+      this->set_persistence_mode(first[1]);
+      first += 2;
+    }
+    else if (arg == "--lock-gpu-clocks" || arg == "--lgc")
+    {
+      check_params(1);
+      this->lock_gpu_clocks(first[1]);
+      first += 2;
     }
     else if (arg == "--run-once")
     {
@@ -569,6 +607,85 @@ void option_parser::print_help_axis() const
   fmt::print("{}\n", ::cli_help_axis_text);
 }
 
+void option_parser::set_persistence_mode(const std::string &state)
+try
+{
+  m_exit_after_parsing = true;
+
+  nvbench::int32_t state_val{};
+  ::parse(state, state_val);
+
+  for (nvbench::device_info &device : m_recent_devices)
+  {
+    fmt::print("Turning persistence mode {} for device '{}' ({}).\n",
+               static_cast<bool>(state_val) ? "ON" : "OFF",
+               device.get_name(),
+               device.get_id());
+    device.set_persistence_mode(static_cast<bool>(state_val));
+  }
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `--persistence-mode {}`:\n{}",
+                state,
+                e.what());
+}
+
+void option_parser::lock_gpu_clocks(const std::string &rate)
+try
+{
+  m_exit_after_parsing = true;
+
+  nvbench::device_info::clock_rate rate_val;
+
+  if (rate == "reset" || rate == "unlock" || rate == "none")
+  {
+    rate_val = nvbench::device_info::clock_rate::none;
+  }
+  else if (rate == "base" || rate == "tdp")
+  {
+    rate_val = nvbench::device_info::clock_rate::base;
+  }
+  else if (rate == "max" || rate == "maximum")
+  {
+    rate_val = nvbench::device_info::clock_rate::maximum;
+  }
+  else
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Unsupported argument: '{}'. Valid values are {}",
+                  rate,
+                  "{reset, base, max}");
+  }
+
+  for (nvbench::device_info &device : m_recent_devices)
+  {
+    if (rate_val == nvbench::device_info::clock_rate::none)
+    {
+      fmt::print("Unlocking clocks for device '{}' ({}).\n",
+                 device.get_name(),
+                 device.get_id());
+    }
+    else
+    {
+      fmt::print("Locking clocks to '{}' for device '{}' ({}).\n",
+                 rate,
+                 device.get_name(),
+                 device.get_id());
+    }
+
+    device.lock_gpu_clocks(rate_val);
+  }
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `--lock-gpu-clocks {}`:\n{}",
+                rate,
+                e.what());
+}
+
 void option_parser::enable_run_once()
 {
   // If no active benchmark, save args as global.
@@ -606,7 +723,7 @@ try
 catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
-                "Error parsing --benchmark `{}`:\n{}",
+                "Error handling option --benchmark `{}`:\n{}",
                 name,
                 e.what());
 }
@@ -620,21 +737,26 @@ void option_parser::replay_global_args()
 void option_parser::update_devices(const std::string &devices)
 try
 {
+  auto device_vec = ::parse_devices(devices);
+
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
     m_global_benchmark_args.push_back("--devices");
     m_global_benchmark_args.push_back(devices);
-    return;
+  }
+  else
+  {
+    benchmark_base &bench = *m_benchmarks.back();
+    bench.set_devices(device_vec);
   }
 
-  benchmark_base &bench = *m_benchmarks.back();
-  bench.set_devices(parse_values<nvbench::int32_t>(devices));
+  m_recent_devices = std::move(device_vec);
 }
 catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
-                "Error parsing --devices `{}`:\n{}",
+                "Error handling option --devices `{}`:\n{}",
                 devices,
                 e.what());
 }
@@ -710,7 +832,7 @@ try
 catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
-                "Error parsing --axis `{}`:\n{}",
+                "Error handling option --axis `{}`:\n{}",
                 spec,
                 e.what());
 }
@@ -820,7 +942,7 @@ try
 catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
-                "Error parsing `{} {}`:\n{}",
+                "Error handling option `{} {}`:\n{}",
                 prop_arg,
                 prop_val,
                 e.what());
@@ -866,7 +988,7 @@ try
 catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
-                "Error parsing `{} {}`:\n{}",
+                "Error handling option `{} {}`:\n{}",
                 prop_arg,
                 prop_val,
                 e.what());

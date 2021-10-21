@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <nvbench/device_info.cuh>
 #include <nvbench/printer_multiplex.cuh>
 
 #include <iosfwd>
@@ -89,6 +90,9 @@ private:
   void print_help() const;
   void print_help_axis() const;
 
+  void set_persistence_mode(const std::string &state);
+  void lock_gpu_clocks(const std::string &rate);
+
   void enable_run_once();
 
   void add_benchmark(const std::string &name);
@@ -123,6 +127,11 @@ private:
   // Store benchmark modifiers passed in before any benchmarks are requested as
   // "global args". Replay them after every benchmark.
   std::vector<std::string> m_global_benchmark_args;
+
+  // List of devices specified by the most recent --devices option, or all
+  // devices if --devices has not been used.
+  std::vector<nvbench::device_info> m_recent_devices;
+
   benchmark_vector m_benchmarks;
 
   // Manages lifetimes of any ofstreams opened for m_printer.
@@ -136,6 +145,9 @@ private:
 
   // True if any stdout printers have been added to m_printer.
   bool m_have_stdout_printer{false};
+
+  // Used for device modification commands like --log-gpu-clocks
+  bool m_exit_after_parsing{false};
 };
 
 } // namespace nvbench

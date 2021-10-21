@@ -27,6 +27,9 @@
 #include <string_view>
 #include <utility>
 
+// forward declare this for internal storage
+struct nvmlDevice_st;
+
 namespace nvbench
 {
 
@@ -66,13 +69,35 @@ struct device_info
     NVBENCH_CUDA_CALL(cudaSetDevice(m_id));
   }
 
+  /// Enable or disable persistence mode.
+  /// @note Only supported on Linux.
+  /// @note Requires root / admin privileges.
+  void set_persistence_mode(bool state);
+
+
+  /// Symbolic values for special clock rates
+  enum class clock_rate
+  {
+    /// Unlock clocks
+    none,
+    /// Base TDP clock; Preferred for stable benchmarking
+    base,
+    /// Maximum clock rate
+    maximum
+  };
+
+  /// Lock GPU clocks to the specified rate.
+  /// @note Only supported on Volta+ (sm_70+) devices.
+  /// @note Requires root / admin privileges.
+  void lock_gpu_clocks(clock_rate rate);
+
   /// @return The SM version of the current device as (major*100) + (minor*10).
   [[nodiscard]] int get_sm_version() const
   {
     return m_prop.major * 100 + m_prop.minor * 10;
   }
 
-  /// @return The PTX version of the current device
+  /// @return The PTX version of the current device, e.g. sm_80 returns 800.
   [[nodiscard]] __forceinline__ int get_ptx_version() const
   {
     return detail::get_ptx_version(m_id);
@@ -197,6 +222,7 @@ struct device_info
 private:
   int m_id;
   cudaDeviceProp m_prop;
+  nvmlDevice_st *m_nvml_device;
 };
 
 // get_ptx_version implementation; this needs to stay in the header so it will
