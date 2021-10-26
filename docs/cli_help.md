@@ -9,6 +9,9 @@
 * `--help-axes`, `--help-axis`
   * Print axis specification documentation and exit.
 
+* `--version`
+  * Print information about the version of NVBench used to build the executable.
+
 # Output
 
 * `--csv <filename/stream>`
