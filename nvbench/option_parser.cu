@@ -377,6 +377,8 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
 
     if (arg == "--help" || arg == "-h")
     {
+      this->print_version();
+      fmt::print("\n");
       this->print_help();
       std::exit(0);
     }
@@ -546,7 +548,6 @@ void option_parser::print_version() const
              NVBENCH_VERSION_PATCH,
              NVBENCH_GIT_BRANCH,
              NVBENCH_GIT_VERSION);
-  std::exit(0);
 }
 
 void option_parser::print_list() const
