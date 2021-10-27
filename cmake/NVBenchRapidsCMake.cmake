@@ -13,8 +13,6 @@ macro(nvbench_load_rapids_cmake)
   include(rapids-find)
 
   rapids_cuda_init_architectures(NVBench)
-  # Only sets CMAKE_CUDA_RUNTIME_LIBRARY if it is currently unset:
-  rapids_cuda_init_runtime(USE_STATIC TRUE)
 endmacro()
 
 # Called after project(...)
