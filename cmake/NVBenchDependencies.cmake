@@ -51,8 +51,5 @@ rapids_find_package(CUDAToolkit REQUIRED
   INSTALL_EXPORT_SET nvbench-targets
 )
 
-if (CMAKE_CUDA_RUNTIME_LIBRARY STREQUAL "Shared")
-  set(ctk_libraries CUDA::cudart)
-elseif(CMAKE_CUDA_RUNTIME_LIBRARY STREQUAL "Static")
-  set(ctk_libraries CUDA::cudart_static)
-endif()
+# Append CTK targets to this as we add optional deps (NMVL, CUPTI, ...)
+set(ctk_libraries CUDA::toolkit)
