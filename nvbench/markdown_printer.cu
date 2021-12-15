@@ -253,7 +253,7 @@ void markdown_printer::do_print_benchmark_results(
       }
 
       std::size_t row = 0;
-      nvbench::internal::markdown_table table;
+      nvbench::internal::markdown_table table{m_color};
 
       for (const auto &cur_state : bench.get_states())
       {

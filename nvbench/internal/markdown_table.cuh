@@ -22,10 +22,12 @@
 
 #include <nvbench/internal/table_builder.cuh>
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include <algorithm>
 #include <cstdint>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -47,6 +49,10 @@ struct markdown_table : private table_builder
 {
   using table_builder::add_cell;
 
+  markdown_table(bool color)
+      : m_color(color)
+  {}
+
   std::string to_string()
   {
     if (m_columns.empty())
@@ -54,48 +60,91 @@ struct markdown_table : private table_builder
       return {};
     }
 
-    fmt::memory_buffer buffer;
     this->fix_row_lengths();
-    this->print_header(buffer);
-    this->print_divider(buffer);
-    this->print_rows(buffer);
-    return fmt::to_string(buffer);
+
+    std::vector<char> buffer;
+    buffer.reserve(4096);
+    auto iter = std::back_inserter(buffer);
+
+    this->print_header(iter);
+    this->print_divider(iter);
+    this->print_rows(iter);
+
+    return std::string(buffer.data(), buffer.size());
   }
 
 private:
-
-  void print_header(fmt::memory_buffer &buffer)
+  template <typename Iter>
+  void print_header(Iter iter)
   {
-    fmt::format_to(buffer, "|");
+    fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     for (const column &col : m_columns)
     {
-      fmt::format_to(buffer, " {:^{}} |", col.header, col.max_width);
+      fmt::format_to(iter,
+                     m_color ? (m_bg | m_header_fg) : m_no_style,
+                     " {:^{}} ",
+                     col.header,
+                     col.max_width);
+      fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     }
-    fmt::format_to(buffer, "\n");
+    fmt::format_to(iter, "\n");
   }
 
-  void print_divider(fmt::memory_buffer &buffer)
+  template <typename Iter>
+  void print_divider(Iter iter)
   {
-    fmt::format_to(buffer, "|");
+    fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     for (const column &col : m_columns)
-    { // fill=-, centered, empty string, width = max_width + 2
-      fmt::format_to(buffer, "{:-^{}}|", "", col.max_width + 2);
+    {
+      fmt::format_to(iter,
+                     m_color ? (m_bg | m_hdiv_fg) : m_no_style,
+                     "{:-^{}}",
+                     "",
+                     col.max_width + 2);
+      fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     }
-    fmt::format_to(buffer, "\n");
+    fmt::format_to(iter, "\n");
   }
 
-  void print_rows(fmt::memory_buffer &buffer)
+  template <typename Iter>
+  void print_rows(Iter iter)
   {
+    auto style     = m_bg | m_data_fg;
+    auto style_alt = m_bg | m_data_fg_alt;
+
     for (std::size_t row = 0; row < m_num_rows; ++row)
     {
-      fmt::format_to(buffer, "|");
+      fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
       for (const column &col : m_columns)
-      { // fill=-, centered, empty string, width = max_width + 2
-        fmt::format_to(buffer, " {:>{}} |", col.rows[row], col.max_width);
+      {
+        fmt::format_to(iter,
+                       m_color ? style : m_no_style,
+                       " {:>{}} ",
+                       col.rows[row],
+                       col.max_width);
+        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+      } // cols
+
+      fmt::format_to(iter, "\n");
+
+      {
+        using std::swap;
+        swap(style, style_alt);
       }
-      fmt::format_to(buffer, "\n");
-    }
+    } // rows
   }
+
+  bool m_color;
+
+  // clang-format off
+  fmt::text_style m_no_style    {};
+  fmt::text_style m_bg          { bg(fmt::rgb{ 20, 20,   32}) };
+  fmt::text_style m_vdiv_fg     { fg(fmt::rgb{ 20, 20,   32}) };
+  fmt::text_style m_header_fg   { fg(fmt::rgb{200, 200, 200}) };
+  fmt::text_style m_hdiv_fg     { fg(fmt::rgb{170, 170, 170}) };
+  fmt::text_style m_data_fg     { fg(fmt::rgb{200, 200, 200}) };
+  fmt::text_style m_data_fg_alt { fg(fmt::rgb{170, 170, 170}) };
+  // clang-format on
 };
 
 } // namespace nvbench::internal
