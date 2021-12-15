@@ -8,6 +8,7 @@ rapids_cpm_find(fmt 7.1.3
     OPTIONS
       # Force static to keep fmt internal.
       "BUILD_SHARED_LIBS OFF"
+      "CMAKE_POSITION_INDEPENDENT_CODE ON"
 )
 
 ################################################################################
