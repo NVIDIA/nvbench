@@ -68,7 +68,7 @@ void markdown_printer::do_print_device_info()
                    gmem_used / 1024 / 1024);
     fmt::format_to(
       buffer,
-      "* Global Memory Bus Peak: {} GiB/sec ({}-bit DDR @{}MHz)\n",
+      "* Global Memory Bus Peak: {} GB/sec ({}-bit DDR @{}MHz)\n",
       device.get_global_memory_bus_bandwidth() / 1000 / 1000 / 1000,
       device.get_global_memory_bus_width(),
       device.get_global_memory_bus_peak_clock_rate() / 1000 / 1000);
@@ -396,11 +396,11 @@ std::string markdown_printer::do_format_item_rate(const summary &data)
   {
     return fmt::format("{:0.3f}P", items_per_second * 1e-15);
   }
-  if (items_per_second >= 1e12)
+  else if (items_per_second >= 1e12)
   {
     return fmt::format("{:0.3f}T", items_per_second * 1e-12);
   }
-  if (items_per_second >= 1e9)
+  else if (items_per_second >= 1e9)
   {
     return fmt::format("{:0.3f}G", items_per_second * 1e-9);
   }
@@ -442,18 +442,25 @@ std::string markdown_printer::do_format_bytes(const summary &data)
 std::string markdown_printer::do_format_byte_rate(const summary &data)
 {
   const auto bytes_per_second = data.get_float64("value");
-  if (bytes_per_second >= 1024. * 1024. * 1024.) // 1 GiB/s
+  if (bytes_per_second >= 1e15)
   {
-    return fmt::format("{:0.3f} GiB/s",
-                       bytes_per_second / (1024. * 1024. * 1024.));
+    return fmt::format("{:0.3f} PB/s", bytes_per_second * 1e-15);
   }
-  else if (bytes_per_second >= 1024. * 1024.) // 1 MiB/s
+  else if (bytes_per_second >= 1e12)
   {
-    return fmt::format("{:0.3f} MiB/s", bytes_per_second / (1024. * 1024.));
+    return fmt::format("{:0.3f} TB/s", bytes_per_second * 1e-12);
   }
-  else if (bytes_per_second >= 1024.) // 1 KiB/s.
+  else if (bytes_per_second >= 1e9)
   {
-    return fmt::format("{:0.3f} KiB/s", bytes_per_second / 1024.);
+    return fmt::format("{:0.3f} GB/s", bytes_per_second * 1e-9);
+  }
+  else if (bytes_per_second >= 1e6)
+  {
+    return fmt::format("{:0.3f} MB/s", bytes_per_second * 1e-6);
+  }
+  else if (bytes_per_second >= 1e3)
+  {
+    return fmt::format("{:0.3f} KB/s", bytes_per_second * 1e-3);
   }
   else
   {
