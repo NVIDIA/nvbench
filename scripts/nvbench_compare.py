@@ -3,6 +3,7 @@
 import argparse
 import json
 import math
+import os
 import sys
 
 from colorama import Fore
@@ -255,21 +256,35 @@ def main():
 
     args = parser.parse_args(sys.argv[3:])
 
-    with open(sys.argv[1], "r") as ref_file:
-        ref_root = json.load(ref_file)
+    # if provided two directories, find all the exactly named files
+    # in both and treat them as the reference and compare
+    to_compare = [ ]
+    if os.path.isdir(sys.argv[1]) and os.path.isdir(sys.argv[2]):
+        for f in os.listdir(sys.argv[2]):
+            r = os.path.join(sys.argv[1], f)
+            c = os.path.join(sys.argv[2], f)
+            if os.path.isfile(r) and os.path.isfile(c):
+                to_compare.append( (r,c) )
 
-    with open(sys.argv[2], "r") as cmp_file:
-        cmp_root = json.load(cmp_file)
+    else:
+        to_compare = [ (sys.argv[1],sys.argv[2]) ]
 
-    global all_devices
-    all_devices = cmp_root["devices"]
+    for ref,comp in to_compare:
 
-    # This is blunt but works for now:
-    if ref_root["devices"] != cmp_root["devices"]:
-        print("Device sections do not match.")
-        sys.exit(1)
+        with open(ref, "r") as ref_file:
+            ref_root = json.load(ref_file)
+        with open(comp, "r") as cmp_file:
+            cmp_root = json.load(cmp_file)
 
-    compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"], args.threshold)
+        global all_devices
+        all_devices = cmp_root["devices"]
+
+        # This is blunt but works for now:
+        if ref_root["devices"] != cmp_root["devices"]:
+            print("Device sections do not match.")
+            sys.exit(1)
+
+        compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"], args.threshold)
 
     print("# Summary\n")
     print("- Total Matches: %d" % config_count)
