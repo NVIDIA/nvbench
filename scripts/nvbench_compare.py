@@ -96,7 +96,7 @@ def format_percentage(percentage):
     return "%0.2f%%" % (percentage * 100.0)
 
 
-def compare_benches(ref_benches, cmp_benches):
+def compare_benches(ref_benches, cmp_benches, threshold):
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
         if not ref_bench:
@@ -128,8 +128,6 @@ def compare_benches(ref_benches, cmp_benches):
         colalign.append("center")
 
         for device_id in device_ids:
-            device = find_device_by_id(device_id)
-            print("## [%d] %s\n" % (device["id"], device["name"]))
 
             rows = []
             for cmp_state_name in cmp_states:
@@ -213,16 +211,23 @@ def compare_benches(ref_benches, cmp_benches):
                     failure_count += 1
                     status = Fore.RED + "FAIL" + Fore.RESET
 
-                row.append(format_duration(ref_time))
-                row.append(format_percentage(ref_noise))
-                row.append(format_duration(cmp_time))
-                row.append(format_percentage(cmp_noise))
-                row.append(format_duration(diff))
-                row.append(format_percentage(frac_diff))
-                row.append(status)
+                if abs(frac_diff) >= threshold:
+                    row.append(format_duration(ref_time))
+                    row.append(format_percentage(ref_noise))
+                    row.append(format_duration(cmp_time))
+                    row.append(format_percentage(cmp_noise))
+                    row.append(format_duration(diff))
+                    row.append(format_percentage(frac_diff))
+                    row.append(status)
 
-                rows.append(row)
+                    rows.append(row)
 
+
+            if len(rows) == 0:
+                continue
+
+            device = find_device_by_id(device_id)
+            print("## [%d] %s\n" % (device["id"], device["name"]))
             # colalign and github format require tabulate 0.8.3
             if tabulate_version >= (0, 8, 3):
                 print(tabulate.tabulate(rows,
@@ -238,9 +243,17 @@ def compare_benches(ref_benches, cmp_benches):
 
 
 def main():
-    if len(sys.argv) != 3:
-        print("Usage: %s reference.json compare.json\n" % sys.argv[0])
+
+    help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
+    parser = argparse.ArgumentParser(prog='nvbench_compare', usage=help_text)
+    parser.add_argument('--threshold-diff',type=float, dest='threshold', default=0.0,
+                        help='only show benchmarks where percentage diff is >= THRESHOLD')
+
+    if len(sys.argv) < 3:
+        parser.print_help()
         sys.exit(1)
+
+    args = parser.parse_args(sys.argv[3:])
 
     with open(sys.argv[1], "r") as ref_file:
         ref_root = json.load(ref_file)
@@ -256,14 +269,13 @@ def main():
         print("Device sections do not match.")
         sys.exit(1)
 
-    compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"])
+    compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"], args.threshold)
 
     print("# Summary\n")
     print("- Total Matches: %d" % config_count)
     print("  - Pass    (diff <= min_noise): %d" % pass_count)
     print("  - Unknown (infinite noise):    %d" % unknown_count)
     print("  - Failure (diff > min_noise):  %d" % failure_count)
-
     return failure_count
 
 
