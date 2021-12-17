@@ -22,6 +22,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/callable.cuh>
+#include <nvbench/config.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/create.cuh>
 #include <nvbench/cuda_call.cuh>

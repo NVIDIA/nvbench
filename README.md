@@ -10,7 +10,7 @@ features:
   be dynamic numbers/strings or [static types](docs/benchmarks.md#type-axes).
 * [Runtime customization](docs/cli_help.md): A rich command-line interface
   allows [redefinition of parameter axes](docs/cli_help_axis.md), CUDA device
-  selection, changing output formats, and more.
+  selection, locking GPU clocks (Volta+), changing output formats, and more.
 * [Throughput calculations](docs/benchmarks.md#throughput-measurements): Compute
   and report:
   * Item throughput (elements/second)

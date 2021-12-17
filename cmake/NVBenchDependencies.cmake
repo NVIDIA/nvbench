@@ -57,3 +57,10 @@ rapids_find_package(CUDAToolkit REQUIRED
 
 # Append CTK targets to this as we add optional deps (NMVL, CUPTI, ...)
 set(ctk_libraries CUDA::toolkit)
+
+################################################################################
+# CUDAToolkit -> NVML
+if (NVBench_ENABLE_NVML)
+  include("${CMAKE_CURRENT_LIST_DIR}/NVBenchNVML.cmake")
+  list(APPEND ctk_libraries nvbench::nvml)
+endif()

@@ -12,6 +12,33 @@
 * `--version`
   * Print information about the version of NVBench used to build the executable.
 
+# Device Modification
+
+* `--persistence-mode <state>`, `--pm <state>`
+  * Sets persistence mode for one or more GPU devices.
+  * Applies to the devices described by the most recent `--devices` option,
+    or all devices if `--devices` is not specified.
+  * This option requires root / admin permissions.
+  * This option is only supported on Linux.
+  * This call must precede all other device modification options, if any.
+  * Note that persistence mode is deprecated and will be removed at some point
+    in favor of the new persistence daemon. See the following link for more
+    details: https://docs.nvidia.com/deploy/driver-persistence/index.html
+  * Valid values for `state` are:
+    * `0`: Disable persistence mode.
+    * `1`: Enable persistence mode.
+
+* `--lock-gpu-clocks <rate>`, `--lgc <rate>`
+  * Lock GPU clocks for one or more devices to a particular rate.
+  * Applies to the devices described by the most recent `--devices` option,
+    or all devices if `--devices` is not specified.
+  * This option requires root / admin permissions.
+  * This option is only supported in Volta+ (sm_70+) devices.
+  * Valid values for `rate` are:
+    * `reset`, `unlock`, `none`: Unlock the GPU clocks.
+    * `base`, `tdp`: Lock clocks to base frequency (best for stable results).
+    * `max`, `maximum`: Lock clocks to max frequency (best for fastest results).
+
 # Output
 
 * `--csv <filename/stream>`
@@ -51,7 +78,7 @@
 
 * `--devices <device ids>`, `--device <device ids>`, `-d <device ids>`
   * Limit execution to one or more devices.
-  * `<device ids>` is a single id, or a comma separated list.
+  * `<device ids>` is a single id, a comma separated list, or the string "all".
   * Device ids can be obtained from `--list`.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.

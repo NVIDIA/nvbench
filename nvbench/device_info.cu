@@ -18,8 +18,10 @@
 
 #include <nvbench/device_info.cuh>
 
+#include <nvbench/config.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
+#include <nvbench/internal/nvml.cuh>
 
 #include <cuda_runtime_api.h>
 
@@ -38,8 +40,108 @@ device_info::memory_info device_info::get_global_memory_usage() const
 device_info::device_info(int id)
     : m_id{id}
     , m_prop{}
+    , m_nvml_device(nullptr)
 {
   NVBENCH_CUDA_CALL(cudaGetDeviceProperties(&m_prop, m_id));
+
+#ifdef NVBENCH_HAS_NVML
+  // Retrieve the current device's pci_id as a null-terminated string.
+  // Docs say 13 chars should always be sufficient.
+  constexpr int pci_id_len = 13;
+  char pci_id[pci_id_len];
+  NVBENCH_CUDA_CALL(cudaDeviceGetPCIBusId(pci_id, pci_id_len, m_id));
+  NVBENCH_NVML_CALL(nvmlDeviceGetHandleByPciBusId(pci_id, &m_nvml_device));
+#endif // NVBENCH_HAS_NVML
 }
+
+void device_info::set_persistence_mode(bool state)
+#ifndef NVBENCH_HAS_NVML
+{
+  throw nvbench::nvml::not_enabled{};
+}
+#else  // NVBENCH_HAS_NVML
+try
+{
+  NVBENCH_NVML_CALL(nvmlDeviceSetPersistenceMode(
+    m_nvml_device,
+    state ? NVML_FEATURE_ENABLED : NVML_FEATURE_DISABLED));
+}
+catch (nvml::call_failed &e)
+{
+  if (e.get_error_code() == NVML_ERROR_NOT_SUPPORTED)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "{}",
+                  "Persistence mode is only supported on Linux.");
+  }
+  else if (e.get_error_code() == NVML_ERROR_NO_PERMISSION)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "{}",
+                  "Root/Admin permissions required to set persistence mode.");
+  }
+
+  throw;
+}
+#endif // NVBENCH_HAS_NVML
+
+void device_info::lock_gpu_clocks(device_info::clock_rate rate)
+#ifndef NVBENCH_HAS_NVML
+{
+  throw nvbench::nvml::not_enabled{};
+}
+#else  // NVBENCH_HAS_NVML
+try
+{
+  switch (rate)
+  {
+    case clock_rate::none:
+      NVBENCH_NVML_CALL(nvmlDeviceResetGpuLockedClocks(m_nvml_device));
+      break;
+
+    case clock_rate::base:
+      NVBENCH_NVML_CALL(nvmlDeviceSetGpuLockedClocks(
+        m_nvml_device,
+        static_cast<unsigned int>(NVML_CLOCK_LIMIT_ID_TDP),
+        static_cast<unsigned int>(NVML_CLOCK_LIMIT_ID_TDP)));
+      break;
+
+    case clock_rate::maximum: {
+      const auto max_mhz = static_cast<unsigned int>(
+        this->get_sm_default_clock_rate() / (1000 * 1000));
+      NVBENCH_NVML_CALL(
+        nvmlDeviceSetGpuLockedClocks(m_nvml_device, max_mhz, max_mhz));
+      break;
+    }
+
+    default:
+      NVBENCH_THROW(std::runtime_error,
+                    "Unrecognized clock rate: {}",
+                    static_cast<int>(rate));
+  }
+}
+catch (nvml::call_failed &e)
+{
+  if (e.get_error_code() == NVML_ERROR_NOT_SUPPORTED &&
+      this->get_ptx_version() < 700)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "GPU clock rates can only be modified for Volta and later. "
+                  "Device: {} ({}) SM: {} < {}",
+                  this->get_name(),
+                  this->get_id(),
+                  this->get_ptx_version(),
+                  700);
+  }
+  else if (e.get_error_code() == NVML_ERROR_NO_PERMISSION)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "{}",
+                  "Root/Admin permissions required to change GPU clock rates.");
+  }
+
+  throw;
+}
+#endif // NVBENCH_HAS_NVML
 
 } // namespace nvbench
