@@ -66,72 +66,78 @@ struct markdown_table : private table_builder
     buffer.reserve(4096);
     auto iter = std::back_inserter(buffer);
 
-    this->print_header(iter);
-    this->print_divider(iter);
-    this->print_rows(iter);
+    iter = this->print_header(iter);
+    iter = this->print_divider(iter);
+    iter = this->print_rows(iter);
 
     return std::string(buffer.data(), buffer.size());
   }
 
 private:
   template <typename Iter>
-  void print_header(Iter iter)
+  auto print_header(Iter iter)
   {
     fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     for (const column &col : m_columns)
     {
-      fmt::format_to(iter,
-                     m_color ? (m_bg | m_header_fg) : m_no_style,
-                     " {:^{}} ",
-                     col.header,
-                     col.max_width);
-      fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+      iter = fmt::format_to(iter,
+                            m_color ? (m_bg | m_header_fg) : m_no_style,
+                            " {:^{}} ",
+                            col.header,
+                            col.max_width);
+      iter =
+        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     }
-    fmt::format_to(iter, "\n");
+    return fmt::format_to(iter, "\n");
   }
 
   template <typename Iter>
-  void print_divider(Iter iter)
+  auto print_divider(Iter iter)
   {
-    fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+    iter = fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     for (const column &col : m_columns)
     {
-      fmt::format_to(iter,
-                     m_color ? (m_bg | m_hdiv_fg) : m_no_style,
-                     "{:-^{}}",
-                     "",
-                     col.max_width + 2);
-      fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+      iter = fmt::format_to(iter,
+                            m_color ? (m_bg | m_hdiv_fg) : m_no_style,
+                            "{:-^{}}",
+                            "",
+                            col.max_width + 2);
+      iter =
+        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     }
-    fmt::format_to(iter, "\n");
+    return fmt::format_to(iter, "\n");
   }
 
   template <typename Iter>
-  void print_rows(Iter iter)
+  auto print_rows(Iter iter)
   {
     auto style     = m_bg | m_data_fg;
     auto style_alt = m_bg | m_data_fg_alt;
 
     for (std::size_t row = 0; row < m_num_rows; ++row)
     {
-      fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+      iter =
+        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
       for (const column &col : m_columns)
       {
-        fmt::format_to(iter,
-                       m_color ? style : m_no_style,
-                       " {:>{}} ",
-                       col.rows[row],
-                       col.max_width);
-        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+        iter = fmt::format_to(iter,
+                              m_color ? style : m_no_style,
+                              " {:>{}} ",
+                              col.rows[row],
+                              col.max_width);
+        iter =
+          fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
       } // cols
 
-      fmt::format_to(iter, "\n");
+      iter = fmt::format_to(iter, "\n");
 
       {
         using std::swap;
         swap(style, style_alt);
       }
     } // rows
+
+    return iter;
   }
 
   bool m_color;
