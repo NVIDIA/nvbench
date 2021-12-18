@@ -18,12 +18,14 @@
 
 #pragma once
 
+#include <nvbench/config.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
 
 #include <cuda_runtime_api.h>
 
 #include <cstdint> // CHAR_BIT
+#include <stdexcept>
 #include <string_view>
 #include <utility>
 
@@ -67,6 +69,13 @@ struct device_info
   void set_active() const
   {
     NVBENCH_CUDA_CALL(cudaSetDevice(m_id));
+
+#ifdef NVBENCH_HAS_CUPTI
+    // cudaSetDevice doesn't initialize a context on the first call, so we have
+    // to force it. According to the documentation, if devPtr is 0, no
+    // operation is performed.
+    NVBENCH_CUDA_CALL(cudaFree(nullptr));
+#endif
   }
 
   /// Enable or disable persistence mode.
@@ -199,6 +208,20 @@ struct device_info
 
   /// @return True if ECC is enabled on this device.
   [[nodiscard]] bool get_ecc_state() const { return m_prop.ECCEnabled; }
+
+  /// @return True if CUPTI supports this device.
+  [[nodiscard]] bool is_cupti_supported() const
+  {
+#ifdef NVBENCH_HAS_CUPTI
+    return m_prop.major >= 7;
+#else
+    return false;
+#endif
+  }
+
+#ifdef NVBENCH_HAS_CUPTI
+  [[nodiscard]] CUcontext get_context() const;
+#endif
 
   /// @return A cached copy of the device's cudaDeviceProp.
   [[nodiscard]] const cudaDeviceProp &get_cuda_device_prop() const

@@ -17,6 +17,7 @@ project(NVBench
 nvbench_init_rapids_cmake()
 
 option(NVBench_ENABLE_NVML "Build with NVML support from the Cuda Toolkit." ON)
+option(NVBench_ENABLE_CUPTI "Build NVBench with CUPTI." ON)
 
 option(NVBench_ENABLE_TESTING "Build NVBench testing suite." OFF)
 option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)

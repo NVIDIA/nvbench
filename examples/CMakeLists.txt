@@ -5,6 +5,7 @@ set(example_srcs
   exec_tag_timer.cu
   skip.cu
   throughput.cu
+  auto_throughput.cu
 )
 
 # Metatarget for all examples:

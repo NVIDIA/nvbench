@@ -20,3 +20,6 @@
 
 // Defined if NVBench has been built with NVML support.
 #cmakedefine NVBENCH_HAS_NVML
+
+// Defined if NVBench has been built with CUPTI support.
+#cmakedefine NVBENCH_HAS_CUPTI

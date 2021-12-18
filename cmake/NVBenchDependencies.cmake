@@ -64,3 +64,10 @@ if (NVBench_ENABLE_NVML)
   include("${CMAKE_CURRENT_LIST_DIR}/NVBenchNVML.cmake")
   list(APPEND ctk_libraries nvbench::nvml)
 endif()
+
+################################################################################
+# CUDAToolkit -> CUPTI
+if (NVBench_ENABLE_CUPTI)
+  include("${CMAKE_CURRENT_LIST_DIR}/NVBenchCUPTI.cmake")
+  list(APPEND ctk_libraries CUDA::cuda_driver nvbench::cupti)
+endif()

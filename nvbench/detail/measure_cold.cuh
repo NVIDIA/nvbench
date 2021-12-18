@@ -185,6 +185,7 @@ private:
     }
 
     kernel_launch_timer<use_blocking_kernel> timer(*this);
+
     this->launch_kernel(timer);
     this->check_skip_time(m_cuda_timer.get_duration());
   }
