@@ -19,6 +19,7 @@
 #include <nvbench/detail/measure_cold.cuh>
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/state.cuh>
@@ -49,17 +50,15 @@ void measure_cold_base::check()
   const auto device = m_state.get_device();
   if (!device)
   {
-    throw std::runtime_error(fmt::format("{}:{}: Device required for `cold` "
-                                         "measurement.",
-                                         __FILE__,
-                                         __LINE__));
+    NVBENCH_THROW(std::runtime_error,
+                  "{}",
+                  "Device required for `cold` measurement.");
   }
   if (!device->is_active())
   { // This means something went wrong higher up. Throw an error.
-    throw std::runtime_error(fmt::format("{}:{}: Internal error: Current "
-                                         "device is not active.",
-                                         __FILE__,
-                                         __LINE__));
+    NVBENCH_THROW(std::runtime_error,
+                  "{}",
+                  "Internal error: Current device is not active.");
   }
 }
 
@@ -216,7 +215,7 @@ void measure_cold_base::check_skip_time(nvbench::float64_t warmup_time)
                               m_skip_time * 1e6);
 
     m_state.skip(reason);
-    throw std::runtime_error{std::move(reason)};
+    NVBENCH_THROW(std::runtime_error, "{}", std::move(reason));
   }
 }
 

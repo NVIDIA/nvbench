@@ -18,6 +18,8 @@
 
 #include <nvbench/type_axis.cuh>
 
+#include <nvbench/detail/throw.cuh>
+
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
@@ -56,10 +58,12 @@ std::size_t type_axis::get_type_index(const std::string &input_string) const
     std::find(m_input_strings.cbegin(), m_input_strings.cend(), input_string);
   if (it == m_input_strings.end())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: Invalid input string '{}' for type_axis `{}`.\n"
+    NVBENCH_THROW(std::runtime_error,
+                  "Invalid input string '{}' for type_axis `{}`.\n"
                   "Valid input strings: {}",
-      __FILE__, __LINE__, input_string, this->get_name(), m_input_strings));
+                  input_string,
+                  this->get_name(),
+                  m_input_strings);
   }
 
   return it - m_input_strings.cbegin();

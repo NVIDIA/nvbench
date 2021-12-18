@@ -18,6 +18,8 @@
 
 #include <nvbench/int64_axis.cuh>
 
+#include <nvbench/detail/throw.cuh>
+
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -45,12 +47,10 @@ void int64_axis::set_inputs(std::vector<int64_t> inputs, int64_axis_flags flags)
     auto conv = [](int64_t in) -> int64_t {
       if (in < 0 || in >= 64)
       {
-        throw std::runtime_error(fmt::format("{}:{}: Input value exceeds valid "
-                                             "range for power-of-two mode. "
-                                             "Input={} ValidRange=[0, 63]",
-                                             __FILE__,
-                                             __LINE__,
-                                             in));
+        NVBENCH_THROW(std::runtime_error,
+                      "Input value exceeds valid range for power-of-two mode. "
+                      "Input={} ValidRange=[0, 63]",
+                      in);
       }
       return int64_axis::compute_pow2(in);
     };

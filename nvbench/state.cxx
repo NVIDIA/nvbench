@@ -19,6 +19,7 @@
 #include <nvbench/state.cuh>
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/types.cuh>
 
 #include <fmt/color.h>
@@ -127,8 +128,7 @@ const summary &state::get_summary(std::string_view name) const
                  [&name](const auto &s) { return s.get_name() == name; });
   if (iter == m_summaries.cend())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: No summary named '{}'.", __FILE__, __LINE__, name));
+    NVBENCH_THROW(std::runtime_error, "No summary named '{}'.", name);
   }
   return *iter;
 }
@@ -140,8 +140,7 @@ summary &state::get_summary(std::string_view name)
                            [&name](auto &s) { return s.get_name() == name; });
   if (iter == m_summaries.end())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: No summary named '{}'.", __FILE__, __LINE__, name));
+    NVBENCH_THROW(std::runtime_error, "No summary named '{}'.", name);
   }
   return *iter;
 }

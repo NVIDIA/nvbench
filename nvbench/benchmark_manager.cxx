@@ -18,6 +18,8 @@
 
 #include <nvbench/benchmark_manager.cuh>
 
+#include <nvbench/detail/throw.cuh>
+
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -58,8 +60,7 @@ benchmark_manager::get_benchmark(const std::string &name) const
                            });
   if (iter == m_benchmarks.cend())
   {
-    throw std::out_of_range(
-      fmt::format("{}:{}: No benchmark named '{}'.", name));
+    NVBENCH_THROW(std::out_of_range, "No benchmark named '{}'.", name);
   }
 
   return **iter;

@@ -16,10 +16,14 @@
  *  limitations under the License.
  */
 
+#include <nvbench/cupti_profiler.cuh>
+
+#include <nvbench/detail/throw.cuh>
+#include <nvbench/device_info.cuh>
+
 #include <cupti_profiler_target.h>
 #include <cupti_target.h>
-#include <nvbench/cupti_profiler.cuh>
-#include <nvbench/device_info.cuh>
+
 #include <nvperf_cuda_host.h>
 #include <nvperf_host.h>
 #include <nvperf_target.h>
@@ -41,8 +45,7 @@ void cupti_call(const CUptiResult status)
     const char *errstr{};
     cuptiGetResultString(status, &errstr);
 
-    throw std::runtime_error(
-      fmt::format("CUPTI call returned error: {}\n", errstr));
+    NVBENCH_THROW(std::runtime_error, "CUPTI call returned error: {}", errstr);
   }
 }
 
@@ -50,8 +53,7 @@ void nvpw_call(const NVPA_Status status)
 {
   if (status != NVPA_STATUS_SUCCESS)
   {
-    throw std::runtime_error(
-      fmt::format("NVPW call returned error: {}\n", status));
+    NVBENCH_THROW(std::runtime_error, "NVPW call returned error: {}", status);
   }
 }
 
@@ -100,9 +102,10 @@ void cupti_profiler::initialize_profiler()
 {
   if (!m_device.is_cupti_supported())
   {
-    throw std::runtime_error(fmt::format("Device: {} isn't supported (CC {})",
-                                         m_device.get_id(),
-                                         m_device.get_sm_version()));
+    NVBENCH_THROW(std::runtime_error,
+                  "Device: {} isn't supported (CC {})",
+                  m_device.get_id(),
+                  m_device.get_sm_version());
   }
 
   CUpti_Profiler_Initialize_Params params = {
@@ -727,7 +730,9 @@ std::vector<double> cupti_profiler::get_counter_values()
 
     if (params.numRanges != 1)
     {
-      throw std::runtime_error("Something's gone wrong, one range is expected");
+      NVBENCH_THROW(std::runtime_error,
+                    "{}",
+                    "Something's gone wrong, one range is expected");
     }
   }
 
