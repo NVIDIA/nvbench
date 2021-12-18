@@ -95,16 +95,16 @@ private:
   axes_type m_axes;
 };
 
-template <typename ...TypeAxes>
+template <typename... TypeAxes>
 axes_metadata::axes_metadata(nvbench::type_list<TypeAxes...>)
     : axes_metadata{}
 {
-  using type_axes = nvbench::type_list<TypeAxes...>;
-  constexpr auto num_type_axes = nvbench::tl::size<type_axes>::value;
+  using type_axes_list         = nvbench::type_list<TypeAxes...>;
+  constexpr auto num_type_axes = nvbench::tl::size<type_axes_list>::value;
   auto names = axes_metadata::generate_default_type_axis_names(num_type_axes);
 
   auto names_iter = names.begin(); // contents will be moved from
-  nvbench::tl::foreach<type_axes>(
+  nvbench::tl::foreach<type_axes_list>(
     [&axes = m_axes, &names_iter]([[maybe_unused]] auto wrapped_type) {
       // This is always called before other axes are added, so the length of the
       // axes vector will be the type axis index:

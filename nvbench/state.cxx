@@ -187,8 +187,8 @@ std::string state::get_axis_values_as_string(bool color) const
     if (axis_type == named_values::type::int64 &&
         axes.get_int64_axis(name).is_power_of_two())
     {
-      const nvbench::uint64_t value    = m_axis_values.get_int64(name);
-      const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
+      const nvbench::int64_t value    = m_axis_values.get_int64(name);
+      const nvbench::int64_t exponent = int64_axis::compute_log2(value);
       append_key_value(name, exponent, "2^{}");
     }
     else if (axis_type == named_values::type::float64)

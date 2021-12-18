@@ -73,7 +73,7 @@ struct table_builder
     m_num_rows = nvbench::detail::transform_reduce(
       m_columns.cbegin(),
       m_columns.cend(),
-      0ll,
+      std::size_t{},
       [](const auto &a, const auto &b) { return a > b ? a : b; },
       [](const column &col) { return col.rows.size(); });
     std::for_each(m_columns.begin(),
