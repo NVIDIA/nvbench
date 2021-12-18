@@ -75,7 +75,7 @@ struct markdown_table : private table_builder
 
 private:
   template <typename Iter>
-  auto print_header(Iter iter)
+  Iter print_header(Iter iter)
   {
     fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     for (const column &col : m_columns)
@@ -92,7 +92,7 @@ private:
   }
 
   template <typename Iter>
-  auto print_divider(Iter iter)
+  Iter print_divider(Iter iter)
   {
     iter = fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     for (const column &col : m_columns)
@@ -109,7 +109,7 @@ private:
   }
 
   template <typename Iter>
-  auto print_rows(Iter iter)
+  Iter print_rows(Iter iter)
   {
     auto style     = m_bg | m_data_fg;
     auto style_alt = m_bg | m_data_fg_alt;
