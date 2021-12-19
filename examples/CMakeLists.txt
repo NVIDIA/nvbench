@@ -11,6 +11,7 @@ set(example_srcs
 # Metatarget for all examples:
 add_custom_target(nvbench.example.all)
 add_dependencies(nvbench.all nvbench.example.all)
+set(examples)
 
 foreach(example_src IN LISTS example_srcs)
   get_filename_component(example_name "${example_src}" NAME_WLE)
@@ -25,4 +26,7 @@ foreach(example_src IN LISTS example_srcs)
   )
 
   add_dependencies(nvbench.example.all ${example_name})
+  list(APPEND examples ${example_name})
 endforeach()
+
+add_subdirectory(outputs)

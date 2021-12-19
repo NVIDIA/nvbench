@@ -46,6 +46,9 @@ struct printer_multiplex : nvbench::printer_base
     return m_printers.size();
   }
 
+  [[nodiscard]] const auto &get_printers() const { return m_printers; }
+  [[nodiscard]] auto &get_printers() { return m_printers; }
+
 private:
   void do_print_device_info() override;
   void do_print_log_preamble() override;

@@ -1,0 +1,426 @@
+{
+  "devices": [
+    {
+      "id": 0,
+      "name": "Quadro GV100",
+      "sm_version": 700,
+      "ptx_version": 700,
+      "sm_default_clock_rate": 1627000000,
+      "number_of_sms": 80,
+      "max_blocks_per_sm": 32,
+      "max_threads_per_sm": 2048,
+      "max_threads_per_block": 1024,
+      "registers_per_sm": 65536,
+      "registers_per_block": 65536,
+      "global_memory_size": 34086060032,
+      "global_memory_bus_peak_clock_rate": 850000000,
+      "global_memory_bus_width": 4096,
+      "global_memory_bus_bandwidth": 870400000000,
+      "l2_cache_size": 6291456,
+      "shared_memory_per_sm": 98304,
+      "shared_memory_per_block": 49152,
+      "ecc_state": false
+    },
+    {
+      "id": 1,
+      "name": "Quadro GP100",
+      "sm_version": 600,
+      "ptx_version": 600,
+      "sm_default_clock_rate": 1442500000,
+      "number_of_sms": 56,
+      "max_blocks_per_sm": 32,
+      "max_threads_per_sm": 2048,
+      "max_threads_per_block": 1024,
+      "registers_per_sm": 65536,
+      "registers_per_block": 65536,
+      "global_memory_size": 17069309952,
+      "global_memory_bus_peak_clock_rate": 715000000,
+      "global_memory_bus_width": 4096,
+      "global_memory_bus_bandwidth": 732160000000,
+      "l2_cache_size": 4194304,
+      "shared_memory_per_sm": 65536,
+      "shared_memory_per_block": 49152,
+      "ecc_state": false
+    }
+  ],
+  "benchmarks": [
+    {
+      "index": 0,
+      "name": "sequence_bench",
+      "min_samples": 10,
+      "min_time": 0.5,
+      "max_noise": 0.005,
+      "skip_time": -1.0,
+      "timeout": 15.0,
+      "devices": [
+        0,
+        1
+      ],
+      "axes": null,
+      "states": {
+        "Device=0": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": null,
+          "summaries": {
+            "Element count: Items": {
+              "short_name": {
+                "type": "string",
+                "value": "Items"
+              },
+              "value": {
+                "type": "int64",
+                "value": "16777216"
+              }
+            },
+            "Output Buffer Size: ": {
+              "hint": {
+                "type": "string",
+                "value": "bytes"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Size"
+              },
+              "value": {
+                "type": "int64",
+                "value": "67108864"
+              }
+            },
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "88096"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00011210838060751815"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0043948813906645855"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00010738264021815305"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.005226831698093829"
+              }
+            },
+            "Element Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "item_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Elem/s"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of input elements handled per second."
+              },
+              "value": {
+                "type": "float64",
+                "value": "156237693224.12143"
+              }
+            },
+            "Average Global Memory Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "byte_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GlobalMem BW"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of bytes read/written per second to the CUDA device's global memory."
+              },
+              "value": {
+                "type": "float64",
+                "value": "624950772896.4857"
+              }
+            },
+            "Percent Peak Global Memory Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "BWPeak"
+              },
+              "description": {
+                "type": "string",
+                "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.7180041048902639"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": null,
+          "summaries": {
+            "Element count: Items": {
+              "short_name": {
+                "type": "string",
+                "value": "Items"
+              },
+              "value": {
+                "type": "int64",
+                "value": "16777216"
+              }
+            },
+            "Output Buffer Size: ": {
+              "hint": {
+                "type": "string",
+                "value": "bytes"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Size"
+              },
+              "value": {
+                "type": "int64",
+                "value": "67108864"
+              }
+            },
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "4236"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0001220395009442869"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0031913153957058224"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00011805303109505499"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0030945635166685077"
+              }
+            },
+            "Element Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "item_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Elem/s"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of input elements handled per second."
+              },
+              "value": {
+                "type": "float64",
+                "value": "142115927430.03076"
+              }
+            },
+            "Average Global Memory Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "byte_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GlobalMem BW"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of bytes read/written per second to the CUDA device's global memory."
+              },
+              "value": {
+                "type": "float64",
+                "value": "568463709720.123"
+              }
+            },
+            "Percent Peak Global Memory Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "BWPeak"
+              },
+              "description": {
+                "type": "string",
+                "value": "Global device memory throughput as a percentage of the device's peak bandwidth."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.7764200580749058"
+              }
+            }
+          },
+          "is_skipped": false
+        }
+      }
+    }
+  ]
+}

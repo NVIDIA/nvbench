@@ -353,7 +353,7 @@ void option_parser::parse_impl()
 
   if (m_exit_after_parsing)
   {
-    std::exit(0);
+    this->cleanup_and_exit(0);
   }
 
   if (m_benchmarks.empty())
@@ -406,22 +406,22 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->print_version();
       fmt::print("\n");
       this->print_help();
-      std::exit(0);
+      this->cleanup_and_exit(0);
     }
     else if (arg == "--help-axes" || arg == "--help-axis")
     {
       this->print_help_axis();
-      std::exit(0);
+      this->cleanup_and_exit(0);
     }
     else if (arg == "--version")
     {
       this->print_version();
-      std::exit(0);
+      this->cleanup_and_exit(0);
     }
     else if (arg == "--list" || arg == "-l")
     {
       this->print_list();
-      std::exit(0);
+      this->cleanup_and_exit(0);
     }
     else if (arg == "--persistence-mode" || arg == "--pm")
     {
@@ -590,11 +590,28 @@ void option_parser::print_version() const
 
 void option_parser::print_list() const
 {
-  const auto &bench_mgr = nvbench::benchmark_manager::get();
+  auto do_print = [](auto &&printer) {
+    printer.print_device_info();
 
-  nvbench::markdown_printer printer{std::cout};
-  printer.print_device_info();
-  printer.print_benchmark_list(bench_mgr.get_benchmarks());
+    const auto &bench_mgr = nvbench::benchmark_manager::get();
+    printer.print_benchmark_list(bench_mgr.get_benchmarks());
+  };
+
+  // Try to find a markdown printer in the current list:
+  for (const auto &printer : m_printer.get_printers())
+  {
+    if (const auto *md_printer_const =
+          dynamic_cast<const markdown_printer *>(printer.get());
+        md_printer_const)
+    {
+      auto &md_printer = const_cast<markdown_printer &>(*md_printer_const);
+      do_print(md_printer);
+      return;
+    }
+  }
+
+  // Fallback to a new stdout printer.
+  do_print(nvbench::markdown_printer{std::cout});
 }
 
 void option_parser::print_help() const
@@ -1011,5 +1028,12 @@ void option_parser::update_used_device_state() const
 }
 
 nvbench::printer_base &option_parser::get_printer() { return m_printer; }
+
+void option_parser::cleanup_and_exit(int exit_code)
+{
+  // Free all ofstreams to make sure they flush:
+  m_ofstream_storage.clear();
+  std::exit(exit_code);
+}
 
 } // namespace nvbench

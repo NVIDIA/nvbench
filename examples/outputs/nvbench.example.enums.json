@@ -1,0 +1,3949 @@
+{
+  "devices": [
+    {
+      "id": 0,
+      "name": "Quadro GV100",
+      "sm_version": 700,
+      "ptx_version": 700,
+      "sm_default_clock_rate": 1627000000,
+      "number_of_sms": 80,
+      "max_blocks_per_sm": 32,
+      "max_threads_per_sm": 2048,
+      "max_threads_per_block": 1024,
+      "registers_per_sm": 65536,
+      "registers_per_block": 65536,
+      "global_memory_size": 34086060032,
+      "global_memory_bus_peak_clock_rate": 850000000,
+      "global_memory_bus_width": 4096,
+      "global_memory_bus_bandwidth": 870400000000,
+      "l2_cache_size": 6291456,
+      "shared_memory_per_sm": 98304,
+      "shared_memory_per_block": 49152,
+      "ecc_state": false
+    },
+    {
+      "id": 1,
+      "name": "Quadro GP100",
+      "sm_version": 600,
+      "ptx_version": 600,
+      "sm_default_clock_rate": 1442500000,
+      "number_of_sms": 56,
+      "max_blocks_per_sm": 32,
+      "max_threads_per_sm": 2048,
+      "max_threads_per_block": 1024,
+      "registers_per_sm": 65536,
+      "registers_per_block": 65536,
+      "global_memory_size": 17069309952,
+      "global_memory_bus_peak_clock_rate": 715000000,
+      "global_memory_bus_width": 4096,
+      "global_memory_bus_bandwidth": 732160000000,
+      "l2_cache_size": 4194304,
+      "shared_memory_per_sm": 65536,
+      "shared_memory_per_block": 49152,
+      "ecc_state": false
+    }
+  ],
+  "benchmarks": [
+    {
+      "index": 0,
+      "name": "runtime_enum_sweep_string",
+      "min_samples": 10,
+      "min_time": 0.5,
+      "max_noise": 0.005,
+      "skip_time": -1.0,
+      "timeout": 15.0,
+      "devices": [
+        0,
+        1
+      ],
+      "axes": {
+        "MyEnum": {
+          "type": "string",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "A",
+              "description": "",
+              "value": "A"
+            },
+            {
+              "input_string": "B",
+              "description": "",
+              "value": "B"
+            },
+            {
+              "input_string": "C",
+              "description": "",
+              "value": "C"
+            }
+          ]
+        }
+      },
+      "states": {
+        "Device=0 MyEnum=A": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "A"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101454729458924"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00046483104049603716"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001003841868144471"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005749097846815492"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001001477914376195"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 MyEnum=B": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "B"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001010159408817635"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004613137827456428"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010038492447866406"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005555267067795092"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001001477914376195"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 MyEnum=C": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "C"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101243687374746"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005092828188229102"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001003840521246726"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005589757153765308"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014759304418617"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=A": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "A"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010076531543086172"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004980799779298182"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010027744387815845"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0003286485696207647"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014733467393249"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=B": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "B"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001007305567134269"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004149742922173277"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010026098881551395"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0003090849629556725"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014743950530773"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=C": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "C"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010073099939879758"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00041034663323030794"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001002610978000388"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0003063685132670013"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014735796979365"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        }
+      }
+    },
+    {
+      "index": 1,
+      "name": "runtime_enum_sweep_int64",
+      "min_samples": 10,
+      "min_time": 0.5,
+      "max_noise": 0.005,
+      "skip_time": -1.0,
+      "timeout": 15.0,
+      "devices": [
+        0,
+        1
+      ],
+      "axes": {
+        "MyEnum": {
+          "type": "int64",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "0",
+              "description": "",
+              "value": 0
+            },
+            {
+              "input_string": "1",
+              "description": "",
+              "value": 1
+            },
+            {
+              "input_string": "2",
+              "description": "",
+              "value": 2
+            }
+          ]
+        }
+      },
+      "states": {
+        "Device=0 MyEnum=0": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "int64",
+              "value": "0"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101685511022043"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00048173554195341087"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001003846292266381"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005760736687258556"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001001475909284053"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 MyEnum=1": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "int64",
+              "value": "1"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101069098196389"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.000452307701913514"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010036457628907521"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004970727279364392"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014759304418617"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 MyEnum=2": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "int64",
+              "value": "2"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101263466933872"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004551387873866542"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001003668336447824"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004936151206687181"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014759304418617"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=0": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "int64",
+              "value": "0"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010076479038076157"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005063884103258074"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010027646934818884"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0003189744202423173"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014735796979365"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=1": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "int64",
+              "value": "1"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010073362545090188"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0006783144138303011"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001002585007575805"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00032119540844936307"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014733467393249"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=2": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "int64",
+              "value": "2"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010073002645290582"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004221934097940968"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010025900736122663"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00030148599118709333"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014748609703007"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        }
+      }
+    },
+    {
+      "index": 2,
+      "name": "compile_time_enum_sweep",
+      "min_samples": 10,
+      "min_time": 0.5,
+      "max_noise": 0.005,
+      "skip_time": -1.0,
+      "timeout": 15.0,
+      "devices": [
+        0,
+        1
+      ],
+      "axes": {
+        "MyEnum": {
+          "type": "type",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "A",
+              "description": "MyEnum::ValueA",
+              "is_active": true
+            },
+            {
+              "input_string": "B",
+              "description": "MyEnum::ValueB",
+              "is_active": true
+            },
+            {
+              "input_string": "C",
+              "description": "MyEnum::ValueC",
+              "is_active": true
+            }
+          ]
+        }
+      },
+      "states": {
+        "Device=0 MyEnum=A": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "A"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001010085394789578"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004655817990209206"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001003753755278955"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005493729335684191"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014759304418617"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 MyEnum=B": {
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "B"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001010053595190381"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005071877844696576"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010036782112293535"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005775279883320534"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001001473929135854"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 MyEnum=C": {
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "C"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101191442885773"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.000491671020220968"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001003674685835594"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005387103704343772"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001001475909284053"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=A": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "A"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010072828116232475"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004397728983271746"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001002574038171099"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0003125584355538476"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014731137807133"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=B": {
+          "device": 1,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "B"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010073154749498997"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00040217119470421287"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010025884063544867"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0002963185452948694"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014750939289121"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 MyEnum=C": {
+          "device": 1,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "MyEnum": {
+              "type": "string",
+              "value": "C"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010073215450901796"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00042671482068318837"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010026036672936165"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.000296913783133073"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014753268875237"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        }
+      }
+    },
+    {
+      "index": 3,
+      "name": "compile_time_int_sweep",
+      "min_samples": 10,
+      "min_time": 0.5,
+      "max_noise": 0.005,
+      "skip_time": -1.0,
+      "timeout": 15.0,
+      "devices": [
+        0,
+        1
+      ],
+      "axes": {
+        "SomeInts": {
+          "type": "type",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "0",
+              "description": "nvbench::enum_type<0, int>",
+              "is_active": true
+            },
+            {
+              "input_string": "16",
+              "description": "nvbench::enum_type<16, int>",
+              "is_active": true
+            },
+            {
+              "input_string": "4096",
+              "description": "nvbench::enum_type<4096, int>",
+              "is_active": true
+            },
+            {
+              "input_string": "-12",
+              "description": "nvbench::enum_type<-12, int>",
+              "is_active": true
+            }
+          ]
+        }
+      },
+      "states": {
+        "Device=0 SomeInts=0": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "0"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101242705410818"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00046763787302286317"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010036719920401053"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005214982620209435"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001001477889432252"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 SomeInts=16": {
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "16"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101197975951911"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00047310755052367136"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010037048890260939"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005711753095722302"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014759304418617"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 SomeInts=4096": {
+          "device": 0,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "4096"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010100482024048096"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00048230228130997395"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010036862909435461"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0005703633321237566"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001001475909284053"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 SomeInts=-12": {
+          "device": 0,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "-12"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010101047835671339"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004779495034261126"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010036583329011495"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004905372193961659"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014759304418617"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "523"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 SomeInts=0": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "0"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010073524008016035"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00045954094220701026"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001002591226765053"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0003132035131857924"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014731137807133"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 SomeInts=16": {
+          "device": 1,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "16"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010072802204408825"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00041173035101990657"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001002568971417949"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00030006995446635803"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014742785737715"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 SomeInts=4096": {
+          "device": 1,
+          "type_config_index": 2,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "4096"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010072856112224454"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00041573006780551387"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010025766641200192"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0003017176216493314"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014750939289121"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 SomeInts=-12": {
+          "device": 1,
+          "type_config_index": 3,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "SomeInts": {
+              "type": "string",
+              "value": "-12"
+            }
+          },
+          "summaries": {
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "499"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010073294088176355"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00042082782124641986"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001002588534402943"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0002955692521037092"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0010014733467393249"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "524"
+              }
+            }
+          },
+          "is_skipped": false
+        }
+      }
+    }
+  ]
+}
