@@ -1,0 +1,1293 @@
+{
+  "devices": [
+    {
+      "id": 0,
+      "name": "Quadro GV100",
+      "sm_version": 700,
+      "ptx_version": 700,
+      "sm_default_clock_rate": 1627000000,
+      "number_of_sms": 80,
+      "max_blocks_per_sm": 32,
+      "max_threads_per_sm": 2048,
+      "max_threads_per_block": 1024,
+      "registers_per_sm": 65536,
+      "registers_per_block": 65536,
+      "global_memory_size": 34086060032,
+      "global_memory_bus_peak_clock_rate": 850000000,
+      "global_memory_bus_width": 4096,
+      "global_memory_bus_bandwidth": 870400000000,
+      "l2_cache_size": 6291456,
+      "shared_memory_per_sm": 98304,
+      "shared_memory_per_block": 49152,
+      "ecc_state": false
+    },
+    {
+      "id": 1,
+      "name": "Quadro GP100",
+      "sm_version": 600,
+      "ptx_version": 600,
+      "sm_default_clock_rate": 1442500000,
+      "number_of_sms": 56,
+      "max_blocks_per_sm": 32,
+      "max_threads_per_sm": 2048,
+      "max_threads_per_block": 1024,
+      "registers_per_sm": 65536,
+      "registers_per_block": 65536,
+      "global_memory_size": 17069309952,
+      "global_memory_bus_peak_clock_rate": 715000000,
+      "global_memory_bus_width": 4096,
+      "global_memory_bus_bandwidth": 732160000000,
+      "l2_cache_size": 4194304,
+      "shared_memory_per_sm": 65536,
+      "shared_memory_per_block": 49152,
+      "ecc_state": false
+    }
+  ],
+  "benchmarks": [
+    {
+      "index": 0,
+      "name": "throughput_bench",
+      "min_samples": 10,
+      "min_time": 0.5,
+      "max_noise": 0.005,
+      "skip_time": -1.0,
+      "timeout": 15.0,
+      "devices": [
+        0,
+        1
+      ],
+      "axes": {
+        "T": {
+          "type": "type",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "1",
+              "description": "nvbench::enum_type<1, int>",
+              "is_active": true
+            },
+            {
+              "input_string": "2",
+              "description": "nvbench::enum_type<2, int>",
+              "is_active": true
+            }
+          ]
+        },
+        "Stride": {
+          "type": "int64",
+          "flags": "",
+          "values": [
+            {
+              "input_string": "1",
+              "description": "",
+              "value": 1
+            },
+            {
+              "input_string": "4",
+              "description": "",
+              "value": 4
+            }
+          ]
+        }
+      },
+      "states": {
+        "Device=0 T=1 Stride=1": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "1"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "1"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            },
+            "Peak Sustained Global Memory Throughput (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "HBWPeak"
+              },
+              "description": {
+                "type": "string",
+                "value": "The utilization level of the device memory relative to the peak utilization."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.6585438475423353"
+              }
+            },
+            "Global Load Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "LoadEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory load throughput to required global memory load throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "1"
+              }
+            },
+            "Global Store Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "StoreEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory store throughput to required global memory store throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "1"
+              }
+            },
+            "L1 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L1HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L1 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0"
+              }
+            },
+            "L2 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L2HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L2 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.49999904648868265"
+              }
+            },
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "1078"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.00047011594805194853"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0014244727929907238"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004639086524829754"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0015463138823336802"
+              }
+            },
+            "Element Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "item_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Elem/s"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of input elements handled per second."
+              },
+              "value": {
+                "type": "float64",
+                "value": "72329825754.28767"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0004611097332451499"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "1134"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 T=1 Stride=4": {
+          "device": 0,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "1"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "4"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            },
+            "Peak Sustained Global Memory Throughput (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "HBWPeak"
+              },
+              "description": {
+                "type": "string",
+                "value": "The utilization level of the device memory relative to the peak utilization."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.6947096407739456"
+              }
+            },
+            "Global Load Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "LoadEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory load throughput to required global memory load throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.25"
+              }
+            },
+            "Global Store Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "StoreEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory store throughput to required global memory store throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "1"
+              }
+            },
+            "L1 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L1HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L1 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0"
+              }
+            },
+            "L2 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L2HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L2 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.2000340992245478"
+              }
+            },
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "452"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0011125579800884962"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0006852662282240376"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0011062891657373588"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0006886487256687341"
+              }
+            },
+            "Element Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "item_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Elem/s"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of input elements handled per second."
+              },
+              "value": {
+                "type": "float64",
+                "value": "30330616116.660107"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.001102912886702233"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "473"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 T=2 Stride=1": {
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "2"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "1"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            },
+            "Peak Sustained Global Memory Throughput (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "HBWPeak"
+              },
+              "description": {
+                "type": "string",
+                "value": "The utilization level of the device memory relative to the peak utilization."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.671727291393325"
+              }
+            },
+            "Global Load Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "LoadEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory load throughput to required global memory load throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.5069332663594991"
+              }
+            },
+            "Global Store Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "StoreEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory store throughput to required global memory store throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "1"
+              }
+            },
+            "L1 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L1HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L1 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.2682065963745117"
+              }
+            },
+            "L2 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L2HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L2 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.5437664402009483"
+              }
+            },
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "548"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0009194173795620432"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0006406757855676574"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0009131468997819581"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0006974456101610215"
+              }
+            },
+            "Element Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "item_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Elem/s"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of input elements handled per second."
+              },
+              "value": {
+                "type": "float64",
+                "value": "36745929935.27345"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0009104959699842665"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "576"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=0 T=2 Stride=4": {
+          "device": 0,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "2"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "4"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            },
+            "Peak Sustained Global Memory Throughput (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "HBWPeak"
+              },
+              "description": {
+                "type": "string",
+                "value": "The utilization level of the device memory relative to the peak utilization."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.5825672478320796"
+              }
+            },
+            "Global Load Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "LoadEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory load throughput to required global memory load throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.12669523778540573"
+              }
+            },
+            "Global Store Efficiency (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "StoreEff"
+              },
+              "description": {
+                "type": "string",
+                "value": "Ratio of requested global memory store throughput to required global memory store throughput expressed as percentage."
+              },
+              "value": {
+                "type": "float64",
+                "value": "1"
+              }
+            },
+            "L1 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L1HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L1 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.20691384209526908"
+              }
+            },
+            "L2 Cache Hit Rate (HW)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "L2HitRate"
+              },
+              "description": {
+                "type": "string",
+                "value": "Hit rate at L2 cache."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.3812073432135215"
+              }
+            },
+            "Number of Samples (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Samples"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in cold time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "175"
+              }
+            },
+            "Average CPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "CPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time observed from host."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0028746560114285722"
+              }
+            },
+            "CPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold CPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.002486847758258855"
+              }
+            },
+            "Average GPU Time (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "GPU Time"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average isolated kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.002868418363843645"
+              }
+            },
+            "GPU Relative Standard Deviation (Cold)": {
+              "hint": {
+                "type": "string",
+                "value": "percentage"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Noise"
+              },
+              "description": {
+                "type": "string",
+                "value": "Relative standard deviation of the cold GPU execution time measurements."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.0024933453791821615"
+              }
+            },
+            "Element Throughput": {
+              "hint": {
+                "type": "string",
+                "value": "item_rate"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Elem/s"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of input elements handled per second."
+              },
+              "value": {
+                "type": "float64",
+                "value": "11697886341.460135"
+              }
+            },
+            "Average GPU Time (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "duration"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch GPU"
+              },
+              "description": {
+                "type": "string",
+                "value": "Average back-to-back kernel execution time as measured by CUDA events."
+              },
+              "value": {
+                "type": "float64",
+                "value": "0.002855257117229959"
+              }
+            },
+            "Number of Samples (Batch)": {
+              "hint": {
+                "type": "string",
+                "value": "sample_size"
+              },
+              "short_name": {
+                "type": "string",
+                "value": "Batch"
+              },
+              "description": {
+                "type": "string",
+                "value": "Number of kernel executions in hot time measurements."
+              },
+              "value": {
+                "type": "int64",
+                "value": "184"
+              }
+            }
+          },
+          "is_skipped": false
+        },
+        "Device=1 T=1 Stride=1": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "1"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "1"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            }
+          },
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: Device: 1 isn't supported (CC 600)"
+        },
+        "Device=1 T=1 Stride=4": {
+          "device": 1,
+          "type_config_index": 0,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "1"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "4"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            }
+          },
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: Device: 1 isn't supported (CC 600)"
+        },
+        "Device=1 T=2 Stride=1": {
+          "device": 1,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "2"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "1"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            }
+          },
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: Device: 1 isn't supported (CC 600)"
+        },
+        "Device=1 T=2 Stride=4": {
+          "device": 1,
+          "type_config_index": 1,
+          "min_samples": 10,
+          "min_time": 0.5,
+          "max_noise": 0.005,
+          "skip_time": -1.0,
+          "timeout": 15.0,
+          "axis_values": {
+            "T": {
+              "type": "string",
+              "value": "2"
+            },
+            "Stride": {
+              "type": "int64",
+              "value": "4"
+            }
+          },
+          "summaries": {
+            "Element count: Elements": {
+              "short_name": {
+                "type": "string",
+                "value": "Elements"
+              },
+              "value": {
+                "type": "int64",
+                "value": "33554432"
+              }
+            }
+          },
+          "is_skipped": true,
+          "skip_reason": "Unexpected error: Device: 1 isn't supported (CC 600)"
+        }
+      }
+    }
+  ]
+}

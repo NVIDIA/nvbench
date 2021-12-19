@@ -172,6 +172,11 @@ void markdown_printer::do_print_benchmark_list(
                    bench_ptr->get_name(),
                    num_configs);
 
+    if (axes.empty())
+    {
+      continue;
+    }
+
     fmt::format_to(buffer, "### Axes\n\n");
     for (const auto &axis_ptr : axes)
     {

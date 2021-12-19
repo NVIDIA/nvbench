@@ -121,6 +121,9 @@ private:
 
   void update_used_device_state() const;
 
+  // Releases any important resources and calls `std::exit(exit_code)`
+  [[noreturn]] void cleanup_and_exit(int exit_code);
+
   // less gross argv:
   std::vector<std::string> m_args;
 

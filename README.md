@@ -58,10 +58,18 @@ various NVBench features and usecases:
 
 - [Runtime and compile-time parameter sweeps](examples/axes.cu)
 - [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
-- [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
+- [Reporting simple item/sec and byte/sec throughput statistics](examples/throughput.cu)
+- [Gathering and reporting CUPTI metrics](examples/auto_throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
 - [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)
 - [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_timer.cu)
+
+### Example Output Samples
+
+Sample outputs for `--list`, `--markdown`, `--json`, and `--csv` are provided
+for each example. These are located in the [examples/outputs](examples/outputs/)
+directory. See the associated [README](examples/outputs/README.md) for more
+information.
 
 ### Building Examples
 
