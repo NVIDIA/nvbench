@@ -50,7 +50,7 @@ struct markdown_printer : nvbench::printer_base
   [[nodiscard]] bool get_color() const { return m_color; }
   /*!@}*/
 
-private:
+protected:
   // Virtual API from printer_base:
   void do_print_device_info() override;
   void do_print_log_preamble() override;

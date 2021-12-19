@@ -64,11 +64,6 @@ struct benchmark final : public benchmark_base
       : benchmark_base(type_axes{})
   {}
 
-  // Note that this inline virtual dtor may cause vtable issues if linking
-  // benchmark TUs together. That's not a likely scenario, so we'll deal with
-  // that if it comes up.
-  ~benchmark() override = default;
-
 private:
   std::unique_ptr<benchmark_base> do_clone() const final
   {
