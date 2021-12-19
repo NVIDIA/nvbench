@@ -83,5 +83,28 @@ void printer_multiplex::do_print_benchmark_results(
     format_ptr->print_benchmark_results(benches);
   }
 }
+void printer_multiplex::do_set_completed_state_count(std::size_t states)
+{
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->set_completed_state_count(states);
+  }
+}
+
+void printer_multiplex::do_add_completed_state()
+{
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->add_completed_state();
+  }
+}
+
+void printer_multiplex::do_set_total_state_count(std::size_t states)
+{
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->set_total_state_count(states);
+  }
+}
 
 } // namespace nvbench

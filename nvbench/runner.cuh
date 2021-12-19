@@ -40,7 +40,8 @@ struct runner_base
   void handle_sampling_exception(const std::exception &e,
                                  nvbench::state &exec_state) const;
 
-  void announce_state(state &exec_state) const;
+  void run_state_prologue(state &exec_state) const;
+  void run_state_epilogue(state &exec_state) const;
 
   void print_skip_notification(nvbench::state &exec_state) const;
 
@@ -98,7 +99,7 @@ private:
         if (cur_state.get_device() == device &&
             cur_state.get_type_config_index() == type_config_index)
         {
-          self.announce_state(cur_state);
+          self.run_state_prologue(cur_state);
           try
           {
             kernel_generator{}(cur_state, type_config{});
@@ -111,6 +112,7 @@ private:
           {
             self.handle_sampling_exception(e, cur_state);
           }
+          self.run_state_epilogue(cur_state);
         }
       }
 

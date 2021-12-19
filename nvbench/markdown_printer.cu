@@ -23,8 +23,6 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
-#include <nvbench/detail/transform_reduce.cuh>
-
 #include <nvbench/internal/markdown_table.cuh>
 
 #include <fmt/color.h>
@@ -147,7 +145,19 @@ void markdown_printer::do_log(nvbench::log_level level, const std::string &msg)
 
 void markdown_printer::do_log_run_state(const nvbench::state &exec_state)
 {
-  this->log(nvbench::log_level::run, exec_state.get_short_description(m_color));
+  if (m_total_state_count == 0)
+  { // No progress info
+    this->log(nvbench::log_level::run,
+              exec_state.get_short_description(m_color));
+  }
+  else
+  { // Add progress
+    this->log(nvbench::log_level::run,
+              fmt::format("[{}/{}] {}",
+                          m_completed_state_count + 1,
+                          m_total_state_count,
+                          exec_state.get_short_description(m_color)));
+  }
 }
 
 void markdown_printer::do_print_benchmark_list(
@@ -159,12 +169,7 @@ void markdown_printer::do_print_benchmark_list(
   for (const auto &bench_ptr : benches)
   {
     const auto &axes              = bench_ptr->get_axes().get_axes();
-    const std::size_t num_configs = nvbench::detail::transform_reduce(
-      axes.cbegin(),
-      axes.cend(),
-      std::size_t{1},
-      std::multiplies<>{},
-      [](const auto &axis_ptr) { return axis_ptr->get_size(); });
+    const std::size_t num_configs = bench_ptr->get_config_count();
 
     fmt::format_to(buffer,
                    "## [{}] `{}` ({} configurations)\n\n",

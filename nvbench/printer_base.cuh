@@ -113,8 +113,38 @@ struct printer_base
     this->do_print_benchmark_results(benches);
   }
 
+  /*!
+   * Used to track progress for interactive progress display:
+   *
+   * - `completed_state_count`: Number of states with completed measurements.
+   * - `total_state_count`: Total number of states.
+   * @{
+   */
+  virtual void set_completed_state_count(std::size_t states)
+  {
+    this->do_set_completed_state_count(states);
+  }
+  virtual void add_completed_state() { this->do_add_completed_state(); }
+  [[nodiscard]] virtual std::size_t get_completed_state_count() const
+  {
+    return this->do_get_completed_state_count();
+  }
+
+  virtual void set_total_state_count(std::size_t states)
+  {
+    this->do_set_total_state_count(states);
+  }
+  [[nodiscard]] virtual std::size_t get_total_state_count() const
+  {
+    return this->do_get_total_state_count();
+  }
+  /*!@}*/
+
 protected:
   std::ostream &m_ostream;
+
+  std::size_t m_completed_state_count{};
+  std::size_t m_total_state_count{};
 
 private:
   // Implementation hooks for subclasses:
@@ -125,6 +155,25 @@ private:
   virtual void do_log_run_state(const nvbench::state &) {}
   virtual void do_print_benchmark_list(const benchmark_vector &) {}
   virtual void do_print_benchmark_results(const benchmark_vector &) {}
+
+  virtual void do_set_completed_state_count(std::size_t states)
+  {
+    m_completed_state_count = states;
+  }
+  virtual void do_add_completed_state() { ++m_completed_state_count; }
+  [[nodiscard]] virtual std::size_t do_get_completed_state_count() const
+  {
+    return m_completed_state_count;
+  }
+
+  virtual void do_set_total_state_count(std::size_t states)
+  {
+    m_total_state_count = states;
+  }
+  [[nodiscard]] virtual std::size_t do_get_total_state_count() const
+  {
+    return m_total_state_count;
+  }
 };
 
 } // namespace nvbench

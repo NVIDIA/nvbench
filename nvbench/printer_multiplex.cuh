@@ -55,6 +55,10 @@ private:
   void do_print_benchmark_list(const benchmark_vector &benches) override;
   void do_print_benchmark_results(const benchmark_vector &benches) override;
 
+  void do_set_completed_state_count(std::size_t states) override;
+  void do_add_completed_state() override;
+  void do_set_total_state_count(std::size_t states) override;
+
   std::vector<std::unique_ptr<nvbench::printer_base>> m_printers;
 };
 

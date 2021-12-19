@@ -18,6 +18,8 @@
 
 #include <nvbench/benchmark_base.cuh>
 
+#include <nvbench/detail/transform_reduce.cuh>
+
 namespace nvbench
 {
 
@@ -56,6 +58,17 @@ benchmark_base &benchmark_base::set_devices(std::vector<int> device_ids)
 benchmark_base &benchmark_base::add_device(int device_id)
 {
   return this->add_device(device_info{device_id});
+}
+
+std::size_t benchmark_base::get_config_count() const
+{
+  return nvbench::detail::transform_reduce(m_axes.get_axes().cbegin(),
+                                           m_axes.get_axes().cend(),
+                                           std::size_t{1},
+                                           std::multiplies<>{},
+                                           [](const auto &axis_ptr) {
+                                             return axis_ptr->get_size();
+                                           });
 }
 
 } // namespace nvbench
