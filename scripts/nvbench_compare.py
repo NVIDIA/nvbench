@@ -250,24 +250,24 @@ def main():
     parser.add_argument('--threshold-diff',type=float, dest='threshold', default=0.0,
                         help='only show benchmarks where percentage diff is >= THRESHOLD')
 
-    if len(sys.argv) < 3:
+    args,files_or_dirs = parser.parse_known_args()
+    print(files_or_dirs)
+
+    if len(files_or_dirs) != 2:
         parser.print_help()
         sys.exit(1)
 
-    args = parser.parse_args(sys.argv[3:])
-
     # if provided two directories, find all the exactly named files
     # in both and treat them as the reference and compare
-    to_compare = [ ]
-    if os.path.isdir(sys.argv[1]) and os.path.isdir(sys.argv[2]):
-        for f in os.listdir(sys.argv[2]):
-            r = os.path.join(sys.argv[1], f)
-            c = os.path.join(sys.argv[2], f)
+    to_compare = []
+    if os.path.isdir(files_or_dirs[0]) and os.path.isdir(files_or_dirs[1]):
+        for f in os.listdir(files_or_dirs[1]):
+            r = os.path.join(files_or_dirs[0], f)
+            c = os.path.join(files_or_dirs[1], f)
             if os.path.isfile(r) and os.path.isfile(c):
                 to_compare.append( (r,c) )
-
     else:
-        to_compare = [ (sys.argv[1],sys.argv[2]) ]
+        to_compare = [(files_or_dirs[0],files_or_dirs[1])]
 
     for ref,comp in to_compare:
 
