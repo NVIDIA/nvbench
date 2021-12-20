@@ -47,6 +47,7 @@ nvbench_add_compile_test(test_name
   test_export
   build_tree
   -D "NVBench_DIR=${NVBench_BINARY_DIR}"
+  -D TEST_TYPE=BUILD_TREE
 )
 
 ################################################################################
@@ -57,6 +58,7 @@ nvbench_add_compile_test(test_name
   install_tree
   # "rapids_export() always installs to lib" per rapids_export docs
   -D "NVBench_DIR=${tmp_install_prefix}/lib/cmake/nvbench/"
+  -D TEST_TYPE=INSTALL_TREE
 )
 set_tests_properties(${test_name} PROPERTIES FIXTURES_REQUIRED install_tree)
 
