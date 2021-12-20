@@ -279,13 +279,9 @@ void markdown_printer::do_print_benchmark_results(
               const nvbench::int64_t value    = axis_values.get_int64(name);
               const nvbench::int64_t exponent = int64_axis::compute_log2(value);
               table.add_cell(row,
-                             name + "_axis_pretty",
                              name,
-                             fmt::format("2^{}", exponent));
-              table.add_cell(row,
-                             name + "_axis_descriptive",
-                             fmt::format("({})", name),
-                             fmt::to_string(value));
+                             name,
+                             fmt::format("2^{} = {}", exponent, value));
             }
             else
             {
