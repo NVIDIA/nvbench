@@ -306,7 +306,7 @@ auto parse_axis_key_flag_value_spec(const std::string &spec)
   const auto name = submatch_to_sv(match[1]);
   const auto flag = submatch_to_sv(match[2]);
   const auto vals = submatch_to_sv(match[3]);
-  return std::tie(name, flag, vals);
+  return std::make_tuple(name, flag, vals);
 }
 
 } // namespace
