@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-from colorama import Fore
+import argparse
 import json
 import math
+import os
 import sys
+
+from colorama import Fore
 
 import tabulate
 
@@ -13,22 +16,7 @@ def version_tuple(v):
 
 tabulate_version = version_tuple(tabulate.__version__)
 
-if len(sys.argv) != 3:
-    print("Usage: %s reference.json compare.json\n" % sys.argv[0])
-    sys.exit(1)
-
-with open(sys.argv[1], "r") as ref_file:
-    ref_root = json.load(ref_file)
-
-with open(sys.argv[2], "r") as cmp_file:
-    cmp_root = json.load(cmp_file)
-
-# This is blunt but works for now:
-if ref_root["devices"] != cmp_root["devices"]:
-    print("Device sections do not match.")
-    sys.exit(1)
-
-all_devices = cmp_root["devices"]
+all_devices = []
 config_count = 0
 unknown_count = 0
 failure_count = 0
@@ -109,7 +97,7 @@ def format_percentage(percentage):
     return "%0.2f%%" % (percentage * 100.0)
 
 
-def compare_benches(ref_benches, cmp_benches):
+def compare_benches(ref_benches, cmp_benches, threshold):
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
         if not ref_bench:
@@ -141,8 +129,6 @@ def compare_benches(ref_benches, cmp_benches):
         colalign.append("center")
 
         for device_id in device_ids:
-            device = find_device_by_id(device_id)
-            print("## [%d] %s\n" % (device["id"], device["name"]))
 
             rows = []
             for cmp_state_name in cmp_states:
@@ -226,16 +212,23 @@ def compare_benches(ref_benches, cmp_benches):
                     failure_count += 1
                     status = Fore.RED + "FAIL" + Fore.RESET
 
-                row.append(format_duration(ref_time))
-                row.append(format_percentage(ref_noise))
-                row.append(format_duration(cmp_time))
-                row.append(format_percentage(cmp_noise))
-                row.append(format_duration(diff))
-                row.append(format_percentage(frac_diff))
-                row.append(status)
+                if abs(frac_diff) >= threshold:
+                    row.append(format_duration(ref_time))
+                    row.append(format_percentage(ref_noise))
+                    row.append(format_duration(cmp_time))
+                    row.append(format_percentage(cmp_noise))
+                    row.append(format_duration(diff))
+                    row.append(format_percentage(frac_diff))
+                    row.append(status)
 
-                rows.append(row)
+                    rows.append(row)
 
+
+            if len(rows) == 0:
+                continue
+
+            device = find_device_by_id(device_id)
+            print("## [%d] %s\n" % (device["id"], device["name"]))
             # colalign and github format require tabulate 0.8.3
             if tabulate_version >= (0, 8, 3):
                 print(tabulate.tabulate(rows,
@@ -250,12 +243,56 @@ def compare_benches(ref_benches, cmp_benches):
             print("")
 
 
-compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"])
+def main():
 
-print("# Summary\n")
-print("- Total Matches: %d" % config_count)
-print("  - Pass    (diff <= min_noise): %d" % pass_count)
-print("  - Unknown (infinite noise):    %d" % unknown_count)
-print("  - Failure (diff > min_noise):  %d" % failure_count)
+    help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
+    parser = argparse.ArgumentParser(prog='nvbench_compare', usage=help_text)
+    parser.add_argument('--threshold-diff',type=float, dest='threshold', default=0.0,
+                        help='only show benchmarks where percentage diff is >= THRESHOLD')
 
-sys.exit(failure_count)
+    args,files_or_dirs = parser.parse_known_args()
+    print(files_or_dirs)
+
+    if len(files_or_dirs) != 2:
+        parser.print_help()
+        sys.exit(1)
+
+    # if provided two directories, find all the exactly named files
+    # in both and treat them as the reference and compare
+    to_compare = []
+    if os.path.isdir(files_or_dirs[0]) and os.path.isdir(files_or_dirs[1]):
+        for f in os.listdir(files_or_dirs[1]):
+            r = os.path.join(files_or_dirs[0], f)
+            c = os.path.join(files_or_dirs[1], f)
+            if os.path.isfile(r) and os.path.isfile(c):
+                to_compare.append( (r,c) )
+    else:
+        to_compare = [(files_or_dirs[0],files_or_dirs[1])]
+
+    for ref,comp in to_compare:
+
+        with open(ref, "r") as ref_file:
+            ref_root = json.load(ref_file)
+        with open(comp, "r") as cmp_file:
+            cmp_root = json.load(cmp_file)
+
+        global all_devices
+        all_devices = cmp_root["devices"]
+
+        # This is blunt but works for now:
+        if ref_root["devices"] != cmp_root["devices"]:
+            print("Device sections do not match.")
+            sys.exit(1)
+
+        compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"], args.threshold)
+
+    print("# Summary\n")
+    print("- Total Matches: %d" % config_count)
+    print("  - Pass    (diff <= min_noise): %d" % pass_count)
+    print("  - Unknown (infinite noise):    %d" % unknown_count)
+    print("  - Failure (diff > min_noise):  %d" % failure_count)
+    return failure_count
+
+
+if __name__ == '__main__':
+    sys.exit(main())
