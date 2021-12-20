@@ -4,7 +4,13 @@ if (NOT TARGET CUDA::toolkit)
   find_package(CUDAToolkit REQUIRED)
 endif()
 
-set(nvbench_cupti_root "${CUDAToolkit_LIBRARY_ROOT}/extras/CUPTI")
+if (EXISTS "${CUDAToolkit_LIBRARY_ROOT}/extras/CUPTI/lib64")
+  # NVIDIA installer layout:
+  set(nvbench_cupti_root "${CUDAToolkit_LIBRARY_ROOT}/extras/CUPTI")
+else()
+  # Ubuntu package layout:
+  set(nvbench_cupti_root "${CUDAToolkit_LIBRARY_ROOT}")
+endif()
 
 # The CUPTI targets in FindCUDAToolkit are broken:
 # - The dll locations are not specified
