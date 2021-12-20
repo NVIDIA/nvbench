@@ -30,6 +30,6 @@ std::string float64_axis::do_get_input_string(std::size_t i) const
   return fmt::format("{:0.5g}", m_values[i]);
 }
 
-std::string float64_axis::do_get_description(std::size_t i) const { return {}; }
+std::string float64_axis::do_get_description(std::size_t) const { return {}; }
 
 } // namespace nvbench

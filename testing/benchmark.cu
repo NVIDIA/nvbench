@@ -138,7 +138,7 @@ void test_type_configs()
   lots_of_types_bench bench;
   bench.set_type_axes_names({"Integer", "Float", "Other"});
 
-  ASSERT(bench.num_type_configs == 16);
+  static_assert(bench.num_type_configs == 16);
 
   std::size_t idx = 0;
   fmt::memory_buffer buffer;

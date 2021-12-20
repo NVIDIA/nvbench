@@ -167,10 +167,7 @@ const nvbench::type_axis &axes_metadata::get_type_axis(std::size_t index) const
       }
     }
   }
-  throw std::runtime_error(fmt::format("{}:{}: Invalid type axis index: {}.",
-                                       __FILE__,
-                                       __LINE__,
-                                       index));
+  NVBENCH_THROW(std::runtime_error, "Invalid type axis index: {}.", index);
 }
 
 nvbench::type_axis &axes_metadata::get_type_axis(std::size_t index)
@@ -186,10 +183,7 @@ nvbench::type_axis &axes_metadata::get_type_axis(std::size_t index)
       }
     }
   }
-  throw std::runtime_error(fmt::format("{}:{}: Invalid type axis index: {}.",
-                                       __FILE__,
-                                       __LINE__,
-                                       index));
+  NVBENCH_THROW(std::runtime_error, "Invalid type axis index: {}.", index);
 }
 
 const axis_base &axes_metadata::get_axis(std::string_view name) const
@@ -201,8 +195,7 @@ const axis_base &axes_metadata::get_axis(std::string_view name) const
 
   if (iter == m_axes.cend())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: Axis '{}' not found.", __FILE__, __LINE__, name));
+    NVBENCH_THROW(std::runtime_error, "Axis '{}' not found.", name);
   }
 
   return **iter;
@@ -217,8 +210,7 @@ axis_base &axes_metadata::get_axis(std::string_view name)
 
   if (iter == m_axes.end())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: Axis '{}' not found.", __FILE__, __LINE__, name));
+    NVBENCH_THROW(std::runtime_error, "Axis '{}' not found.", name);
   }
 
   return **iter;
@@ -230,13 +222,11 @@ const axis_base &axes_metadata::get_axis(std::string_view name,
   const auto &axis = this->get_axis(name);
   if (axis.get_type() != type)
   {
-    throw std::runtime_error(fmt::format("{}:{}: Axis '{}' type mismatch "
-                                         "(expected {}, actual {}).",
-                                         __FILE__,
-                                         __LINE__,
-                                         name,
-                                         type,
-                                         axis.get_type()));
+    NVBENCH_THROW(std::runtime_error,
+                  "Axis '{}' type mismatch (expected {}, actual {}).",
+                  name,
+                  type,
+                  axis.get_type());
   }
   return axis;
 }
@@ -247,13 +237,11 @@ axis_base &axes_metadata::get_axis(std::string_view name,
   auto &axis = this->get_axis(name);
   if (axis.get_type() != type)
   {
-    throw std::runtime_error(fmt::format("{}:{}: Axis '{}' type mismatch "
-                                         "(expected {}, actual {}).",
-                                         __FILE__,
-                                         __LINE__,
-                                         name,
-                                         type,
-                                         axis.get_type()));
+    NVBENCH_THROW(std::runtime_error,
+                  "Axis '{}' type mismatch (expected {}, actual {}).",
+                  name,
+                  type,
+                  axis.get_type());
   }
   return axis;
 }

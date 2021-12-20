@@ -21,8 +21,30 @@ foreach(example_src IN LISTS example_srcs)
   target_link_libraries(${example_name} PRIVATE nvbench::main)
   set_target_properties(${example_name} PROPERTIES COMPILE_FEATURES cuda_std_17)
   add_test(NAME ${example_name}
-    COMMAND "$<TARGET_FILE:${example_name}>" --timeout 1
+    COMMAND "$<TARGET_FILE:${example_name}>" --timeout 0.1
   )
 
   add_dependencies(nvbench.example.all ${example_name})
+endforeach()
+
+# Silence some warnings from old thrust headers:
+set(thrust_examples
+  auto_throughput
+  axes
+  exec_tag_sync
+  exec_tag_timer
+  skip
+  throughput
+)
+foreach (example IN LISTS thrust_examples)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # C4324: structure was padded due to alignment specifier
+    nvbench_add_cxx_flag(nvbench.example.${example} PRIVATE "/wd4324")
+
+    # warning C4201: nonstandard extension used: nameless struct/union:
+    # Fixed in Thrust 1.12.0 (CTK 11.4, NV HPC 21.3)
+    if (${CUDAToolkit_VERSION} VERSION_LESS 11.4)
+      nvbench_add_cxx_flag(nvbench.example.${example} PRIVATE "/wd4201")
+    endif()
+  endif()
 endforeach()

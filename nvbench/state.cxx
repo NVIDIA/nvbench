@@ -19,6 +19,7 @@
 #include <nvbench/state.cuh>
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/types.cuh>
 
 #include <fmt/color.h>
@@ -127,8 +128,7 @@ const summary &state::get_summary(std::string_view name) const
                  [&name](const auto &s) { return s.get_name() == name; });
   if (iter == m_summaries.cend())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: No summary named '{}'.", __FILE__, __LINE__, name));
+    NVBENCH_THROW(std::runtime_error, "No summary named '{}'.", name);
   }
   return *iter;
 }
@@ -140,8 +140,7 @@ summary &state::get_summary(std::string_view name)
                            [&name](auto &s) { return s.get_name() == name; });
   if (iter == m_summaries.end())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: No summary named '{}'.", __FILE__, __LINE__, name));
+    NVBENCH_THROW(std::runtime_error, "No summary named '{}'.", name);
   }
   return *iter;
 }
@@ -188,8 +187,8 @@ std::string state::get_axis_values_as_string(bool color) const
     if (axis_type == named_values::type::int64 &&
         axes.get_int64_axis(name).is_power_of_two())
     {
-      const nvbench::uint64_t value    = m_axis_values.get_int64(name);
-      const nvbench::uint64_t exponent = int64_axis::compute_log2(value);
+      const nvbench::int64_t value    = m_axis_values.get_int64(name);
+      const nvbench::int64_t exponent = int64_axis::compute_log2(value);
       append_key_value(name, exponent, "2^{}");
     }
     else if (axis_type == named_values::type::float64)

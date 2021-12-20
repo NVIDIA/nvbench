@@ -179,8 +179,9 @@ private:
       m_total_samples += batch_size;
 
       // Predict number of remaining iterations:
-      batch_size = (m_min_time - m_total_cuda_time) /
-                   (m_total_cuda_time / m_total_samples);
+      batch_size = static_cast<nvbench::int64_t>(
+        (m_min_time - m_total_cuda_time) /
+        (m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples)));
 
       m_timeout_timer.stop();
       const auto total_time = m_timeout_timer.get_duration();

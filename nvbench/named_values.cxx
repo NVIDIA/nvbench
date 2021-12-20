@@ -18,6 +18,8 @@
 
 #include <nvbench/named_values.cuh>
 
+#include <nvbench/detail/throw.cuh>
+
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -68,8 +70,7 @@ named_values::get_value(const std::string &name) const
                  [&name](const auto &val) { return val.name == name; });
   if (iter == m_storage.cend())
   {
-    throw std::runtime_error(
-      fmt::format("{}:{}: No value with name '{}'.", __FILE__, __LINE__, name));
+    NVBENCH_THROW(std::runtime_error, "No value with name '{}'.", name);
   }
   return iter->value;
 }
@@ -91,11 +92,9 @@ named_values::type named_values::get_type(const std::string &name) const
       {
         return nvbench::named_values::type::string;
       }
-      throw std::runtime_error(fmt::format("{}:{}: Unknown variant type for "
-                                           "entry '{}'.",
-                                           __FILE__,
-                                           __LINE__,
-                                           name));
+      NVBENCH_THROW(std::runtime_error,
+                    "Unknown variant type for entry '{}'.",
+                    name);
     },
     this->get_value(name));
 }
@@ -107,12 +106,10 @@ try
 }
 catch (std::exception &err)
 {
-  throw std::runtime_error(fmt::format("{}:{}: Error looking up int64 value "
-                                       "`{}`:\n{}",
-                                       __FILE__,
-                                       __LINE__,
-                                       name,
-                                       err.what()));
+  NVBENCH_THROW(std::runtime_error,
+                "Error looking up int64 value `{}`:\n{}",
+                name,
+                err.what());
 }
 
 nvbench::float64_t named_values::get_float64(const std::string &name) const
@@ -122,12 +119,10 @@ try
 }
 catch (std::exception &err)
 {
-  throw std::runtime_error(fmt::format("{}:{}: Error looking up float64 value "
-                                       "`{}`:\n{}",
-                                       __FILE__,
-                                       __LINE__,
-                                       name,
-                                       err.what()));
+  NVBENCH_THROW(std::runtime_error,
+                "Error looking up float64 value `{}`:\n{}",
+                name,
+                err.what());
 }
 
 const std::string &named_values::get_string(const std::string &name) const
@@ -137,12 +132,10 @@ try
 }
 catch (std::exception &err)
 {
-  throw std::runtime_error(fmt::format("{}:{}: Error looking up string value "
-                                       "`{}`:\n{}",
-                                       __FILE__,
-                                       __LINE__,
-                                       name,
-                                       err.what()));
+  NVBENCH_THROW(std::runtime_error,
+                "Error looking up string value `{}`:\n{}",
+                name,
+                err.what());
 }
 
 void named_values::set_int64(std::string name, nvbench::int64_t value)

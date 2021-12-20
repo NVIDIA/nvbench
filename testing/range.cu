@@ -64,11 +64,12 @@ void test_fp_tolerance()
   // Make sure that the range is padded a bit for floats to prevent rounding
   // errors from skipping `end`. This test will trigger failures without
   // the padding.
-  const nvbench::float32_t start  = 0.1;
-  const nvbench::float32_t stride = 1e-4;
+  const nvbench::float32_t start  = 0.1f;
+  const nvbench::float32_t stride = 1e-4f;
   for (std::size_t size = 1; size < 1024; ++size)
   {
-    const nvbench::float32_t end = start + stride * (size - 1);
+    const nvbench::float32_t end =
+      start + stride * static_cast<nvbench::float32_t>(size - 1);
     ASSERT_MSG(nvbench::range(start, end, stride).size() == size,
                "size={}", size);
   }

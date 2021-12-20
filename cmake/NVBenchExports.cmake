@@ -23,14 +23,14 @@ macro(nvbench_generate_exports)
   rapids_export(BUILD NVBench
     EXPORT_SET nvbench-targets
     NAMESPACE "nvbench::"
-    GLOBAL_TARGETS nvbench main
+    GLOBAL_TARGETS nvbench main internal_build_interface
     LANGUAGES CUDA CXX
     FINAL_CODE_BLOCK nvbench_build_export_code_block
   )
   rapids_export(INSTALL NVBench
     EXPORT_SET nvbench-targets
     NAMESPACE "nvbench::"
-    GLOBAL_TARGETS nvbench main
+    GLOBAL_TARGETS nvbench main internal_build_interface
     LANGUAGES CUDA CXX
     FINAL_CODE_BLOCK nvbench_install_export_code_block
   )

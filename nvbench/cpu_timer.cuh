@@ -51,7 +51,7 @@ struct cpu_timer
     const auto duration = m_stop - m_start;
     const auto ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
-    return ns * (1e-9);
+    return static_cast<nvbench::float64_t>(ns) * (1e-9);
   }
 
 private:

@@ -68,8 +68,8 @@ void throughput_bench(nvbench::state &state,
   state.collect_stores_efficiency();
 
   const auto threads_in_block = 256;
-  const auto blocks_in_grid = (elements + threads_in_block - 1) /
-                              threads_in_block;
+  const auto blocks_in_grid =
+    static_cast<int>((elements + threads_in_block - 1) / threads_in_block);
 
   state.exec([&](nvbench::launch &launch) {
     kernel<ItemsPerThread>

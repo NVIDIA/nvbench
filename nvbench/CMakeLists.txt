@@ -39,10 +39,13 @@ endif()
 # output ( no PTX version info )
 if(CMAKE_CUDA_COMPILER_ID STREQUAL NVIDIA AND
    CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.1)
-  list(APPEND srcs json_printer.cxx)
+  set(json_printer_impl json_printer.cxx)
+  set(json_is_cu FALSE)
 else()
-  list(APPEND srcs json_printer.cu)
+  set(json_printer_impl json_printer.cu)
+  set(json_is_cu TRUE)
 endif()
+list(APPEND srcs ${json_printer_impl})
 
 # Generate doc strings from md files:
 include("../cmake/FileToString.cmake")
@@ -61,31 +64,44 @@ nvbench_write_config_header("${NVBench_BINARY_DIR}/nvbench/config.cuh")
 
 # nvbench (nvbench::nvbench)
 add_library(nvbench SHARED ${srcs})
+nvbench_config_target(nvbench)
 target_include_directories(nvbench PUBLIC
   "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
   "$<BUILD_INTERFACE:${NVBench_BINARY_DIR}>"
   "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
-target_link_libraries(nvbench PUBLIC ${ctk_libraries})
-target_link_libraries(nvbench PRIVATE
-  fmt::fmt
-  nvbench_json
-  nvbench_git_revision
+target_link_libraries(nvbench
+  PUBLIC
+    ${ctk_libraries}
+  PRIVATE
+    fmt::fmt
+    nvbench_json
+    nvbench_git_revision
 )
-nvbench_config_target(nvbench)
 target_compile_features(nvbench PUBLIC cuda_std_17 PRIVATE cxx_std_17)
 add_dependencies(nvbench.all nvbench)
 
-# nvbench_main (nvbench::main)
-add_library(nvbench_main OBJECT main.cu)
-nvbench_config_target(nvbench_main)
-target_link_libraries(nvbench_main PUBLIC nvbench)
-set_target_properties(nvbench_main PROPERTIES EXPORT_NAME main)
-add_dependencies(nvbench.all nvbench_main)
+# nvbench.main (nvbench::main)
+add_library(nvbench.main OBJECT main.cu)
+nvbench_config_target(nvbench.main)
+target_link_libraries(nvbench.main PUBLIC nvbench)
+set_target_properties(nvbench.main PROPERTIES EXPORT_NAME main)
+add_dependencies(nvbench.all nvbench.main)
 
 # Support add_subdirectory:
 add_library(nvbench::nvbench ALIAS nvbench)
-add_library(nvbench::main ALIAS nvbench_main)
+add_library(nvbench::main ALIAS nvbench.main)
 
 nvbench_setup_dep_dlls(nvbench)
-nvbench_install_libraries(nvbench nvbench_main)
+nvbench_install_libraries(nvbench nvbench.main nvbench.build_interface)
+
+# nvcc emits several unavoidable warnings while compiling nlohmann_json:
+if (json_is_cu)
+  set_property(SOURCE ${json_printer_impl} APPEND PROPERTY COMPILE_OPTIONS
+    # error #186-D: pointless comparison of unsigned integer with zero
+    $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--diag_suppress=186>
+    # error #940-D: missing return statement at end of non-void function
+    # (the end of the function in hash.hpp(114) is unreachable)
+    $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--diag_suppress=940>
+  )
+endif()

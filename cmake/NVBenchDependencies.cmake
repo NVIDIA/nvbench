@@ -39,7 +39,7 @@ rapids_cpm_find(nlohmann_json 3.9.1
 )
 
 # nlohmann_json release headers
-add_library(nvbench_json INTERFACE)
+add_library(nvbench_json INTERFACE IMPORTED)
 target_include_directories(nvbench_json SYSTEM INTERFACE
   "${nlohmann_json_SOURCE_DIR}/include"
 )

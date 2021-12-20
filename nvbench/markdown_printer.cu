@@ -420,7 +420,7 @@ std::string markdown_printer::do_format_item_rate(const summary &data)
 
 std::string markdown_printer::do_format_bytes(const summary &data)
 {
-  const auto bytes = data.get_int64("value");
+  const auto bytes = static_cast<nvbench::float64_t>(data.get_int64("value"));
   if (bytes >= 1024. * 1024. * 1024.) // 1 GiB
   {
     return fmt::format("{:0.3f} GiB", bytes / (1024. * 1024. * 1024.));
