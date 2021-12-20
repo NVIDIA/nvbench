@@ -145,6 +145,11 @@ struct benchmark_base
     return m_axes;
   }
 
+  // Computes the number of configs in the benchmark.
+  // Unlike get_states().size(), this method may be used prior to calling run().
+  [[nodiscard]] std::size_t get_config_count() const;
+
+  // Is empty until run() is called.
   [[nodiscard]] const std::vector<nvbench::state> &get_states() const
   {
     return m_states;

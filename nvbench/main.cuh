@@ -63,6 +63,15 @@
     printer.print_device_info();                                               \
     printer.print_log_preamble();                                              \
     auto &benchmarks = parser.get_benchmarks();                                \
+                                                                               \
+    std::size_t total_states = 0;                                              \
+    for (auto &bench_ptr : benchmarks)                                         \
+    {                                                                          \
+      total_states += bench_ptr->get_config_count();                           \
+    }                                                                          \
+    printer.set_total_state_count(total_states);                               \
+                                                                               \
+    printer.set_completed_state_count(0);                                      \
     for (auto &bench_ptr : benchmarks)                                         \
     {                                                                          \
       bench_ptr->set_printer(printer);                                         \

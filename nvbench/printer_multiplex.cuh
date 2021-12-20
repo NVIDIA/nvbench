@@ -31,7 +31,6 @@ namespace nvbench
  */
 struct printer_multiplex : nvbench::printer_base
 {
-
   printer_multiplex();
 
   template <typename Format, typename... Ts>
@@ -46,7 +45,7 @@ struct printer_multiplex : nvbench::printer_base
     return m_printers.size();
   }
 
-private:
+protected:
   void do_print_device_info() override;
   void do_print_log_preamble() override;
   void do_print_log_epilogue() override;
@@ -54,6 +53,9 @@ private:
   void do_log_run_state(const nvbench::state &) override;
   void do_print_benchmark_list(const benchmark_vector &benches) override;
   void do_print_benchmark_results(const benchmark_vector &benches) override;
+  void do_set_completed_state_count(std::size_t states) override;
+  void do_add_completed_state() override;
+  void do_set_total_state_count(std::size_t states) override;
 
   std::vector<std::unique_ptr<nvbench::printer_base>> m_printers;
 };
