@@ -54,3 +54,8 @@ function(nvbench_install_libraries)
     EXPORT nvbench-targets
   )
 endfunction()
+
+# Call with a list of executables to generate install rules:
+function(nvbench_install_executables)
+  install(TARGETS ${ARGN} EXPORT nvbench-targets)
+endfunction()

@@ -51,6 +51,8 @@ if (NVBench_ENABLE_EXAMPLES OR NVBench_ENABLE_TESTING)
   enable_testing()
 endif()
 
+add_subdirectory(exec)
+
 if (NVBench_ENABLE_EXAMPLES)
   add_subdirectory(examples)
 endif()

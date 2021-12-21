@@ -163,6 +163,11 @@ void markdown_printer::do_log_run_state(const nvbench::state &exec_state)
 void markdown_printer::do_print_benchmark_list(
   const printer_base::benchmark_vector &benches)
 {
+  if (benches.empty())
+  {
+    return;
+  }
+
   fmt::memory_buffer buffer;
   fmt::format_to(buffer, "# Benchmarks\n\n");
   std::size_t benchmark_id{0};

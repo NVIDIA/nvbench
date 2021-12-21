@@ -47,17 +47,22 @@
   }
 
 #ifdef NVBENCH_HAS_CUPTI
-#define NVBENCH_INITIALIZE_DRIVER_API NVBENCH_DRIVER_API_CALL(cuInit(0));
+#define NVBENCH_INITIALIZE_DRIVER_API NVBENCH_DRIVER_API_CALL(cuInit(0))
 #else
-#define NVBENCH_INITIALIZE_DRIVER_API
+// clang-format off
+#define NVBENCH_INITIALIZE_DRIVER_API do {} while (false)
+// clang-format on
 #endif
+
+#define NVBENCH_MAIN_PARSE(argc, argv)                                         \
+  nvbench::option_parser parser;                                               \
+  parser.parse(argc, argv)
 
 #define NVBENCH_MAIN_BODY(argc, argv)                                          \
   do                                                                           \
   {                                                                            \
-    NVBENCH_INITIALIZE_DRIVER_API                                              \
-    nvbench::option_parser parser;                                             \
-    parser.parse(argc, argv);                                                  \
+    NVBENCH_INITIALIZE_DRIVER_API;                                             \
+    NVBENCH_MAIN_PARSE(argc, argv);                                            \
     auto &printer = parser.get_printer();                                      \
                                                                                \
     printer.print_device_info();                                               \
