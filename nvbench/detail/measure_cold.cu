@@ -165,7 +165,7 @@ void measure_cold_base::run_trials_epilogue()
   const auto cpu_stdev =
     nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
                                                     m_cpu_times.cend(),
-                                                    m_total_cpu_time);
+                                                    cpu_mean);
   m_cpu_noise = cpu_stdev / cpu_mean;
 
   m_walltime_timer.stop();
