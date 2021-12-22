@@ -52,6 +52,11 @@ bool type_axis::get_is_active(std::size_t idx) const
   return m_mask.at(idx);
 }
 
+std::size_t type_axis::get_active_count() const
+{
+  return std::count(m_mask.cbegin(), m_mask.cend(), true);
+}
+
 std::size_t type_axis::get_type_index(const std::string &input_string) const
 {
   auto it =

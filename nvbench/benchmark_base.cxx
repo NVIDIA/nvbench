@@ -62,13 +62,20 @@ benchmark_base &benchmark_base::add_device(int device_id)
 
 std::size_t benchmark_base::get_config_count() const
 {
-  return nvbench::detail::transform_reduce(m_axes.get_axes().cbegin(),
-                                           m_axes.get_axes().cend(),
-                                           std::size_t{1},
-                                           std::multiplies<>{},
-                                           [](const auto &axis_ptr) {
-                                             return axis_ptr->get_size();
-                                           });
+  return nvbench::detail::transform_reduce(
+    m_axes.get_axes().cbegin(),
+    m_axes.get_axes().cend(),
+    std::size_t{1},
+    std::multiplies<>{},
+    [](const auto &axis_ptr) {
+      if (const auto *type_axis_ptr =
+            dynamic_cast<const nvbench::type_axis *>(axis_ptr.get());
+          type_axis_ptr != nullptr)
+      {
+        return type_axis_ptr->get_active_count();
+      }
+      return axis_ptr->get_size();
+    });
 }
 
 } // namespace nvbench

@@ -175,7 +175,8 @@ std::vector<std::string> parse_range_values(std::string_view range_spec,
                                             nvbench::wrapped_type<std::string>)
 {
   NVBENCH_THROW(std::runtime_error,
-                "Cannot use range syntax for string axis specification: `{}`.",
+                "Cannot use range syntax for string or type axis "
+                "specification: `{}`.",
                 range_spec);
 }
 
