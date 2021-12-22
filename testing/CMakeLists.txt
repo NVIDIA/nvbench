@@ -10,6 +10,7 @@ set(test_srcs
   named_values.cu
   option_parser.cu
   range.cu
+  ring_buffer.cu
   runner.cu
   state.cu
   state_generator.cu
@@ -36,3 +37,4 @@ foreach(test_src IN LISTS test_srcs)
 endforeach()
 
 add_subdirectory(cmake)
+add_subdirectory(device)

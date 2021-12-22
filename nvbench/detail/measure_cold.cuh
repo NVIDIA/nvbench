@@ -28,6 +28,7 @@
 
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
+#include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/statistics.cuh>
 
 #include <cuda_runtime.h>
@@ -58,19 +59,11 @@ protected:
   struct kernel_launch_timer;
 
   void check();
-
-  void initialize()
-  {
-    m_total_cuda_time = 0.;
-    m_total_cpu_time  = 0.;
-    m_cuda_noise      = 0.;
-    m_cpu_noise       = 0.;
-    m_total_samples   = 0;
-    m_cuda_times.clear();
-    m_cpu_times.clear();
-    m_max_time_exceeded = false;
-  }
-
+  void initialize();
+  void run_trials_prologue();
+  void record_measurements();
+  bool is_finished();
+  void run_trials_epilogue();
   void generate_summaries();
 
   void check_skip_time(nvbench::float64_t warmup_time);
@@ -86,7 +79,6 @@ protected:
   }
 
   void block_stream();
-
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
 
   nvbench::state &m_state;
@@ -94,7 +86,7 @@ protected:
   nvbench::launch m_launch;
   nvbench::cuda_timer m_cuda_timer;
   nvbench::cpu_timer m_cpu_timer;
-  nvbench::cpu_timer m_timeout_timer;
+  nvbench::cpu_timer m_walltime_timer;
   nvbench::detail::l2flush m_l2flush;
   nvbench::blocking_kernel m_blocker;
 
@@ -110,8 +102,10 @@ protected:
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
-  nvbench::float64_t m_cuda_noise{}; // rel stdev
-  nvbench::float64_t m_cpu_noise{};  // rel stdev
+  nvbench::float64_t m_cpu_noise{}; // rel stdev
+
+  // Trailing history of noise measurements for convergence tests
+  nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;
@@ -170,7 +164,11 @@ struct measure_cold : public measure_cold_base
     this->check();
     this->initialize();
     this->run_warmup();
+
+    this->run_trials_prologue();
     this->run_trials();
+    this->run_trials_epilogue();
+
     this->generate_summaries();
   }
 
@@ -192,47 +190,12 @@ private:
 
   void run_trials()
   {
-    m_timeout_timer.start();
     kernel_launch_timer<use_blocking_kernel> timer(*this);
-
     do
     {
       this->launch_kernel(timer);
-
-      const auto cur_cuda_time = m_cuda_timer.get_duration();
-      const auto cur_cpu_time  = m_cpu_timer.get_duration();
-      m_cuda_times.push_back(cur_cuda_time);
-      m_cpu_times.push_back(cur_cpu_time);
-      m_total_cuda_time += cur_cuda_time;
-      m_total_cpu_time += cur_cpu_time;
-      ++m_total_samples;
-
-      // Only consider the cuda noise in the convergence criteria.
-      m_cuda_noise = nvbench::detail::compute_noise(m_cuda_times,
-                                                    m_total_cuda_time);
-
-      m_timeout_timer.stop();
-      const auto total_time = m_timeout_timer.get_duration();
-
-      if (m_run_once)
-      {
-        break;
-      }
-
-      if (m_total_cuda_time > m_min_time &&  // Min time okay
-          m_total_samples > m_min_samples && // Min samples okay
-          m_cuda_noise < m_max_noise)        // Noise okay
-      {
-        break;
-      }
-
-      if (total_time > m_timeout) // Max time exceeded, stop iterating.
-      {
-        m_max_time_exceeded = true;
-        break;
-      }
-    } while (true);
-    m_cpu_noise = nvbench::detail::compute_noise(m_cpu_times, m_total_cpu_time);
+      this->record_measurements();
+    } while (!this->is_finished());
   }
 
   template <typename TimerT>
