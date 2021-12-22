@@ -47,6 +47,7 @@ struct type_axis final : public axis_base
 
   [[nodiscard]] bool get_is_active(const std::string &input) const;
   [[nodiscard]] bool get_is_active(std::size_t index) const;
+  [[nodiscard]] std::size_t get_active_count() const;
 
   /**
    * The index of this axis in the `benchmark`'s `type_axes` type list.
