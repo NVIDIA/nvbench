@@ -60,7 +60,9 @@ file_to_string("../docs/cli_help_axis.md"
   cli_help_axis_text
 )
 
-nvbench_write_config_header("${NVBench_BINARY_DIR}/nvbench/config.cuh")
+nvbench_write_config_header(config.cuh.in
+  "${NVBench_BINARY_DIR}/nvbench/config.cuh"
+)
 
 # nvbench (nvbench::nvbench)
 add_library(nvbench SHARED ${srcs})
