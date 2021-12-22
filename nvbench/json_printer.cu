@@ -196,7 +196,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         auto &summaries = st["summaries"];
         for (const auto &exec_summ : exec_state.get_summaries())
         {
-          auto &summ            = summaries[exec_summ.get_name()];
+          auto &summ            = summaries[exec_summ.get_tag()];
           ::write_named_values(summ, exec_summ);
         }
 

@@ -53,11 +53,8 @@ struct metric_traits<metric_id::dram_peak_sustained_throughput>
   static constexpr const char *metric_name =
     "dram__throughput.avg.pct_of_peak_sustained_elapsed";
 
-  static constexpr const char *summary =
-    "Peak Sustained Global Memory Throughput (HW)";
-
-  static constexpr const char *hint       = "percentage";
-  static constexpr const char *short_name = "HBWPeak";
+  static constexpr const char *name = "HBWPeak";
+  static constexpr const char *hint = "percentage";
 
   static constexpr const char *description =
     "The utilization level of the device memory relative to the peak "
@@ -77,9 +74,8 @@ struct metric_traits<metric_id::global_load_efficiency>
   static constexpr const char *metric_name =
     "smsp__sass_average_data_bytes_per_sector_mem_global_op_ld.pct";
 
-  static constexpr const char *summary    = "Global Load Efficiency (HW)";
-  static constexpr const char *hint       = "percentage";
-  static constexpr const char *short_name = "LoadEff";
+  static constexpr const char *name = "LoadEff";
+  static constexpr const char *hint = "percentage";
 
   static constexpr const char *description =
     "Ratio of requested global memory load throughput to required global "
@@ -99,9 +95,8 @@ struct metric_traits<metric_id::global_store_efficiency>
   static constexpr const char *metric_name =
     "smsp__sass_average_data_bytes_per_sector_mem_global_op_st.pct";
 
-  static constexpr const char *summary    = "Global Store Efficiency (HW)";
-  static constexpr const char *hint       = "percentage";
-  static constexpr const char *short_name = "StoreEff";
+  static constexpr const char *name = "StoreEff";
+  static constexpr const char *hint = "percentage";
 
   static constexpr const char *description =
     "Ratio of requested global memory store throughput to required global "
@@ -119,9 +114,8 @@ template <>
 struct metric_traits<metric_id::l1_hit_rate>
 {
   static constexpr const char *metric_name = "l1tex__t_sector_hit_rate.pct";
-  static constexpr const char *summary     = "L1 Cache Hit Rate (HW)";
+  static constexpr const char *name        = "L1HitRate";
   static constexpr const char *hint        = "percentage";
-  static constexpr const char *short_name  = "L1HitRate";
   static constexpr const char *description = "Hit rate at L1 cache.";
   static constexpr double divider          = 100.0;
 
@@ -135,9 +129,8 @@ template <>
 struct metric_traits<metric_id::l2_hit_rate>
 {
   static constexpr const char *metric_name = "lts__t_sector_hit_rate.pct";
-  static constexpr const char *summary     = "L2 Cache Hit Rate (HW)";
+  static constexpr const char *name        = "L2HitRate";
   static constexpr const char *hint        = "percentage";
-  static constexpr const char *short_name  = "L2HitRate";
   static constexpr const char *description = "Hit rate at L2 cache.";
   static constexpr double divider          = 100.0;
 
@@ -219,9 +212,10 @@ void gen_summary(std::size_t result_id,
 
   if (metric::is_collected(m_state))
   {
-    auto &summ = m_state.add_summary(metric::summary);
+    auto &summ =
+      m_state.add_summary(fmt::format("nv/cupti/{}", metric::metric_name));
+    summ.set_string("name", metric::name);
     summ.set_string("hint", metric::hint);
-    summ.set_string("short_name", metric::short_name);
     summ.set_string("description", metric::description);
     summ.set_float64("value", result[result_id++] / metric::divider);
   }

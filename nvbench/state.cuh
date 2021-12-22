@@ -119,7 +119,7 @@ struct state
                                 std::string column_name = {});
 
   void add_buffer_size(std::size_t num_bytes,
-                       std::string summary_name,
+                       std::string summary_tag,
                        std::string column_name = {},
                        std::string description = {});
 
@@ -266,10 +266,10 @@ struct state
         || is_dram_throughput_collected();
   }
 
-  summary &add_summary(std::string summary_name);
+  summary &add_summary(std::string summary_tag);
   summary &add_summary(summary s);
-  [[nodiscard]] const summary &get_summary(std::string_view name) const;
-  [[nodiscard]] summary &get_summary(std::string_view name);
+  [[nodiscard]] const summary &get_summary(std::string_view tag) const;
+  [[nodiscard]] summary &get_summary(std::string_view tag);
   [[nodiscard]] const std::vector<summary> &get_summaries() const;
   [[nodiscard]] std::vector<summary> &get_summaries();
 

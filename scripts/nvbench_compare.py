@@ -154,13 +154,13 @@ def compare_benches(ref_benches, cmp_benches, threshold):
                 if not ref_summaries or not cmp_summaries:
                     continue
 
-                cmp_time_summary = cmp_summaries.get("Average GPU Time (Cold)")
-                ref_time_summary = ref_summaries.get("Average GPU Time (Cold)")
+                cmp_time_summary = cmp_summaries.get("nv/cold/time/gpu/mean")
+                ref_time_summary = ref_summaries.get("nv/cold/time/gpu/mean")
                 cmp_noise_summary = cmp_summaries.get(
-                    "GPU Relative Standard Deviation (Cold)"
+                    "nv/cold/time/gpu/stdev/relative"
                 )
                 ref_noise_summary = ref_summaries.get(
-                    "GPU Relative Standard Deviation (Cold)"
+                    "nv/cold/time/gpu/stdev/relative"
                 )
 
                 # TODO: Use other timings, too. Maybe multiple rows, with a

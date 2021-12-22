@@ -175,53 +175,50 @@ void measure_cold_base::generate_summaries()
 {
   const auto d_samples = static_cast<double>(m_total_samples);
   {
-    auto &summ = m_state.add_summary("Number of Samples (Cold)");
+    auto &summ = m_state.add_summary("nv/cold/sample_size");
+    summ.set_string("name", "Samples");
     summ.set_string("hint", "sample_size");
-    summ.set_string("short_name", "Samples");
-    summ.set_string("description",
-                    "Number of kernel executions in cold time measurements.");
+    summ.set_string("description", "Number of isolated kernel executions");
     summ.set_int64("value", m_total_samples);
   }
 
   const auto avg_cpu_time = m_total_cpu_time / d_samples;
   {
-    auto &summ = m_state.add_summary("Average CPU Time (Cold)");
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/mean");
+    summ.set_string("name", "CPU Time");
     summ.set_string("hint", "duration");
-    summ.set_string("short_name", "CPU Time");
     summ.set_string("description",
-                    "Average isolated kernel execution time observed "
-                    "from host.");
+                    "Mean isolated kernel execution time "
+                    "(measured on host CPU)");
     summ.set_float64("value", avg_cpu_time);
   }
 
   {
-    auto &summ = m_state.add_summary("CPU Relative Standard Deviation (Cold)");
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
+    summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("short_name", "Noise");
     summ.set_string("description",
-                    "Relative standard deviation of the cold CPU execution "
-                    "time measurements.");
+                    "Relative standard deviation of isolated CPU times");
     summ.set_float64("value", m_cpu_noise);
   }
 
   const auto avg_cuda_time = m_total_cuda_time / d_samples;
   {
-    auto &summ = m_state.add_summary("Average GPU Time (Cold)");
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/mean");
+    summ.set_string("name", "GPU Time");
     summ.set_string("hint", "duration");
-    summ.set_string("short_name", "GPU Time");
     summ.set_string("description",
-                    "Average isolated kernel execution time as measured "
-                    "by CUDA events.");
+                    "Mean isolated kernel execution time "
+                    "(measured with CUDA events)");
     summ.set_float64("value", avg_cuda_time);
   }
 
   {
-    auto &summ = m_state.add_summary("GPU Relative Standard Deviation (Cold)");
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
+    summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("short_name", "Noise");
     summ.set_string("description",
-                    "Relative standard deviation of the cold GPU execution "
-                    "time measurements.");
+                    "Relative standard deviation of isolated GPU times");
     summ.set_float64("value",
                      m_noise_tracker.empty()
                        ? std::numeric_limits<nvbench::float64_t>::infinity()
@@ -230,11 +227,11 @@ void measure_cold_base::generate_summaries()
 
   if (const auto items = m_state.get_element_count(); items != 0)
   {
-    auto &summ = m_state.add_summary("Element Throughput");
+    auto &summ = m_state.add_summary("nv/cold/bw/item_rate");
+    summ.set_string("name", "Elem/s");
     summ.set_string("hint", "item_rate");
-    summ.set_string("short_name", "Elem/s");
     summ.set_string("description",
-                    "Number of input elements handled per second.");
+                    "Number of input elements processed per second");
     summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
   }
 
@@ -242,12 +239,12 @@ void measure_cold_base::generate_summaries()
   {
     const auto avg_used_gmem_bw = static_cast<double>(bytes) / avg_cuda_time;
     {
-      auto &summ = m_state.add_summary("Average Global Memory Throughput");
+      auto &summ = m_state.add_summary("nv/cold/bw/global/bytes_per_second");
+      summ.set_string("name", "GlobalMem BW");
       summ.set_string("hint", "byte_rate");
-      summ.set_string("short_name", "GlobalMem BW");
       summ.set_string("description",
                       "Number of bytes read/written per second to the CUDA "
-                      "device's global memory.");
+                      "device's global memory");
       summ.set_float64("value", avg_used_gmem_bw);
     }
 
@@ -255,12 +252,12 @@ void measure_cold_base::generate_summaries()
       const auto peak_gmem_bw = static_cast<double>(
         m_state.get_device()->get_global_memory_bus_bandwidth());
 
-      auto &summ = m_state.add_summary("Percent Peak Global Memory Throughput");
+      auto &summ = m_state.add_summary("nv/cold/bw/global/utilization");
+      summ.set_string("name", "BWUtil");
       summ.set_string("hint", "percentage");
-      summ.set_string("short_name", "BWPeak");
       summ.set_string("description",
-                      "Global device memory throughput as a percentage of the "
-                      "device's peak bandwidth.");
+                      "Global device memory utilization as a percentage of the "
+                      "device's peak bandwidth");
       summ.set_float64("value", avg_used_gmem_bw / peak_gmem_bw);
     }
   }

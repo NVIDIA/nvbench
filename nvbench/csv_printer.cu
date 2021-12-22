@@ -116,10 +116,10 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
         {
           continue;
         }
-        const std::string &key    = summ.get_name();
-        const std::string &header = summ.has_value("short_name")
-                                      ? summ.get_string("short_name")
-                                      : key;
+        const std::string &tag    = summ.get_tag();
+        const std::string &header = summ.has_value("name")
+                                      ? summ.get_string("name")
+                                      : tag;
 
         const std::string hint = summ.has_value("hint")
                                    ? summ.get_string("hint")
@@ -127,31 +127,31 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
         std::string value = std::visit(format_visitor, summ.get_value("value"));
         if (hint == "duration")
         {
-          table.add_cell(row, key, header + " (sec)", std::move(value));
+          table.add_cell(row, tag, header + " (sec)", std::move(value));
         }
         else if (hint == "item_rate")
         {
-          table.add_cell(row, key, header + " (elem/sec)", std::move(value));
+          table.add_cell(row, tag, header + " (elem/sec)", std::move(value));
         }
         else if (hint == "bytes")
         {
-          table.add_cell(row, key, header + " (bytes)", std::move(value));
+          table.add_cell(row, tag, header + " (bytes)", std::move(value));
         }
         else if (hint == "byte_rate")
         {
-          table.add_cell(row, key, header + " (bytes/sec)", std::move(value));
+          table.add_cell(row, tag, header + " (bytes/sec)", std::move(value));
         }
         else if (hint == "sample_size")
         {
-          table.add_cell(row, key, header, std::move(value));
+          table.add_cell(row, tag, header, std::move(value));
         }
         else if (hint == "percentage")
         {
-          table.add_cell(row, key, header, std::move(value));
+          table.add_cell(row, tag, header, std::move(value));
         }
         else
         {
-          table.add_cell(row, key, header, std::move(value));
+          table.add_cell(row, tag, header, std::move(value));
         }
       }
       row++;
