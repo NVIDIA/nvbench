@@ -1,4 +1,4 @@
-function(nvbench_write_config_header filepath)
+function(nvbench_write_config_header in_file out_file)
   if (NVBench_ENABLE_NVML)
     set(NVBENCH_HAS_NVML 1)
   endif()
@@ -7,5 +7,5 @@ function(nvbench_write_config_header filepath)
     set(NVBENCH_HAS_CUPTI 1)
   endif()
 
-  configure_file("${NVBench_SOURCE_DIR}/cmake/config.cuh.in" "${filepath}")
+  configure_file("${in_file}" "${out_file}")
 endfunction()
