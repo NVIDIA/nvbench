@@ -33,6 +33,10 @@ option(NVBench_ENABLE_NVML "Build with NVML support from the Cuda Toolkit." ON)
 option(NVBench_ENABLE_CUPTI "Build NVBench with CUPTI." ${cupti_default})
 
 option(NVBench_ENABLE_TESTING "Build NVBench testing suite." OFF)
+option(NVBench_ENABLE_DEVICE_TESTING
+  "Include tests that require a GPU (with locked clocks)."
+  OFF
+)
 option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
 
 include(cmake/NVBenchConfigTarget.cmake)

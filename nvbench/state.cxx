@@ -128,7 +128,7 @@ const summary &state::get_summary(std::string_view name) const
                  [&name](const auto &s) { return s.get_name() == name; });
   if (iter == m_summaries.cend())
   {
-    NVBENCH_THROW(std::runtime_error, "No summary named '{}'.", name);
+    NVBENCH_THROW(std::invalid_argument, "No summary named '{}'.", name);
   }
   return *iter;
 }
@@ -140,7 +140,7 @@ summary &state::get_summary(std::string_view name)
                            [&name](auto &s) { return s.get_name() == name; });
   if (iter == m_summaries.end())
   {
-    NVBENCH_THROW(std::runtime_error, "No summary named '{}'.", name);
+    NVBENCH_THROW(std::invalid_argument, "No summary named '{}'.", name);
   }
   return *iter;
 }

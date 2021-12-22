@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <utility>
+
 // Many compilers still don't ship transform_reduce with their STLs, so here's
 // a naive implementation that will work everywhere. This is never used in a
 // critical section, so perf isn't a concern.
