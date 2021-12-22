@@ -262,10 +262,13 @@ def main():
     to_compare = []
     if os.path.isdir(files_or_dirs[0]) and os.path.isdir(files_or_dirs[1]):
         for f in os.listdir(files_or_dirs[1]):
+            if os.path.splitext(f)[1] != ".json":
+                continue
             r = os.path.join(files_or_dirs[0], f)
             c = os.path.join(files_or_dirs[1], f)
-            if os.path.isfile(r) and os.path.isfile(c):
-                to_compare.append( (r,c) )
+            if os.path.isfile(r) and os.path.isfile(c) and \
+               os.path.getsize(r) > 0 and os.path.getsize(c) > 0:
+                to_compare.append((r, c))
     else:
         to_compare = [(files_or_dirs[0],files_or_dirs[1])]
 

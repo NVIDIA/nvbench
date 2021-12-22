@@ -18,48 +18,47 @@
 
 #pragma once
 
+#include <nvbench/types.cuh>
+
 #include <nvbench/detail/transform_reduce.cuh>
 
 #include <cmath>
 #include <functional>
+#include <iterator>
 #include <limits>
-#include <numeric>
-#include <vector>
+#include <type_traits>
 
-namespace nvbench::detail
+namespace nvbench::detail::statistics
 {
 
 /**
- * Given a vector of samples and the precomputed sum of all samples in the
- * vector, return a measure of the noise in the samples.
+ * Computes and returns the unbiased sample standard deviation.
  *
- * The noise metric is the relative unbiased sample standard deviation
- * (std_dev / mean).
+ * If the input has fewer than 5 sample, infinity is returned.
  */
-inline nvbench::float64_t
-compute_noise(const std::vector<nvbench::float64_t> &data,
-              nvbench::float64_t sum)
+template <typename Iter,
+          typename ValueType = typename std::iterator_traits<Iter>::value_type>
+ValueType standard_deviation(Iter first, Iter last, ValueType mean)
 {
-  const auto num = static_cast<nvbench::float64_t>(data.size());
+  static_assert(std::is_floating_point_v<ValueType>);
+
+  const auto num = last - first;
   if (num < 5) // don't bother with low sample sizes.
   {
-    return std::numeric_limits<nvbench::float64_t>::infinity();
+    return std::numeric_limits<ValueType>::infinity();
   }
 
-  const auto mean = sum / num;
-  const auto variance =
-    nvbench::detail::transform_reduce(data.cbegin(),
-                                      data.cend(),
-                                      0.,
-                                      std::plus<>{},
-                                      [mean](nvbench::float64_t val) {
-                                        val -= mean;
-                                        val *= val;
-                                        return val;
-                                      }) /
-    (num - 1);
-  const auto abs_stdev = std::sqrt(variance);
-  return abs_stdev / mean;
+  const auto variance = nvbench::detail::transform_reduce(first,
+                                                          last,
+                                                          ValueType{},
+                                                          std::plus<>{},
+                                                          [mean](auto val) {
+                                                            val -= mean;
+                                                            val *= val;
+                                                            return val;
+                                                          }) /
+                        static_cast<ValueType>((num - 1));
+  return std::sqrt(variance);
 }
 
-} // namespace nvbench::detail
+} // namespace nvbench::detail::statistics
