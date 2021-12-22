@@ -260,6 +260,15 @@ void measure_cold_base::generate_summaries()
                       "device's peak bandwidth");
       summ.set_float64("value", avg_used_gmem_bw / peak_gmem_bw);
     }
+  } // bandwidth
+
+  {
+    auto &summ = m_state.add_summary("nv/cold/walltime");
+    summ.set_string("name", "Walltime");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Walltime used for isolated measurements");
+    summ.set_float64("value", m_walltime_timer.get_duration());
+    summ.set_string("hide", "Hidden by default.");
   }
 
   // Log if a printer exists:
@@ -306,10 +315,11 @@ void measure_cold_base::generate_summaries()
     // Log to stdout:
     printer.log(nvbench::log_level::pass,
                 fmt::format("Cold: {:0.6f}ms GPU, {:0.6f}ms CPU, {:0.2f}s "
-                            "total GPU, {}x",
+                            "total GPU, {:0.2f}s total wall, {}x ",
                             avg_cuda_time * 1e3,
                             avg_cpu_time * 1e3,
                             m_total_cuda_time,
+                            m_walltime_timer.get_duration(),
                             m_total_samples));
   }
 }

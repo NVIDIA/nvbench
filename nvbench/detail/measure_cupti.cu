@@ -241,6 +241,34 @@ void measure_cupti_base::generate_summaries()
 try
 {
   gen_summaries(m_state, m_cupti.get_counter_values());
+
+  {
+    auto &summ = m_state.add_summary("nv/cupti/sample_size");
+    summ.set_string("name", "Samples");
+    summ.set_string("hint", "sample_size");
+    summ.set_string("description", "Number of CUPTI kernel executions");
+    summ.set_int64("value", m_total_samples);
+  }
+
+  {
+    auto &summ = m_state.add_summary("nv/cupti/walltime");
+    summ.set_string("name", "Walltime");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Walltime used for CUPTI measurements");
+    summ.set_float64("value", m_walltime_timer.get_duration());
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  // Log if a printer exists:
+  if (auto printer_opt_ref = m_state.get_benchmark().get_printer();
+      printer_opt_ref.has_value())
+  {
+    auto &printer = printer_opt_ref.value().get();
+    printer.log(nvbench::log_level::pass,
+                fmt::format("CUPTI: {:0.2f}s total wall, {}x",
+                            m_walltime_timer.get_duration(),
+                            m_total_samples));
+  }
 }
 catch (const std::exception &ex)
 {

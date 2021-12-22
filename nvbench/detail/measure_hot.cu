@@ -106,6 +106,12 @@ void measure_hot_base::generate_summaries()
   }
 
   {
+    auto &summ = m_state.add_summary("nv/batch/walltime");
+    summ.set_string("name", "Walltime");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Walltime used for batch measurements");
+    summ.set_float64("value", m_walltime_timer.get_duration());
+    summ.set_string("hide", "Hidden by default.");
   }
 
   // Log if a printer exists:
@@ -117,7 +123,7 @@ void measure_hot_base::generate_summaries()
     // Warn if timed out:
     if (m_max_time_exceeded)
     {
-      const auto timeout = m_timeout_timer.get_duration();
+      const auto timeout = m_walltime_timer.get_duration();
 
       if (m_total_samples < m_min_samples)
       {
@@ -142,9 +148,11 @@ void measure_hot_base::generate_summaries()
 
     // Log to stdout:
     printer.log(nvbench::log_level::pass,
-                fmt::format("Batch: {:0.6f}ms GPU, {:0.2f}s total GPU, {}x",
+                fmt::format("Batch: {:0.6f}ms GPU, {:0.2f}s total GPU, "
+                            "{:0.2f}s total wall, {}x",
                             avg_cuda_time * 1e3,
                             m_total_cuda_time,
+                            m_walltime_timer.get_duration(),
                             m_total_samples));
   }
 }

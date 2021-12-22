@@ -75,8 +75,11 @@ protected:
 
   nvbench::launch m_launch;
   nvbench::detail::l2flush m_l2flush;
+  nvbench::cpu_timer m_walltime_timer;
 
   cupti_profiler m_cupti;
+
+  nvbench::int64_t m_total_samples{};
 };
 
 struct measure_cupti_base::kernel_launch_timer
@@ -129,6 +132,9 @@ private:
   // Run the kernel as many times as CUPTI requires.
   void run()
   {
+    m_walltime_timer.start();
+    m_total_samples = 0;
+
     kernel_launch_timer timer(*this);
 
     m_cupti.prepare_user_loop();
@@ -136,9 +142,12 @@ private:
     do
     {
       m_kernel_launcher(m_launch, timer);
+      ++m_total_samples;
     } while (m_cupti.is_replay_required());
 
     m_cupti.process_user_loop();
+
+    m_walltime_timer.stop();
   }
 
   KernelLauncher &m_kernel_launcher;

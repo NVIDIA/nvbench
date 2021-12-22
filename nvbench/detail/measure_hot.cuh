@@ -68,7 +68,7 @@ protected:
 
   nvbench::launch m_launch;
   nvbench::cuda_timer m_cuda_timer;
-  nvbench::cpu_timer m_timeout_timer;
+  nvbench::cpu_timer m_walltime_timer;
   nvbench::blocking_kernel m_blocker;
 
   nvbench::int64_t m_min_samples{};
@@ -125,7 +125,7 @@ private:
 
   void run_trials()
   {
-    m_timeout_timer.start();
+    m_walltime_timer.start();
 
     // Use warmup results to estimate the number of iterations to run.
     // The .95 factor here pads the batch_size a bit to avoid needing a second
@@ -183,21 +183,22 @@ private:
         (m_min_time - m_total_cuda_time) /
         (m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples)));
 
-      m_timeout_timer.stop();
-      const auto total_time = m_timeout_timer.get_duration();
-
       if (m_total_cuda_time > m_min_time && // min time okay
           m_total_samples > m_min_samples)  // min samples okay
       {
         break; // Stop iterating
       }
 
-      if (total_time > m_timeout)
+
+      m_walltime_timer.stop();
+      if (m_walltime_timer.get_duration() > m_timeout)
       {
         m_max_time_exceeded = true;
         break;
       }
     } while (true);
+
+    m_walltime_timer.stop();
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
