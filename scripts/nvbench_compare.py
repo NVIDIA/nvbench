@@ -92,7 +92,7 @@ def format_percentage(percentage):
     # When there aren't enough samples for a meaningful noise measurement,
     # the noise is recorded as infinity. Unfortunately, JSON spec doesn't
     # allow for inf, so these get turned into null.
-    if not percentage:
+    if percentage is None:
         return "inf"
     return "%0.2f%%" % (percentage * 100.0)
 
