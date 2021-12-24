@@ -1,2 +1,3 @@
-tabulate
 colorama
+numpy
+tabulate

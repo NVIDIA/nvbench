@@ -81,7 +81,7 @@ private:
 
   void add_markdown_printer(const std::string &spec);
   void add_csv_printer(const std::string &spec);
-  void add_json_printer(const std::string &spec);
+  void add_json_printer(const std::string &spec, bool enable_binary);
 
   std::ostream &printer_spec_to_ostream(const std::string &spec);
 

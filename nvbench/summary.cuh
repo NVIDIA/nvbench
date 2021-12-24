@@ -65,6 +65,12 @@ namespace nvbench
  * - "byte_rate": "value" is a float64_t byte rate in bytes / second.
  * - "sample_size": "value" is an int64_t samples count.
  * - "percentage": "value" is a float64_t percentage (100% stored as 1.0).
+ * - "file/sample_times":
+ *   - "filename" is the path to a binary file that encodes all sample
+ *     times (in seconds) as float32_t values.
+ *   - "size" is an int64_t containing the number of float32_t values stored in
+ *     the binary file.
+ *
  *
  * Example: Adding a new summary to an nvbench::state object:
  *

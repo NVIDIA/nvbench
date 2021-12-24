@@ -321,6 +321,11 @@ void measure_cold_base::generate_summaries()
                             m_total_cuda_time,
                             m_walltime_timer.get_duration(),
                             m_total_samples));
+
+    printer.process_bulk_data(m_state,
+                              "nv/cold/sample_times",
+                              "sample_times",
+                              m_cuda_times);
   }
 }
 
