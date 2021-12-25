@@ -62,16 +62,21 @@ def init_measures():
 
 
 def get_measures(state):
+    summaries = state["summaries"]
     times = {}
     for name in measure_names:
-        try:
-            time = state["summaries"]["nv/%s/walltime" % name]["value"]["value"]
-            time = float(time)
-        except KeyError:
-            time = None
-        except TypeError:
-            time = None
-        times[name] = time if time else 0.
+        measure_walltime_tag = "nv/{}/walltime".format(name)
+        summary = next(filter(lambda s: s["tag"] == measure_walltime_tag,
+                              summaries),
+                       None)
+        if not summary:
+            continue
+
+        walltime_data = next(filter(lambda d: d["name"] == "value", summary["data"]))
+        assert(walltime_data["type"] == "float64")
+        walltime = walltime_data["value"]
+        walltime = float(walltime)
+        times[name] = walltime if walltime else 0.
     return times
 
 
@@ -130,8 +135,9 @@ def consume_benchmark(bench, file_root):
     axes_out = {}
     axes = bench["axes"]
     if axes:
-        for axis_name, axis in axes.items():
+        for axis in axes:
             values_out = {}
+            axis_name = axis["name"]
             axis_type = axis["type"]
             for value in axis["values"]:
                 if axis_type == "type":
@@ -144,7 +150,8 @@ def consume_benchmark(bench, file_root):
     states_out = {}
     bench_measures = init_measures()
 
-    for state_name, state in bench["states"].items():
+    for state in bench["states"]:
+        state_name = state["name"]
         # Get walltimes for each measurement:
         state_measures = get_measures(state)
         state_out = {}
@@ -157,8 +164,9 @@ def consume_benchmark(bench, file_root):
         # Update the axis measurements:
         axis_values = state["axis_values"]
         if axis_values:
-            for axis_name, value_data in axis_values.items():
-                value = format_axis_value(value_data["value"], value_data["type"])
+            for axis_value in axis_values:
+                axis_name = axis_value["name"]
+                value = format_axis_value(axis_value["value"], axis_value["type"])
                 merge_measures(axes_out[axis_name][value]["measures"], state_measures)
 
     bench_out["axes"] = axes_out

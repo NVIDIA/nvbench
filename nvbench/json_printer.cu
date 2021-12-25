@@ -67,7 +67,8 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
   const auto value_names = values.get_names();
   for (const auto &value_name : value_names)
   {
-    auto &value = node[value_name];
+    auto &value   = node.emplace_back();
+    value["name"] = value_name;
 
     const auto type = values.get_type(value_name);
     switch (type)
@@ -89,6 +90,9 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
         value["type"]  = "string";
         value["value"] = values.get_string(value_name);
         break;
+
+      default:
+        NVBENCH_THROW(std::runtime_error, "Unrecognized value type.");
     } // end switch (value type)
   }   // end foreach value name
 }
@@ -209,7 +213,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
     auto &devices = root["devices"];
     for (const auto &dev_info : nvbench::device_manager::get().get_devices())
     {
-      auto &device                    = devices[devices.size()];
+      auto &device                    = devices.emplace_back();
       device["id"]                    = dev_info.get_id();
       device["name"]                  = dev_info.get_name();
       device["sm_version"]            = dev_info.get_sm_version();
@@ -241,10 +245,10 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
     for (const auto &bench_ptr : benches)
     {
       const auto bench_index = benchmarks.size();
-      auto &bench            = benchmarks[bench_index];
+      auto &bench            = benchmarks.emplace_back();
 
-      bench["index"] = bench_index;
       bench["name"]  = bench_ptr->get_name();
+      bench["index"] = bench_index;
 
       bench["min_samples"] = bench_ptr->get_min_samples();
       bench["min_time"]    = bench_ptr->get_min_time();
@@ -261,8 +265,9 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       auto &axes = bench["axes"];
       for (const auto &axis_ptr : bench_ptr->get_axes().get_axes())
       {
-        auto &axis = axes[axis_ptr->get_name()];
+        auto &axis = axes.emplace_back();
 
+        axis["name"]  = axis_ptr->get_name();
         axis["type"]  = axis_ptr->get_type_as_string();
         axis["flags"] = axis_ptr->get_flags_as_string();
 
@@ -270,8 +275,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         const auto axis_size = axis_ptr->get_size();
         for (std::size_t i = 0; i < axis_size; ++i)
         {
-          const auto value_idx  = values.size();
-          auto &value           = values[value_idx];
+          auto &value           = values.emplace_back();
           value["input_string"] = axis_ptr->get_input_string(i);
           value["description"]  = axis_ptr->get_description(i);
 
@@ -305,13 +309,9 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       auto &states = bench["states"];
       for (const auto &exec_state : bench_ptr->get_states())
       {
-        auto &st = states[exec_state.get_axis_values_as_string()];
+        auto &st = states.emplace_back();
 
-        // TODO: Determine if these need to be part of the state key as well
-        // for uniqueness. The device already is, but the type config index is
-        // not.
-        st["device"]            = exec_state.get_device()->get_id();
-        st["type_config_index"] = exec_state.get_type_config_index();
+        st["name"] = exec_state.get_axis_values_as_string();
 
         st["min_samples"] = exec_state.get_min_samples();
         st["min_time"]    = exec_state.get_min_time();
@@ -319,13 +319,50 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         st["skip_time"]   = exec_state.get_skip_time();
         st["timeout"]     = exec_state.get_timeout();
 
+        st["device"]            = exec_state.get_device()->get_id();
+        st["type_config_index"] = exec_state.get_type_config_index();
+
+        // TODO I'd like to replace this with:
+        //  [ {"name" : <axis name>, "index": <value_index>}, ...]
+        // but it would take some refactoring in the data structures to get
+        // that information through.
         ::write_named_values(st["axis_values"], exec_state.get_axis_values());
 
         auto &summaries = st["summaries"];
         for (const auto &exec_summ : exec_state.get_summaries())
         {
-          auto &summ = summaries[exec_summ.get_tag()];
-          ::write_named_values(summ, exec_summ);
+          auto &summ  = summaries.emplace_back();
+          summ["tag"] = exec_summ.get_tag();
+
+          // Write out the expected values as simple key/value pairs
+          nvbench::named_values summary_values = exec_summ;
+          if (summary_values.has_value("name"))
+          {
+            summ["name"] = summary_values.get_string("name");
+            summary_values.remove_value("name");
+          }
+          if (summary_values.has_value("description"))
+          {
+            summ["description"] = summary_values.get_string("description");
+            summary_values.remove_value("description");
+          }
+          if (summary_values.has_value("hint"))
+          {
+            summ["hint"] = summary_values.get_string("hint");
+            summary_values.remove_value("hint");
+          }
+          if (summary_values.has_value("hide"))
+          {
+            summ["hide"] = summary_values.get_string("hide");
+            summary_values.remove_value("hide");
+          }
+
+          // Write any additional values generically in
+          // ["data"] = [{name,type,value}, ...]:
+          if (summary_values.get_size() != 0)
+          {
+            ::write_named_values(summ["data"], summary_values);
+          }
         }
 
         st["is_skipped"] = exec_state.is_skipped();
