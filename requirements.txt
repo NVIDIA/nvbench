@@ -1,3 +1,6 @@
 colorama
+matplotlib
 numpy
+pandas
+seaborn
 tabulate

@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
 import numpy as np
+import pandas as pd
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 import argparse
 import json
 import os
 import sys
 
 
-def main():
+def parse_files():
     help_text = "%(prog)s [nvbench.out.json | dir/] ..."
     parser = argparse.ArgumentParser(prog='nvbench_histogram', usage=help_text)
 
@@ -28,32 +31,78 @@ def main():
 
     filenames.sort()
 
-    for filename in filenames:
-        with open(filename, "r") as f:
-            json_root = json.load(f)
+    if not filenames:
+        parser.print_help()
+        exit(0)
 
-        for bench in json_root["benchmarks"]:
-            print("Benchmark: {}".format(bench["name"]))
-            for state_name, state in bench["states"].items():
-                print("State: {}".format(state_name))
-                try:
-                    samples = state["summaries"]["nv/json/bin/nv/cold/sample_times"]
-                except KeyError:
-                    continue
-                except TypeError:
-                    continue
-                sample_filename = samples["filename"]["value"]
-                sample_count = int(samples["size"]["value"])
+    return filenames
 
-                # If not absolute, the path is relative to the associated .json file:
-                if not os.path.isabs(sample_filename):
-                    sample_filename = os.path.join(os.path.dirname(filename), sample_filename)
 
-                with open(sample_filename, "rb") as f:
-                    samples = np.fromfile(f, "<f4")
-                assert (sample_count == len(samples))
-                print("mean time: {:>8.6f} s, num_samples: {}".format(np.mean(samples),
-                                                                       len(samples)))
+def parse_samples_meta(filename, state):
+    summaries = state["summaries"]
+    if not summaries:
+        return None, None
+
+    summary = next(filter(lambda s: s["tag"] == "nv/json/bin:nv/cold/sample_times",
+                          summaries),
+                   None)
+    if not summary:
+        return None, None
+
+    sample_filename = summary["filename"]["value"]
+
+    # If not absolute, the path is relative to the associated .json file:
+    if not os.path.isabs(sample_filename):
+        sample_filename = os.path.join(os.path.dirname(filename), sample_filename)
+
+    sample_count = int(summary["size"]["value"])
+    return sample_count, sample_filename
+
+
+def parse_samples(filename, state):
+    sample_count, samples_filename = parse_samples_meta(filename, state)
+    if not sample_count or not samples_filename:
+        return []
+
+    with open(samples_filename, "rb") as f:
+        samples = np.fromfile(f, "<f4")
+
+    assert (sample_count == len(samples))
+    return samples
+
+
+def to_df(data):
+    return pd.DataFrame.from_dict(dict([(k, pd.Series(v)) for k, v in data.items()]))
+
+
+def parse_json(filename):
+    with open(filename, "r") as f:
+        json_root = json.load(f)
+
+    samples_data = {}
+
+    for bench in json_root["benchmarks"]:
+        print("Benchmark: {}".format(bench["name"]))
+        for state in bench["states"]:
+            print("State: {}".format(state["name"]))
+
+            samples = parse_samples(filename, state)
+            if len(samples) == 0:
+                continue
+
+            samples_data["{} {}".format(bench["name"], state["name"])] = samples
+
+    return to_df(samples_data)
+
+
+def main():
+    filenames = parse_files()
+
+    dfs = [parse_json(filename) for filename in filenames]
+    df = pd.concat(dfs, ignore_index=True)
+
+    sns.displot(df, rug=True, kind="kde", fill=True)
+    plt.show()
 
 
 if __name__ == '__main__':
