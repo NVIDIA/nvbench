@@ -62,7 +62,7 @@ benchmark_base &benchmark_base::add_device(int device_id)
 
 std::size_t benchmark_base::get_config_count() const
 {
-  return nvbench::detail::transform_reduce(
+  const std::size_t per_device_count = nvbench::detail::transform_reduce(
     m_axes.get_axes().cbegin(),
     m_axes.get_axes().cend(),
     std::size_t{1},
@@ -76,6 +76,8 @@ std::size_t benchmark_base::get_config_count() const
       }
       return axis_ptr->get_size();
     });
+
+  return per_device_count * m_devices.size();
 }
 
 } // namespace nvbench
