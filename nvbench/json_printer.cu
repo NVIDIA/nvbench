@@ -23,8 +23,10 @@
 #include <nvbench/config.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/device_manager.cuh>
+#include <nvbench/git_revision.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
+#include <nvbench/version.cuh>
 
 #include <nvbench/detail/throw.cuh>
 
@@ -101,6 +103,23 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
 
 namespace nvbench
 {
+
+json_printer::version_t json_printer::get_json_file_version()
+{
+  // This version number should stay in sync with `file_version` in
+  // scripts/nvbench_json/version.py.
+  //
+  // Use semantic versioning:
+  // Major version: backwards incompatible changes
+  // Minor version: backwards compatible additions
+  // Patch version: backwards compatible bugfixes/patches
+  return {1, 0, 0};
+}
+
+std::string json_printer::version_t::get_string() const
+{
+  return fmt::format("{}.{}.{}", this->major, this->minor, this->patch);
+}
 
 void json_printer::do_process_bulk_data_float64(
   state &state,
@@ -208,6 +227,43 @@ void json_printer::do_process_bulk_data_float64(
 void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
 {
   nlohmann::ordered_json root;
+
+  {
+    auto &metadata = root["meta"];
+    auto &version  = metadata["version"];
+
+    {
+      const auto version_info = json_printer::get_json_file_version();
+      auto &json_version      = version["json"];
+
+      json_version["major"]  = version_info.major;
+      json_version["minor"]  = version_info.minor;
+      json_version["patch"]  = version_info.patch;
+      json_version["string"] = version_info.get_string();
+    }
+
+    {
+      auto &nvb_version = version["nvbench"];
+
+      nvb_version["major"]  = NVBENCH_VERSION_MAJOR;
+      nvb_version["minor"]  = NVBENCH_VERSION_MINOR;
+      nvb_version["patch"]  = NVBENCH_VERSION_PATCH;
+      nvb_version["string"] = fmt::format("{}.{}.{}",
+                                          NVBENCH_VERSION_MAJOR,
+                                          NVBENCH_VERSION_MINOR,
+                                          NVBENCH_VERSION_PATCH);
+
+      nvb_version["git_branch"]  = NVBENCH_GIT_BRANCH;
+      nvb_version["git_sha"]     = NVBENCH_GIT_SHA1;
+      nvb_version["git_version"] = NVBENCH_GIT_VERSION;
+      nvb_version["git_is_dirty"] =
+#ifdef NVBENCH_GIT_IS_DIRTY
+        true;
+#else
+        false;
+#endif
+    }
+  }
 
   {
     auto &devices = root["devices"];

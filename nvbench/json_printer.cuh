@@ -22,11 +22,16 @@
 
 #include <nvbench/types.cuh>
 
+#include <string>
+
 namespace nvbench
 {
 
 /*!
  * JSON output format.
+ *
+ * All modifications to the output file should increment the semantic version
+ * of the json files appropriately (see json_printer::get_json_file_version()).
  */
 struct json_printer : nvbench::printer_base
 {
@@ -38,6 +43,20 @@ struct json_printer : nvbench::printer_base
       : printer_base(stream, std::move(stream_name))
       , m_enable_binary_output{enable_binary_output}
   {}
+
+  /**
+   * The json schema version. Follows semantic versioning.
+   */
+  struct version_t
+  {
+    nvbench::uint16_t major;
+    nvbench::uint16_t minor;
+    nvbench::uint16_t patch;
+
+    [[nodiscard]] std::string get_string() const;
+  };
+
+  [[nodiscard]] static version_t get_json_file_version();
 
   [[nodiscard]] bool get_enable_binary_output() const
   {
