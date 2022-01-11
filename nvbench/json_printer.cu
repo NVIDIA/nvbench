@@ -230,40 +230,51 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
 
   {
     auto &metadata = root["meta"];
-    auto &version  = metadata["version"];
 
     {
-      const auto version_info = json_printer::get_json_file_version();
-      auto &json_version      = version["json"];
-
-      json_version["major"]  = version_info.major;
-      json_version["minor"]  = version_info.minor;
-      json_version["patch"]  = version_info.patch;
-      json_version["string"] = version_info.get_string();
-    }
+      auto &argv = metadata["argv"];
+      for (const auto &arg : m_argv)
+      {
+        argv.push_back(arg);
+      }
+    } // "argv"
 
     {
-      auto &nvb_version = version["nvbench"];
+      auto &version = metadata["version"];
 
-      nvb_version["major"]  = NVBENCH_VERSION_MAJOR;
-      nvb_version["minor"]  = NVBENCH_VERSION_MINOR;
-      nvb_version["patch"]  = NVBENCH_VERSION_PATCH;
-      nvb_version["string"] = fmt::format("{}.{}.{}",
-                                          NVBENCH_VERSION_MAJOR,
-                                          NVBENCH_VERSION_MINOR,
-                                          NVBENCH_VERSION_PATCH);
+      {
+        const auto version_info = json_printer::get_json_file_version();
+        auto &json_version      = version["json"];
 
-      nvb_version["git_branch"]  = NVBENCH_GIT_BRANCH;
-      nvb_version["git_sha"]     = NVBENCH_GIT_SHA1;
-      nvb_version["git_version"] = NVBENCH_GIT_VERSION;
-      nvb_version["git_is_dirty"] =
+        json_version["major"]  = version_info.major;
+        json_version["minor"]  = version_info.minor;
+        json_version["patch"]  = version_info.patch;
+        json_version["string"] = version_info.get_string();
+      } // "json"
+
+      {
+        auto &nvb_version = version["nvbench"];
+
+        nvb_version["major"]  = NVBENCH_VERSION_MAJOR;
+        nvb_version["minor"]  = NVBENCH_VERSION_MINOR;
+        nvb_version["patch"]  = NVBENCH_VERSION_PATCH;
+        nvb_version["string"] = fmt::format("{}.{}.{}",
+                                            NVBENCH_VERSION_MAJOR,
+                                            NVBENCH_VERSION_MINOR,
+                                            NVBENCH_VERSION_PATCH);
+
+        nvb_version["git_branch"]  = NVBENCH_GIT_BRANCH;
+        nvb_version["git_sha"]     = NVBENCH_GIT_SHA1;
+        nvb_version["git_version"] = NVBENCH_GIT_VERSION;
+        nvb_version["git_is_dirty"] =
 #ifdef NVBENCH_GIT_IS_DIRTY
-        true;
+          true;
 #else
-        false;
+          false;
 #endif
-    }
-  }
+      } // "nvbench"
+    }   // "version"
+  }     // "meta"
 
   {
     auto &devices = root["devices"];
@@ -294,7 +305,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         dev_info.get_shared_memory_per_block();
       device["ecc_state"] = dev_info.get_ecc_state();
     }
-  }
+  } // "devices"
 
   {
     auto &benchmarks = root["benchmarks"];
@@ -429,7 +440,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         }
       } // end foreach exec_state
     }   // end foreach benchmark
-  }
+  }     // "benchmarks"
 
   m_ostream << root.dump(2) << "\n";
 }

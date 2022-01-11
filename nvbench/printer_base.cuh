@@ -82,6 +82,15 @@ struct printer_base
   printer_base &operator=(printer_base &&) = default;
 
   /*!
+   * Called once with the command line arguments used to invoke the current
+   * executable.
+   */
+  void log_argv(const std::vector<std::string> &argv)
+  {
+    this->do_log_argv(argv);
+  }
+
+  /*!
    * Print a summary of all detected devices, if supported.
    *
    * Called before running benchmarks for active terminal output.
@@ -184,6 +193,7 @@ struct printer_base
 
 protected:
   // Implementation hooks for subclasses:
+  virtual void do_log_argv(const std::vector<std::string>&) {}
   virtual void do_print_device_info() {}
   virtual void do_print_log_preamble() {}
   virtual void do_print_log_epilogue() {}

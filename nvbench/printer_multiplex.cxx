@@ -121,5 +121,13 @@ void printer_multiplex::do_set_total_state_count(std::size_t states)
     format_ptr->set_total_state_count(states);
   }
 }
+void printer_multiplex::do_log_argv(const std::vector<std::string> &argv)
+{
+  printer_base::do_log_argv(argv);
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->log_argv(argv);
+  }
+}
 
 } // namespace nvbench

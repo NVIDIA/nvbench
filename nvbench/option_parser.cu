@@ -375,6 +375,8 @@ void option_parser::parse_impl()
   }
 
   this->update_used_device_state();
+
+  m_printer.log_argv(m_args);
 }
 
 void option_parser::parse_range(option_parser::arg_iterator_t first,

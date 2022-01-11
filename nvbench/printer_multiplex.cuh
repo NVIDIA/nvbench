@@ -46,6 +46,7 @@ struct printer_multiplex : nvbench::printer_base
   }
 
 protected:
+  void do_log_argv(const std::vector<std::string> &argv) override;
   void do_print_device_info() override;
   void do_print_log_preamble() override;
   void do_print_log_epilogue() override;

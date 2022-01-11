@@ -121,7 +121,7 @@ private:
 
   void update_used_device_state() const;
 
-  // less gross argv:
+  // Command line args
   std::vector<std::string> m_args;
 
   // Store benchmark modifiers passed in before any benchmarks are requested as
