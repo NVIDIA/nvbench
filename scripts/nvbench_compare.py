@@ -112,6 +112,8 @@ def compare_benches(ref_benches, cmp_benches, threshold):
         ref_states = ref_bench["states"]
         cmp_states = cmp_bench["states"]
 
+        axes = axes if axes else []
+
         headers = [x["name"] for x in axes]
         colalign = ["center"] * len(headers)
 
@@ -281,10 +283,8 @@ def main():
 
     for ref, comp in to_compare:
 
-        with open(ref, "r") as ref_file:
-            ref_root = reader.read_file(ref_file)
-        with open(comp, "r") as cmp_file:
-            cmp_root = reader.read_file(cmp_file)
+        ref_root = reader.read_file(ref)
+        cmp_root = reader.read_file(comp)
 
         global all_devices
         all_devices = cmp_root["devices"]
