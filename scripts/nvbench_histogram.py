@@ -6,10 +6,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import argparse
-import json
 import os
 import sys
 
+from nvbench_json import reader
 
 def parse_files():
     help_text = "%(prog)s [nvbench.out.json | dir/] ..."
@@ -76,8 +76,7 @@ def to_df(data):
 
 
 def parse_json(filename):
-    with open(filename, "r") as f:
-        json_root = json.load(f)
+    json_root = reader.read_file(filename)
 
     samples_data = {}
 

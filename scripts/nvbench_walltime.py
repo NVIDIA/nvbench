@@ -2,9 +2,10 @@
 
 import argparse
 import math
-import json
 import os
 import sys
+
+from nvbench_json import reader
 
 import tabulate
 
@@ -111,8 +112,7 @@ def append_measure_values(row, measures, active=measure_names):
 
 
 def consume_file(filename):
-    with open(filename, "r") as f:
-        file_root = json.load(f)
+    file_root = reader.read_file(filename)
 
     file_out = {}
     file_measures = init_measures()
@@ -348,9 +348,6 @@ def main():
 
     data["files"] = files_out
     data["measures"] = measures
-
-    # Debug data structure:
-    # print(json.dumps(data, indent=2))
 
     print_overview_section(data)
     print_files_section(data)

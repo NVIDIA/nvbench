@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import json
 import math
 import os
 import sys
@@ -10,6 +9,7 @@ from colorama import Fore
 
 import tabulate
 
+from nvbench_json import reader
 
 # Parse version string into tuple, "x.y.z" -> (x, y, z)
 def version_tuple(v):
@@ -282,9 +282,9 @@ def main():
     for ref, comp in to_compare:
 
         with open(ref, "r") as ref_file:
-            ref_root = json.load(ref_file)
+            ref_root = reader.read_file(ref_file)
         with open(comp, "r") as cmp_file:
-            cmp_root = json.load(cmp_file)
+            cmp_root = reader.read_file(cmp_file)
 
         global all_devices
         all_devices = cmp_root["devices"]
