@@ -35,7 +35,6 @@
 #include <nlohmann/json.hpp>
 
 #include <cstdint>
-#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <ostream>
@@ -43,6 +42,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#ifdef __GNUC__
+#include <experimental/filesystem>
+#else
+#include <filesystem>
+#endif
 
 #if NVBENCH_CPP_DIALECT >= 2020
 #include <bit>
@@ -94,7 +99,7 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
         break;
 
       default:
-        NVBENCH_THROW(std::runtime_error, "Unrecognized value type.");
+        NVBENCH_THROW(std::runtime_error, "{}", "Unrecognized value type.");
     } // end switch (value type)
   }   // end foreach value name
 }
@@ -136,7 +141,11 @@ void json_printer::do_process_bulk_data_float64(
 
   if (hint == "sample_times")
   {
+#ifdef __GNUC__
+    namespace fs = std::experimental::filesystem;
+#else
     namespace fs = std::filesystem;
+#endif
 
     nvbench::cpu_timer timer;
     timer.start();
