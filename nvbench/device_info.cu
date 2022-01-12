@@ -25,6 +25,8 @@
 
 #include <cuda_runtime_api.h>
 
+#define UNUSED(x) (void)(x)
+
 namespace nvbench
 {
 
@@ -57,6 +59,7 @@ device_info::device_info(int id)
 void device_info::set_persistence_mode(bool state)
 #ifndef NVBENCH_HAS_NVML
 {
+  UNUSED(state);
   throw nvbench::nvml::not_enabled{};
 }
 #else  // NVBENCH_HAS_NVML
@@ -88,6 +91,7 @@ catch (nvml::call_failed &e)
 void device_info::lock_gpu_clocks(device_info::clock_rate rate)
 #ifndef NVBENCH_HAS_NVML
 {
+  UNUSED(rate);
   throw nvbench::nvml::not_enabled{};
 }
 #else  // NVBENCH_HAS_NVML
