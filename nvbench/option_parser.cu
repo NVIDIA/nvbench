@@ -375,6 +375,8 @@ void option_parser::parse_impl()
   }
 
   this->update_used_device_state();
+
+  m_printer.log_argv(m_args);
 }
 
 void option_parser::parse_range(option_parser::arg_iterator_t first,
@@ -468,7 +470,13 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     else if (arg == "--json")
     {
       check_params(1);
-      this->add_json_printer(first[1]);
+      this->add_json_printer(first[1], false);
+      first += 2;
+    }
+    else if (arg == "--jsonbin")
+    {
+      check_params(1);
+      this->add_json_printer(first[1], true);
       first += 2;
     }
     else if (arg == "--benchmark" || arg == "-b")
@@ -515,7 +523,7 @@ void option_parser::add_markdown_printer(const std::string &spec)
 try
 {
   std::ostream &stream = this->printer_spec_to_ostream(spec);
-  auto &printer        = m_printer.emplace<nvbench::markdown_printer>(stream);
+  auto &printer = m_printer.emplace<nvbench::markdown_printer>(stream, spec);
   if (spec == "stdout")
   {
     printer.set_color(m_color_md_stdout_printer);
@@ -533,7 +541,7 @@ void option_parser::add_csv_printer(const std::string &spec)
 try
 {
   std::ostream &stream = this->printer_spec_to_ostream(spec);
-  m_printer.emplace<nvbench::csv_printer>(stream);
+  m_printer.emplace<nvbench::csv_printer>(stream, spec);
 }
 catch (std::exception &e)
 {
@@ -543,16 +551,18 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::add_json_printer(const std::string &spec)
+void option_parser::add_json_printer(const std::string &spec,
+                                     bool enable_binary)
 try
 {
   std::ostream &stream = this->printer_spec_to_ostream(spec);
-  m_printer.emplace<nvbench::json_printer>(stream);
+  m_printer.emplace<nvbench::json_printer>(stream, spec, enable_binary);
 }
 catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
-                "Error while adding json output for `{}`:\n{}",
+                "Error while adding {} output for `{}`:\n{}",
+                enable_binary ? "jsonbin" : "json",
                 spec,
                 e.what());
 }

@@ -109,9 +109,9 @@ catch (...)
   return default_value;
 }
 
-summary &state::add_summary(std::string summary_name)
+summary &state::add_summary(std::string summary_tag)
 {
-  return m_summaries.emplace_back(std::move(summary_name));
+  return m_summaries.emplace_back(std::move(summary_tag));
 }
 
 summary &state::add_summary(summary s)
@@ -120,29 +120,54 @@ summary &state::add_summary(summary s)
   return m_summaries.back();
 }
 
-const summary &state::get_summary(std::string_view name) const
+const summary &state::get_summary(std::string_view tag) const
 {
+  // Check tags first
   auto iter =
     std::find_if(m_summaries.cbegin(),
                  m_summaries.cend(),
-                 [&name](const auto &s) { return s.get_name() == name; });
-  if (iter == m_summaries.cend())
+                 [&tag](const auto &s) { return s.get_tag() == tag; });
+  if (iter != m_summaries.cend())
   {
-    NVBENCH_THROW(std::invalid_argument, "No summary named '{}'.", name);
+    return *iter;
   }
-  return *iter;
+
+  // Then names:
+  iter =
+    std::find_if(m_summaries.cbegin(),
+                 m_summaries.cend(),
+                 [&tag](const auto &s) { return s.get_string("name") == tag; });
+  if (iter != m_summaries.cend())
+  {
+    return *iter;
+  }
+
+  NVBENCH_THROW(std::invalid_argument, "No summary tagged '{}'.", tag);
 }
 
-summary &state::get_summary(std::string_view name)
+summary &state::get_summary(std::string_view tag)
 {
-  auto iter = std::find_if(m_summaries.begin(),
-                           m_summaries.end(),
-                           [&name](auto &s) { return s.get_name() == name; });
-  if (iter == m_summaries.end())
+  // Check tags first
+  auto iter =
+    std::find_if(m_summaries.begin(), m_summaries.end(), [&tag](const auto &s) {
+      return s.get_tag() == tag;
+    });
+  if (iter != m_summaries.end())
   {
-    NVBENCH_THROW(std::invalid_argument, "No summary named '{}'.", name);
+    return *iter;
   }
-  return *iter;
+
+  // Then names:
+  iter =
+    std::find_if(m_summaries.begin(), m_summaries.end(), [&tag](const auto &s) {
+      return s.get_string("name") == tag;
+    });
+  if (iter != m_summaries.end())
+  {
+    return *iter;
+  }
+
+  NVBENCH_THROW(std::invalid_argument, "No summary tagged '{}'.", tag);
 }
 
 const std::vector<summary> &state::get_summaries() const { return m_summaries; }
@@ -226,8 +251,9 @@ void state::add_element_count(std::size_t elements, std::string column_name)
   m_element_count += elements;
   if (!column_name.empty())
   {
-    auto &summ = this->add_summary("Element count: " + column_name);
-    summ.set_string("short_name", std::move(column_name));
+    auto &summ = this->add_summary("nv/element_count/" + column_name);
+    summ.set_string("description", "Number of elements: " + column_name);
+    summ.set_string("name", std::move(column_name));
     summ.set_int64("value", static_cast<nvbench::int64_t>(elements));
   }
 }
@@ -237,9 +263,8 @@ void state::add_global_memory_reads(std::size_t bytes, std::string column_name)
   m_global_memory_rw_bytes += bytes;
   if (!column_name.empty())
   {
-    this->add_buffer_size(bytes,
-                          "Input Buffer Size: " + column_name,
-                          std::move(column_name));
+    std::string tag = fmt::format("nv/gmem/reads/{}", column_name);
+    this->add_buffer_size(bytes, std::move(tag), std::move(column_name));
   }
 }
 
@@ -248,29 +273,33 @@ void state::add_global_memory_writes(std::size_t bytes, std::string column_name)
   m_global_memory_rw_bytes += bytes;
   if (!column_name.empty())
   {
-    this->add_buffer_size(bytes,
-                          "Output Buffer Size: " + column_name,
-                          std::move(column_name));
+    const std::string tag = fmt::format("nv/gmem/writes/{}", column_name);
+    this->add_buffer_size(bytes, std::move(tag), std::move(column_name));
   }
 }
 
 void state::add_buffer_size(std::size_t num_bytes,
-                            std::string summary_name,
+                            std::string summary_tag,
                             std::string column_name,
                             std::string description)
 {
-  auto &summ = this->add_summary(std::move(summary_name));
+  auto &summ = this->add_summary(std::move(summary_tag));
   summ.set_string("hint", "bytes");
+  summ.set_int64("value", static_cast<nvbench::int64_t>(num_bytes));
 
   if (!column_name.empty())
   {
-    summ.set_string("short_name", std::move(column_name));
+    summ.set_string("name", std::move(column_name));
+  }
+  else
+  {
+    summ.set_string("name", ("None"));
+    summ.set_string("hide", "No column name provided.");
   }
   if (!description.empty())
   {
     summ.set_string("description", std::move(description));
   }
-  summ.set_int64("value", static_cast<nvbench::int64_t>(num_bytes));
 }
 
 } // namespace nvbench

@@ -23,8 +23,9 @@
 namespace nvbench
 {
 
-printer_base::printer_base(std::ostream &ostream)
+printer_base::printer_base(std::ostream &ostream, std::string stream_name)
     : m_ostream{ostream}
+    , m_stream_name{std::move(stream_name)}
 {}
 
 // Defined here to keep <ostream> out of the header

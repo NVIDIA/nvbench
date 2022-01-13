@@ -63,6 +63,11 @@ else()
   endif()
 endif()
 
+# GCC-specific flags
+if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+  target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
+endif()
+
 # CUDA-specific flags
 target_compile_options(nvbench.build_interface INTERFACE
   $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--display_error_number>

@@ -47,7 +47,7 @@ measure_hot_base::measure_hot_base(state &exec_state)
   try
   {
     nvbench::int64_t cold_samples =
-      m_state.get_summary("Number of Samples (Cold)").get_int64("value");
+      m_state.get_summary("nv/cold/sample_size").get_int64("value");
     m_min_samples = std::max(m_min_samples, cold_samples);
 
     // If the cold measurement ran successfully, disable skip_time. It'd just
@@ -85,25 +85,33 @@ void measure_hot_base::check()
 
 void measure_hot_base::generate_summaries()
 {
-  const auto d_samples     = static_cast<double>(m_total_samples);
+  const auto d_samples = static_cast<double>(m_total_samples);
+  {
+    auto &summ = m_state.add_summary("nv/batch/sample_size");
+    summ.set_string("name", "Samples");
+    summ.set_string("hint", "sample_size");
+    summ.set_string("description", "Number of batch kernel executions");
+    summ.set_int64("value", m_total_samples);
+  }
+
   const auto avg_cuda_time = m_total_cuda_time / d_samples;
   {
-    auto &summ = m_state.add_summary("Average GPU Time (Batch)");
+    auto &summ = m_state.add_summary("nv/batch/time/gpu/mean");
+    summ.set_string("name", "Batch GPU");
     summ.set_string("hint", "duration");
-    summ.set_string("short_name", "Batch GPU");
     summ.set_string("description",
-                    "Average back-to-back kernel execution time as measured "
-                    "by CUDA events.");
+                    "Mean batch kernel execution time "
+                    "(measured by CUDA events)");
     summ.set_float64("value", avg_cuda_time);
   }
 
   {
-    auto &summ = m_state.add_summary("Number of Samples (Batch)");
-    summ.set_string("hint", "sample_size");
-    summ.set_string("short_name", "Batch");
-    summ.set_string("description",
-                    "Number of kernel executions in hot time measurements.");
-    summ.set_int64("value", m_total_samples);
+    auto &summ = m_state.add_summary("nv/batch/walltime");
+    summ.set_string("name", "Walltime");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Walltime used for batch measurements");
+    summ.set_float64("value", m_walltime_timer.get_duration());
+    summ.set_string("hide", "Hidden by default.");
   }
 
   // Log if a printer exists:
@@ -115,7 +123,7 @@ void measure_hot_base::generate_summaries()
     // Warn if timed out:
     if (m_max_time_exceeded)
     {
-      const auto timeout = m_timeout_timer.get_duration();
+      const auto timeout = m_walltime_timer.get_duration();
 
       if (m_total_samples < m_min_samples)
       {
@@ -140,9 +148,11 @@ void measure_hot_base::generate_summaries()
 
     // Log to stdout:
     printer.log(nvbench::log_level::pass,
-                fmt::format("Batch: {:0.6f}ms GPU, {:0.2f}s total GPU, {}x",
+                fmt::format("Batch: {:0.6f}ms GPU, {:0.2f}s total GPU, "
+                            "{:0.2f}s total wall, {}x",
                             avg_cuda_time * 1e3,
                             m_total_cuda_time,
+                            m_walltime_timer.get_duration(),
                             m_total_samples));
   }
 }
@@ -163,8 +173,7 @@ void measure_hot_base::check_skip_time(nvbench::float64_t warmup_time)
 
 void measure_hot_base::block_stream()
 {
-  m_blocker.block(m_launch.get_stream(),
-                  m_state.get_blocking_kernel_timeout());
+  m_blocker.block(m_launch.get_stream(), m_state.get_blocking_kernel_timeout());
 }
 
 } // namespace nvbench::detail

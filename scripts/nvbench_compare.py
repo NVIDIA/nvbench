@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import json
 import math
 import os
 import sys
@@ -10,9 +9,12 @@ from colorama import Fore
 
 import tabulate
 
+from nvbench_json import reader
+
 # Parse version string into tuple, "x.y.z" -> (x, y, z)
 def version_tuple(v):
     return tuple(map(int, (v.split("."))))
+
 
 tabulate_version = version_tuple(tabulate.__version__)
 
@@ -38,8 +40,8 @@ def find_device_by_id(device_id):
 
 
 def format_int64_axis_value(axis_name, axis_value, axes):
-    axis_def = axes[axis_name]
-    axis_flags = axis_def["flags"]
+    axis = next(filter(lambda ax: ax["name"] == axis_name, axes))
+    axis_flags = axis["flags"]
     value = int(axis_value["value"])
     if axis_flags == "pow2":
         value = math.log2(value)
@@ -60,8 +62,8 @@ def format_string_axis_value(axis_name, axis_value, axes):
 
 
 def format_axis_value(axis_name, axis_value, axes):
-    axis_def = axes[axis_name]
-    axis_type = axis_def["type"]
+    axis = next(filter(lambda ax: ax["name"] == axis_name, axes))
+    axis_type = axis["type"]
     if axis_type == "int64":
         return format_int64_axis_value(axis_name, axis_value, axes)
     elif axis_type == "float64":
@@ -92,7 +94,7 @@ def format_percentage(percentage):
     # When there aren't enough samples for a meaningful noise measurement,
     # the noise is recorded as infinity. Unfortunately, JSON spec doesn't
     # allow for inf, so these get turned into null.
-    if not percentage:
+    if percentage is None:
         return "inf"
     return "%0.2f%%" % (percentage * 100.0)
 
@@ -110,7 +112,9 @@ def compare_benches(ref_benches, cmp_benches, threshold):
         ref_states = ref_bench["states"]
         cmp_states = cmp_bench["states"]
 
-        headers = list(axes.keys()) if axes else []
+        axes = axes if axes else []
+
+        headers = [x["name"] for x in axes]
         colalign = ["center"] * len(headers)
 
         headers.append("Ref Time")
@@ -131,9 +135,11 @@ def compare_benches(ref_benches, cmp_benches, threshold):
         for device_id in device_ids:
 
             rows = []
-            for cmp_state_name in cmp_states:
-                cmp_state = cmp_states[cmp_state_name]
-                ref_state = ref_states[cmp_state_name]
+            for cmp_state in cmp_states:
+                cmp_state_name = cmp_state["name"]
+                ref_state = next(filter(lambda st: st["name"] == cmp_state_name,
+                                        ref_states),
+                                 None)
                 if not ref_state:
                     continue
 
@@ -142,8 +148,8 @@ def compare_benches(ref_benches, cmp_benches, threshold):
                     axis_values = []
 
                 row = []
-                for axis_value_name in axis_values:
-                    axis_value = axis_values[axis_value_name]
+                for axis_value in axis_values:
+                    axis_value_name = axis_value["name"]
                     row.append(format_axis_value(axis_value_name,
                                                  axis_value,
                                                  axes))
@@ -154,14 +160,13 @@ def compare_benches(ref_benches, cmp_benches, threshold):
                 if not ref_summaries or not cmp_summaries:
                     continue
 
-                cmp_time_summary = cmp_summaries.get("Average GPU Time (Cold)")
-                ref_time_summary = ref_summaries.get("Average GPU Time (Cold)")
-                cmp_noise_summary = cmp_summaries.get(
-                    "GPU Relative Standard Deviation (Cold)"
-                )
-                ref_noise_summary = ref_summaries.get(
-                    "GPU Relative Standard Deviation (Cold)"
-                )
+                def lookup_summary(summaries, tag):
+                    return next(filter(lambda s: s["tag"] == tag, summaries), None)
+
+                cmp_time_summary = lookup_summary(cmp_summaries, "nv/cold/time/gpu/mean")
+                ref_time_summary = lookup_summary(ref_summaries, "nv/cold/time/gpu/mean")
+                cmp_noise_summary = lookup_summary(cmp_summaries, "nv/cold/time/gpu/stdev/relative")
+                ref_noise_summary = lookup_summary(ref_summaries, "nv/cold/time/gpu/stdev/relative")
 
                 # TODO: Use other timings, too. Maybe multiple rows, with a
                 # "Timing" column + values "CPU/GPU/Batch"?
@@ -171,10 +176,16 @@ def compare_benches(ref_benches, cmp_benches, threshold):
                             ref_noise_summary]):
                     continue
 
-                cmp_time = cmp_time_summary["value"]["value"]
-                ref_time = ref_time_summary["value"]["value"]
-                cmp_noise = cmp_noise_summary["value"]["value"]
-                ref_noise = ref_noise_summary["value"]["value"]
+                def extract_value(summary):
+                    summary_data = summary["data"]
+                    value_data = next(filter(lambda v: v["name"] == "value", summary_data))
+                    assert(value_data["type"] == "float64")
+                    return value_data["value"]
+
+                cmp_time = extract_value(cmp_time_summary)
+                ref_time = extract_value(ref_time_summary)
+                cmp_noise = extract_value(cmp_noise_summary)
+                ref_noise = extract_value(ref_noise_summary)
 
                 # Convert string encoding to expected numerics:
                 cmp_time = float(cmp_time)
@@ -223,7 +234,6 @@ def compare_benches(ref_benches, cmp_benches, threshold):
 
                     rows.append(row)
 
-
             if len(rows) == 0:
                 continue
 
@@ -244,13 +254,12 @@ def compare_benches(ref_benches, cmp_benches, threshold):
 
 
 def main():
-
     help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
     parser = argparse.ArgumentParser(prog='nvbench_compare', usage=help_text)
-    parser.add_argument('--threshold-diff',type=float, dest='threshold', default=0.0,
+    parser.add_argument('--threshold-diff', type=float, dest='threshold', default=0.0,
                         help='only show benchmarks where percentage diff is >= THRESHOLD')
 
-    args,files_or_dirs = parser.parse_known_args()
+    args, files_or_dirs = parser.parse_known_args()
     print(files_or_dirs)
 
     if len(files_or_dirs) != 2:
@@ -270,14 +279,12 @@ def main():
                os.path.getsize(r) > 0 and os.path.getsize(c) > 0:
                 to_compare.append((r, c))
     else:
-        to_compare = [(files_or_dirs[0],files_or_dirs[1])]
+        to_compare = [(files_or_dirs[0], files_or_dirs[1])]
 
-    for ref,comp in to_compare:
+    for ref, comp in to_compare:
 
-        with open(ref, "r") as ref_file:
-            ref_root = json.load(ref_file)
-        with open(comp, "r") as cmp_file:
-            cmp_root = json.load(cmp_file)
+        ref_root = reader.read_file(ref)
+        cmp_root = reader.read_file(comp)
 
         global all_devices
         all_devices = cmp_root["devices"]

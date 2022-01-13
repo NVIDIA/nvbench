@@ -81,7 +81,7 @@ private:
 
   void add_markdown_printer(const std::string &spec);
   void add_csv_printer(const std::string &spec);
-  void add_json_printer(const std::string &spec);
+  void add_json_printer(const std::string &spec, bool enable_binary);
 
   std::ostream &printer_spec_to_ostream(const std::string &spec);
 
@@ -121,7 +121,7 @@ private:
 
   void update_used_device_state() const;
 
-  // less gross argv:
+  // Command line args
   std::vector<std::string> m_args;
 
   // Store benchmark modifiers passed in before any benchmarks are requested as

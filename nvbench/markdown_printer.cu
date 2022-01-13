@@ -307,43 +307,43 @@ void markdown_printer::do_print_benchmark_results(
             {
               continue;
             }
-            const std::string &key    = summ.get_name();
-            const std::string &header = summ.has_value("short_name")
-                                          ? summ.get_string("short_name")
-                                          : key;
+            const std::string &tag    = summ.get_tag();
+            const std::string &header = summ.has_value("name")
+                                          ? summ.get_string("name")
+                                          : tag;
 
             std::string hint = summ.has_value("hint") ? summ.get_string("hint")
                                                       : std::string{};
             if (hint == "duration")
             {
-              table.add_cell(row, key, header, this->do_format_duration(summ));
+              table.add_cell(row, tag, header, this->do_format_duration(summ));
             }
             else if (hint == "item_rate")
             {
-              table.add_cell(row, key, header, this->do_format_item_rate(summ));
+              table.add_cell(row, tag, header, this->do_format_item_rate(summ));
             }
             else if (hint == "bytes")
             {
-              table.add_cell(row, key, header, this->do_format_bytes(summ));
+              table.add_cell(row, tag, header, this->do_format_bytes(summ));
             }
             else if (hint == "byte_rate")
             {
-              table.add_cell(row, key, header, this->do_format_byte_rate(summ));
+              table.add_cell(row, tag, header, this->do_format_byte_rate(summ));
             }
             else if (hint == "sample_size")
             {
               table.add_cell(row,
-                             key,
+                             tag,
                              header,
                              this->do_format_sample_size(summ));
             }
             else if (hint == "percentage")
             {
-              table.add_cell(row, key, header, this->do_format_percentage(summ));
+              table.add_cell(row, tag, header, this->do_format_percentage(summ));
             }
             else
             {
-              table.add_cell(row, key, header, this->do_format_default(summ));
+              table.add_cell(row, tag, header, this->do_format_default(summ));
             }
           }
           row++;

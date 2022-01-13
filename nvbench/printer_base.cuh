@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <nvbench/types.cuh>
+
 #include <iosfwd>
 #include <memory>
 #include <string>
@@ -55,7 +57,22 @@ struct printer_base
   /*!
    * Construct a new printer_base that will write to ostream.
    */
-  explicit printer_base(std::ostream &ostream);
+  explicit printer_base(std::ostream &ostream)
+      : printer_base(ostream, {})
+  {}
+
+  /*!
+   * Construct a new print_base that will write to an ostream, described by
+   * stream_name.
+   *
+   * `stream_name` is used to open any additional files needed by the printer.
+   * If `ostream` is a file stream, use the filename. Stream name may be
+   * "stdout" / "stderr" or empty.
+   * @param ostream
+   * @param stream_name
+   */
+  explicit printer_base(std::ostream &ostream, std::string stream_name);
+
   virtual ~printer_base();
 
   // move-only
@@ -63,6 +80,15 @@ struct printer_base
   printer_base(printer_base &&)      = default;
   printer_base &operator=(const printer_base &) = delete;
   printer_base &operator=(printer_base &&) = default;
+
+  /*!
+   * Called once with the command line arguments used to invoke the current
+   * executable.
+   */
+  void log_argv(const std::vector<std::string> &argv)
+  {
+    this->do_log_argv(argv);
+  }
 
   /*!
    * Print a summary of all detected devices, if supported.
@@ -94,6 +120,31 @@ struct printer_base
   void log_run_state(const nvbench::state &exec_state)
   {
     this->do_log_run_state(exec_state);
+  }
+
+  /*!
+   * Measurements may call this to allow a printer to perform extra processing
+   * on large sets of data.
+   *
+   * @param state The `nvbench::state` associated with this measurement.
+   *
+   * @param tag A tag identifying the data. Tags must be unique within a state,
+   *            but the same tag may be reused in multiple states. Data produced
+   *            by NVBench will be prefixed with "nv/", for example, isolated
+   *            sample time measurements are tagged "nv/cold/sample_times".
+   *
+   * @param hint A hint describing the type of data. Subclasses may use these
+   *             to determine how to handle the data, and should ignore any
+   *             hints they don't understand. Common hints are:
+   *             - "sample_times": `data` contains all sample times for a
+   *               measurement (in seconds).
+   */
+  void process_bulk_data(nvbench::state &state,
+                         const std::string &tag,
+                         const std::string &hint,
+                         const std::vector<nvbench::float64_t> &data)
+  {
+    this->do_process_bulk_data_float64(state, tag, hint, data);
   }
 
   /*!
@@ -142,11 +193,17 @@ struct printer_base
 
 protected:
   // Implementation hooks for subclasses:
+  virtual void do_log_argv(const std::vector<std::string>&) {}
   virtual void do_print_device_info() {}
   virtual void do_print_log_preamble() {}
   virtual void do_print_log_epilogue() {}
   virtual void do_log(nvbench::log_level, const std::string &) {}
   virtual void do_log_run_state(const nvbench::state &) {}
+  virtual void
+  do_process_bulk_data_float64(nvbench::state &,
+                               const std::string &,
+                               const std::string &,
+                               const std::vector<nvbench::float64_t> &){};
   virtual void do_print_benchmark_list(const benchmark_vector &) {}
   virtual void do_print_benchmark_results(const benchmark_vector &) {}
 
@@ -158,6 +215,10 @@ protected:
   [[nodiscard]] virtual std::size_t do_get_total_state_count() const;
 
   std::ostream &m_ostream;
+
+  // May be empty, a filename,  or "stdout" / "stderr" depending on the type of
+  // stream in m_stream.
+  std::string m_stream_name;
 
   std::size_t m_completed_state_count{};
   std::size_t m_total_state_count{};

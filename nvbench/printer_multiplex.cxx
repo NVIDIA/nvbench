@@ -67,6 +67,18 @@ void printer_multiplex::do_log_run_state(const nvbench::state &exec_state)
   }
 }
 
+void printer_multiplex::do_process_bulk_data_float64(
+  state &state,
+  const std::string &tag,
+  const std::string &hint,
+  const std::vector<nvbench::float64_t> &data)
+{
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->process_bulk_data(state, tag, hint, data);
+  }
+}
+
 void printer_multiplex::do_print_benchmark_list(const benchmark_vector &benches)
 {
   for (auto &format_ptr : m_printers)
@@ -107,6 +119,14 @@ void printer_multiplex::do_set_total_state_count(std::size_t states)
   for (auto &format_ptr : m_printers)
   {
     format_ptr->set_total_state_count(states);
+  }
+}
+void printer_multiplex::do_log_argv(const std::vector<std::string> &argv)
+{
+  printer_base::do_log_argv(argv);
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->log_argv(argv);
   }
 }
 

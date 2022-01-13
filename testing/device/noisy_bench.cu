@@ -48,12 +48,12 @@ void noisy_bench(nvbench::state &state)
   });
 
   const auto measured_mean = static_cast<nvbench::float32_t>(
-    state.get_summary("Average GPU Time (Cold)").get_float64("value"));
+    state.get_summary("nv/cold/time/gpu/mean").get_float64("value"));
   const auto measured_noise = [&]() {
     try
     {
       return static_cast<nvbench::float32_t>(
-        state.get_summary("GPU Relative Standard Deviation (Cold)")
+        state.get_summary("nv/cold/time/gpu/stdev/relative")
           .get_float64("value"));
     }
     catch (std::invalid_argument &)

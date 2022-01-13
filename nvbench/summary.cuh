@@ -27,50 +27,68 @@ namespace nvbench
 {
 
 /**
- * A named set of key/value pairs associated with a benchmark result.
+ * @brief A single value associated with a benchmark state.
  *
- * The summary name is the unabbreviated name for the measurement.
- * An abbreviated name for column headings can be suggested in a "short_name"
- * entry (see below).
+ * Each summary object contains a single value with associated metadata, such
+ * as name, description, type, and formatting hints. Each summary object
+ * corresponds to a cell in an output markdown table, with summaries grouped
+ * into columns by their tag.
  *
- * Some keys have standard meanings that output formats may use to produce
- * more readable representations of the result:
+ * The summary tag provided at construction should be a unique identifier that
+ * will be convenient and unambiguous during lookups. For example, summaries
+ * produced by NVBench will begin with `nv/` and contain a hierarchical
+ * organization of descriptors, such as `nv/cold/time/gpu/mean`.
  *
- * - "hint": Formatting hints (see below)
- * - "short_name": Abbreviated name for table headings.
- * - "description": Longer description of result.
- * - "value": Actual value.
+ * The summary may contain an arbitrary number of key/value pairs. The keys
+ * are `std::string` and the values may be `std::string`, `int64_t`, or
+ * `float64_t`. These may be used to store arbitrary user data and will be
+ * written into the json output.
  *
- * Hints:
- * - unset: Arbitrary value is stored in "value".
+ * Some keys are reserved and have special meaning. These may be used by tooling
+ * to help interpret data:
+ *
+ * - `"name": required [string]` Compact, used for table headings.
+ * - `"description": optional [string]` Longer description.
+ * - `"value": required [string|float64|int64]` Actual value.
+ * - `"hint": optional [string]` Formatting hints (see below)
+ * - `"hide": optional [string]` If present, the summary will not be included in
+ *                               markdown output tables.
+ *
+ * Additionally, keys beginning with `nv/` are reserved for NVBench.
+ *
+ * Hints indicate the type of data stored in "value", but may be omitted.
+ * NVBench uses the following hints:
+ *
  * - "duration": "value" is a float64_t time duration in seconds.
  * - "item_rate": "value" is a float64_t item rate in elements / second.
  * - "bytes": "value" is an int64_t number of bytes.
  * - "byte_rate": "value" is a float64_t byte rate in bytes / second.
- * - "sample_size": "value" is an int64_t number of samples in a measurement.
- * - "percentage": "value" is a float64_t percentage (stored as a ratio, 1. =
- *    100%).
+ * - "sample_size": "value" is an int64_t samples count.
+ * - "percentage": "value" is a float64_t percentage (100% stored as 1.0).
+ * - "file/sample_times":
+ *   - "filename" is the path to a binary file that encodes all sample
+ *     times (in seconds) as float32_t values.
+ *   - "size" is an int64_t containing the number of float32_t values stored in
+ *     the binary file.
  *
- * The key/value pair functionality is implemented by the
- * `nvbench::named_values` base class.
  *
  * Example: Adding a new summary to an nvbench::state object:
  *
  * ```
- * auto &summ = state.add_summary("Average GPU Time (Batch)");
+ * auto &summ = state.add_summary("nv/batch/gpu/time/mean");
+ * summ.set_string("name", "Batch GPU");
  * summ.set_string("hint", "duration");
- * summ.set_string("short_name", "Batch GPU");
  * summ.set_string("description",
- *                 "Average back-to-back kernel execution time as measured "
- *                 "by CUDA events.");
+ *                 "Average batch execution time measured by CUDA event
+ *                  timers.");
  * summ.set_float64("value", avg_batch_gpu_time);
  * ```
  */
 struct summary : public nvbench::named_values
 {
   summary() = default;
-  explicit summary(std::string name)
-      : m_name(std::move(name))
+  explicit summary(std::string tag)
+      : m_tag(std::move(tag))
   {}
 
   // move-only
@@ -79,11 +97,11 @@ struct summary : public nvbench::named_values
   summary &operator=(const summary &) = delete;
   summary &operator=(summary &&) = default;
 
-  void set_name(std::string name) { m_name = std::move(name); }
-  [[nodiscard]] const std::string &get_name() const { return m_name; }
+  void set_tag(std::string tag) { m_tag = std::move(tag); }
+  [[nodiscard]] const std::string &get_tag() const { return m_tag; }
 
 private:
-  std::string m_name;
+  std::string m_tag;
 };
 
 } // namespace nvbench
