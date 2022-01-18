@@ -6,7 +6,7 @@
 # See https://llvm.org/LICENSE.txt for license information.
 
 ################################################################################
-# Thrust and CUB local containerized build script
+# NVBench local containerized build script
 ################################################################################
 
 function usage {

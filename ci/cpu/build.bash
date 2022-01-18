@@ -6,7 +6,7 @@
 # See https://llvm.org/LICENSE.txt for license information.
 
 ################################################################################
-# NVBench build script for gpuCI (heterogeneous)
+# NVBench build script for gpuCI (CPU-only)
 ################################################################################
 
 export PARALLEL_LEVEL=${PARALLEL_LEVEL:-4}

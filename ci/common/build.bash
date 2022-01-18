@@ -6,7 +6,7 @@
 # See https://llvm.org/LICENSE.txt for license information.
 
 ################################################################################
-# Thrust and CUB build script for gpuCI
+# NVBench build script for gpuCI
 ################################################################################
 
 set -e
