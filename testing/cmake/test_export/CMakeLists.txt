@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20.1)
 project(NVBenchTestExport CUDA CXX)
 
 message(STATUS "NVBench_DIR=${NVBench_DIR}")
-find_package(NVBench)
+find_package(NVBench REQUIRED)
 
 add_executable(test_bench test_bench.cu)
 target_link_libraries(test_bench PRIVATE nvbench::main)
