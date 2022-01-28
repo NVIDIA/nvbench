@@ -225,8 +225,8 @@ const axis_base &axes_metadata::get_axis(std::string_view name,
     NVBENCH_THROW(std::runtime_error,
                   "Axis '{}' type mismatch (expected {}, actual {}).",
                   name,
-                  type,
-                  axis.get_type());
+                  axis_type_to_string(type),
+                  axis.get_type_as_string());
   }
   return axis;
 }
@@ -240,8 +240,8 @@ axis_base &axes_metadata::get_axis(std::string_view name,
     NVBENCH_THROW(std::runtime_error,
                   "Axis '{}' type mismatch (expected {}, actual {}).",
                   name,
-                  type,
-                  axis.get_type());
+                  axis_type_to_string(type),
+                  axis.get_type_as_string());
   }
   return axis;
 }
