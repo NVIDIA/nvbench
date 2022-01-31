@@ -111,6 +111,21 @@ struct benchmark_base
     return *this;
   }
 
+  benchmark_base &tie_axes(std::vector<std::string> names)
+  {
+    m_axes.tie_axes(std::move(names));
+    return *this;
+  }
+
+  benchmark_base &
+  user_iteration_axes(std::vector<std::string> names,
+                      std::function<nvbench::make_user_space_signature> make)
+  {
+    m_axes.user_iteration_axes(std::move(names), std::move(make));
+    return *this;
+  }
+
+
   benchmark_base &set_devices(std::vector<int> device_ids);
 
   benchmark_base &set_devices(std::vector<nvbench::device_info> devices)

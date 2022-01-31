@@ -20,6 +20,8 @@
 
 #include <nvbench/detail/transform_reduce.cuh>
 
+#include <algorithm>
+
 namespace nvbench
 {
 
@@ -62,22 +64,22 @@ benchmark_base &benchmark_base::add_device(int device_id)
 
 std::size_t benchmark_base::get_config_count() const
 {
-  const std::size_t per_device_count = nvbench::detail::transform_reduce(
-    m_axes.get_axes().cbegin(),
-    m_axes.get_axes().cend(),
+  const auto& axes = m_axes.get_axes();
+  const std::size_t value_count = nvbench::detail::transform_reduce(
+    m_axes.get_value_iteration_space().cbegin(),
+    m_axes.get_value_iteration_space().cend(),
     std::size_t{1},
     std::multiplies<>{},
-    [](const auto &axis_ptr) {
-      if (const auto *type_axis_ptr =
-            dynamic_cast<const nvbench::type_axis *>(axis_ptr.get());
-          type_axis_ptr != nullptr)
-      {
-        return type_axis_ptr->get_active_count();
-      }
-      return axis_ptr->get_size();
-    });
+    [&axes](const auto &space) { return space->size(axes); });
 
-  return per_device_count * m_devices.size();
+  const std::size_t type_count = nvbench::detail::transform_reduce(
+    m_axes.get_type_iteration_space().cbegin(),
+    m_axes.get_type_iteration_space().cend(),
+    std::size_t{1},
+    std::multiplies<>{},
+    [&axes](const auto &space) { return space->valid_count(axes); });
+
+  return (value_count * type_count) * std::max(1UL, m_devices.size());
 }
 
 } // namespace nvbench

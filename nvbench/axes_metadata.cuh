@@ -18,12 +18,14 @@
 
 #pragma once
 
+#include <nvbench/axis_iteration_space.cuh>
 #include <nvbench/float64_axis.cuh>
 #include <nvbench/int64_axis.cuh>
 #include <nvbench/string_axis.cuh>
 #include <nvbench/type_axis.cuh>
 #include <nvbench/types.cuh>
 
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -37,6 +39,8 @@ namespace nvbench
 struct axes_metadata
 {
   using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
+  using axes_iteration_space =
+    std::vector<std::unique_ptr<nvbench::axis_space_base>>;
 
   template <typename... TypeAxes>
   explicit axes_metadata(nvbench::type_list<TypeAxes...>);
@@ -57,6 +61,21 @@ struct axes_metadata
   void add_float64_axis(std::string name, std::vector<nvbench::float64_t> data);
 
   void add_string_axis(std::string name, std::vector<std::string> data);
+
+  void tie_axes(std::vector<std::string> names);
+
+  void
+  user_iteration_axes(std::vector<std::string> names,
+                      std::function<nvbench::make_user_space_signature> make);
+
+  [[nodiscard]] const axes_iteration_space &get_type_iteration_space() const
+  {
+    return m_type_space;
+  }
+  [[nodiscard]] const axes_iteration_space &get_value_iteration_space() const
+  {
+    return m_value_space;
+  }
 
   [[nodiscard]] const nvbench::int64_axis &
   get_int64_axis(std::string_view name) const;
@@ -93,6 +112,9 @@ struct axes_metadata
 
 private:
   axes_type m_axes;
+  std::size_t m_type_axe_count = 0;
+  axes_iteration_space m_type_space;
+  axes_iteration_space m_value_space;
 };
 
 template <typename... TypeAxes>
@@ -105,10 +127,14 @@ axes_metadata::axes_metadata(nvbench::type_list<TypeAxes...>)
 
   auto names_iter = names.begin(); // contents will be moved from
   nvbench::tl::foreach<type_axes_list>(
-    [&axes = m_axes, &names_iter]([[maybe_unused]] auto wrapped_type) {
+    [&axes = m_axes, &spaces = m_type_space, &names_iter](
+      [[maybe_unused]] auto wrapped_type) {
       // This is always called before other axes are added, so the length of the
       // axes vector will be the type axis index:
       const std::size_t type_axis_index = axes.size();
+
+      spaces.push_back(
+        std::make_unique<linear_axis_space>(type_axis_index, type_axis_index));
 
       // Note:
       // The word "type" appears 6 times in the next line.
@@ -119,6 +145,7 @@ axes_metadata::axes_metadata(nvbench::type_list<TypeAxes...>)
       axis->template set_inputs<type_list>();
       axes.push_back(std::move(axis));
     });
+  m_type_axe_count = m_axes.size();
 }
 
 } // namespace nvbench

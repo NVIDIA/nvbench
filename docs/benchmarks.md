@@ -237,9 +237,34 @@ NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
 ```
 
 This would generate a total of 36 configurations and instantiate the benchmark 6
-times. Keep the rapid growth of these combinations in mind when choosing the
-number of values in an axis. See the section about combinatorial explosion for
-more examples and information.
+times.
+
+Keep the rapid growth of combinations due to multiple parameter axes in mind when
+choosing the number of values in an axis. See the section about combinatorial
+explosion for more examples and information.
+
+## Zipped/Tied Iteration of Value Axes
+
+At times multiple value axes need to be iterated like they are actually a tuple
+or zipped together. To enable this behavior you can request axes to be 'tied'
+together.
+
+```cpp
+// InputTypes: {char, int, unsigned int}
+// OutputTypes: {float, double}
+// NumInputs: {2^10, 2^20, 2^30}
+// Quality: {0.5, 1.0}
+
+using input_types = nvbench::type_list<char, int, unsigned int>;
+using output_types = nvbench::type_list<float, double>;
+NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
+  .set_type_axes_names({"InputType", "OutputType"})
+  .add_int64_axis("NumInputs", {1000, 10000, 100000, 200000, 200000, 200000})
+  .add_float64_axis("Quality", {0.05, 0.1, 0.25, 0.5, 0.75, 1.});
+```
+
+This tieing reduces the total combinations from 24 to 6, reducing the
+combinatorial explosion.
 
 # Throughput Measurements
 
@@ -426,9 +451,9 @@ NVBENCH_BENCH_TYPES(my_benchmark,
 ```
 
 For large configuration spaces like this, pruning some of the less useful
-combinations (e.g. `sizeof(init_type) < sizeof(output)`) using the techniques
-described in the "Skip Uninteresting / Invalid Benchmarks" section can help
-immensely with keeping compile / run times manageable.
+combinations using the techniques described in the "Zipped/Tied Iteration of Value Axes"
+or "Skip Uninteresting / Invalid Benchmarks" section can help immensely with
+keeping compile / run times manageable.
 
 Splitting a single large configuration space into multiple, more focused
 benchmarks with reduced dimensionality will likely be worth the effort as well.

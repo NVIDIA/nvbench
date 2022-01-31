@@ -296,10 +296,9 @@ void test_get_config_count()
   bench.add_float64_axis("foo", {0.4, 2.3, 4.3});                      // 3, 12
   bench.add_int64_axis("bar", {4, 6, 15});                             // 3, 36
   bench.add_string_axis("baz", {"str", "ing"});                        // 2, 72
-  bench.add_string_axis("baz", {"single"});                            // 1, 72
+  bench.add_string_axis("fez", {"single"});                            // 1, 72
 
   auto const num_devices = bench.get_devices().size();
-
   ASSERT_MSG(bench.get_config_count() == 72 * num_devices,
              "Got {}",
              bench.get_config_count());

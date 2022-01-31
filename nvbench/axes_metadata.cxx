@@ -25,6 +25,9 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <unordered_set>
+
+#include <iostream>
 
 namespace nvbench
 {
@@ -36,6 +39,19 @@ axes_metadata::axes_metadata(const axes_metadata &other)
   {
     m_axes.push_back(axis->clone());
   }
+
+  m_type_axe_count = other.m_type_axe_count;
+  m_type_space.reserve(other.m_type_space.size());
+  for (const auto &iter : other.m_type_space)
+  {
+    m_type_space.push_back(iter->clone());
+  }
+
+  m_value_space.reserve(other.m_value_space.size());
+  for (const auto &iter : other.m_value_space)
+  {
+    m_value_space.push_back(iter->clone());
+  }
 }
 
 axes_metadata &axes_metadata::operator=(const axes_metadata &other)
@@ -46,6 +62,23 @@ axes_metadata &axes_metadata::operator=(const axes_metadata &other)
   {
     m_axes.push_back(axis->clone());
   }
+
+  m_type_axe_count = other.m_type_axe_count;
+
+  m_type_space.clear();
+  m_type_space.reserve(other.m_type_space.size());
+  for (const auto &iter : other.m_type_space)
+  {
+    m_type_space.push_back(iter->clone());
+  }
+
+  m_value_space.clear();
+  m_value_space.reserve(other.m_value_space.size());
+  for (const auto &iter : other.m_value_space)
+  {
+    m_value_space.push_back(iter->clone());
+  }
+
   return *this;
 }
 
@@ -84,6 +117,10 @@ catch (std::exception &e)
 void axes_metadata::add_float64_axis(std::string name,
                                      std::vector<nvbench::float64_t> data)
 {
+  m_value_space.push_back(
+    std::make_unique<linear_axis_space>(m_axes.size(),
+                                        m_axes.size() - m_type_axe_count));
+
   auto axis = std::make_unique<nvbench::float64_axis>(std::move(name));
   axis->set_inputs(std::move(data));
   m_axes.push_back(std::move(axis));
@@ -93,6 +130,10 @@ void axes_metadata::add_int64_axis(std::string name,
                                    std::vector<nvbench::int64_t> data,
                                    nvbench::int64_axis_flags flags)
 {
+  m_value_space.push_back(
+    std::make_unique<linear_axis_space>(m_axes.size(),
+                                        m_axes.size() - m_type_axe_count));
+
   auto axis = std::make_unique<nvbench::int64_axis>(std::move(name));
   axis->set_inputs(std::move(data), flags);
   m_axes.push_back(std::move(axis));
@@ -101,9 +142,160 @@ void axes_metadata::add_int64_axis(std::string name,
 void axes_metadata::add_string_axis(std::string name,
                                     std::vector<std::string> data)
 {
+  m_value_space.push_back(
+    std::make_unique<linear_axis_space>(m_axes.size(),
+                                        m_axes.size() - m_type_axe_count));
+
   auto axis = std::make_unique<nvbench::string_axis>(std::move(name));
   axis->set_inputs(std::move(data));
   m_axes.push_back(std::move(axis));
+}
+
+namespace
+{
+std::tuple<std::vector<std::size_t>, std::vector<std::size_t>>
+get_axes_indices(std::size_t type_axe_count,
+                 const nvbench::axes_metadata::axes_type &axes,
+                 const std::vector<std::string> &names)
+{
+  std::vector<std::size_t> input_indices;
+  input_indices.reserve(names.size());
+  for (auto &n : names)
+  {
+    auto iter =
+      std::find_if(axes.cbegin(), axes.cend(), [&n](const auto &axis) {
+        return axis->get_name() == n;
+      });
+
+    // iter distance is input_indices
+    if (iter == axes.cend())
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "Unable to find the axes named ({}).",
+                    n);
+    }
+    auto index = std::distance(axes.cbegin(), iter);
+    input_indices.push_back(index);
+  }
+
+  std::vector<std::size_t> output_indices = input_indices;
+  for (auto &out : output_indices)
+  {
+    out -= type_axe_count;
+  }
+  return std::tie(input_indices, output_indices);
+}
+
+void reset_iteration_space(
+  nvbench::axes_metadata::axes_iteration_space &all_spaces,
+  const std::vector<std::size_t> &indices_to_remove)
+{
+  // 1. Find all spaces indices that
+  nvbench::axes_metadata::axes_iteration_space reset_space;
+  nvbench::axes_metadata::axes_iteration_space to_filter;
+  for (auto &space : all_spaces)
+  {
+    bool added = false;
+    for (auto &i : indices_to_remove)
+    {
+      if (space->contains(i))
+      {
+        // add each item back as linear_axis_space
+        auto as_linear = space->clone_as_linear();
+        to_filter.insert(to_filter.end(),
+                         std::make_move_iterator(as_linear.begin()),
+                         std::make_move_iterator(as_linear.end()));
+        added = true;
+        break;
+      }
+    }
+    if (!added)
+    {
+      // this space doesn't need to be removed
+      reset_space.push_back(std::move(space));
+    }
+  }
+
+  for (auto &iter : to_filter)
+  {
+    bool to_add = true;
+    for (auto &i : indices_to_remove)
+    {
+      if (iter->contains(i))
+      {
+        to_add = false;
+        break;
+      }
+    }
+    if (to_add)
+    {
+      reset_space.push_back(std::move(iter));
+      break;
+    }
+  }
+
+  all_spaces = std::move(reset_space);
+}
+} // namespace
+
+void axes_metadata::tie_axes(std::vector<std::string> names)
+{
+  NVBENCH_THROW_IF((names.size() < 2),
+                   std::runtime_error,
+                   "At least two axi names ( {} provided ) need to be provided "
+                   "when using tie_axes.",
+                   names.size());
+
+  // compute the numeric indice for each name we have
+  auto [input_indices,
+        output_indices] = get_axes_indices(m_type_axe_count, m_axes, names);
+
+  const auto expected_size = m_axes[input_indices[0]]->get_size();
+  for (auto i : input_indices)
+  {
+    NVBENCH_THROW_IF((m_axes[i]->get_type() == nvbench::axis_type::type),
+                     std::runtime_error,
+                     "Currently no support for tieing type axis ( {} ).",
+                     m_axes[i]->get_name());
+
+    NVBENCH_THROW_IF((m_axes[i]->get_size() < expected_size),
+                     std::runtime_error,
+                     "All axes that are tied together must be atleast as long "
+                     "the first axi provided ( {} ).",
+                     expected_size);
+  }
+
+  // remove any iteration spaces that have axes we need
+  reset_iteration_space(m_value_space, input_indices);
+
+  // add the new tied iteration space
+  auto tied = std::make_unique<tie_axis_space>(std::move(input_indices),
+                                               std::move(output_indices));
+  m_value_space.push_back(std::move(tied));
+}
+
+void axes_metadata::user_iteration_axes(
+  std::vector<std::string> names,
+  std::function<nvbench::make_user_space_signature> make)
+{
+  // compute the numeric indice for each name we have
+  auto [input_indices,
+        output_indices] = get_axes_indices(m_type_axe_count, m_axes, names);
+
+  for (auto i : input_indices)
+  {
+    NVBENCH_THROW_IF((m_axes[i]->get_type() == nvbench::axis_type::type),
+                     std::runtime_error,
+                     "Currently no support for using type axis with "
+                     "user_iteration_axes ( {} ).",
+                     m_axes[i]->get_name());
+  }
+
+  // remove any iteration spaces that have axes we need
+  reset_iteration_space(m_value_space, input_indices);
+
+  auto user_func = make(std::move(input_indices), std::move(output_indices));
+  m_value_space.push_back(std::move(user_func));
 }
 
 const int64_axis &axes_metadata::get_int64_axis(std::string_view name) const
