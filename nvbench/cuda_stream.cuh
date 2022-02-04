@@ -29,14 +29,14 @@ namespace nvbench
 struct cuda_stream
 {
   cuda_stream()
-      : m_owning(true)
+      : m_owning{true}
   {
     NVBENCH_CUDA_CALL(cudaStreamCreate(&m_stream));
   }
 
   cuda_stream(cuda_stream stream, bool owning)
-      : m_stream(stream)
-      , m_owning(owning)
+      : m_stream{stream}
+      , m_owning{owning}
   {}
 
   // destroy the stream if it's owning
@@ -55,8 +55,8 @@ struct cuda_stream
   cuda_stream &operator=(const cuda_stream &) = delete;
 
   cuda_stream(cuda_stream &&other)
-      : m_stream(other.get_stream())
-      , m_owning(other.is_owning())
+      : m_stream{other.get_stream()}
+      , m_owning{other.is_owning()}
   {
     other.destroy();
   }
