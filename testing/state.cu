@@ -51,6 +51,23 @@ struct state_tester : public nvbench::state
 
 using nvbench::detail::state_tester;
 
+void test_streams()
+{
+  dummy_bench bench;
+
+  state_tester state{bench};
+
+  // Test non-owning stream
+  state.set_cuda_stream(nvbench::cuda_stream{cudaStreamDefault, false});
+  ASSERT(state.get_cuda_stream() == cudaStreamDefault);
+
+  // Test owning stream
+  auto stream = nvbench::cuda_stream{};
+  auto gold   = stream.get_stream();
+  state.set_cuda_stream(std::move(stream));
+  ASSERT(state.get_cuda_stream() == gold);
+}
+
 void test_params()
 {
   dummy_bench bench;
@@ -110,6 +127,7 @@ void test_defaults()
 
 int main()
 {
+  test_streams();
   test_params();
   test_summaries();
   test_defaults();
