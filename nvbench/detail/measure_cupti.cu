@@ -169,7 +169,12 @@ std::vector<std::string> add_metrics(nvbench::state &state)
 } // namespace
 
 measure_cupti_base::measure_cupti_base(state &exec_state)
-try : m_state{exec_state}, m_cupti(*m_state.get_device(), add_metrics(m_state))
+try : m_state
+{
+  exec_state
+}
+, m_launch{m_state.get_cuda_stream()},
+  m_cupti{*m_state.get_device(), add_metrics(m_state)}
 {}
 catch (const std::exception &ex)
 {
