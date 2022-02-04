@@ -42,7 +42,7 @@ struct cuda_stream
   // destroy the stream if it's owning
   void destroy()
   {
-    if (m_owning and m_stream != cudaStreamDefault)
+    if (m_owning)
     {
       NVBENCH_CUDA_CALL_NOEXCEPT(cudaStreamDestroy(m_stream));
     }
