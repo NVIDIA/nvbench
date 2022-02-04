@@ -25,8 +25,11 @@ namespace nvbench
 
 struct launch
 {
+  explicit launch(const nvbench::cuda_stream &stream)
+      : m_stream{stream}
+  {}
+
   // move-only
-  launch()               = default;
   launch(const launch &) = delete;
   launch(launch &&)      = default;
   launch &operator=(const launch &) = delete;
@@ -38,7 +41,7 @@ struct launch
   };
 
 private:
-  nvbench::cuda_stream m_stream;
+  const nvbench::cuda_stream &m_stream;
 };
 
 } // namespace nvbench
