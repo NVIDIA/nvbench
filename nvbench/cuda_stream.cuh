@@ -28,19 +28,58 @@ namespace nvbench
 // RAII wrapper for a cudaStream_t.
 struct cuda_stream
 {
-  cuda_stream() { NVBENCH_CUDA_CALL(cudaStreamCreate(&m_stream)); }
-  ~cuda_stream() { NVBENCH_CUDA_CALL(cudaStreamDestroy(m_stream)); }
+  cuda_stream()
+      : m_owning(true)
+  {
+    NVBENCH_CUDA_CALL(cudaStreamCreate(&m_stream));
+  }
+
+  cuda_stream(cuda_stream stream, bool owning)
+      : m_stream(stream)
+      , m_owning(owning)
+  {}
+
+  // destroy the stream if it's owning
+  void destroy()
+  {
+    if (m_owning)
+    {
+      NVBENCH_CUDA_CALL_NOEXCEPT(cudaStreamDestroy(m_stream));
+    }
+  }
+
+  ~cuda_stream() { destroy(); }
 
   // move-only
   cuda_stream(const cuda_stream &) = delete;
-  cuda_stream(cuda_stream &&)      = default;
   cuda_stream &operator=(const cuda_stream &) = delete;
-  cuda_stream &operator=(cuda_stream &&) = default;
+
+  cuda_stream(cuda_stream &&other)
+      : m_stream(other.get_stream())
+      , m_owning(other.is_owning())
+  {
+    other.destroy();
+  }
+
+  cuda_stream &operator=(cuda_stream &&other)
+  {
+    m_stream = other.get_stream();
+    m_owning = other.is_owning();
+
+    other.destroy();
+
+    return *this;
+  }
 
   operator cudaStream_t() const { return m_stream; }
 
+  cudaStream_t get_stream() const { return m_stream; }
+
+  bool is_owning() const { return m_owning; }
+
 private:
   cudaStream_t m_stream;
+  bool m_owning;
 };
 
 } // namespace nvbench
