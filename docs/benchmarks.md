@@ -11,6 +11,18 @@ void my_benchmark(nvbench::state& state) {
 NVBENCH_BENCH(my_benchmark);
 ```
 
+The following example shows how to benchmark functions that do not expose stream parameters:
+```cpp
+void my_benchmark(nvbench::state& state) {
+  state.set_cuda_stream(nvbench::cuda_stream{cudaStreamDefault, false});
+  state.exec([](nvbench::launch&) {
+    my_func(); // a host API invoking GPU kernels without taking an explicit stream
+    my_kernel<<<num_blocks, 256>>>(); // or a kernel launched with the default stream
+  });
+}
+NVBENCH_BENCH(my_benchmark);
+```
+
 There are three main components in the definition of a benchmark:
 
 - A `KernelGenerator` callable (`my_benchmark` above)
