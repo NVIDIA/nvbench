@@ -34,7 +34,7 @@ struct cuda_stream
     NVBENCH_CUDA_CALL(cudaStreamCreate(&m_stream));
   }
 
-  cuda_stream(cuda_stream stream, bool owning)
+  cuda_stream(cudaStream_t stream, bool owning)
       : m_stream{stream}
       , m_owning{owning}
   {}
@@ -42,7 +42,7 @@ struct cuda_stream
   // destroy the stream if it's owning
   void destroy()
   {
-    if (m_owning)
+    if (m_owning and m_stream != cudaStreamDefault)
     {
       NVBENCH_CUDA_CALL_NOEXCEPT(cudaStreamDestroy(m_stream));
     }
@@ -56,16 +56,24 @@ struct cuda_stream
 
   cuda_stream(cuda_stream &&other)
       : m_stream{other.get_stream()}
-      , m_owning{other.is_owning()}
+      , m_owning{other.get_owning()}
   {
+    if (m_owning)
+    {
+      other.set_owning(not m_owning);
+    }
     other.destroy();
   }
 
   cuda_stream &operator=(cuda_stream &&other)
   {
     m_stream = other.get_stream();
-    m_owning = other.is_owning();
+    m_owning = other.get_owning();
 
+    if (m_owning)
+    {
+      other.set_owning(not m_owning);
+    }
     other.destroy();
 
     return *this;
@@ -75,7 +83,8 @@ struct cuda_stream
 
   cudaStream_t get_stream() const { return m_stream; }
 
-  bool is_owning() const { return m_owning; }
+  [[nodiscard]] bool get_owning() const { return m_owning; }
+  void set_owning(bool b) { m_owning = b; }
 
 private:
   cudaStream_t m_stream;
