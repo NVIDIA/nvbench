@@ -22,6 +22,8 @@
 
 #include <cuda_runtime_api.h>
 
+#include <memory>
+
 namespace nvbench
 {
 
@@ -29,66 +31,46 @@ namespace nvbench
 struct cuda_stream
 {
   cuda_stream()
-      : m_owning{true}
-  {
-    NVBENCH_CUDA_CALL(cudaStreamCreate(&m_stream));
-  }
-
-  cuda_stream(cudaStream_t stream, bool owning)
-      : m_stream{stream}
-      , m_owning{owning}
+      : m_stream{[]() {
+                   cudaStream_t s;
+                   NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   return s;
+                 }(),
+                 stream_deleter{true}}
   {}
 
-  // destroy the stream if it's owning
-  void destroy()
-  {
-    if (m_owning)
-    {
-      NVBENCH_CUDA_CALL_NOEXCEPT(cudaStreamDestroy(m_stream));
-    }
-  }
+  cuda_stream(cudaStream_t stream, bool owning)
+      : m_stream{stream, stream_deleter{owning}}
+  {}
 
-  ~cuda_stream() { destroy(); }
+  ~cuda_stream() = default;
 
   // move-only
   cuda_stream(const cuda_stream &) = delete;
   cuda_stream &operator=(const cuda_stream &) = delete;
+  cuda_stream(cuda_stream &&)                 = default;
+  cuda_stream &operator=(cuda_stream &&) = default;
 
-  cuda_stream(cuda_stream &&other)
-      : m_stream{other.get_stream()}
-      , m_owning{other.get_owning()}
-  {
-    if (m_owning)
-    {
-      other.set_owning(not m_owning);
-    }
-    other.destroy();
-  }
+  operator cudaStream_t() const { return m_stream.get(); }
 
-  cuda_stream &operator=(cuda_stream &&other)
-  {
-    m_stream = other.get_stream();
-    m_owning = other.get_owning();
-
-    if (m_owning)
-    {
-      other.set_owning(not m_owning);
-    }
-    other.destroy();
-
-    return *this;
-  }
-
-  operator cudaStream_t() const { return m_stream; }
-
-  cudaStream_t get_stream() const { return m_stream; }
-
-  [[nodiscard]] bool get_owning() const { return m_owning; }
-  void set_owning(bool b) { m_owning = b; }
+  cudaStream_t get_stream() const { return m_stream.get(); }
 
 private:
-  cudaStream_t m_stream;
-  bool m_owning;
+  struct stream_deleter
+  {
+    using pointer = cudaStream_t;
+    bool owning;
+
+    constexpr void operator()(pointer s) const noexcept
+    {
+      if (owning)
+      {
+        NVBENCH_CUDA_CALL_NOEXCEPT(cudaStreamDestroy(s));
+      }
+    }
+  };
+
+  std::unique_ptr<cudaStream_t, stream_deleter> m_stream;
 };
 
 } // namespace nvbench
