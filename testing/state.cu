@@ -58,8 +58,9 @@ void test_streams()
   state_tester state{bench};
 
   // Test non-owning stream
-  state.set_cuda_stream(nvbench::cuda_stream{cudaStreamDefault, false});
-  ASSERT(state.get_cuda_stream() == cudaStreamDefault);
+  cudaStream_t default_stream = 0;
+  state.set_cuda_stream(nvbench::cuda_stream{default_stream, false});
+  ASSERT(state.get_cuda_stream() == default_stream);
 
   // Test owning stream
   auto stream = nvbench::cuda_stream{};
