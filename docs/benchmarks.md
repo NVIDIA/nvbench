@@ -20,7 +20,8 @@ stream-ordered operation. A `cudaStream_t` may be provided via `state::set_cuda_
 It is assumed that all work of interest executes on or synchronizes with this stream. 
 ```cpp
 void my_benchmark(nvbench::state& state) {
-  state.set_cuda_stream(nvbench::cuda_stream{cudaStreamDefault, false});
+  cudaStream_t default_stream = 0;
+  state.set_cuda_stream(nvbench::cuda_stream{default_stream, false});
   state.exec([](nvbench::launch&) {
     my_func(); // a host API invoking GPU kernels without taking an explicit stream
     my_kernel<<<num_blocks, 256>>>(); // or a kernel launched with the default stream
