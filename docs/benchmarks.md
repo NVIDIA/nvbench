@@ -11,7 +11,13 @@ void my_benchmark(nvbench::state& state) {
 NVBENCH_BENCH(my_benchmark);
 ```
 
-The following example shows how to benchmark functions that do not expose stream parameters:
+NVBench records the elapsed time of work on a CUDA stream for each iteration of a benchmark. 
+By default, NVBench creates and provides an explicit stream via `launch::get_stream()` 
+to pass to every stream-ordered operation. 
+
+Sometimes it is inconvenient or impossible to specify an explicit CUDA stream to every 
+stream-ordered operation. A `cudaStream_t` may be provided via `state::set_cuda_stream`. 
+It is assumed that all work of interest executes on or synchronizes with this stream. 
 ```cpp
 void my_benchmark(nvbench::state& state) {
   state.set_cuda_stream(nvbench::cuda_stream{cudaStreamDefault, false});
