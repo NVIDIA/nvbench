@@ -60,6 +60,7 @@ various NVBench features and usecases:
 - [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
+- [Benchmarking on a specific stream](examples/stream.cu)
 - [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)
 - [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_timer.cu)
 

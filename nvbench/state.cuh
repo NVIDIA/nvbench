@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 NVIDIA Corporation
+ *  Copyright 2021-2022 NVIDIA Corporation
  *
  *  Licensed under the Apache License, Version 2.0 with the LLVM exception
  *  (the "License"); you may not use this file except in compliance with
@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <nvbench/cuda_stream.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/named_values.cuh>
@@ -61,6 +62,15 @@ struct state
   state(state &&)      = default;
   state &operator=(const state &) = delete;
   state &operator=(state &&) = default;
+
+  [[nodiscard]] const nvbench::cuda_stream &get_cuda_stream() const
+  {
+    return m_cuda_stream;
+  }
+  void set_cuda_stream(nvbench::cuda_stream &&stream)
+  {
+    m_cuda_stream = std::move(stream);
+  }
 
   /// The CUDA device associated with with this benchmark state. May be
   /// nullopt for CPU-only benchmarks.
@@ -259,11 +269,13 @@ struct state
 
   [[nodiscard]] bool is_cupti_required() const
   {
-    return is_l2_hit_rate_collected()
-        || is_l1_hit_rate_collected()
-        || is_stores_efficiency_collected()
-        || is_loads_efficiency_collected()
-        || is_dram_throughput_collected();
+    // clang-format off
+    return is_l2_hit_rate_collected() ||
+           is_l1_hit_rate_collected() ||
+           is_stores_efficiency_collected() ||
+           is_loads_efficiency_collected() ||
+           is_dram_throughput_collected();
+    // clang-format on
   }
 
   summary &add_summary(std::string summary_tag);
@@ -303,6 +315,7 @@ private:
         std::optional<nvbench::device_info> device,
         std::size_t type_config_index);
 
+  nvbench::cuda_stream m_cuda_stream;
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;

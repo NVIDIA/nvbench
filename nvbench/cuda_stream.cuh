@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 NVIDIA Corporation
+ *  Copyright 2021-2022 NVIDIA Corporation
  *
  *  Licensed under the Apache License, Version 2.0 with the LLVM exception
  *  (the "License"); you may not use this file except in compliance with
@@ -22,25 +22,88 @@
 
 #include <cuda_runtime_api.h>
 
+#include <memory>
+
 namespace nvbench
 {
 
-// RAII wrapper for a cudaStream_t.
+/**
+ * Manages and provides access to a CUDA stream.
+ *
+ * May be owning or non-owning. If the stream is owned, it will be freed with
+ * `cudaStreamDestroy` when the `cuda_stream`'s lifetime ends. Non-owning
+ * `cuda_stream`s are sometimes referred to as views.
+ *
+ * @sa nvbench::make_cuda_stream_view
+ */
 struct cuda_stream
 {
-  cuda_stream() { NVBENCH_CUDA_CALL(cudaStreamCreate(&m_stream)); }
-  ~cuda_stream() { NVBENCH_CUDA_CALL(cudaStreamDestroy(m_stream)); }
+  /**
+   * Constructs a cuda_stream that owns a new stream, created with
+   * `cudaStreamCreate`.
+   */
+  cuda_stream()
+      : m_stream{[]() {
+                   cudaStream_t s;
+                   NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   return s;
+                 }(),
+                 stream_deleter{true}}
+  {}
+
+  /**
+   * Constructs a `cuda_stream` from an explicit cudaStream_t.
+   *
+   * @param owning If true, `cudaStreamCreate(stream)` will be called from this
+   * `cuda_stream`'s destructor.
+   *
+   * @sa nvbench::make_cuda_stream_view
+   */
+  cuda_stream(cudaStream_t stream, bool owning)
+      : m_stream{stream, stream_deleter{owning}}
+  {}
+
+  ~cuda_stream() = default;
 
   // move-only
   cuda_stream(const cuda_stream &) = delete;
-  cuda_stream(cuda_stream &&)      = default;
   cuda_stream &operator=(const cuda_stream &) = delete;
+  cuda_stream(cuda_stream &&)                 = default;
   cuda_stream &operator=(cuda_stream &&) = default;
 
-  operator cudaStream_t() const { return m_stream; }
+  /**
+   * @return The `cudaStream_t` managed by this `cuda_stream`.
+   * @{
+   */
+  operator cudaStream_t() const { return m_stream.get(); }
+
+  cudaStream_t get_stream() const { return m_stream.get(); }
+  /**@}*/
 
 private:
-  cudaStream_t m_stream;
+  struct stream_deleter
+  {
+    using pointer = cudaStream_t;
+    bool owning;
+
+    constexpr void operator()(pointer s) const noexcept
+    {
+      if (owning)
+      {
+        NVBENCH_CUDA_CALL_NOEXCEPT(cudaStreamDestroy(s));
+      }
+    }
+  };
+
+  std::unique_ptr<cudaStream_t, stream_deleter> m_stream;
 };
+
+/**
+ * Creates a non-owning view of the specified `stream`.
+ */
+inline nvbench::cuda_stream make_cuda_stream_view(cudaStream_t stream)
+{
+  return cuda_stream{stream, false};
+}
 
 } // namespace nvbench

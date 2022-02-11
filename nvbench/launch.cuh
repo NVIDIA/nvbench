@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 NVIDIA Corporation
+ *  Copyright 2021-2022 NVIDIA Corporation
  *
  *  Licensed under the Apache License, Version 2.0 with the LLVM exception
  *  (the "License"); you may not use this file except in compliance with
@@ -23,22 +23,43 @@
 namespace nvbench
 {
 
+/**
+ * Configuration object used to communicate with a `KernelLauncher`.
+ *
+ * The `KernelLauncher` passed into `nvbench::state::exec` is required to
+ * accept an `nvbench::launch` argument:
+ *
+ * ```cpp
+ * state.exec([](nvbench::launch &launch) {
+ *   kernel<<<M, N, 0, launch.get_stream()>>>();
+ * }
+ * ```
+ */
 struct launch
 {
+  explicit launch(const nvbench::cuda_stream &stream)
+      : m_stream{stream}
+  {}
+
   // move-only
-  launch()               = default;
   launch(const launch &) = delete;
   launch(launch &&)      = default;
   launch &operator=(const launch &) = delete;
   launch &operator=(launch &&) = default;
 
+  /**
+   * @return a CUDA stream that all kernels and other stream-ordered CUDA work
+   * must use. This stream can be changed by the `KernelGenerator` using the
+   * `nvbench::state::set_cuda_stream` method.
+   */
   __forceinline__ const nvbench::cuda_stream &get_stream() const
   {
     return m_stream;
   };
 
 private:
-  nvbench::cuda_stream m_stream;
+  // The stream is owned by the `nvbench::state` associated with this launch.
+  const nvbench::cuda_stream &m_stream;
 };
 
 } // namespace nvbench

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 NVIDIA Corporation
+ *  Copyright 2021-2022 NVIDIA Corporation
  *
  *  Licensed under the Apache License, Version 2.0 with the LLVM exception
  *  (the "License"); you may not use this file except in compliance with
@@ -39,6 +39,7 @@ namespace nvbench::detail
 
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
+    , m_launch{m_state.get_cuda_stream()}
     , m_run_once{exec_state.get_run_once()}
     , m_min_samples{exec_state.get_min_samples()}
     , m_max_noise{exec_state.get_max_noise()}

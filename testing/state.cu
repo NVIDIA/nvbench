@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 NVIDIA Corporation
+ *  Copyright 2021-2022 NVIDIA Corporation
  *
  *  Licensed under the Apache License, Version 2.0 with the LLVM exception
  *  (the "License"); you may not use this file except in compliance with
@@ -50,6 +50,24 @@ struct state_tester : public nvbench::state
 } // namespace nvbench::detail
 
 using nvbench::detail::state_tester;
+
+void test_streams()
+{
+  dummy_bench bench;
+
+  state_tester state{bench};
+
+  // Test non-owning stream
+  cudaStream_t default_stream = 0;
+  state.set_cuda_stream(nvbench::cuda_stream{default_stream, false});
+  ASSERT(state.get_cuda_stream() == default_stream);
+
+  // Test owning stream
+  auto stream = nvbench::cuda_stream{};
+  auto gold   = stream.get_stream();
+  state.set_cuda_stream(std::move(stream));
+  ASSERT(state.get_cuda_stream() == gold);
+}
 
 void test_params()
 {
@@ -110,6 +128,7 @@ void test_defaults()
 
 int main()
 {
+  test_streams();
   test_params();
   test_summaries();
   test_defaults();
