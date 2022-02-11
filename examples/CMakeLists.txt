@@ -22,7 +22,7 @@ foreach(example_src IN LISTS example_srcs)
   target_link_libraries(${example_name} PRIVATE nvbench::main)
   set_target_properties(${example_name} PROPERTIES COMPILE_FEATURES cuda_std_17)
   add_test(NAME ${example_name}
-    COMMAND "$<TARGET_FILE:${example_name}>" --timeout 0.1
+    COMMAND "$<TARGET_FILE:${example_name}>" --timeout 0.1 --min-time 1e-5
   )
 
   add_dependencies(nvbench.example.all ${example_name})
