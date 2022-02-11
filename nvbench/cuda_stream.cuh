@@ -27,9 +27,19 @@
 namespace nvbench
 {
 
-// RAII wrapper for a cudaStream_t.
+/**
+ * Manages and provides access to a CUDA stream.
+ *
+ * May be owning or non-owning. If the stream is owned, it will be freed with
+ * `cudaStreamDestroy` when the `cuda_stream`'s lifetime ends. Non-owning
+ * `cuda_stream`s are sometimes referred to as views.
+ */
 struct cuda_stream
 {
+  /**
+   * Constructs a cuda_stream that owns a new stream, created with
+   * `cudaStreamCreate`.
+   */
   cuda_stream()
       : m_stream{[]() {
                    cudaStream_t s;
@@ -39,6 +49,12 @@ struct cuda_stream
                  stream_deleter{true}}
   {}
 
+  /**
+   * Constructs a `cuda_stream` from an explicit cudaStream_t.
+   *
+   * @param owning If true, `cudaStreamCreate(stream)` will be called from this
+   * `cuda_stream`'s destructor.
+   */
   cuda_stream(cudaStream_t stream, bool owning)
       : m_stream{stream, stream_deleter{owning}}
   {}
@@ -51,9 +67,14 @@ struct cuda_stream
   cuda_stream(cuda_stream &&)                 = default;
   cuda_stream &operator=(cuda_stream &&) = default;
 
+  /**
+   * @return The `cudaStream_t` managed by this `cuda_stream`.
+   * @{
+   */
   operator cudaStream_t() const { return m_stream.get(); }
 
   cudaStream_t get_stream() const { return m_stream.get(); }
+  /**@}*/
 
 private:
   struct stream_deleter

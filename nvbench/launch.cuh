@@ -23,6 +23,18 @@
 namespace nvbench
 {
 
+/**
+ * Configuration object used to communicate with a `KernelLauncher`.
+ *
+ * The `KernelLauncher` passed into `nvbench::state::exec` is required to
+ * accept an `nvbench::launch` argument:
+ *
+ * ```cpp
+ * state.exec([](nvbench::launch &launch) {
+ *   kernel<<<M, N, 0, launch.get_stream()>>>();
+ * }
+ * ```
+ */
 struct launch
 {
   explicit launch(const nvbench::cuda_stream &stream)
@@ -35,12 +47,18 @@ struct launch
   launch &operator=(const launch &) = delete;
   launch &operator=(launch &&) = default;
 
+  /**
+   * @return a CUDA stream that all kernels and other stream-ordered CUDA work
+   * must use. This stream can be changed by the `KernelGenerator` using the
+   * `nvbench::state::set_cuda_stream` method.
+   */
   __forceinline__ const nvbench::cuda_stream &get_stream() const
   {
     return m_stream;
   };
 
 private:
+  // The stream is owned by the `nvbench::state` associated with this launch.
   const nvbench::cuda_stream &m_stream;
 };
 
