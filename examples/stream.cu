@@ -49,8 +49,7 @@ void stream_bench(nvbench::state &state)
   // Set CUDA default stream as the target stream. Note the default stream
   // is non-owning.
   cudaStream_t default_stream = 0;
-  state.set_cuda_stream(
-    nvbench::cuda_stream{default_stream, false /*owning = false*/});
+  state.set_cuda_stream(nvbench::make_cuda_stream_view(default_stream));
 
   state.exec([&input, &output, num_values](nvbench::launch &) {
     copy(thrust::raw_pointer_cast(input.data()),
@@ -58,5 +57,4 @@ void stream_bench(nvbench::state &state)
          num_values);
   });
 }
-
 NVBENCH_BENCH(stream_bench);

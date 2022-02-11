@@ -33,6 +33,8 @@ namespace nvbench
  * May be owning or non-owning. If the stream is owned, it will be freed with
  * `cudaStreamDestroy` when the `cuda_stream`'s lifetime ends. Non-owning
  * `cuda_stream`s are sometimes referred to as views.
+ *
+ * @sa nvbench::make_cuda_stream_view
  */
 struct cuda_stream
 {
@@ -54,6 +56,8 @@ struct cuda_stream
    *
    * @param owning If true, `cudaStreamCreate(stream)` will be called from this
    * `cuda_stream`'s destructor.
+   *
+   * @sa nvbench::make_cuda_stream_view
    */
   cuda_stream(cudaStream_t stream, bool owning)
       : m_stream{stream, stream_deleter{owning}}
@@ -93,5 +97,13 @@ private:
 
   std::unique_ptr<cudaStream_t, stream_deleter> m_stream;
 };
+
+/**
+ * Creates a non-owning view of the specified `stream`.
+ */
+inline nvbench::cuda_stream make_cuda_stream_view(cudaStream_t stream)
+{
+  return cuda_stream{stream, false};
+}
 
 } // namespace nvbench
