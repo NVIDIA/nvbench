@@ -210,7 +210,7 @@ log "Test..."
   # Make sure test_status captures ctest, not tee:
   # https://stackoverflow.com/a/999259/11130318
   set -o pipefail
-  echo_and_run_timed "Test" ctest ${CTEST_FLAGS} | tee ctest_log
+  echo_and_run_timed "Test" ctest ${CTEST_FLAGS} -j ${PARALLEL_LEVEL} | tee ctest_log
 )
 
 test_status=$?
