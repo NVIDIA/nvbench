@@ -269,9 +269,13 @@ struct state
 
   [[nodiscard]] bool is_cupti_required() const
   {
-    return is_l2_hit_rate_collected() || is_l1_hit_rate_collected() ||
+    // clang-format off
+    return is_l2_hit_rate_collected() ||
+           is_l1_hit_rate_collected() ||
            is_stores_efficiency_collected() ||
-           is_loads_efficiency_collected() || is_dram_throughput_collected();
+           is_loads_efficiency_collected() ||
+           is_dram_throughput_collected();
+    // clang-format on
   }
 
   summary &add_summary(std::string summary_tag);
