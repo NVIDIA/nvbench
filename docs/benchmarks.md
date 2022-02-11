@@ -53,7 +53,7 @@ In some instances, it may be inconvenient or impossible to specify an explicit
 CUDA stream for the benchmarked operation to use. For example, a library may
 manage and use its own streams, or an opaque API may always launch work on the
 default stream. In these situations, users may provide NVBench with an explicit
-stream via `nvbench::state::set_cuda_stream` and `nvbench::make_stream_view`.
+stream via `nvbench::state::set_cuda_stream` and `nvbench::make_cuda_stream_view`.
 It is assumed that all work of interest executes on or synchronizes with this
 stream.
 
