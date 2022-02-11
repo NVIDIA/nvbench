@@ -11,25 +11,6 @@ void my_benchmark(nvbench::state& state) {
 NVBENCH_BENCH(my_benchmark);
 ```
 
-NVBench records the elapsed time of work on a CUDA stream for each iteration of a benchmark. 
-By default, NVBench creates and provides an explicit stream via `launch::get_stream()` 
-to pass to every stream-ordered operation. 
-
-Sometimes it is inconvenient or impossible to specify an explicit CUDA stream to every 
-stream-ordered operation. A `cudaStream_t` may be provided via `state::set_cuda_stream`. 
-It is assumed that all work of interest executes on or synchronizes with this stream. 
-```cpp
-void my_benchmark(nvbench::state& state) {
-  cudaStream_t default_stream = 0;
-  state.set_cuda_stream(nvbench::cuda_stream{default_stream, false});
-  state.exec([](nvbench::launch&) {
-    my_func(); // a host API invoking GPU kernels without taking an explicit stream
-    my_kernel<<<num_blocks, 256>>>(); // or a kernel launched with the default stream
-  });
-}
-NVBENCH_BENCH(my_benchmark);
-```
-
 There are three main components in the definition of a benchmark:
 
 - A `KernelGenerator` callable (`my_benchmark` above)
@@ -59,6 +40,36 @@ attributes to be modified.
 ```cpp
 NVBENCH_BENCH(my_benchmark).set_name("my_kernel<<<num_blocks, 256>>>");
 ```
+
+# CUDA Streams
+
+NVBench records GPU execution times on a specific CUDA stream. By default, a new
+stream is created and passed to the `KernelLauncher` via the
+`nvbench::launch::get_stream()` method, as shown in
+[Minimal Benchmark](#minimal-benchmark). All benchmarked kernels and other
+stream-ordered work must be launched on this stream for NVBench to capture it.
+
+In some instances, it may be inconvenient or impossible to specify an explicit
+CUDA stream for the benchmarked operation to use. For example, a library may
+manage and use its own streams, or an opaque API may always launch work on the
+default stream. In these situations, users may provide NVBench with an explicit
+stream via `nvbench::state::set_cuda_stream` and `nvbench::make_stream_view`.
+It is assumed that all work of interest executes on or synchronizes with this
+stream.
+
+```cpp
+void my_benchmark(nvbench::state& state) {
+  cudaStream_t default_stream = 0;
+  state.set_cuda_stream(nvbench::make_cuda_stream_view(default_stream));
+  state.exec([](nvbench::launch&) {
+    my_func(); // a host API invoking GPU kernels on the default stream
+    my_kernel<<<num_blocks, 256>>>(); // or a kernel launched with the default stream
+  });
+}
+NVBENCH_BENCH(my_benchmark);
+```
+
+A full example can be found in [examples/stream.cu](../examples/stream.cu).
 
 # Parameter Axes
 
