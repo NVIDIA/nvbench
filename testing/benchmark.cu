@@ -298,7 +298,9 @@ void test_get_config_count()
   bench.add_string_axis("baz", {"str", "ing"});                        // 2, 72
   bench.add_string_axis("baz", {"single"});                            // 1, 72
 
-  ASSERT_MSG(bench.get_config_count() == 72,
+  auto const num_devices = bench.get_devices().size();
+
+  ASSERT_MSG(bench.get_config_count() == 72 * num_devices,
              "Got {}",
              bench.get_config_count());
 }
