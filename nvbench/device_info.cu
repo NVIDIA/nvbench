@@ -127,14 +127,14 @@ try
 catch (nvml::call_failed &e)
 {
   if (e.get_error_code() == NVML_ERROR_NOT_SUPPORTED &&
-      this->get_ptx_version() < 700)
+      this->get_sm_version() < 700)
   {
     NVBENCH_THROW(std::runtime_error,
                   "GPU clock rates can only be modified for Volta and later. "
                   "Device: {} ({}) SM: {} < {}",
                   this->get_name(),
                   this->get_id(),
-                  this->get_ptx_version(),
+                  this->get_sm_version(),
                   700);
   }
   else if (e.get_error_code() == NVML_ERROR_NO_PERMISSION)
