@@ -131,7 +131,10 @@ catch (nvml::call_failed &e)
   {
     NVBENCH_THROW(std::runtime_error,
                   "GPU clock rates can only be modified for Volta and later. "
-                  "Device: {} ({}) SM: {} < {}",
+                  "Device: {} ({}) SM: {} < {}. For older cards, look up the "
+                  "desired frequency for your card and lock clocks manually "
+                  "with `nvidia-smi -lgc <freq_MHz>,<freq_MHz>` (or -rgc to "
+                  "unlock).",
                   this->get_name(),
                   this->get_id(),
                   this->get_sm_version(),
