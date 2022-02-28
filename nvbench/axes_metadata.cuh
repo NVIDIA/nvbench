@@ -62,7 +62,7 @@ struct axes_metadata
 
   void add_string_axis(std::string name, std::vector<std::string> data);
 
-  void tie_axes(std::vector<std::string> names);
+  void zip_axes(std::vector<std::string> names);
 
   void
   user_iteration_axes(std::vector<std::string> names,

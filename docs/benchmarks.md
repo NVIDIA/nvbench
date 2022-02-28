@@ -260,7 +260,8 @@ using output_types = nvbench::type_list<float, double>;
 NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
   .set_type_axes_names({"InputType", "OutputType"})
   .add_int64_axis("NumInputs", {1000, 10000, 100000, 200000, 200000, 200000})
-  .add_float64_axis("Quality", {0.05, 0.1, 0.25, 0.5, 0.75, 1.});
+  .add_float64_axis("Quality", {0.05, 0.1, 0.25, 0.5, 0.75, 1.})
+  .zip_axes({"NumInputs", "Quality"});
 ```
 
 This tieing reduces the total combinations from 24 to 6, reducing the

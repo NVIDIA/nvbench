@@ -238,12 +238,12 @@ void reset_iteration_space(
 }
 } // namespace
 
-void axes_metadata::tie_axes(std::vector<std::string> names)
+void axes_metadata::zip_axes(std::vector<std::string> names)
 {
   NVBENCH_THROW_IF((names.size() < 2),
                    std::runtime_error,
                    "At least two axi names ( {} provided ) need to be provided "
-                   "when using tie_axes.",
+                   "when using zip_axes.",
                    names.size());
 
   // compute the numeric indice for each name we have
@@ -269,7 +269,7 @@ void axes_metadata::tie_axes(std::vector<std::string> names)
   reset_iteration_space(m_value_space, input_indices);
 
   // add the new tied iteration space
-  auto tied = std::make_unique<tie_axis_space>(std::move(input_indices),
+  auto tied = std::make_unique<zip_axis_space>(std::move(input_indices),
                                                std::move(output_indices));
   m_value_space.push_back(std::move(tied));
 }

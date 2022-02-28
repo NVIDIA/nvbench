@@ -77,13 +77,13 @@ void template_no_op_generator(nvbench::state &state,
 NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator,
                                  template_no_op_callable);
 
-void test_tie_axes()
+void test_zip_axes()
 {
   using benchmark_type = nvbench::benchmark<no_op_callable>;
   benchmark_type bench;
   bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
   bench.add_int64_axis("I64 Axis", {1, 3, 2, 4, 5});
-  bench.tie_axes({"F64 Axis", "I64 Axis"});
+  bench.zip_axes({"F64 Axis", "I64 Axis"});
 
   ASSERT_MSG(bench.get_config_count() == 5 * bench.get_devices().size(),
              "Got {}",
@@ -97,10 +97,10 @@ void test_tie_invalid_names()
   bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
   bench.add_int64_axis("I64 Axis", {1, 3, 2});
 
-  ASSERT_THROWS_ANY(bench.tie_axes({"F32 Axis", "I64 Axis"}));
-  ASSERT_THROWS_ANY(bench.tie_axes({"F32 Axis"}));
-  ASSERT_THROWS_ANY(bench.tie_axes({""}));
-  ASSERT_THROWS_ANY(bench.tie_axes(std::vector<std::string>()));
+  ASSERT_THROWS_ANY(bench.zip_axes({"F32 Axis", "I64 Axis"}));
+  ASSERT_THROWS_ANY(bench.zip_axes({"F32 Axis"}));
+  ASSERT_THROWS_ANY(bench.zip_axes({""}));
+  ASSERT_THROWS_ANY(bench.zip_axes(std::vector<std::string>()));
 }
 
 void test_tie_unequal_length()
@@ -110,8 +110,8 @@ void test_tie_unequal_length()
   bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
   bench.add_int64_axis("I64 Axis", {1, 3, 2});
 
-  bench.tie_axes({"I64 Axis", "F64 Axis"});
-  ASSERT_THROWS_ANY(bench.tie_axes({"F64 Axis", "I64 Axis"}));
+  bench.zip_axes({"I64 Axis", "F64 Axis"});
+  ASSERT_THROWS_ANY(bench.zip_axes({"F64 Axis", "I64 Axis"}));
 }
 
 void test_tie_type_axi()
@@ -126,10 +126,10 @@ void test_tie_type_axi()
   bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
   bench.add_int64_axis("I64 Axis", {1, 3, 2});
 
-  ASSERT_THROWS_ANY(bench.tie_axes({"F64 Axis", "Float"}));
+  ASSERT_THROWS_ANY(bench.zip_axes({"F64 Axis", "Float"}));
 }
 
-void test_retie_axes()
+void test_rezip_axes()
 {
   using benchmark_type = nvbench::benchmark<no_op_callable>;
   benchmark_type bench;
@@ -142,20 +142,20 @@ void test_retie_axes()
                            .1,
                          });
 
-  bench.tie_axes({"FAxis_5", "IAxis_A"});
-  bench.tie_axes({"IAxis_B", "FAxis_5", "IAxis_A"}); // re-tie
+  bench.zip_axes({"FAxis_5", "IAxis_A"});
+  bench.zip_axes({"IAxis_B", "FAxis_5", "IAxis_A"}); // re-tie
 
   ASSERT_MSG(bench.get_config_count() == 10 * bench.get_devices().size(),
              "Got {}",
              bench.get_config_count());
 
-  bench.tie_axes({"FAxis_5", "IAxis_A"});
+  bench.zip_axes({"FAxis_5", "IAxis_A"});
   ASSERT_MSG(bench.get_config_count() == 50 * bench.get_devices().size(),
              "Got {}",
              bench.get_config_count());
 }
 
-void test_retie_axes2()
+void test_rezip_axes2()
 {
   using benchmark_type = nvbench::benchmark<no_op_callable>;
   benchmark_type bench;
@@ -170,17 +170,17 @@ void test_retie_axes2()
                            .1,
                          });
 
-  bench.tie_axes({"IAxis_A", "IAxis_B", "IAxis_C"});
-  bench.tie_axes({"FAxis_1", "FAxis_2"});
-  bench.tie_axes(
+  bench.zip_axes({"IAxis_A", "IAxis_B", "IAxis_C"});
+  bench.zip_axes({"FAxis_1", "FAxis_2"});
+  bench.zip_axes(
     {"IAxis_A", "IAxis_B", "IAxis_C", "FAxis_1", "FAxis_2"}); // re-tie
 
   ASSERT_MSG(bench.get_config_count() == 10 * bench.get_devices().size(),
              "Got {}",
              bench.get_config_count());
 
-  bench.tie_axes({"IAxis_A", "IAxis_B", "IAxis_C"});
-  bench.tie_axes({"FAxis_1", "FAxis_2"});
+  bench.zip_axes({"IAxis_A", "IAxis_B", "IAxis_C"});
+  bench.zip_axes({"FAxis_1", "FAxis_2"});
   ASSERT_MSG(bench.get_config_count() == 50 * bench.get_devices().size(),
              "Got {}",
              bench.get_config_count());
@@ -195,7 +195,7 @@ void test_tie_clone()
   bench.add_int64_power_of_two_axis("I64 POT Axis", {10, 20});
   bench.add_int64_axis("I64 Axis", {10, 20});
   bench.add_float64_axis("F64 Axis", {0., .1, .25});
-  bench.tie_axes({"F64 Axis", "Strings"});
+  bench.zip_axes({"F64 Axis", "Strings"});
 
   const auto expected_count = bench.get_config_count();
 
@@ -316,11 +316,11 @@ void test_user_axes()
 
 int main()
 {
-  test_tie_axes();
+  test_zip_axes();
   test_tie_invalid_names();
   test_tie_unequal_length();
   test_tie_type_axi();
-  test_retie_axes();
-  test_retie_axes2();
+  test_rezip_axes();
+  test_rezip_axes2();
   test_tie_clone();
 }

@@ -74,7 +74,7 @@ NVBENCH_BENCH(tied_copy_sweep_grid_shape)
   // Every power of two from  64->1024:
   .add_int64_axis("BlockSize", {32,64,128,256})
   .add_int64_axis("NumBlocks", {1024,512,256,128})
-  .tie_axes({"BlockSize", "NumBlocks"});
+  .zip_axes({"BlockSize", "NumBlocks"});
 
 //==============================================================================
 // under_diag:

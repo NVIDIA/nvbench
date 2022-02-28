@@ -127,14 +127,14 @@ std::unique_ptr<axis_space_base> linear_axis_space::do_clone() const
   return std::make_unique<linear_axis_space>(*this);
 }
 
-tie_axis_space::tie_axis_space(std::vector<std::size_t> input_indices,
+zip_axis_space::zip_axis_space(std::vector<std::size_t> input_indices,
                                std::vector<std::size_t> output_indices)
     : axis_space_base(std::move(input_indices), std::move(output_indices))
 {}
 
-tie_axis_space::~tie_axis_space() = default;
+zip_axis_space::~zip_axis_space() = default;
 
-detail::axis_space_iterator tie_axis_space::do_iter(axes_info info) const
+detail::axis_space_iterator zip_axis_space::do_iter(axes_info info) const
 {
   std::vector<std::size_t> locs = m_output_indices;
   auto update_func              = [=](std::size_t inc_index,
@@ -150,19 +150,19 @@ detail::axis_space_iterator tie_axis_space::do_iter(axes_info info) const
   return detail::make_space_iterator(locs.size(), info[0].size, update_func);
 }
 
-std::size_t tie_axis_space::do_size(const axes_info &info) const
+std::size_t zip_axis_space::do_size(const axes_info &info) const
 {
   return info[0].size;
 }
 
-std::size_t tie_axis_space::do_valid_count(const axes_info &info) const
+std::size_t zip_axis_space::do_valid_count(const axes_info &info) const
 {
   return info[0].active_size;
 }
 
-std::unique_ptr<axis_space_base> tie_axis_space::do_clone() const
+std::unique_ptr<axis_space_base> zip_axis_space::do_clone() const
 {
-  return std::make_unique<tie_axis_space>(*this);
+  return std::make_unique<zip_axis_space>(*this);
 }
 
 user_axis_space::user_axis_space(std::vector<std::size_t> input_indices,

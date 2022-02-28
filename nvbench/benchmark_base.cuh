@@ -111,9 +111,9 @@ struct benchmark_base
     return *this;
   }
 
-  benchmark_base &tie_axes(std::vector<std::string> names)
+  benchmark_base &zip_axes(std::vector<std::string> names)
   {
-    m_axes.tie_axes(std::move(names));
+    m_axes.zip_axes(std::move(names));
     return *this;
   }
 

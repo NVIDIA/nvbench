@@ -67,11 +67,11 @@ struct linear_axis_space final : axis_space_base
   std::size_t do_valid_count(const axes_info &info) const override;
 };
 
-struct tie_axis_space final : axis_space_base
+struct zip_axis_space final : axis_space_base
 {
-  tie_axis_space(std::vector<std::size_t> input_indices,
+  zip_axis_space(std::vector<std::size_t> input_indices,
       std::vector<std::size_t> output_indices);
-  ~tie_axis_space();
+  ~zip_axis_space();
 
   std::unique_ptr<axis_space_base> do_clone() const override;
   detail::axis_space_iterator do_iter(axes_info info) const override;
