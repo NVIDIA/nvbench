@@ -117,38 +117,28 @@ catch (std::exception &e)
 void axes_metadata::add_float64_axis(std::string name,
                                      std::vector<nvbench::float64_t> data)
 {
-  m_value_space.push_back(
-    std::make_unique<linear_axis_space>(m_axes.size(),
-                                        m_axes.size() - m_type_axe_count));
-
-  auto axis = std::make_unique<nvbench::float64_axis>(std::move(name));
-  axis->set_inputs(std::move(data));
-  m_axes.push_back(std::move(axis));
+  this->add_axis(nvbench::float64_axis{name,data});
 }
 
 void axes_metadata::add_int64_axis(std::string name,
                                    std::vector<nvbench::int64_t> data,
                                    nvbench::int64_axis_flags flags)
 {
-  m_value_space.push_back(
-    std::make_unique<linear_axis_space>(m_axes.size(),
-                                        m_axes.size() - m_type_axe_count));
-
-  auto axis = std::make_unique<nvbench::int64_axis>(std::move(name));
-  axis->set_inputs(std::move(data), flags);
-  m_axes.push_back(std::move(axis));
+  this->add_axis(nvbench::int64_axis{name,data,flags});
 }
 
 void axes_metadata::add_string_axis(std::string name,
                                     std::vector<std::string> data)
 {
+  this->add_axis(nvbench::string_axis{name,data});
+}
+
+void axes_metadata::add_axis(const axis_base& axis)
+{
   m_value_space.push_back(
     std::make_unique<linear_axis_space>(m_axes.size(),
                                         m_axes.size() - m_type_axe_count));
-
-  auto axis = std::make_unique<nvbench::string_axis>(std::move(name));
-  axis->set_inputs(std::move(data));
-  m_axes.push_back(std::move(axis));
+  m_axes.push_back(axis.clone());
 }
 
 namespace

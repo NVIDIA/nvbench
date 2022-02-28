@@ -81,9 +81,8 @@ void test_zip_axes()
 {
   using benchmark_type = nvbench::benchmark<no_op_callable>;
   benchmark_type bench;
-  bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
-  bench.add_int64_axis("I64 Axis", {1, 3, 2, 4, 5});
-  bench.zip_axes({"F64 Axis", "I64 Axis"});
+  bench.add_zip_axes(nvbench::float64_axis("F64 Axis", {0., .1, .25, .5, 1.}),
+                     nvbench::int64_axis("I64 Axis", {1, 3, 2, 4, 5}));
 
   ASSERT_MSG(bench.get_config_count() == 5 * bench.get_devices().size(),
              "Got {}",
@@ -107,11 +106,10 @@ void test_tie_unequal_length()
 {
   using benchmark_type = nvbench::benchmark<no_op_callable>;
   benchmark_type bench;
-  bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
-  bench.add_int64_axis("I64 Axis", {1, 3, 2});
 
-  bench.zip_axes({"I64 Axis", "F64 Axis"});
-  ASSERT_THROWS_ANY(bench.zip_axes({"F64 Axis", "I64 Axis"}));
+  ASSERT_THROWS_ANY(
+    bench.add_zip_axes(nvbench::float64_axis("F64 Axis", {0., .1, .25, .5, 1.}),
+                       nvbench::int64_axis("I64 Axis", {1, 3, 2})));
 }
 
 void test_tie_type_axi()
@@ -191,11 +189,11 @@ void test_tie_clone()
   using benchmark_type = nvbench::benchmark<no_op_callable>;
   benchmark_type bench;
   bench.set_devices(std::vector<int>{});
-  bench.add_string_axis("Strings", {"string a", "string b", "string c"});
   bench.add_int64_power_of_two_axis("I64 POT Axis", {10, 20});
   bench.add_int64_axis("I64 Axis", {10, 20});
-  bench.add_float64_axis("F64 Axis", {0., .1, .25});
-  bench.zip_axes({"F64 Axis", "Strings"});
+  bench.add_zip_axes(nvbench::string_axis("Strings",
+                                          {"string a", "string b", "string c"}),
+                     nvbench::float64_axis("F64 Axis", {0., .1, .25}));
 
   const auto expected_count = bench.get_config_count();
 
@@ -237,7 +235,8 @@ struct under_diag final : nvbench::user_axis_space
 {
   under_diag(std::vector<std::size_t> input_indices,
              std::vector<std::size_t> output_indices)
-      : nvbench::user_axis_space(std::move(input_indices), std::move(output_indices))
+      : nvbench::user_axis_space(std::move(input_indices),
+                                 std::move(output_indices))
   {}
 
   mutable std::size_t x_pos   = 0;

@@ -72,9 +72,8 @@ void tied_copy_sweep_grid_shape(nvbench::state &state)
 }
 NVBENCH_BENCH(tied_copy_sweep_grid_shape)
   // Every power of two from  64->1024:
-  .add_int64_axis("BlockSize", {32,64,128,256})
-  .add_int64_axis("NumBlocks", {1024,512,256,128})
-  .zip_axes({"BlockSize", "NumBlocks"});
+  .add_zip_axes(nvbench::int64_axis{"BlockSize", {32, 64, 128, 256}},
+                nvbench::int64_axis{"NumBlocks", {1024, 512, 256, 128}});
 
 //==============================================================================
 // under_diag:
@@ -89,7 +88,8 @@ struct under_diag final : nvbench::user_axis_space
 {
   under_diag(std::vector<std::size_t> input_indices,
              std::vector<std::size_t> output_indices)
-      : nvbench::user_axis_space(std::move(input_indices), std::move(output_indices))
+      : nvbench::user_axis_space(std::move(input_indices),
+                                 std::move(output_indices))
   {}
 
   mutable std::size_t x_pos   = 0;
@@ -154,15 +154,12 @@ void user_copy_sweep_grid_shape(nvbench::state &state)
   copy_sweep_grid_shape(state);
 }
 NVBENCH_BENCH(user_copy_sweep_grid_shape)
-  // Every power of two from  64->1024:
-  .add_int64_power_of_two_axis("BlockSize", nvbench::range(6, 10))
-  .add_int64_power_of_two_axis("NumBlocks", nvbench::range(6, 10))
-  .user_iteration_axes({"NumBlocks", "BlockSize"},
-                       [](auto... args)
-                         -> std::unique_ptr<nvbench::axis_space_base> {
-                         return std::make_unique<under_diag>(args...);
-                       });
-
+  .add_user_iteration_axes(
+    [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
+      return std::make_unique<under_diag>(args...);
+    },
+    nvbench::int64_axis("BlockSize", {64, 128, 256, 512, 1024}),
+    nvbench::int64_axis("NumBlocks", {1024, 521, 256, 128, 64}));
 
 //==============================================================================
 // gauss:
@@ -174,7 +171,8 @@ struct gauss final : nvbench::user_axis_space
 
   gauss(std::vector<std::size_t> input_indices,
         std::vector<std::size_t> output_indices)
-      : nvbench::user_axis_space(std::move(input_indices), std::move(output_indices))
+      : nvbench::user_axis_space(std::move(input_indices),
+                                 std::move(output_indices))
   {}
 
   nvbench::detail::axis_space_iterator do_iter(axes_info info) const
@@ -233,15 +231,13 @@ void dual_float64_axis(nvbench::state &state)
   });
 }
 NVBENCH_BENCH(dual_float64_axis)
-  .add_float64_axis("Duration_A", nvbench::range(0., 1e-4, 1e-5))
-  .add_float64_axis("Duration_B", nvbench::range(0., 1e-4, 1e-5))
-  .user_iteration_axes({"Duration_A"},
-                       [](auto... args)
-                         -> std::unique_ptr<nvbench::axis_space_base> {
-                         return std::make_unique<gauss>(args...);
-                       })
-  .user_iteration_axes({"Duration_B"},
-                       [](auto... args)
-                         -> std::unique_ptr<nvbench::axis_space_base> {
-                         return std::make_unique<gauss>(args...);
-                       });
+  .add_user_iteration_axes(
+    [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
+      return std::make_unique<gauss>(args...);
+    },
+    nvbench::float64_axis("Duration_A", nvbench::range(0., 1e-4, 1e-5)))
+  .add_user_iteration_axes(
+    [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
+      return std::make_unique<gauss>(args...);
+    },
+    nvbench::float64_axis("Duration_B", nvbench::range(0., 1e-4, 1e-5)));

@@ -111,9 +111,23 @@ struct benchmark_base
     return *this;
   }
 
+  template<typename... Args>
+  benchmark_base &add_zip_axes(Args&&... args)
+  {
+    m_axes.add_zip_axes(std::forward<Args>(args)...);
+    return *this;
+  }
+
   benchmark_base &zip_axes(std::vector<std::string> names)
   {
     m_axes.zip_axes(std::move(names));
+    return *this;
+  }
+
+  template<typename... Args>
+  benchmark_base &add_user_iteration_axes(Args&&... args)
+  {
+    m_axes.add_user_iteration_axes(std::forward<Args>(args)...);
     return *this;
   }
 

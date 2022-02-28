@@ -62,6 +62,24 @@ struct axes_metadata
 
   void add_string_axis(std::string name, std::vector<std::string> data);
 
+  void add_axis(const axis_base& axis);
+
+  template <typename... Args>
+  void add_zip_axes(Args &&...args)
+  {
+    (this->add_axis(std::forward<Args>(args)), ...);
+    this->zip_axes({args.get_name()...});
+  }
+
+  template <typename... Args>
+  void add_user_iteration_axes(
+    std::function<nvbench::make_user_space_signature> make,
+    Args &&...args)
+  {
+    (this->add_axis(std::forward<Args>(args)), ...);
+    this->user_iteration_axes({args.get_name()...}, std::move(make));
+  }
+
   void zip_axes(std::vector<std::string> names);
 
   void

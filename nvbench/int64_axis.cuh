@@ -51,6 +51,10 @@ struct int64_axis final : public axis_base
       , m_flags{int64_axis_flags::none}
   {}
 
+  explicit int64_axis(std::string name,
+                      std::vector<int64_t> inputs,
+                      int64_axis_flags flags = int64_axis_flags::none);
+
   ~int64_axis() final;
 
   [[nodiscard]] bool is_power_of_two() const
