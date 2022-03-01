@@ -60,16 +60,27 @@ void copy_sweep_grid_shape(nvbench::state &state)
         num_values);
     });
 }
-
-//==============================================================================
-// Tied iteration space allows you to iterate two or more axes at the same
-// time allowing for sparse exploration of the search space. Can also be used
-// to test the diagonal of a square matrix
-//
+void naive_copy_sweep_grid_shape(nvbench::state &state)
+{
+  copy_sweep_grid_shape(state);
+}
 void tied_copy_sweep_grid_shape(nvbench::state &state)
 {
   copy_sweep_grid_shape(state);
 }
+
+//==============================================================================
+// Naive iteration of both the BlockSize and NumBlocks axis.
+// Will generate the full cross product of the two axis for a total of
+// 16 invocations of copy_sweep_grid_shape.
+NVBENCH_BENCH(naive_copy_sweep_grid_shape)
+  // Full combinatorial of Every power of two from  64->1024:
+  .add_int64_axis("BlockSize", {32, 64, 128, 256})
+  .add_int64_axis("NumBlocks", {1024, 512, 256, 128});
+
+//==============================================================================
+// Zipped iteration of BlockSize and Numblocks axes.
+// Will generate only 4 invocations of copy_sweep_grid_shape
 NVBENCH_BENCH(tied_copy_sweep_grid_shape)
   // Every power of two from  64->1024:
   .add_zip_axes(nvbench::int64_axis{"BlockSize", {32, 64, 128, 256}},
