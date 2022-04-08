@@ -91,6 +91,7 @@ protected:
   nvbench::blocking_kernel m_blocker;
 
   bool m_run_once{false};
+  bool m_no_block{false};
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_max_noise{}; // rel stdev

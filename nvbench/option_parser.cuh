@@ -94,6 +94,7 @@ private:
   void lock_gpu_clocks(const std::string &rate);
 
   void enable_run_once();
+  void disable_blocking_kernel();
 
   void add_benchmark(const std::string &name);
   void replay_global_args();

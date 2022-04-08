@@ -64,6 +64,13 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     return;
   }
 
+  if (!(modifier_tags & no_block) && this->get_no_block())
+  {
+    constexpr auto no_block_tags = modifier_tags | no_block;
+    this->exec(no_block_tags, std::forward<KernelLauncher>(kernel_launcher));
+    return;
+  }
+
   // If no measurements selected, pick some defaults based on the modifiers:
   if constexpr (!measure_tags)
   {

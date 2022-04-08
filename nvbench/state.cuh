@@ -167,6 +167,12 @@ struct state
   void set_run_once(bool v) { m_run_once = v; }
   /// @}
 
+  /// If true, the benchmark does not use the blocking_kernel. This is intended
+  /// for use with external profiling tools. @{
+  [[nodiscard]] bool get_no_block() const { return m_no_block; }
+  void set_no_block(bool v) { m_no_block = v; }
+  /// @}
+
   /// Accumulate at least this many seconds of timing data per measurement. @{
   [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
   void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
@@ -322,6 +328,7 @@ private:
   std::size_t m_type_config_index{};
 
   bool m_run_once{false};
+  bool m_no_block{false};
 
   nvbench::int64_t m_min_samples;
   nvbench::float64_t m_min_time;

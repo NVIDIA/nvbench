@@ -83,6 +83,13 @@ __global__ void block_stream(const volatile nvbench::int32_t *flag,
       "The current timeout is set to %0.5g seconds.\n"
       "\n"
       "For more information, see the 'Benchmarks that sync' section of the\n"
+      "NVBench documentation.\n"
+      "\n"
+      "If this happens while profiling with an external tool,\n"
+      "pass the `--disable-blocking-kernel` flag or the `--profile` flag\n"
+      "(to also only run the benchmark once) to the executable.\n"
+      "\n"
+      "For more information, see the 'Benchmark Properties' section of the\n"
       "NVBench documentation.\n\n",
       timeout);
   }
