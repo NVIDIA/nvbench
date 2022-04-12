@@ -79,7 +79,7 @@ NVBENCH_BENCH(naive_copy_sweep_grid_shape)
   .add_int64_axis("NumBlocks", {1024, 512, 256, 128});
 
 //==============================================================================
-// Zipped iteration of BlockSize and Numblocks axes.
+// Zipped iteration of BlockSize and NumBlocks axes.
 // Will generate only 4 invocations of copy_sweep_grid_shape
 NVBENCH_BENCH(tied_copy_sweep_grid_shape)
   // Every power of two from  64->1024:
