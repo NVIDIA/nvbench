@@ -70,7 +70,7 @@ void tied_copy_sweep_grid_shape(nvbench::state &state)
 }
 
 //==============================================================================
-// Naive iteration of both the BlockSize and NumBlocks axis.
+// Naive iteration of both the BlockSize and NumBlocks axes.
 // Will generate the full cross product of the two axis for a total of
 // 16 invocations of copy_sweep_grid_shape.
 NVBENCH_BENCH(naive_copy_sweep_grid_shape)
