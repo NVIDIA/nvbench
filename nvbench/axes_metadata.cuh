@@ -77,14 +77,14 @@ struct axes_metadata
     Args &&...args)
   {
     (this->add_axis(std::forward<Args>(args)), ...);
-    this->user_iteration_axes({args.get_name()...}, std::move(make));
+    this->user_iteration_axes(std::move(make), {args.get_name()...});
   }
 
   void zip_axes(std::vector<std::string> names);
 
   void
-  user_iteration_axes(std::vector<std::string> names,
-                      std::function<nvbench::make_user_space_signature> make);
+  user_iteration_axes(std::function<nvbench::make_user_space_signature> make,
+                      std::vector<std::string> names);
 
   [[nodiscard]] const axes_iteration_space &get_type_iteration_space() const
   {

@@ -265,8 +265,8 @@ void axes_metadata::zip_axes(std::vector<std::string> names)
 }
 
 void axes_metadata::user_iteration_axes(
-  std::vector<std::string> names,
-  std::function<nvbench::make_user_space_signature> make)
+  std::function<nvbench::make_user_space_signature> make,
+  std::vector<std::string> names)
 {
   // compute the numeric indice for each name we have
   auto [input_indices,
