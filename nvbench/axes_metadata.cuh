@@ -21,9 +21,12 @@
 #include <nvbench/axis_iteration_space.cuh>
 #include <nvbench/float64_axis.cuh>
 #include <nvbench/int64_axis.cuh>
+#include <nvbench/linear_axis_space.cuh>
 #include <nvbench/string_axis.cuh>
 #include <nvbench/type_axis.cuh>
 #include <nvbench/types.cuh>
+#include <nvbench/user_axis_space.cuh>
+#include <nvbench/zip_axis_space.cuh>
 
 #include <functional>
 #include <memory>

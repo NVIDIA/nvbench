@@ -11,6 +11,7 @@ set(srcs
   device_manager.cu
   float64_axis.cxx
   int64_axis.cxx
+  linear_axis_space.cxx
   markdown_printer.cu
   named_values.cxx
   option_parser.cu
@@ -21,6 +22,8 @@ set(srcs
   string_axis.cxx
   type_axis.cxx
   type_strings.cxx
+  user_axis_space.cxx
+  zip_axis_space.cxx
 
   detail/measure_cold.cu
   detail/measure_hot.cu
