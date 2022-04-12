@@ -111,19 +111,42 @@ struct benchmark_base
     return *this;
   }
 
-  template<typename... Args>
-  benchmark_base &add_zip_axes(Args&&... args)
+  /// Construct a zip iteration space from the provided value axes.
+  ///
+  /// When axes are zipped together they are iterated like a tuple
+  /// of values instead of separate parameters. For example two
+  /// value axes of 5 entries will generate 25 combinations, but
+  /// when zipped will generate 5 combinations.
+  ///
+  /// @param[axes] a set of axis_base to be added to the benchmark
+  /// and zipped together
+  ///
+  template<typename... Axes>
+  benchmark_base &add_zip_axes(Axes&&... axes)
   {
-    m_axes.add_zip_axes(std::forward<Args>(args)...);
+    m_axes.add_zip_axes(std::forward<Axes>(axes)...);
     return *this;
   }
+  /// @}
 
-  template<typename... Args>
-  benchmark_base &add_user_iteration_axes(Args&&... args)
+  /// Construct a user iteration space from the provided value axes.
+  ///
+  /// Instead of using the standard iteration over each axes, they
+  /// are iterated using the custom user iterator that was provided.
+  /// This allows for fancy iteration such as using every other
+  /// value, random sampling, etc.
+  ///
+  /// @param[args] First argument is a `std::function<nvbench::make_user_space_signature>`
+  /// which constructs the user iteration space, and the reseet are axis_base to be
+  /// added to the benchmark and iterated using the user iteration space
+  ///
+  template<typename... ConstructorAndAxes>
+  benchmark_base &add_user_iteration_axes(ConstructorAndAxes&&... args)
   {
-    m_axes.add_user_iteration_axes(std::forward<Args>(args)...);
+    m_axes.add_user_iteration_axes(std::forward<ConstructorAndAxes>(args)...);
     return *this;
   }
+  /// @}
 
   benchmark_base &set_devices(std::vector<int> device_ids);
 
