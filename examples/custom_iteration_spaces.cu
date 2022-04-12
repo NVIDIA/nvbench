@@ -71,7 +71,7 @@ void tied_copy_sweep_grid_shape(nvbench::state &state)
 
 //==============================================================================
 // Naive iteration of both the BlockSize and NumBlocks axes.
-// Will generate the full cross product of the two axis for a total of
+// Will generate the full cartesian product of the two axes for a total of
 // 16 invocations of copy_sweep_grid_shape.
 NVBENCH_BENCH(naive_copy_sweep_grid_shape)
   // Full combinatorial of Every power of two from  64->1024:
