@@ -39,8 +39,8 @@ namespace nvbench
 struct axes_metadata
 {
   using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
-  using axes_iteration_space =
-    std::vector<std::unique_ptr<nvbench::axis_space_base>>;
+  using iteration_space_type =
+    std::vector<std::unique_ptr<nvbench::iteration_space_base>>;
 
   template <typename... TypeAxes>
   explicit axes_metadata(nvbench::type_list<TypeAxes...>);
@@ -86,11 +86,11 @@ struct axes_metadata
   user_iteration_axes(std::function<nvbench::make_user_space_signature> make,
                       std::vector<std::string> names);
 
-  [[nodiscard]] const axes_iteration_space &get_type_iteration_space() const
+  [[nodiscard]] const iteration_space_type &get_type_iteration_space() const
   {
     return m_type_space;
   }
-  [[nodiscard]] const axes_iteration_space &get_value_iteration_space() const
+  [[nodiscard]] const iteration_space_type &get_value_iteration_space() const
   {
     return m_value_space;
   }
@@ -131,8 +131,8 @@ struct axes_metadata
 private:
   axes_type m_axes;
   std::size_t m_type_axe_count = 0;
-  axes_iteration_space m_type_space;
-  axes_iteration_space m_value_space;
+  iteration_space_type m_type_space;
+  iteration_space_type m_value_space;
 };
 
 template <typename... TypeAxes>

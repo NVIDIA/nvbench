@@ -70,14 +70,14 @@ std::size_t benchmark_base::get_config_count() const
     m_axes.get_value_iteration_space().cend(),
     std::size_t{1},
     std::multiplies<>{},
-    [&axes](const auto &space) { return space->size(axes); });
+    [&axes](const auto &space) { return space->get_size(axes); });
 
   const std::size_t type_count = nvbench::detail::transform_reduce(
     m_axes.get_type_iteration_space().cbegin(),
     m_axes.get_type_iteration_space().cend(),
     std::size_t{1},
     std::multiplies<>{},
-    [&axes](const auto &space) { return space->valid_count(axes); });
+    [&axes](const auto &space) { return space->get_active_count(axes); });
 
   return (value_count * type_count) * std::max(1UL, m_devices.size());
 }

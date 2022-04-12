@@ -99,7 +99,7 @@ struct under_diag final : nvbench::user_axis_space
   mutable std::size_t y_pos   = 0;
   mutable std::size_t x_start = 0;
 
-  nvbench::detail::axis_space_iterator do_iter(axes_info info) const
+  nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
   {
     // generate our increment function
     auto adv_func = [&, info](std::size_t &inc_index,
@@ -136,17 +136,17 @@ struct under_diag final : nvbench::user_axis_space
                                                 diag_under);
   }
 
-  std::size_t do_size(const axes_info &info) const
+  std::size_t do_get_size(const axes_info &info) const
   {
     return ((info[0].size * (info[1].size + 1)) / 2);
   }
 
-  std::size_t do_valid_count(const axes_info &info) const
+  std::size_t do_get_active_count(const axes_info &info) const
   {
     return ((info[0].size * (info[1].size + 1)) / 2);
   }
 
-  std::unique_ptr<nvbench::axis_space_base> do_clone() const
+  std::unique_ptr<nvbench::iteration_space_base> do_clone() const
   {
     return std::make_unique<under_diag>(*this);
   }
@@ -155,7 +155,7 @@ struct under_diag final : nvbench::user_axis_space
 NVBENCH_BENCH(copy_sweep_grid_shape)
   .set_name("user_copy_sweep_grid_shape")
   .add_user_iteration_axes(
-    [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
+    [](auto... args) -> std::unique_ptr<nvbench::iteration_space_base> {
       return std::make_unique<under_diag>(args...);
     },
     nvbench::int64_axis("BlockSize", {64, 128, 256, 512, 1024}),
@@ -175,7 +175,7 @@ struct gauss final : nvbench::user_axis_space
                                  std::move(output_indices))
   {}
 
-  nvbench::detail::axis_space_iterator do_iter(axes_info info) const
+  nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
   {
     const double mid_point = static_cast<double>((info[0].size / 2));
 
@@ -206,14 +206,14 @@ struct gauss final : nvbench::user_axis_space
                                                 gauss_func);
   }
 
-  std::size_t do_size(const axes_info &info) const { return info[0].size; }
+  std::size_t do_get_size(const axes_info &info) const { return info[0].size; }
 
-  std::size_t do_valid_count(const axes_info &info) const
+  std::size_t do_get_active_count(const axes_info &info) const
   {
     return info[0].size;
   }
 
-  std::unique_ptr<axis_space_base> do_clone() const
+  std::unique_ptr<iteration_space_base> do_clone() const
   {
     return std::make_unique<gauss>(*this);
   }
@@ -232,12 +232,12 @@ void dual_float64_axis(nvbench::state &state)
 }
 NVBENCH_BENCH(dual_float64_axis)
   .add_user_iteration_axes(
-    [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
+    [](auto... args) -> std::unique_ptr<nvbench::iteration_space_base> {
       return std::make_unique<gauss>(args...);
     },
     nvbench::float64_axis("Duration_A", nvbench::range(0., 1e-4, 1e-5)))
   .add_user_iteration_axes(
-    [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
+    [](auto... args) -> std::unique_ptr<nvbench::iteration_space_base> {
       return std::make_unique<gauss>(args...);
     },
     nvbench::float64_axis("Duration_B", nvbench::range(0., 1e-4, 1e-5)));

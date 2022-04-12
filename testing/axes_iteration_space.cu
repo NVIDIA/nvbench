@@ -279,7 +279,7 @@ struct under_diag final : nvbench::user_axis_space
   mutable std::size_t y_pos   = 0;
   mutable std::size_t x_start = 0;
 
-  nvbench::detail::axis_space_iterator do_iter(axes_info info) const
+  nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
   {
     // generate our increment function
     auto adv_func = [&, info](std::size_t &inc_index,
@@ -316,17 +316,17 @@ struct under_diag final : nvbench::user_axis_space
                                                 diag_under);
   }
 
-  std::size_t do_size(const axes_info &info) const
+  std::size_t do_get_size(const axes_info &info) const
   {
     return ((info[0].size * (info[1].size + 1)) / 2);
   }
 
-  std::size_t do_valid_count(const axes_info &info) const
+  std::size_t do_get_active_count(const axes_info &info) const
   {
     return ((info[0].size * (info[1].size + 1)) / 2);
   }
 
-  std::unique_ptr<nvbench::axis_space_base> do_clone() const
+  std::unique_ptr<nvbench::iteration_space_base> do_clone() const
   {
     return std::make_unique<under_diag>(*this);
   }
@@ -339,7 +339,7 @@ void test_user_axes()
   bench.add_float64_axis("F64 Axis", {0., .1, .25, .5, 1.});
   bench.add_int64_axis("I64 Axis", {1, 3, 2, 4, 5});
   bench.user_iteration_axes(
-    [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
+    [](auto... args) -> std::unique_ptr<nvbench::iteration_space_base> {
       return std::make_unique<under_diag>(args...);
     },
     {"F64 Axis", "I64 Axis"});

@@ -23,7 +23,7 @@
 namespace nvbench
 {
 
-struct axis_space_base
+struct iteration_space_base
 {
   using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
   using axes_info = std::vector<detail::axis_index>;
@@ -32,17 +32,17 @@ struct axis_space_base
     nvbench::detail::axis_space_iterator::AdvanceSignature;
   using UpdateSignature = nvbench::detail::axis_space_iterator::UpdateSignature;
 
-  axis_space_base(std::vector<std::size_t> input_indices,
+  iteration_space_base(std::vector<std::size_t> input_indices,
                   std::vector<std::size_t> output_indices);
-  virtual ~axis_space_base();
+  virtual ~iteration_space_base();
 
-  [[nodiscard]] std::unique_ptr<axis_space_base> clone() const;
-  [[nodiscard]] std::vector<std::unique_ptr<axis_space_base>>
+  [[nodiscard]] std::unique_ptr<iteration_space_base> clone() const;
+  [[nodiscard]] std::vector<std::unique_ptr<iteration_space_base>>
   clone_as_linear() const;
 
-  [[nodiscard]] detail::axis_space_iterator iter(const axes_type &axes) const;
-  [[nodiscard]] std::size_t size(const axes_type &axes) const;
-  [[nodiscard]] std::size_t valid_count(const axes_type &axes) const;
+  [[nodiscard]] detail::axis_space_iterator get_iterator(const axes_type &axes) const;
+  [[nodiscard]] std::size_t get_size(const axes_type &axes) const;
+  [[nodiscard]] std::size_t get_active_count(const axes_type &axes) const;
 
   [[nodiscard]] bool contains(std::size_t input_index) const;
 
@@ -50,36 +50,36 @@ protected:
   std::vector<std::size_t> m_input_indices;
   std::vector<std::size_t> m_output_indices;
 
-  virtual std::unique_ptr<axis_space_base> do_clone() const         = 0;
-  virtual detail::axis_space_iterator do_iter(axes_info info) const = 0;
-  virtual std::size_t do_size(const axes_info &info) const          = 0;
-  virtual std::size_t do_valid_count(const axes_info &info) const   = 0;
+  virtual std::unique_ptr<iteration_space_base> do_clone() const         = 0;
+  virtual detail::axis_space_iterator do_get_iterator(axes_info info) const = 0;
+  virtual std::size_t do_get_size(const axes_info &info) const          = 0;
+  virtual std::size_t do_get_active_count(const axes_info &info) const   = 0;
 };
 
-struct linear_axis_space final : axis_space_base
+struct linear_axis_space final : iteration_space_base
 {
   linear_axis_space(std::size_t in, std::size_t out);
   ~linear_axis_space();
 
-  std::unique_ptr<axis_space_base> do_clone() const override;
-  detail::axis_space_iterator do_iter(axes_info info) const override;
-  std::size_t do_size(const axes_info &info) const override;
-  std::size_t do_valid_count(const axes_info &info) const override;
+  std::unique_ptr<iteration_space_base> do_clone() const override;
+  detail::axis_space_iterator do_get_iterator(axes_info info) const override;
+  std::size_t do_get_size(const axes_info &info) const override;
+  std::size_t do_get_active_count(const axes_info &info) const override;
 };
 
-struct zip_axis_space final : axis_space_base
+struct zip_axis_space final : iteration_space_base
 {
   zip_axis_space(std::vector<std::size_t> input_indices,
       std::vector<std::size_t> output_indices);
   ~zip_axis_space();
 
-  std::unique_ptr<axis_space_base> do_clone() const override;
-  detail::axis_space_iterator do_iter(axes_info info) const override;
-  std::size_t do_size(const axes_info &info) const override;
-  std::size_t do_valid_count(const axes_info &info) const override;
+  std::unique_ptr<iteration_space_base> do_clone() const override;
+  detail::axis_space_iterator do_get_iterator(axes_info info) const override;
+  std::size_t do_get_size(const axes_info &info) const override;
+  std::size_t do_get_active_count(const axes_info &info) const override;
 };
 
-struct user_axis_space : axis_space_base
+struct user_axis_space : iteration_space_base
 {
   user_axis_space(std::vector<std::size_t> input_indices,
                   std::vector<std::size_t> output_indices);
@@ -87,7 +87,7 @@ struct user_axis_space : axis_space_base
 };
 
 using make_user_space_signature =
-  std::unique_ptr<axis_space_base>(std::vector<std::size_t> input_indices,
+  std::unique_ptr<iteration_space_base>(std::vector<std::size_t> input_indices,
                                    std::vector<std::size_t> output_indices);
 
 } // namespace nvbench

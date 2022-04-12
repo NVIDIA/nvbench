@@ -177,12 +177,12 @@ get_axes_indices(std::size_t type_axe_count,
 }
 
 void reset_iteration_space(
-  nvbench::axes_metadata::axes_iteration_space &all_spaces,
+  nvbench::axes_metadata::iteration_space_type &all_spaces,
   const std::vector<std::size_t> &indices_to_remove)
 {
   // 1. Find all spaces indices that
-  nvbench::axes_metadata::axes_iteration_space reset_space;
-  nvbench::axes_metadata::axes_iteration_space to_filter;
+  nvbench::axes_metadata::iteration_space_type reset_space;
+  nvbench::axes_metadata::iteration_space_type to_filter;
   for (auto &space : all_spaces)
   {
     bool added = false;

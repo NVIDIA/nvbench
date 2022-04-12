@@ -108,12 +108,12 @@ void state_generator::build_axis_configs()
     std::for_each(type_space.crbegin(),
                   type_space.crend(),
                   [&ti, &axes_vec](const auto &space) {
-                    ti.add_iteration_space(space->iter(axes_vec));
+                    ti.add_iteration_space(space->get_iterator(axes_vec));
                   });
     std::for_each(value_space.begin(),
                   value_space.end(),
                   [&vi, &axes_vec](const auto &space) {
-                    vi.add_iteration_space(space->iter(axes_vec));
+                    vi.add_iteration_space(space->get_iterator(axes_vec));
                   });
   }
 

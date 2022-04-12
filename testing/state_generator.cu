@@ -62,7 +62,7 @@ void test_single_state()
   std::vector<std::unique_ptr<nvbench::axis_base>> axes;
   axes.push_back(std::make_unique<nvbench::string_axis>(si));
 
-  sg.add_iteration_space(nvbench::linear_axis_space{0, 0}.iter(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{0, 0}.get_iterator(axes));
   ASSERT(sg.get_number_of_states() == 1);
   sg.init();
   ASSERT(sg.iter_valid());
@@ -96,10 +96,10 @@ void test_basic()
   axes.emplace_back(std::make_unique<nvbench::string_axis>(si3));
   axes.emplace_back(std::make_unique<nvbench::string_axis>(si4));
 
-  sg.add_iteration_space(nvbench::linear_axis_space{0, 0}.iter(axes));
-  sg.add_iteration_space(nvbench::linear_axis_space{1, 1}.iter(axes));
-  sg.add_iteration_space(nvbench::linear_axis_space{2, 2}.iter(axes));
-  sg.add_iteration_space(nvbench::linear_axis_space{3, 3}.iter(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{0, 0}.get_iterator(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{1, 1}.get_iterator(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{2, 2}.get_iterator(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{3, 3}.get_iterator(axes));
 
   ASSERT_MSG(sg.get_number_of_states() == (2 * 3 * 3 * 2),
              "Actual: {} Expected: {}",
