@@ -243,7 +243,7 @@ Keep the rapid growth of combinations due to multiple parameter axes in mind whe
 choosing the number of values in an axis. See the section about combinatorial
 explosion for more examples and information.
 
-## Zipped/Tied Iteration of Value Axes
+## Zipped Iteration of Value Axes
 
 At times multiple value axes need to be iterated like they are actually a tuple
 or zipped together. To enable this behavior you can request axes to be 'zipped'
@@ -252,8 +252,8 @@ together.
 ```cpp
 // InputTypes: {char, int, unsigned int}
 // OutputTypes: {float, double}
-// NumInputs: {2^10, 2^20, 2^30}
-// Quality: {0.5, 1.0}
+// NumInputs: {1000, 10000, 100000, 200000, 200000, 200000}
+// Quality: {0.05, 0.1, 0.25, 0.5, 0.75, 1.}
 
 using input_types = nvbench::type_list<char, int, unsigned int>;
 using output_types = nvbench::type_list<float, double>;
@@ -266,6 +266,8 @@ NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
 
 Zipping these two axes reduces the total combinations from 216 to 36, reducing the
 combinatorial explosion.
+
+Note: Only value axes may be zipped together.
 
 # Throughput Measurements
 

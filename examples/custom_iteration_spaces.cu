@@ -60,29 +60,21 @@ void copy_sweep_grid_shape(nvbench::state &state)
         num_values);
     });
 }
-void naive_copy_sweep_grid_shape(nvbench::state &state)
-{
-  copy_sweep_grid_shape(state);
-}
-void tied_copy_sweep_grid_shape(nvbench::state &state)
-{
-  copy_sweep_grid_shape(state);
-}
 
 //==============================================================================
 // Naive iteration of both the BlockSize and NumBlocks axes.
 // Will generate the full cartesian product of the two axes for a total of
 // 16 invocations of copy_sweep_grid_shape.
-NVBENCH_BENCH(naive_copy_sweep_grid_shape)
-  // Full combinatorial of Every power of two from  64->1024:
+NVBENCH_BENCH(copy_sweep_grid_shape)
+  .set_name("naive_copy_sweep_grid_shape")
   .add_int64_axis("BlockSize", {32, 64, 128, 256})
   .add_int64_axis("NumBlocks", {1024, 512, 256, 128});
 
 //==============================================================================
 // Zipped iteration of BlockSize and NumBlocks axes.
 // Will generate only 4 invocations of copy_sweep_grid_shape
-NVBENCH_BENCH(tied_copy_sweep_grid_shape)
-  // Every power of two from  64->1024:
+NVBENCH_BENCH(copy_sweep_grid_shape)
+  .set_name("tied_copy_sweep_grid_shape")
   .add_zip_axes(nvbench::int64_axis{"BlockSize", {32, 64, 128, 256}},
                 nvbench::int64_axis{"NumBlocks", {1024, 512, 256, 128}});
 
@@ -160,11 +152,8 @@ struct under_diag final : nvbench::user_axis_space
   }
 };
 
-void user_copy_sweep_grid_shape(nvbench::state &state)
-{
-  copy_sweep_grid_shape(state);
-}
-NVBENCH_BENCH(user_copy_sweep_grid_shape)
+NVBENCH_BENCH(copy_sweep_grid_shape)
+  .set_name("user_copy_sweep_grid_shape")
   .add_user_iteration_axes(
     [](auto... args) -> std::unique_ptr<nvbench::axis_space_base> {
       return std::make_unique<under_diag>(args...);
