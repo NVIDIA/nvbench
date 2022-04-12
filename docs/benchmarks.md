@@ -246,7 +246,7 @@ explosion for more examples and information.
 ## Zipped/Tied Iteration of Value Axes
 
 At times multiple value axes need to be iterated like they are actually a tuple
-or zipped together. To enable this behavior you can request axes to be 'tied'
+or zipped together. To enable this behavior you can request axes to be 'zipped'
 together.
 
 ```cpp
