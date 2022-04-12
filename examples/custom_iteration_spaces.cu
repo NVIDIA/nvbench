@@ -88,7 +88,7 @@ NVBENCH_BENCH(tied_copy_sweep_grid_shape)
 
 //==============================================================================
 // under_diag:
-// Custom iterator that only searches the `X` locations of two axi
+// Custom iterator that only searches the `X` locations of two axes:
 // [- - - - X]
 // [- - - X X]
 // [- - X X X]
