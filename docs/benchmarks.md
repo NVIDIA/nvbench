@@ -264,7 +264,7 @@ NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
   .zip_axes({"NumInputs", "Quality"});
 ```
 
-This tieing reduces the total combinations from 24 to 6, reducing the
+Zipping these two axes reduces the total combinations from 216 to 36, reducing the
 combinatorial explosion.
 
 # Throughput Measurements
