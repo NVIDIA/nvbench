@@ -95,7 +95,7 @@ bool axis_space_base::contains(std::size_t in_index) const
 
 linear_axis_space::linear_axis_space(std::size_t in_index,
                                      std::size_t out_index)
-    : axis_space_base({std::move(in_index)}, {out_index})
+    : axis_space_base({in_index}, {out_index})
 {}
 
 linear_axis_space::~linear_axis_space() = default;
