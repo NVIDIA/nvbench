@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <nvbench/axis_iteration_space.cuh>
+#include <nvbench/iteration_space_base.cuh>
 #include <nvbench/float64_axis.cuh>
 #include <nvbench/int64_axis.cuh>
 #include <nvbench/linear_axis_space.cuh>

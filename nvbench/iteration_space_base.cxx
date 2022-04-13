@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-#include "axis_iteration_space.cuh"
+#include "iteration_space_base.cuh"
 
 #include <nvbench/type_axis.cuh>
 #include <nvbench/linear_axis_space.cuh>

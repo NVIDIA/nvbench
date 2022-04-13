@@ -1,7 +1,7 @@
 set(srcs
   axes_metadata.cxx
   axis_base.cxx
-  axis_iteration_space.cxx
+  iteration_space_base.cxx
   benchmark_base.cxx
   benchmark_manager.cxx
   blocking_kernel.cu
