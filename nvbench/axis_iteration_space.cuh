@@ -27,7 +27,10 @@ namespace nvbench
  * Base class for all axi and axes iteration spaces.
  *
  * If we consider an axi to be a container of values, iteration_spaces
- * would be the different types of iterators supported by that container.
+ * would be how we can create iterators over that container.
+ *
+ * Construction of the iterators needs to be deferred, to execution
+ * as the axes can change, therefore this class.........
  *
  * With that in mind we get the following mapping:
  * * linear_axis_space is equivalant to a forward iterator.
@@ -48,7 +51,7 @@ struct iteration_space_base
   using UpdateSignature = nvbench::detail::axis_space_iterator::UpdateSignature;
 
   /*!
-   * Construct a new iteration_space_base
+   * Construct a new derived iteration_space
    *
    * @param[input_indices]
    * @param[output_indices]
@@ -62,26 +65,46 @@ struct iteration_space_base
   clone_as_linear() const;
 
   /*!
-   * Construct a new iteration_space_base
+   * Returns the iterator over the @a axis provided
+   *
+   * @param[axes]
    *
    */
   [[nodiscard]] detail::axis_space_iterator
   get_iterator(const axes_type &axes) const;
 
   /*!
-   * Construct a new iteration_space_base
+   * Returns the number of active and inactive elements the iterator will have
+   * when executed over @a axes
    *
+   * Note:
+   *  Type Axis support inactive elements
    */
   [[nodiscard]] std::size_t get_size(const axes_type &axes) const;
 
   /*!
-   * Construct a new iteration_space_base
+   * Returns the number of active elements the iterator will over when
+   * executed over @a axes
    *
+   * Note:
+   *  Type Axis support inactive elements
    */
   [[nodiscard]] std::size_t get_active_count(const axes_type &axes) const;
 
   /*!
-   * Construct a new iteration_space_base
+   * Returns if this space was constructed with the input index specified
+   * by @a input_index.
+   *
+   * The `nvbench::axes_metadata` stores all axes in a std::vector. To represent
+   * which axes each space is 'over' we store those indices. We don't store
+   * the pointers or names for the following reasons:
+   *
+   * * The names of an axis can change after being added. The `nvbench::axes_metadata`
+   * is not aware of the name change, and can't inform this class of it.
+   *
+   * * The `nvbench::axes_metadata` can be deep copied, which would invalidate
+   * any pointers held by this class. By holding onto the index we remove the need
+   * to do any form of fixup on deep copies of `nvbench::axes_metadata`.
    *
    */
   [[nodiscard]] bool contains(std::size_t input_index) const;
