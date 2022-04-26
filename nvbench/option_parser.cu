@@ -731,7 +731,7 @@ void option_parser::disable_blocking_kernel()
   }
 
   benchmark_base &bench = *m_benchmarks.back();
-  bench.set_no_block(true);
+  bench.set_disable_blocking_kernel(true);
 }
 
 void option_parser::add_benchmark(const std::string &name)

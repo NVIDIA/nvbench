@@ -64,7 +64,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     return;
   }
 
-  if (!(modifier_tags & no_block) && this->get_no_block())
+  if (!(modifier_tags & no_block) && this->get_disable_blocking_kernel())
   {
     constexpr auto no_block_tags = modifier_tags | no_block;
     this->exec(no_block_tags, std::forward<KernelLauncher>(kernel_launcher));
