@@ -443,6 +443,17 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->enable_run_once();
       first += 1;
     }
+    else if (arg == "--disable-blocking-kernel")
+    {
+      this->disable_blocking_kernel();
+      first += 1;
+    }
+    else if (arg == "--profile")
+    {
+      this->enable_run_once();
+      this->disable_blocking_kernel();
+      first += 1;
+    }
     else if (arg == "--quiet" | arg == "-q")
     {
       // Setting this flag prevents the default stdout printer from being
@@ -708,6 +719,19 @@ void option_parser::enable_run_once()
 
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_run_once(true);
+}
+
+void option_parser::disable_blocking_kernel()
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--disable-blocking-kernel");
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_disable_blocking_kernel(true);
 }
 
 void option_parser::add_benchmark(const std::string &name)

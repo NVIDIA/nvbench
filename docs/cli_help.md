@@ -131,3 +131,15 @@
   * Intended for use with external profiling tools.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
+
+* `--disable-blocking-kernel`
+  * Don't use the `blocking_kernel`.
+  * Intended for use with external profiling tools.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--profile`
+  * Implies `--run-once` and `--disable-blocking-kernel`.
+  * Intended for use with external profiling tools.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
