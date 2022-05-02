@@ -23,6 +23,18 @@
 namespace nvbench
 {
 
+/*!
+ * Provides linear forward iteration over multiple axes in lockstep
+ *
+ * Consider two axi with the following values:
+ * { 0, 1, 2, 3, 4, 5 }
+ * { 0, 1, 2, 3, 4, 5 }
+ *
+ * Using a zip_axis_space over these two axi will generate 6 values
+ * ( {0,0}, {1,1}, {2,2}, ... ) instead of the default 36 values
+ * ( {0,0}, {0,1}, {0,2}, ...).
+ *
+ */
 struct zip_axis_space final : iteration_space_base
 {
   zip_axis_space(std::vector<std::size_t> input_indices,
