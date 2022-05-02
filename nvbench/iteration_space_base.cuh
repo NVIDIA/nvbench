@@ -29,9 +29,6 @@ namespace nvbench
  * If we consider an axi to be a container of values, iteration_spaces
  * would be how we can create iterators over that container.
  *
- * Construction of the iterators needs to be deferred, to execution
- * as the axes can change, therefore this class.........
- *
  * With that in mind we get the following mapping:
  * * linear_axis_space is equivalant to a forward iterator.
  *
@@ -39,6 +36,9 @@ namespace nvbench
  *
  * * user_axis_space is equivalant to a transform iterator.
  *
+ * We don't immediately construct the iterators as the active elements,
+ * name, etc can be changed before execution. This class allows for
+ * the deferred iterator creation while keeping the meta data insyc.
  *
  */
 struct iteration_space_base
@@ -61,6 +61,13 @@ struct iteration_space_base
   virtual ~iteration_space_base();
 
   [[nodiscard]] std::unique_ptr<iteration_space_base> clone() const;
+
+   /*!
+   * Returns a vector of linear spaces one for each axi held.
+   * This is required when a iteration_space is removed as we need
+   * to restore all the assoicated axes to default.
+   *
+   */
   [[nodiscard]] std::vector<std::unique_ptr<iteration_space_base>>
   clone_as_linear() const;
 
