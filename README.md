@@ -70,7 +70,7 @@ To build the examples:
 ```
 mkdir -p build
 cd build
-cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURE=70 .. && make
+cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURES=70 .. && make
 ```
 Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on. 
 
