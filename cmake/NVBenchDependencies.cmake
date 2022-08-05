@@ -30,23 +30,24 @@ rapids_cpm_find(nlohmann_json 3.9.1
 
   # Development version:
   # I'm waiting for https://github.com/nlohmann/json/issues/2676 to be fixed,
-  # leave this in to simplify testing patches as they come out. Update the
-  # `nvbench_json` target too when switching branches.
+  # leave this in to simplify testing patches as they come out.
   #  CPM_ARGS
   #    VERSION develop
   #    URL https://github.com/nlohmann/json/archive/refs/heads/develop.zip
   #    OPTIONS JSON_MultipleHeaders ON
 )
 
-# nlohmann_json release headers
 add_library(nvbench_json INTERFACE IMPORTED)
-target_include_directories(nvbench_json SYSTEM INTERFACE
-  "${nlohmann_json_SOURCE_DIR}/include"
-)
-
-# nlohmann_json development branch:
-#add_library(nvbench_json INTERFACE)
-#target_link_libraries(nvbench_json INTERFACE nlohmann_json)
+if (TARGET nlohmann_json::nlohmann_json)
+  # If we have a target, just use it. Cannot be an ALIAS library because
+  # nlohmann_json::nlohmann_json itself might be one.
+  target_link_libraries(nvbench_json INTERFACE nlohmann_json::nlohmann_json)
+else()
+  # Otherwise we only downloaded the headers.
+  target_include_directories(nvbench_json SYSTEM INTERFACE
+    "${nlohmann_json_SOURCE_DIR}/include"
+  )
+endif()
 
 ################################################################################
 # CUDAToolkit
