@@ -25,6 +25,8 @@
 
 #include <fmt/format.h>
 
+#include <iostream>
+
 //==============================================================================
 // Declare a couple benchmarks for testing:
 void DummyBench(nvbench::state &state) { state.skip("Skipping for testing."); }
@@ -96,6 +98,7 @@ states_to_string(const std::vector<nvbench::state> &states)
   ASSERT(bench != nullptr);
 
   bench->run();
+  std::cout << bench->get_config_count() << std::endl;
 
   return bench->get_states();
 }
