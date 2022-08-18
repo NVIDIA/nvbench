@@ -40,9 +40,7 @@ void state_iterator::add_axis(const nvbench::axis_base &axis)
   this->add_axis(axis.get_name(), axis.get_type(), axis.get_size());
 }
 
-void state_iterator::add_axis(std::string axis,
-                              nvbench::axis_type type,
-                              std::size_t size)
+void state_iterator::add_axis(std::string axis, nvbench::axis_type type, std::size_t size)
 {
   m_indices.push_back({std::move(axis), type, std::size_t{0}, size});
 }
@@ -74,10 +72,7 @@ state_iterator::get_current_indices() const
   return m_indices;
 }
 
-[[nodiscard]] bool state_iterator::iter_valid() const
-{
-  return m_current < m_total;
-}
+[[nodiscard]] bool state_iterator::iter_valid() const { return m_current < m_total; }
 
 void state_iterator::next()
 {
@@ -102,7 +97,7 @@ state_generator::state_generator(const benchmark_base &bench)
 
 void state_generator::build_axis_configs()
 {
-  const axes_metadata &axes = m_benchmark.get_axes();
+  const axes_metadata &axes                               = m_benchmark.get_axes();
   const std::vector<std::unique_ptr<axis_base>> &axes_vec = axes.get_axes();
 
   // Construct two state_generators:
@@ -118,35 +113,29 @@ void state_generator::build_axis_configs()
     type_axes.reserve(axes_vec.size());
 
     // Filter all axes by into type and non-type:
-    std::for_each(axes_vec.cbegin(),
-                  axes_vec.cend(),
-                  [&non_type_si, &type_axes](const auto &axis) {
-                    if (axis->get_type() == nvbench::axis_type::type)
-                    {
-                      type_axes.push_back(
-                        std::cref(static_cast<const type_axis &>(*axis)));
-                    }
-                    else
-                    {
-                      non_type_si.add_axis(*axis);
-                    }
-                  });
+    std::for_each(axes_vec.cbegin(), axes_vec.cend(), [&non_type_si, &type_axes](const auto &axis) {
+      if (axis->get_type() == nvbench::axis_type::type)
+      {
+        type_axes.push_back(std::cref(static_cast<const type_axis &>(*axis)));
+      }
+      else
+      {
+        non_type_si.add_axis(*axis);
+      }
+    });
 
     // Reverse sort type axes by index. This way the state_generator's cartesian
     // product of the type axes values will be enumerated in the same order as
     // nvbench::tl::cartesian_product<type_axes>. This is necessary to ensure
     // that the correct states are passed to the corresponding benchmark
     // instantiations.
-    std::sort(type_axes.begin(),
-              type_axes.end(),
-              [](const auto &axis_1, const auto &axis_2) {
-                return axis_1.get().get_axis_index() >
-                       axis_2.get().get_axis_index();
-              });
+    std::sort(type_axes.begin(), type_axes.end(), [](const auto &axis_1, const auto &axis_2) {
+      return axis_1.get().get_axis_index() > axis_2.get().get_axis_index();
+    });
 
-    std::for_each(type_axes.cbegin(),
-                  type_axes.cend(),
-                  [&type_si](const auto &axis) { type_si.add_axis(axis); });
+    std::for_each(type_axes.cbegin(), type_axes.cend(), [&type_si](const auto &axis) {
+      type_si.add_axis(axis);
+    });
   }
 
   // type_axis_configs generation:
@@ -157,8 +146,8 @@ void state_generator::build_axis_configs()
     // Build type_axis_configs
     for (type_si.init(); type_si.iter_valid(); type_si.next())
     {
-      auto &[config, active_mask] = m_type_axis_configs.emplace_back(
-        std::make_pair(nvbench::named_values{}, true));
+      auto &[config, active_mask] =
+        m_type_axis_configs.emplace_back(std::make_pair(nvbench::named_values{}, true));
 
       // Reverse the indices so they're once again in the same order as
       // specified:
@@ -173,8 +162,7 @@ void state_generator::build_axis_configs()
           active_mask = false;
         }
 
-        config.set_string(axis_info.axis,
-                          axis.get_input_string(axis_info.index));
+        config.set_string(axis_info.axis, axis.get_input_string(axis_info.index));
       }
     } // type_si
   }   // type_axis_config generation
@@ -199,21 +187,18 @@ void state_generator::build_axis_configs()
             break;
 
           case axis_type::int64:
-            config.set_int64(
-              axis_info.axis,
-              axes.get_int64_axis(axis_info.axis).get_value(axis_info.index));
+            config.set_int64(axis_info.axis,
+                             axes.get_int64_axis(axis_info.axis).get_value(axis_info.index));
             break;
 
           case axis_type::float64:
-            config.set_float64(
-              axis_info.axis,
-              axes.get_float64_axis(axis_info.axis).get_value(axis_info.index));
+            config.set_float64(axis_info.axis,
+                               axes.get_float64_axis(axis_info.axis).get_value(axis_info.index));
             break;
 
           case axis_type::string:
-            config.set_string(
-              axis_info.axis,
-              axes.get_string_axis(axis_info.axis).get_value(axis_info.index));
+            config.set_string(axis_info.axis,
+                              axes.get_string_axis(axis_info.axis).get_value(axis_info.index));
             break;
         } // switch (type)
       }   // for (axis_info : current_indices)
@@ -239,15 +224,12 @@ void state_generator::build_states()
   }
 }
 
-void state_generator::add_states_for_device(
-  const std::optional<device_info> &device)
+void state_generator::add_states_for_device(const std::optional<device_info> &device)
 {
   const auto num_type_configs = m_type_axis_configs.size();
-  for (std::size_t type_config_index = 0; type_config_index < num_type_configs;
-       ++type_config_index)
+  for (std::size_t type_config_index = 0; type_config_index < num_type_configs; ++type_config_index)
   {
-    const auto &[type_config,
-                 axis_mask] = m_type_axis_configs[type_config_index];
+    const auto &[type_config, axis_mask] = m_type_axis_configs[type_config_index];
 
     if (!axis_mask)
     { // Don't generate inner vector if the type config is masked out.
@@ -261,10 +243,7 @@ void state_generator::add_states_for_device(
       config.append(non_type_config);
 
       // Create benchmark:
-      m_states.push_back(nvbench::state{m_benchmark,
-                                        std::move(config),
-                                        device,
-                                        type_config_index});
+      m_states.push_back(nvbench::state{m_benchmark, std::move(config), device, type_config_index});
     }
   }
 }

@@ -43,21 +43,18 @@ benchmark_base &benchmark_manager::add(std::unique_ptr<benchmark_base> bench)
 benchmark_manager::benchmark_vector benchmark_manager::clone_benchmarks() const
 {
   benchmark_vector result(m_benchmarks.size());
-  std::transform(m_benchmarks.cbegin(),
-                 m_benchmarks.cend(),
-                 result.begin(),
-                 [](const auto &bench) { return bench->clone(); });
+  std::transform(m_benchmarks.cbegin(), m_benchmarks.cend(), result.begin(), [](const auto &bench) {
+    return bench->clone();
+  });
   return result;
 }
 
-const benchmark_base &
-benchmark_manager::get_benchmark(const std::string &name) const
+const benchmark_base &benchmark_manager::get_benchmark(const std::string &name) const
 {
-  auto iter = std::find_if(m_benchmarks.cbegin(),
-                           m_benchmarks.cend(),
-                           [&name](const auto &bench_ptr) {
-                             return bench_ptr->get_name() == name;
-                           });
+  auto iter =
+    std::find_if(m_benchmarks.cbegin(), m_benchmarks.cend(), [&name](const auto &bench_ptr) {
+      return bench_ptr->get_name() == name;
+    });
   if (iter == m_benchmarks.cend())
   {
     NVBENCH_THROW(std::out_of_range, "No benchmark named '{}'.", name);

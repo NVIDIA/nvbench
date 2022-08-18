@@ -82,20 +82,11 @@ std::string_view submatch_to_sv(const sv_submatch &in)
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
-void parse(std::string_view input, nvbench::int32_t &val)
-{
-  val = std::stoi(std::string(input));
-}
+void parse(std::string_view input, nvbench::int32_t &val) { val = std::stoi(std::string(input)); }
 
-void parse(std::string_view input, nvbench::int64_t &val)
-{
-  val = std::stoll(std::string(input));
-}
+void parse(std::string_view input, nvbench::int64_t &val) { val = std::stoll(std::string(input)); }
 
-void parse(std::string_view input, nvbench::float64_t &val)
-{
-  val = std::stod(std::string(input));
-}
+void parse(std::string_view input, nvbench::float64_t &val) { val = std::stod(std::string(input)); }
 
 void parse(std::string_view input, std::string &val) { val = input; }
 
@@ -112,9 +103,8 @@ std::vector<T> parse_list_values(std::string_view list_spec)
     "(?:,|$)"  // Delimiters
   };
 
-  auto values_begin =
-    sv_regex_iterator(list_spec.cbegin(), list_spec.cend(), value_regex);
-  auto values_end = sv_regex_iterator{};
+  auto values_begin = sv_regex_iterator(list_spec.cbegin(), list_spec.cend(), value_regex);
+  auto values_end   = sv_regex_iterator{};
   while (values_begin != values_end)
   {
     auto match          = *values_begin++;
@@ -131,8 +121,7 @@ std::vector<T> parse_list_values(std::string_view list_spec)
 // Parses a range specification "<start> : <stop> [ : <stride> ]" and returns
 // a vector filled with the specified range.
 template <typename T>
-std::vector<T> parse_range_values(std::string_view range_spec,
-                                  nvbench::wrapped_type<T>)
+std::vector<T> parse_range_values(std::string_view range_spec, nvbench::wrapped_type<T>)
 {
   std::vector<T> range_params;
 
@@ -143,9 +132,8 @@ std::vector<T> parse_range_values(std::string_view range_spec,
     "(?:$|:)"  // Delimiters
   };
 
-  auto values_begin =
-    sv_regex_iterator(range_spec.cbegin(), range_spec.cend(), value_regex);
-  auto values_end = sv_regex_iterator{};
+  auto values_begin = sv_regex_iterator(range_spec.cbegin(), range_spec.cend(), value_regex);
+  auto values_end   = sv_regex_iterator{};
   for (; values_begin != values_end; ++values_begin)
   {
     auto match          = *values_begin;
@@ -221,25 +209,15 @@ std::vector<T> parse_values(std::string_view value_spec)
                                        "$"};        // EOS
 
   sv_match match;
-  if (std::regex_search(value_spec.cbegin(),
-                        value_spec.cend(),
-                        match,
-                        list_regex))
+  if (std::regex_search(value_spec.cbegin(), value_spec.cend(), match, list_regex))
   {
     return parse_list_values<T>(submatch_to_sv(match[1]));
   }
-  else if (std::regex_search(value_spec.cbegin(),
-                             value_spec.cend(),
-                             match,
-                             range_regex))
+  else if (std::regex_search(value_spec.cbegin(), value_spec.cend(), match, range_regex))
   {
-    return parse_range_values(submatch_to_sv(match[1]),
-                              nvbench::wrapped_type<T>{});
+    return parse_range_values(submatch_to_sv(match[1]), nvbench::wrapped_type<T>{});
   }
-  else if (std::regex_search(value_spec.cbegin(),
-                             value_spec.cend(),
-                             match,
-                             single_regex))
+  else if (std::regex_search(value_spec.cbegin(), value_spec.cend(), match, single_regex))
   {
     T val;
     parse(submatch_to_sv(match[1]), val);
@@ -247,9 +225,7 @@ std::vector<T> parse_values(std::string_view value_spec)
   }
   else
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid axis value spec: {}",
-                  value_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid axis value spec: {}", value_spec);
   }
 }
 
@@ -514,8 +490,8 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--min-time" || arg == "--max-noise" ||
-             arg == "--skip-time" || arg == "--timeout")
+    else if (arg == "--min-time" || arg == "--max-noise" || arg == "--skip-time" ||
+             arg == "--timeout")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -523,9 +499,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
     else
     {
-      NVBENCH_THROW(std::runtime_error,
-                    "Unrecognized command-line argument: `{}`.",
-                    arg);
+      NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
     }
   }
 }
@@ -534,7 +508,7 @@ void option_parser::add_markdown_printer(const std::string &spec)
 try
 {
   std::ostream &stream = this->printer_spec_to_ostream(spec);
-  auto &printer = m_printer.emplace<nvbench::markdown_printer>(stream, spec);
+  auto &printer        = m_printer.emplace<nvbench::markdown_printer>(stream, spec);
   if (spec == "stdout")
   {
     printer.set_color(m_color_md_stdout_printer);
@@ -556,14 +530,10 @@ try
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error while adding csv output for `{}`:\n{}",
-                spec,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error while adding csv output for `{}`:\n{}", spec, e.what());
 }
 
-void option_parser::add_json_printer(const std::string &spec,
-                                     bool enable_binary)
+void option_parser::add_json_printer(const std::string &spec, bool enable_binary)
 try
 {
   std::ostream &stream = this->printer_spec_to_ostream(spec);
@@ -624,10 +594,7 @@ void option_parser::print_help() const
   fmt::print("{}\n{}\n", ::cli_help_text, ::cli_help_axis_text);
 }
 
-void option_parser::print_help_axis() const
-{
-  fmt::print("{}\n", ::cli_help_axis_text);
-}
+void option_parser::print_help_axis() const { fmt::print("{}\n", ::cli_help_axis_text); }
 
 void option_parser::set_persistence_mode(const std::string &state)
 try
@@ -685,9 +652,7 @@ try
   {
     if (rate_val == nvbench::device_info::clock_rate::none)
     {
-      fmt::print("Unlocking clocks for device '{}' ({}).\n",
-                 device.get_name(),
-                 device.get_id());
+      fmt::print("Unlocking clocks for device '{}' ({}).\n", device.get_name(), device.get_id());
     }
     else
     {
@@ -757,16 +722,12 @@ try
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error handling option --benchmark `{}`:\n{}",
-                name,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error handling option --benchmark `{}`:\n{}", name, e.what());
 }
 
 void option_parser::replay_global_args()
 {
-  this->parse_range(m_global_benchmark_args.cbegin(),
-                    m_global_benchmark_args.cend());
+  this->parse_range(m_global_benchmark_args.cbegin(), m_global_benchmark_args.cend());
 }
 
 void option_parser::update_devices(const std::string &devices)
@@ -790,10 +751,7 @@ try
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error handling option --devices `{}`:\n{}",
-                devices,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error handling option --devices `{}`:\n{}", devices, e.what());
 }
 
 void option_parser::update_axis(const std::string &spec)
@@ -832,28 +790,20 @@ try
   switch (axis.get_type())
   {
     case axis_type::type:
-      this->update_type_axis(static_cast<nvbench::type_axis &>(axis),
-                             values,
-                             flags);
+      this->update_type_axis(static_cast<nvbench::type_axis &>(axis), values, flags);
       break;
 
     case axis_type::int64:
-      this->update_int64_axis(static_cast<nvbench::int64_axis &>(axis),
-                              values,
-                              flags);
+      this->update_int64_axis(static_cast<nvbench::int64_axis &>(axis), values, flags);
       break;
 
     case axis_type::float64:
-      this->update_float64_axis(static_cast<nvbench::float64_axis &>(axis),
-                                values,
-                                flags);
+      this->update_float64_axis(static_cast<nvbench::float64_axis &>(axis), values, flags);
 
       break;
 
     case axis_type::string:
-      this->update_string_axis(static_cast<nvbench::string_axis &>(axis),
-                               values,
-                               flags);
+      this->update_string_axis(static_cast<nvbench::string_axis &>(axis), values, flags);
 
       break;
 
@@ -866,10 +816,7 @@ try
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error handling option --axis `{}`:\n{}",
-                spec,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error handling option --axis `{}`:\n{}", spec, e.what());
 }
 
 void option_parser::update_int64_axis(int64_axis &axis,
@@ -888,9 +835,7 @@ void option_parser::update_int64_axis(int64_axis &axis,
   }
   else
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for int64 axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for int64 axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<nvbench::int64_t>(value_spec);
@@ -905,9 +850,7 @@ void option_parser::update_float64_axis(float64_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for float64 axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for float64 axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<nvbench::float64_t>(value_spec);
@@ -922,9 +865,7 @@ void option_parser::update_string_axis(string_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for string axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for string axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<std::string>(value_spec);
@@ -939,9 +880,7 @@ void option_parser::update_type_axis(type_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for type axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for type axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<std::string>(value_spec);
@@ -949,8 +888,7 @@ void option_parser::update_type_axis(type_axis &axis,
   axis.set_active_inputs(input_values);
 }
 
-void option_parser::update_int64_prop(const std::string &prop_arg,
-                                      const std::string &prop_val)
+void option_parser::update_int64_prop(const std::string &prop_arg, const std::string &prop_val)
 try
 {
   // If no active benchmark, save args as global.
@@ -983,8 +921,7 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::update_float64_prop(const std::string &prop_arg,
-                                        const std::string &prop_val)
+void option_parser::update_float64_prop(const std::string &prop_arg, const std::string &prop_val)
 try
 {
   // If no active benchmark, save args as global.

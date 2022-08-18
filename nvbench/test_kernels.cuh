@@ -38,8 +38,8 @@ namespace nvbench
 __global__ void sleep_kernel(double seconds)
 {
   const auto start = cuda::std::chrono::high_resolution_clock::now();
-  const auto ns    = cuda::std::chrono::nanoseconds(
-    static_cast<nvbench::int64_t>(seconds * 1000 * 1000 * 1000));
+  const auto ns =
+    cuda::std::chrono::nanoseconds(static_cast<nvbench::int64_t>(seconds * 1000 * 1000 * 1000));
   const auto finish = start + ns;
 
   auto now = cuda::std::chrono::high_resolution_clock::now();
@@ -53,7 +53,7 @@ __global__ void sleep_kernel(double seconds)
  * Naive copy of `n` values from `in` -> `out`.
  */
 template <typename T, typename U>
-__global__ void copy_kernel(const T* in, U* out, std::size_t n)
+__global__ void copy_kernel(const T *in, U *out, std::size_t n)
 {
   const auto init = blockIdx.x * blockDim.x + threadIdx.x;
   const auto step = blockDim.x * gridDim.x;
@@ -68,7 +68,7 @@ __global__ void copy_kernel(const T* in, U* out, std::size_t n)
  * For `i <- [0,n)`, `out[i] = in[i] % 2`.
  */
 template <typename T, typename U>
-__global__ void mod2_kernel(const T* in, U* out, std::size_t n)
+__global__ void mod2_kernel(const T *in, U *out, std::size_t n)
 {
   const auto init = blockIdx.x * blockDim.x + threadIdx.x;
   const auto step = blockDim.x * gridDim.x;
@@ -79,4 +79,4 @@ __global__ void mod2_kernel(const T* in, U* out, std::size_t n)
   }
 }
 
-}
+} // namespace nvbench

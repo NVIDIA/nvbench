@@ -97,10 +97,10 @@ struct blocking_kernel
   }
 
   // move-only
-  blocking_kernel(const blocking_kernel &) = delete;
-  blocking_kernel(blocking_kernel &&)      = default;
+  blocking_kernel(const blocking_kernel &)            = delete;
+  blocking_kernel(blocking_kernel &&)                 = default;
   blocking_kernel &operator=(const blocking_kernel &) = delete;
-  blocking_kernel &operator=(blocking_kernel &&) = default;
+  blocking_kernel &operator=(blocking_kernel &&)      = default;
 
 private:
   nvbench::int32_t m_host_flag{};

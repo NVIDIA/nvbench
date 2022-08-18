@@ -36,8 +36,7 @@ namespace nvbench::detail::statistics
  *
  * If the input has fewer than 5 sample, infinity is returned.
  */
-template <typename Iter,
-          typename ValueType = typename std::iterator_traits<Iter>::value_type>
+template <typename Iter, typename ValueType = typename std::iterator_traits<Iter>::value_type>
 ValueType standard_deviation(Iter first, Iter last, ValueType mean)
 {
   static_assert(std::is_floating_point_v<ValueType>);

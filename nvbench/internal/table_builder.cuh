@@ -47,18 +47,14 @@ struct table_builder
                 const std::string &header,
                 std::string value)
   {
-    auto iter = std::find_if(m_columns.begin(),
-                             m_columns.end(),
-                             [&column_key](const column &col) {
-                               return col.key == column_key;
-                             });
+    auto iter = std::find_if(m_columns.begin(), m_columns.end(), [&column_key](const column &col) {
+      return col.key == column_key;
+    });
 
     auto &col = iter == m_columns.end()
-                ? m_columns.emplace_back(column{column_key,
-                                                header,
-                                                std::vector<std::string>{},
-                                                header.size()})
-                : *iter;
+                  ? m_columns.emplace_back(
+                      column{column_key, header, std::vector<std::string>{}, header.size()})
+                  : *iter;
 
     col.max_width = std::max(col.max_width, value.size());
     if (col.rows.size() <= row)
@@ -76,11 +72,9 @@ struct table_builder
       std::size_t{},
       [](const auto &a, const auto &b) { return a > b ? a : b; },
       [](const column &col) { return col.rows.size(); });
-    std::for_each(m_columns.begin(),
-                  m_columns.end(),
-                  [num_rows = m_num_rows](column &col) {
-                    col.rows.resize(num_rows);
-                  });
+    std::for_each(m_columns.begin(), m_columns.end(), [num_rows = m_num_rows](column &col) {
+      col.rows.resize(num_rows);
+    });
   }
 };
 

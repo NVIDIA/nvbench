@@ -16,8 +16,8 @@
  *  limitations under the License.
  */
 
-#include <nvbench/cuda_call.cuh>
 #include <nvbench/config.cuh>
+#include <nvbench/cuda_call.cuh>
 
 #include <fmt/format.h>
 
@@ -66,11 +66,7 @@ void throw_error(const std::string &filename,
                                        command));
 }
 #else
-void throw_error(const std::string &,
-                 std::size_t,
-                 const std::string &,
-                 CUresult)
-{}
+void throw_error(const std::string &, std::size_t, const std::string &, CUresult) {}
 #endif
 
 void exit_error(const std::string &filename,

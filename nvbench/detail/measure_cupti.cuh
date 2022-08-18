@@ -50,10 +50,10 @@ namespace detail
 struct measure_cupti_base
 {
   explicit measure_cupti_base(nvbench::state &exec_state);
-  measure_cupti_base(const measure_cupti_base &) = delete;
-  measure_cupti_base(measure_cupti_base &&)      = delete;
+  measure_cupti_base(const measure_cupti_base &)            = delete;
+  measure_cupti_base(measure_cupti_base &&)                 = delete;
   measure_cupti_base &operator=(const measure_cupti_base &) = delete;
-  measure_cupti_base &operator=(measure_cupti_base &&) = delete;
+  measure_cupti_base &operator=(measure_cupti_base &&)      = delete;
 
 protected:
   struct kernel_launch_timer;
@@ -61,10 +61,7 @@ protected:
   void check();
   void generate_summaries();
 
-  __forceinline__ void flush_device_l2()
-  {
-    m_l2flush.flush(m_launch.get_stream());
-  }
+  __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
 
   __forceinline__ void sync_stream() const
   {

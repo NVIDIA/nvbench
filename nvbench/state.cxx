@@ -65,9 +65,8 @@ nvbench::int64_t state::get_int64(const std::string &axis_name) const
   return m_axis_values.get_int64(axis_name);
 }
 
-nvbench::int64_t
-state::get_int64_or_default(const std::string &axis_name,
-                            nvbench::int64_t default_value) const
+nvbench::int64_t state::get_int64_or_default(const std::string &axis_name,
+                                             nvbench::int64_t default_value) const
 try
 {
   return this->get_int64(axis_name);
@@ -82,9 +81,8 @@ nvbench::float64_t state::get_float64(const std::string &axis_name) const
   return m_axis_values.get_float64(axis_name);
 }
 
-nvbench::float64_t
-state::get_float64_or_default(const std::string &axis_name,
-                              nvbench::float64_t default_value) const
+nvbench::float64_t state::get_float64_or_default(const std::string &axis_name,
+                                                 nvbench::float64_t default_value) const
 try
 {
   return this->get_float64(axis_name);
@@ -99,9 +97,8 @@ const std::string &state::get_string(const std::string &axis_name) const
   return m_axis_values.get_string(axis_name);
 }
 
-const std::string &
-state::get_string_or_default(const std::string &axis_name,
-                             const std::string &default_value) const
+const std::string &state::get_string_or_default(const std::string &axis_name,
+                                                const std::string &default_value) const
 try
 {
   return this->get_string(axis_name);
@@ -125,20 +122,18 @@ summary &state::add_summary(summary s)
 const summary &state::get_summary(std::string_view tag) const
 {
   // Check tags first
-  auto iter =
-    std::find_if(m_summaries.cbegin(),
-                 m_summaries.cend(),
-                 [&tag](const auto &s) { return s.get_tag() == tag; });
+  auto iter = std::find_if(m_summaries.cbegin(), m_summaries.cend(), [&tag](const auto &s) {
+    return s.get_tag() == tag;
+  });
   if (iter != m_summaries.cend())
   {
     return *iter;
   }
 
   // Then names:
-  iter =
-    std::find_if(m_summaries.cbegin(),
-                 m_summaries.cend(),
-                 [&tag](const auto &s) { return s.get_string("name") == tag; });
+  iter = std::find_if(m_summaries.cbegin(), m_summaries.cend(), [&tag](const auto &s) {
+    return s.get_string("name") == tag;
+  });
   if (iter != m_summaries.cend())
   {
     return *iter;
@@ -150,20 +145,18 @@ const summary &state::get_summary(std::string_view tag) const
 summary &state::get_summary(std::string_view tag)
 {
   // Check tags first
-  auto iter =
-    std::find_if(m_summaries.begin(), m_summaries.end(), [&tag](const auto &s) {
-      return s.get_tag() == tag;
-    });
+  auto iter = std::find_if(m_summaries.begin(), m_summaries.end(), [&tag](const auto &s) {
+    return s.get_tag() == tag;
+  });
   if (iter != m_summaries.end())
   {
     return *iter;
   }
 
   // Then names:
-  iter =
-    std::find_if(m_summaries.begin(), m_summaries.end(), [&tag](const auto &s) {
-      return s.get_string("name") == tag;
-    });
+  iter = std::find_if(m_summaries.begin(), m_summaries.end(), [&tag](const auto &s) {
+    return s.get_string("name") == tag;
+  });
   if (iter != m_summaries.end())
   {
     return *iter;
@@ -187,18 +180,17 @@ std::string state::get_axis_values_as_string(bool color) const
   // Create a Key=Value list of all parameters:
   fmt::memory_buffer buffer;
 
-  auto append_key_value = [&buffer, &style](const std::string &key,
-                                            const auto &value,
-                                            std::string value_fmtstr = "{}") {
-    constexpr auto key_format   = fmt::emphasis::italic;
-    constexpr auto value_format = fmt::emphasis::bold;
+  auto append_key_value =
+    [&buffer, &style](const std::string &key, const auto &value, std::string value_fmtstr = "{}") {
+      constexpr auto key_format   = fmt::emphasis::italic;
+      constexpr auto value_format = fmt::emphasis::bold;
 
-    fmt::format_to(buffer,
-                   "{}{}={}",
-                   buffer.size() == 0 ? "" : " ",
-                   fmt::format(style(key_format), "{}", key),
-                   fmt::format(style(value_format), value_fmtstr, value));
-  };
+      fmt::format_to(buffer,
+                     "{}{}={}",
+                     buffer.size() == 0 ? "" : " ",
+                     fmt::format(style(key_format), "{}", key),
+                     fmt::format(style(value_format), value_fmtstr, value));
+    };
 
   if (m_device)
   {
@@ -211,8 +203,7 @@ std::string state::get_axis_values_as_string(bool color) const
     const auto axis_type = m_axis_values.get_type(name);
 
     // Handle power-of-two int64 axes differently:
-    if (axis_type == named_values::type::int64 &&
-        axes.get_int64_axis(name).is_power_of_two())
+    if (axis_type == named_values::type::int64 && axes.get_int64_axis(name).is_power_of_two())
     {
       const nvbench::int64_t value    = m_axis_values.get_int64(name);
       const nvbench::int64_t exponent = int64_axis::compute_log2(value);
@@ -242,10 +233,9 @@ std::string state::get_short_description(bool color) const
     return color ? fmt_style : no_style;
   };
 
-  return fmt::format(
-    "{} [{}]",
-    fmt::format(style(fmt::emphasis::bold), "{}", m_benchmark.get().get_name()),
-    this->get_axis_values_as_string(color));
+  return fmt::format("{} [{}]",
+                     fmt::format(style(fmt::emphasis::bold), "{}", m_benchmark.get().get_name()),
+                     this->get_axis_values_as_string(color));
 }
 
 void state::add_element_count(std::size_t elements, std::string column_name)

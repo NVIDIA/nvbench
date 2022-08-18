@@ -47,10 +47,7 @@ struct axis_base
 
   [[nodiscard]] axis_type get_type() const { return m_type; }
 
-  [[nodiscard]] std::string_view get_type_as_string() const
-  {
-    return axis_type_to_string(m_type);
-  }
+  [[nodiscard]] std::string_view get_type_as_string() const { return axis_type_to_string(m_type); }
 
   [[nodiscard]] std::string_view get_flags_as_string() const
   {

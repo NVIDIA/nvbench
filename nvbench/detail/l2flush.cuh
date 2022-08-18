@@ -31,13 +31,12 @@ struct l2flush
   {
     int dev_id{};
     NVBENCH_CUDA_CALL(cudaGetDevice(&dev_id));
-    NVBENCH_CUDA_CALL(
-      cudaDeviceGetAttribute(&m_l2_size, cudaDevAttrL2CacheSize, dev_id));
+    NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&m_l2_size, cudaDevAttrL2CacheSize, dev_id));
     if (m_l2_size > 0)
     {
-      void* buffer = m_l2_buffer;
+      void *buffer = m_l2_buffer;
       NVBENCH_CUDA_CALL(cudaMalloc(&buffer, m_l2_size));
-      m_l2_buffer = reinterpret_cast<int*>(buffer);
+      m_l2_buffer = reinterpret_cast<int *>(buffer);
     }
   }
 

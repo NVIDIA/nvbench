@@ -42,10 +42,10 @@ struct cuda_timer
   }
 
   // move-only
-  cuda_timer(const cuda_timer &) = delete;
-  cuda_timer(cuda_timer &&)      = default;
+  cuda_timer(const cuda_timer &)            = delete;
+  cuda_timer(cuda_timer &&)                 = default;
   cuda_timer &operator=(const cuda_timer &) = delete;
-  cuda_timer &operator=(cuda_timer &&) = default;
+  cuda_timer &operator=(cuda_timer &&)      = default;
 
   __forceinline__ void start(cudaStream_t stream)
   {

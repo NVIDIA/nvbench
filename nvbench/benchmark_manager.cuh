@@ -31,8 +31,7 @@ namespace nvbench
  */
 struct benchmark_manager
 {
-  using benchmark_vector =
-    std::vector<std::unique_ptr<nvbench::benchmark_base>>;
+  using benchmark_vector = std::vector<std::unique_ptr<nvbench::benchmark_base>>;
 
   /**
    * @return The singleton benchmark_manager instance.
@@ -53,25 +52,21 @@ struct benchmark_manager
    * Get a non-mutable reference to benchmark with the specified name/index.
    * @{
    */
-  [[nodiscard]] const benchmark_base &
-  get_benchmark(const std::string &name) const;
+  [[nodiscard]] const benchmark_base &get_benchmark(const std::string &name) const;
   [[nodiscard]] const benchmark_base &get_benchmark(std::size_t idx) const
   {
     return *m_benchmarks.at(idx);
   }
   /**@}*/
 
-  [[nodiscard]] const benchmark_vector &get_benchmarks() const
-  {
-    return m_benchmarks;
-  };
+  [[nodiscard]] const benchmark_vector &get_benchmarks() const { return m_benchmarks; };
 
 private:
-  benchmark_manager()                          = default;
-  benchmark_manager(const benchmark_manager &) = delete;
-  benchmark_manager(benchmark_manager &&)      = delete;
+  benchmark_manager()                                     = default;
+  benchmark_manager(const benchmark_manager &)            = delete;
+  benchmark_manager(benchmark_manager &&)                 = delete;
   benchmark_manager &operator=(const benchmark_manager &) = delete;
-  benchmark_manager &operator=(benchmark_manager &&) = delete;
+  benchmark_manager &operator=(benchmark_manager &&)      = delete;
 
   benchmark_vector m_benchmarks;
 };
