@@ -35,8 +35,7 @@ void runner_base::generate_states()
   m_benchmark.m_states = nvbench::detail::state_generator::create(m_benchmark);
 }
 
-void runner_base::handle_sampling_exception(const std::exception &e,
-                                            state &exec_state) const
+void runner_base::handle_sampling_exception(const std::exception &e, state &exec_state) const
 {
   // If the state is skipped, that means the execution framework class handled
   // the error already.
@@ -62,8 +61,7 @@ void runner_base::handle_sampling_exception(const std::exception &e,
 void runner_base::run_state_prologue(nvbench::state &exec_state) const
 {
   // Log if a printer exists:
-  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer();
-      printer_opt_ref.has_value())
+  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
     printer.log_run_state(exec_state);
@@ -73,19 +71,16 @@ void runner_base::run_state_prologue(nvbench::state &exec_state) const
 void runner_base::run_state_epilogue(state &exec_state) const
 {
   // Notify the printer that the state has completed::
-  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer();
-      printer_opt_ref.has_value())
+  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
     printer.add_completed_state();
   }
 }
 
-
 void runner_base::print_skip_notification(state &exec_state) const
 {
-  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer();
-      printer_opt_ref.has_value())
+  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
     printer.log(nvbench::log_level::skip, exec_state.get_skip_reason());

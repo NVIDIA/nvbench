@@ -27,10 +27,7 @@
 namespace nvbench::detail
 {
 
-template <typename InIterT,
-          typename InitValueT,
-          typename ReduceOp,
-          typename TransformOp>
+template <typename InIterT, typename InitValueT, typename ReduceOp, typename TransformOp>
 InitValueT transform_reduce(InIterT first,
                             InIterT last,
                             InitValueT init,

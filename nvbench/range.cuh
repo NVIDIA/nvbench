@@ -29,13 +29,11 @@ namespace nvbench
 namespace detail
 {
 template <typename T>
-using range_output_t = std::conditional_t<std::is_floating_point_v<T>,
-                                          nvbench::float64_t,
-                                          nvbench::int64_t>;
+using range_output_t =
+  std::conditional_t<std::is_floating_point_v<T>, nvbench::float64_t, nvbench::int64_t>;
 }
 
-template <typename InT,
-          typename OutT = nvbench::detail::range_output_t<InT>>
+template <typename InT, typename OutT = nvbench::detail::range_output_t<InT>>
 auto range(InT start, InT end, InT stride = InT{1})
 {
   if constexpr (std::is_floating_point_v<InT>)

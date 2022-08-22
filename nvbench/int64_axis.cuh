@@ -58,28 +58,18 @@ struct int64_axis final : public axis_base
     return static_cast<bool>(m_flags & int64_axis_flags::power_of_two);
   }
 
-  void set_inputs(std::vector<int64_t> inputs,
-                  int64_axis_flags flags = int64_axis_flags::none);
+  void set_inputs(std::vector<int64_t> inputs, int64_axis_flags flags = int64_axis_flags::none);
 
-  [[nodiscard]] const std::vector<int64_t> &get_inputs() const
-  {
-    return m_inputs;
-  };
+  [[nodiscard]] const std::vector<int64_t> &get_inputs() const { return m_inputs; };
 
   [[nodiscard]] int64_t get_value(std::size_t i) const { return m_values[i]; };
 
-  [[nodiscard]] const std::vector<int64_t> &get_values() const
-  {
-    return m_values;
-  };
+  [[nodiscard]] const std::vector<int64_t> &get_values() const { return m_values; };
 
   int64_axis_flags get_flags() const { return m_flags; }
 
   // Helper functions for pow2 conversions:
-  static nvbench::int64_t compute_pow2(nvbench::int64_t exponent)
-  {
-    return 1ll << exponent;
-  }
+  static nvbench::int64_t compute_pow2(nvbench::int64_t exponent) { return 1ll << exponent; }
 
   // UB if value < 0.
   static nvbench::int64_t compute_log2(nvbench::int64_t value)
@@ -95,10 +85,7 @@ struct int64_axis final : public axis_base
   };
 
 private:
-  std::unique_ptr<axis_base> do_clone() const
-  {
-    return std::make_unique<int64_axis>(*this);
-  }
+  std::unique_ptr<axis_base> do_clone() const { return std::make_unique<int64_axis>(*this); }
   std::size_t do_get_size() const final { return m_inputs.size(); }
   std::string do_get_input_string(std::size_t) const final;
   std::string do_get_description(std::size_t) const final;

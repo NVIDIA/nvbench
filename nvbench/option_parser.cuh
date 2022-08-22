@@ -41,8 +41,7 @@ struct type_axis;
  */
 struct option_parser
 {
-  using benchmark_vector =
-    std::vector<std::unique_ptr<nvbench::benchmark_base>>;
+  using benchmark_vector = std::vector<std::unique_ptr<nvbench::benchmark_base>>;
 
   option_parser();
   ~option_parser();
@@ -51,15 +50,9 @@ struct option_parser
   void parse(std::vector<std::string> args);
 
   [[nodiscard]] benchmark_vector &get_benchmarks() { return m_benchmarks; };
-  [[nodiscard]] const benchmark_vector &get_benchmarks() const
-  {
-    return m_benchmarks;
-  };
+  [[nodiscard]] const benchmark_vector &get_benchmarks() const { return m_benchmarks; };
 
-  [[nodiscard]] const std::vector<std::string> &get_args() const
-  {
-    return m_args;
-  }
+  [[nodiscard]] const std::vector<std::string> &get_args() const { return m_args; }
 
   /*!
    * Returns the output format requested by the parse options.
@@ -115,10 +108,8 @@ private:
                                std::string_view value_spec,
                                std::string_view flag_spec);
 
-  void update_int64_prop(const std::string &prop_arg,
-                         const std::string &prop_val);
-  void update_float64_prop(const std::string &prop_arg,
-                           const std::string &prop_val);
+  void update_int64_prop(const std::string &prop_arg, const std::string &prop_val);
+  void update_float64_prop(const std::string &prop_arg, const std::string &prop_val);
 
   void update_used_device_state() const;
 

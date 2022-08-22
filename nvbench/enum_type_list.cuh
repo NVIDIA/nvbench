@@ -64,10 +64,7 @@ struct type_strings<nvbench::enum_type<Value, T>>
     return std::to_string(Value);
   }
 
-  static std::string description()
-  {
-    return nvbench::demangle<nvbench::enum_type<Value, T>>();
-  }
+  static std::string description() { return nvbench::demangle<nvbench::enum_type<Value, T>>(); }
 };
 
 } // namespace nvbench
@@ -86,15 +83,13 @@ struct type_strings<nvbench::enum_type<Value, T>>
  * \relatesalso enum_type_list
  * \relatesalso nvbench::enum_type_list
  */
-#define NVBENCH_DECLARE_ENUM_TYPE_STRINGS(T,                                   \
-                                          input_generator,                     \
-                                          description_generator)               \
-  namespace nvbench                                                            \
-  {                                                                            \
-  template <T Value>                                                           \
-  struct type_strings<enum_type<Value, T>>                                     \
-  {                                                                            \
-    static std::string input_string() { return input_generator(Value); }       \
-    static std::string description() { return description_generator(Value); }  \
-  };                                                                           \
+#define NVBENCH_DECLARE_ENUM_TYPE_STRINGS(T, input_generator, description_generator)               \
+  namespace nvbench                                                                                \
+  {                                                                                                \
+  template <T Value>                                                                               \
+  struct type_strings<enum_type<Value, T>>                                                         \
+  {                                                                                                \
+    static std::string input_string() { return input_generator(Value); }                           \
+    static std::string description() { return description_generator(Value); }                      \
+  };                                                                                               \
   }

@@ -33,7 +33,7 @@ namespace detail
 template <typename KernelLauncher>
 struct kernel_launch_timer_wrapper
 {
- explicit kernel_launch_timer_wrapper(KernelLauncher &launcher)
+  explicit kernel_launch_timer_wrapper(KernelLauncher &launcher)
       : m_kernel_launcher{launcher}
   {}
 

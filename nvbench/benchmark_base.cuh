@@ -80,32 +80,28 @@ struct benchmark_base
     return *this;
   }
 
-  benchmark_base &add_float64_axis(std::string name,
-                                   std::vector<nvbench::float64_t> data)
+  benchmark_base &add_float64_axis(std::string name, std::vector<nvbench::float64_t> data)
   {
     m_axes.add_float64_axis(std::move(name), std::move(data));
     return *this;
   }
 
-  benchmark_base &add_int64_axis(
-    std::string name,
-    std::vector<nvbench::int64_t> data,
-    nvbench::int64_axis_flags flags = nvbench::int64_axis_flags::none)
+  benchmark_base &add_int64_axis(std::string name,
+                                 std::vector<nvbench::int64_t> data,
+                                 nvbench::int64_axis_flags flags = nvbench::int64_axis_flags::none)
   {
     m_axes.add_int64_axis(std::move(name), std::move(data), flags);
     return *this;
   }
 
-  benchmark_base &add_int64_power_of_two_axis(std::string name,
-                                              std::vector<nvbench::int64_t> data)
+  benchmark_base &add_int64_power_of_two_axis(std::string name, std::vector<nvbench::int64_t> data)
   {
     return this->add_int64_axis(std::move(name),
                                 std::move(data),
                                 nvbench::int64_axis_flags::power_of_two);
   }
 
-  benchmark_base &add_string_axis(std::string name,
-                                  std::vector<std::string> data)
+  benchmark_base &add_string_axis(std::string name, std::vector<std::string> data)
   {
     m_axes.add_string_axis(std::move(name), std::move(data));
     return *this;
@@ -133,48 +129,30 @@ struct benchmark_base
     return *this;
   }
 
-  [[nodiscard]] const std::vector<nvbench::device_info> &get_devices() const
-  {
-    return m_devices;
-  }
+  [[nodiscard]] const std::vector<nvbench::device_info> &get_devices() const { return m_devices; }
 
   [[nodiscard]] nvbench::axes_metadata &get_axes() { return m_axes; }
 
-  [[nodiscard]] const nvbench::axes_metadata &get_axes() const
-  {
-    return m_axes;
-  }
+  [[nodiscard]] const nvbench::axes_metadata &get_axes() const { return m_axes; }
 
   // Computes the number of configs in the benchmark.
   // Unlike get_states().size(), this method may be used prior to calling run().
   [[nodiscard]] std::size_t get_config_count() const;
 
   // Is empty until run() is called.
-  [[nodiscard]] const std::vector<nvbench::state> &get_states() const
-  {
-    return m_states;
-  }
+  [[nodiscard]] const std::vector<nvbench::state> &get_states() const { return m_states; }
   [[nodiscard]] std::vector<nvbench::state> &get_states() { return m_states; }
 
   void run() { this->do_run(); }
 
-  void set_printer(nvbench::printer_base &printer)
-  {
-    m_printer = std::ref(printer);
-  }
+  void set_printer(nvbench::printer_base &printer) { m_printer = std::ref(printer); }
 
   void clear_printer() { m_printer = std::nullopt; }
 
-  [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const
-  {
-    return m_printer;
-  }
+  [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const { return m_printer; }
 
   /// Execute at least this many trials per measurement. @{
-  [[nodiscard]] nvbench::int64_t get_min_samples() const
-  {
-    return m_min_samples;
-  }
+  [[nodiscard]] nvbench::int64_t get_min_samples() const { return m_min_samples; }
   benchmark_base &set_min_samples(nvbench::int64_t min_samples)
   {
     m_min_samples = min_samples;
@@ -193,7 +171,7 @@ struct benchmark_base
   }
   /// @}
 
-  /// If true, the benchmark does not use the blocking_kernel. This is intended 
+  /// If true, the benchmark does not use the blocking_kernel. This is intended
   /// for use with external profiling tools. @{
   [[nodiscard]] bool get_disable_blocking_kernel() const { return m_disable_blocking_kernel; }
   benchmark_base &set_disable_blocking_kernel(bool v)

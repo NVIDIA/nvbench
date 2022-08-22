@@ -85,8 +85,7 @@ private:
                             " {:^{}} ",
                             col.header,
                             col.max_width);
-      iter =
-        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+      iter = fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     }
     return fmt::format_to(iter, "\n");
   }
@@ -102,8 +101,7 @@ private:
                             "{:-^{}}",
                             "",
                             col.max_width + 2);
-      iter =
-        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+      iter = fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
     }
     return fmt::format_to(iter, "\n");
   }
@@ -116,8 +114,7 @@ private:
 
     for (std::size_t row = 0; row < m_num_rows; ++row)
     {
-      iter =
-        fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+      iter = fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
       for (const column &col : m_columns)
       {
         iter = fmt::format_to(iter,
@@ -125,8 +122,7 @@ private:
                               " {:>{}} ",
                               col.rows[row],
                               col.max_width);
-        iter =
-          fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
+        iter = fmt::format_to(iter, m_color ? (m_bg | m_vdiv_fg) : m_no_style, "|");
       } // cols
 
       iter = fmt::format_to(iter, "\n");

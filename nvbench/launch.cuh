@@ -42,20 +42,17 @@ struct launch
   {}
 
   // move-only
-  launch(const launch &) = delete;
-  launch(launch &&)      = default;
+  launch(const launch &)            = delete;
+  launch(launch &&)                 = default;
   launch &operator=(const launch &) = delete;
-  launch &operator=(launch &&) = default;
+  launch &operator=(launch &&)      = default;
 
   /**
    * @return a CUDA stream that all kernels and other stream-ordered CUDA work
    * must use. This stream can be changed by the `KernelGenerator` using the
    * `nvbench::state::set_cuda_stream` method.
    */
-  __forceinline__ const nvbench::cuda_stream &get_stream() const
-  {
-    return m_stream;
-  };
+  __forceinline__ const nvbench::cuda_stream &get_stream() const { return m_stream; };
 
 private:
   // The stream is owned by the `nvbench::state` associated with this launch.

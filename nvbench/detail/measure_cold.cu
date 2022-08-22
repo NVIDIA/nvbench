@@ -54,15 +54,11 @@ void measure_cold_base::check()
   const auto device = m_state.get_device();
   if (!device)
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Device required for `cold` measurement.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Device required for `cold` measurement.");
   }
   if (!device->is_active())
   { // This means something went wrong higher up. Throw an error.
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Internal error: Current device is not active.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Internal error: Current device is not active.");
   }
 }
 
@@ -92,13 +88,11 @@ void measure_cold_base::record_measurements()
   ++m_total_samples;
 
   // Compute convergence statistics using CUDA timings:
-  const auto mean_cuda_time = m_total_cuda_time /
-                              static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cuda_stdev =
-    nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
-                                                    m_cuda_times.cend(),
-                                                    mean_cuda_time);
-  auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
+  const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
+  const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
+                                                                          m_cuda_times.cend(),
+                                                                          mean_cuda_time);
+  auto cuda_rel_stdev       = cuda_stdev / mean_cuda_time;
   if (std::isfinite(cuda_rel_stdev))
   {
     m_noise_tracker.push_back(cuda_rel_stdev);
@@ -132,10 +126,10 @@ bool measure_cold_base::is_finished()
     {
       // Use the current noise as the stdev reference.
       const auto current_noise = m_noise_tracker.back();
-      const auto noise_stdev = nvbench::detail::statistics::standard_deviation(
-        m_noise_tracker.cbegin(),
-        m_noise_tracker.cend(),
-        current_noise);
+      const auto noise_stdev =
+        nvbench::detail::statistics::standard_deviation(m_noise_tracker.cbegin(),
+                                                        m_noise_tracker.cend(),
+                                                        current_noise);
       const auto noise_rel_stdev = noise_stdev / current_noise;
 
       // If the rel stdev of the last N cuda noise measurements is less than
@@ -162,13 +156,11 @@ bool measure_cold_base::is_finished()
 void measure_cold_base::run_trials_epilogue()
 {
   // Only need to compute this at the end, not per iteration.
-  const auto cpu_mean = m_total_cuda_time /
-                        static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cpu_stdev =
-    nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
-                                                    m_cpu_times.cend(),
-                                                    cpu_mean);
-  m_cpu_noise = cpu_stdev / cpu_mean;
+  const auto cpu_mean  = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
+  const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
+                                                                         m_cpu_times.cend(),
+                                                                         cpu_mean);
+  m_cpu_noise          = cpu_stdev / cpu_mean;
 
   m_walltime_timer.stop();
 }
@@ -199,8 +191,7 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("description",
-                    "Relative standard deviation of isolated CPU times");
+    summ.set_string("description", "Relative standard deviation of isolated CPU times");
     summ.set_float64("value", m_cpu_noise);
   }
 
@@ -219,12 +210,10 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("description",
-                    "Relative standard deviation of isolated GPU times");
+    summ.set_string("description", "Relative standard deviation of isolated GPU times");
     summ.set_float64("value",
-                     m_noise_tracker.empty()
-                       ? std::numeric_limits<nvbench::float64_t>::infinity()
-                       : m_noise_tracker.back());
+                     m_noise_tracker.empty() ? std::numeric_limits<nvbench::float64_t>::infinity()
+                                             : m_noise_tracker.back());
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -232,8 +221,7 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/bw/item_rate");
     summ.set_string("name", "Elem/s");
     summ.set_string("hint", "item_rate");
-    summ.set_string("description",
-                    "Number of input elements processed per second");
+    summ.set_string("description", "Number of input elements processed per second");
     summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
   }
 
@@ -251,8 +239,8 @@ void measure_cold_base::generate_summaries()
     }
 
     {
-      const auto peak_gmem_bw = static_cast<double>(
-        m_state.get_device()->get_global_memory_bus_bandwidth());
+      const auto peak_gmem_bw =
+        static_cast<double>(m_state.get_device()->get_global_memory_bus_bandwidth());
 
       auto &summ = m_state.add_summary("nv/cold/bw/global/utilization");
       summ.set_string("name", "BWUtil");
@@ -274,8 +262,7 @@ void measure_cold_base::generate_summaries()
   }
 
   // Log if a printer exists:
-  if (auto printer_opt_ref = m_state.get_benchmark().get_printer();
-      printer_opt_ref.has_value())
+  if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
 
@@ -324,10 +311,7 @@ void measure_cold_base::generate_summaries()
                             m_walltime_timer.get_duration(),
                             m_total_samples));
 
-    printer.process_bulk_data(m_state,
-                              "nv/cold/sample_times",
-                              "sample_times",
-                              m_cuda_times);
+    printer.process_bulk_data(m_state, "nv/cold/sample_times", "sample_times", m_cuda_times);
   }
 }
 

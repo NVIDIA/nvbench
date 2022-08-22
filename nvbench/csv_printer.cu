@@ -66,10 +66,8 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
     {
       std::optional<nvbench::device_info> device = cur_state.get_device();
 
-      std::string device_id   = device ? fmt::to_string(device->get_id())
-                                       : std::string{};
-      std::string device_name = device ? std::string{device->get_name()}
-                                       : std::string{};
+      std::string device_id   = device ? fmt::to_string(device->get_id()) : std::string{};
+      std::string device_name = device ? std::string{device->get_name()} : std::string{};
 
       table.add_cell(row, "_bench_name", "Benchmark", bench_name);
       table.add_cell(row, "_device_id", "Device", std::move(device_id));
@@ -88,15 +86,11 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
                          name + "_axis_pow2_pretty",
                          name + " (pow2)",
                          fmt::format("2^{}", exponent));
-          table.add_cell(row,
-                         name + "_axis_plain",
-                         fmt::format("{}", name),
-                         fmt::to_string(value));
+          table.add_cell(row, name + "_axis_plain", fmt::format("{}", name), fmt::to_string(value));
         }
         else
         {
-          std::string value = std::visit(format_visitor,
-                                         axis_values.get_value(name));
+          std::string value = std::visit(format_visitor, axis_values.get_value(name));
           table.add_cell(row, name + "_axis", name, std::move(value));
         }
       }
@@ -117,14 +111,10 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
           continue;
         }
         const std::string &tag    = summ.get_tag();
-        const std::string &header = summ.has_value("name")
-                                      ? summ.get_string("name")
-                                      : tag;
+        const std::string &header = summ.has_value("name") ? summ.get_string("name") : tag;
 
-        const std::string hint = summ.has_value("hint")
-                                   ? summ.get_string("hint")
-                                   : std::string{};
-        std::string value = std::visit(format_visitor, summ.get_value("value"));
+        const std::string hint = summ.has_value("hint") ? summ.get_string("hint") : std::string{};
+        std::string value      = std::visit(format_visitor, summ.get_value("value"));
         if (hint == "duration")
         {
           table.add_cell(row, tag, header + " (sec)", std::move(value));
@@ -182,10 +172,7 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
       std::size_t remaining = table.m_columns.size();
       for (const auto &col : table.m_columns)
       {
-        fmt::format_to(buffer,
-                       "{}{}",
-                       col.rows[i],
-                       (--remaining == 0) ? "" : ",");
+        fmt::format_to(buffer, "{}{}", col.rows[i], (--remaining == 0) ? "" : ",");
       }
       fmt::format_to(buffer, "\n");
     }

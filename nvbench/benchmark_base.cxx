@@ -68,8 +68,7 @@ std::size_t benchmark_base::get_config_count() const
     std::size_t{1},
     std::multiplies<>{},
     [](const auto &axis_ptr) {
-      if (const auto *type_axis_ptr =
-            dynamic_cast<const nvbench::type_axis *>(axis_ptr.get());
+      if (const auto *type_axis_ptr = dynamic_cast<const nvbench::type_axis *>(axis_ptr.get());
           type_axis_ptr != nullptr)
       {
         return type_axis_ptr->get_active_count();

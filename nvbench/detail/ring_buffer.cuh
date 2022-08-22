@@ -58,18 +58,12 @@ struct ring_buffer
   /**
    * The number of valid values in the ring buffer. Always <= capacity().
    */
-  [[nodiscard]] std::size_t size() const
-  {
-    return m_full ? m_buffer.size() : m_index;
-  }
+  [[nodiscard]] std::size_t size() const { return m_full ? m_buffer.size() : m_index; }
 
   /**
    * The maximum size of the ring buffer.
    */
-  [[nodiscard]] std::size_t capacity() const
-  {
-    return m_buffer.size();
-  }
+  [[nodiscard]] std::size_t capacity() const { return m_buffer.size(); }
 
   /**
    * @return True if the ring buffer is empty.

@@ -74,10 +74,7 @@ struct call_failed : error
 
   [[nodiscard]] nvmlReturn_t get_error_code() const { return m_error_code; }
 
-  [[nodiscard]] const std::string &get_error_string() const
-  {
-    return m_error_string;
-  }
+  [[nodiscard]] const std::string &get_error_string() const { return m_error_string; }
 
 private:
   nvmlReturn_t m_error_code;
@@ -90,30 +87,26 @@ private:
 
 #ifdef NVBENCH_HAS_NVML
 
-#define NVBENCH_NVML_CALL(call)                                                \
-  do                                                                           \
-  {                                                                            \
-    const auto _rr = call;                                                     \
-    if (_rr != NVML_SUCCESS)                                                   \
-    {                                                                          \
-      throw nvbench::nvml::call_failed(__FILE__,                               \
-                                       __LINE__,                               \
-                                       #call,                                  \
-                                       _rr,                                    \
-                                       nvmlErrorString(_rr));                  \
-    }                                                                          \
+#define NVBENCH_NVML_CALL(call)                                                                    \
+  do                                                                                               \
+  {                                                                                                \
+    const auto _rr = call;                                                                         \
+    if (_rr != NVML_SUCCESS)                                                                       \
+    {                                                                                              \
+      throw nvbench::nvml::call_failed(__FILE__, __LINE__, #call, _rr, nvmlErrorString(_rr));      \
+    }                                                                                              \
   } while (false)
 
 // Same as above, but used for nvmlInit(), where a failure means that
 // nvmlErrorString is not available.
-#define NVBENCH_NVML_CALL_NO_API(call)                                         \
-  do                                                                           \
-  {                                                                            \
-    const auto _rr = call;                                                     \
-    if (_rr != NVML_SUCCESS)                                                   \
-    {                                                                          \
-      throw nvbench::nvml::call_failed(__FILE__, __LINE__, #call, _rr, "");    \
-    }                                                                          \
+#define NVBENCH_NVML_CALL_NO_API(call)                                                             \
+  do                                                                                               \
+  {                                                                                                \
+    const auto _rr = call;                                                                         \
+    if (_rr != NVML_SUCCESS)                                                                       \
+    {                                                                                              \
+      throw nvbench::nvml::call_failed(__FILE__, __LINE__, #call, _rr, "");                        \
+    }                                                                                              \
   } while (false)
 
 #endif // NVBENCH_HAS_NVML

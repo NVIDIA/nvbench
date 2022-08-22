@@ -49,10 +49,10 @@ namespace detail
 struct measure_cold_base
 {
   explicit measure_cold_base(nvbench::state &exec_state);
-  measure_cold_base(const measure_cold_base &) = delete;
-  measure_cold_base(measure_cold_base &&)      = delete;
+  measure_cold_base(const measure_cold_base &)            = delete;
+  measure_cold_base(measure_cold_base &&)                 = delete;
   measure_cold_base &operator=(const measure_cold_base &) = delete;
-  measure_cold_base &operator=(measure_cold_base &&) = delete;
+  measure_cold_base &operator=(measure_cold_base &&)      = delete;
 
 protected:
   template <bool use_blocking_kernel>
@@ -68,10 +68,7 @@ protected:
 
   void check_skip_time(nvbench::float64_t warmup_time);
 
-  __forceinline__ void flush_device_l2()
-  {
-    m_l2flush.flush(m_launch.get_stream());
-  }
+  __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
 
   __forceinline__ void sync_stream() const
   {

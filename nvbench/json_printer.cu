@@ -126,11 +126,10 @@ std::string json_printer::version_t::get_string() const
   return fmt::format("{}.{}.{}", this->major, this->minor, this->patch);
 }
 
-void json_printer::do_process_bulk_data_float64(
-  state &state,
-  const std::string &tag,
-  const std::string &hint,
-  const std::vector<nvbench::float64_t> &data)
+void json_printer::do_process_bulk_data_float64(state &state,
+                                                const std::string &tag,
+                                                const std::string &hint,
+                                                const std::vector<nvbench::float64_t> &data)
 {
   printer_base::do_process_bulk_data_float64(state, tag, hint, data);
 
@@ -157,16 +156,12 @@ void json_printer::do_process_bulk_data_float64(
       {
         if (!fs::create_directory(result_path))
         {
-          NVBENCH_THROW(std::runtime_error,
-                        "{}",
-                        "Failed to create result directory '{}'.");
+          NVBENCH_THROW(std::runtime_error, "{}", "Failed to create result directory '{}'.");
         }
       }
       else if (!fs::is_directory(result_path))
       {
-        NVBENCH_THROW(std::runtime_error,
-                      "{}",
-                      "'{}' exists and is not a directory.");
+        NVBENCH_THROW(std::runtime_error, "{}", "'{}' exists and is not a directory.");
       }
 
       const auto file_id = m_num_jsonbin_files++;
@@ -197,16 +192,12 @@ void json_printer::do_process_bulk_data_float64(
     }
     catch (std::exception &e)
     {
-      if (auto printer_opt_ref = state.get_benchmark().get_printer();
-          printer_opt_ref.has_value())
+      if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
       {
         auto &printer = printer_opt_ref.value().get();
-        printer.log(nvbench::log_level::warn,
-                    fmt::format("Error writing {} ({}) to {}: {}",
-                                tag,
-                                hint,
-                                result_path.string(),
-                                e.what()));
+        printer.log(
+          nvbench::log_level::warn,
+          fmt::format("Error writing {} ({}) to {}: {}", tag, hint, result_path.string(), e.what()));
       }
     } // end catch
 
@@ -221,14 +212,12 @@ void json_printer::do_process_bulk_data_float64(
     summ.set_string("hide", "Not needed in table.");
 
     timer.stop();
-    if (auto printer_opt_ref = state.get_benchmark().get_printer();
-        printer_opt_ref.has_value())
+    if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
     {
       auto &printer = printer_opt_ref.value().get();
-      printer.log(nvbench::log_level::info,
-                  fmt::format("Wrote '{}' in {:>6.3f}ms",
-                              result_path.string(),
-                              timer.get_duration() * 1000));
+      printer.log(
+        nvbench::log_level::info,
+        fmt::format("Wrote '{}' in {:>6.3f}ms", result_path.string(), timer.get_duration() * 1000));
     }
   } // end hint == sample_times
 }
@@ -304,15 +293,12 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       device["global_memory_size"]    = dev_info.get_global_memory_size();
       device["global_memory_bus_peak_clock_rate"] =
         dev_info.get_global_memory_bus_peak_clock_rate();
-      device["global_memory_bus_width"] =
-        dev_info.get_global_memory_bus_width();
-      device["global_memory_bus_bandwidth"] =
-        dev_info.get_global_memory_bus_bandwidth();
-      device["l2_cache_size"]        = dev_info.get_l2_cache_size();
-      device["shared_memory_per_sm"] = dev_info.get_shared_memory_per_sm();
-      device["shared_memory_per_block"] =
-        dev_info.get_shared_memory_per_block();
-      device["ecc_state"] = dev_info.get_ecc_state();
+      device["global_memory_bus_width"]     = dev_info.get_global_memory_bus_width();
+      device["global_memory_bus_bandwidth"] = dev_info.get_global_memory_bus_bandwidth();
+      device["l2_cache_size"]               = dev_info.get_l2_cache_size();
+      device["shared_memory_per_sm"]        = dev_info.get_shared_memory_per_sm();
+      device["shared_memory_per_block"]     = dev_info.get_shared_memory_per_block();
+      device["ecc_state"]                   = dev_info.get_ecc_state();
     }
   } // "devices"
 
@@ -358,23 +344,19 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
           switch (axis_ptr->get_type())
           {
             case nvbench::axis_type::type:
-              value["is_active"] =
-                static_cast<type_axis &>(*axis_ptr).get_is_active(i);
+              value["is_active"] = static_cast<type_axis &>(*axis_ptr).get_is_active(i);
               break;
 
             case nvbench::axis_type::int64:
-              value["value"] =
-                static_cast<int64_axis &>(*axis_ptr).get_value(i);
+              value["value"] = static_cast<int64_axis &>(*axis_ptr).get_value(i);
               break;
 
             case nvbench::axis_type::float64:
-              value["value"] =
-                static_cast<float64_axis &>(*axis_ptr).get_value(i);
+              value["value"] = static_cast<float64_axis &>(*axis_ptr).get_value(i);
               break;
 
             case nvbench::axis_type::string:
-              value["value"] =
-                static_cast<string_axis &>(*axis_ptr).get_value(i);
+              value["value"] = static_cast<string_axis &>(*axis_ptr).get_value(i);
               break;
             default:
               break;
