@@ -454,8 +454,8 @@ NVBENCH_BENCH_TYPES(my_benchmark,
 ```
 
 For large configuration spaces like this, pruning some of the less useful
-combinations using the techniques described in the "Zipped/Tied Iteration of Value Axes"
-or "Skip Uninteresting / Invalid Benchmarks" section can help immensely with
+combinations using the techniques described in the [Zipped/Tied Iteration of Value Axes](#zipped-iteration-of-value-axes)
+or [Skip Uninteresting / Invalid Benchmarks](#skip-uninteresting--invalid-benchmarks) section can help immensely with
 keeping compile / run times manageable.
 
 Splitting a single large configuration space into multiple, more focused
