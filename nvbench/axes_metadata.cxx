@@ -173,7 +173,7 @@ get_axes_indices(std::size_t type_axe_count,
   {
     out -= type_axe_count;
   }
-  return std::tie(input_indices, output_indices);
+  return {std::move(input_indices), std::move(output_indices)};
 }
 
 void reset_iteration_space(
