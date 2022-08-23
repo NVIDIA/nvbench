@@ -53,8 +53,11 @@ struct iteration_space_base
   /*!
    * Construct a new derived iteration_space
    *
-   * @param[input_indices]
-   * @param[output_indices]
+   * The input_indices and output_indices combine together to allow the iteration space to know
+   * what axi they should query from axes_metadata and where each of those map to in the output
+   * iteration space.
+   * @param[input_indices] recorded indices of each axi from the axes metadata value space
+   * @param[output_indices] requested indices of each axi for output when iterating the type+value space
    */
   iteration_space_base(std::vector<std::size_t> input_indices,
                        std::vector<std::size_t> output_indices);
