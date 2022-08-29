@@ -280,38 +280,6 @@ struct benchmark_base
   /// @}
 
 protected:
-
-  /// Move existing Axis to being part of zip axis iteration space.
-  /// This will remove any existing iteration spaces that the named axis
-  /// are part of, while restoring all other axis in those spaces to
-  /// the default linear space
-  ///
-  /// This is meant to be used only by the option_parser
-  ///  @{
-  benchmark_base &zip_axes(std::vector<std::string> names)
-  {
-    m_axes.zip_axes(std::move(names));
-    return *this;
-  }
-  /// @}
-
-
-  /// Move existing Axis to being part of user axis iteration space.
-  /// This will remove any existing iteration spaces that the named axis
-  /// are part of, while restoring all other axis in those spaces to
-  /// the default linear space
-  ///
-  /// This is meant to be used only by the option_parser
-  ///  @{
-  benchmark_base &
-  user_iteration_axes(std::function<nvbench::make_user_space_signature> make,
-                      std::vector<std::string> names)
-  {
-    m_axes.user_iteration_axes(std::move(make), std::move(names));
-    return *this;
-  }
-  /// @}
-
   friend struct nvbench::runner_base;
 
   template <typename BenchmarkType>

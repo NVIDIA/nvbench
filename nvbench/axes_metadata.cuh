@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <nvbench/iteration_space_base.cuh>
 #include <nvbench/float64_axis.cuh>
 #include <nvbench/int64_axis.cuh>
+#include <nvbench/iteration_space_base.cuh>
 #include <nvbench/linear_axis_space.cuh>
 #include <nvbench/string_axis.cuh>
 #include <nvbench/type_axis.cuh>
@@ -65,13 +65,16 @@ struct axes_metadata
 
   void add_string_axis(std::string name, std::vector<std::string> data);
 
-  void add_axis(const axis_base& axis);
+  void add_axis(const axis_base &axis);
 
   template <typename... Args>
   void add_zip_axes(Args &&...args)
   {
-    (this->add_axis(std::forward<Args>(args)), ...);
-    this->zip_axes({args.get_name()...});
+    const std::size_t start = this->m_axes.size();
+    const std::size_t count = sizeof...(Args);
+    // (this->add_axis(std::forward<Args>(args)), ...);
+    (m_axes.push_back(args.clone()), ...);
+    this->add_zip_space(start, count);
   }
 
   template <typename... Args>
@@ -79,15 +82,11 @@ struct axes_metadata
     std::function<nvbench::make_user_space_signature> make,
     Args &&...args)
   {
-    (this->add_axis(std::forward<Args>(args)), ...);
-    this->user_iteration_axes(std::move(make), {args.get_name()...});
+    const std::size_t start = this->m_axes.size();
+    const std::size_t count = sizeof...(Args);
+    (m_axes.push_back(args.clone()), ...);
+    this->add_user_iteration_space(std::move(make), start, count);
   }
-
-  void zip_axes(std::vector<std::string> names);
-
-  void
-  user_iteration_axes(std::function<nvbench::make_user_space_signature> make,
-                      std::vector<std::string> names);
 
   [[nodiscard]] const iteration_space_type &get_type_iteration_space() const
   {
@@ -136,6 +135,12 @@ private:
   std::size_t m_type_axe_count = 0;
   iteration_space_type m_type_space;
   iteration_space_type m_value_space;
+
+  void add_zip_space(std::size_t first_index, std::size_t count);
+  void add_user_iteration_space(
+    std::function<nvbench::make_user_space_signature> make,
+    std::size_t first_index,
+    std::size_t count);
 };
 
 template <typename... TypeAxes>

@@ -24,6 +24,7 @@
 #include <fmt/ranges.h>
 
 #include <algorithm>
+#include <numeric>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -117,23 +118,23 @@ catch (std::exception &e)
 void axes_metadata::add_float64_axis(std::string name,
                                      std::vector<nvbench::float64_t> data)
 {
-  this->add_axis(nvbench::float64_axis{name,data});
+  this->add_axis(nvbench::float64_axis{name, data});
 }
 
 void axes_metadata::add_int64_axis(std::string name,
                                    std::vector<nvbench::int64_t> data,
                                    nvbench::int64_axis_flags flags)
 {
-  this->add_axis(nvbench::int64_axis{name,data,flags});
+  this->add_axis(nvbench::int64_axis{name, data, flags});
 }
 
 void axes_metadata::add_string_axis(std::string name,
                                     std::vector<std::string> data)
 {
-  this->add_axis(nvbench::string_axis{name,data});
+  this->add_axis(nvbench::string_axis{name, data});
 }
 
-void axes_metadata::add_axis(const axis_base& axis)
+void axes_metadata::add_axis(const axis_base &axis)
 {
   m_value_space.push_back(
     std::make_unique<linear_axis_space>(m_axes.size(),
@@ -141,104 +142,21 @@ void axes_metadata::add_axis(const axis_base& axis)
   m_axes.push_back(axis.clone());
 }
 
-namespace
+void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
 {
-std::tuple<std::vector<std::size_t>, std::vector<std::size_t>>
-get_axes_indices(std::size_t type_axe_count,
-                 const nvbench::axes_metadata::axes_type &axes,
-                 const std::vector<std::string> &names)
-{
-  std::vector<std::size_t> input_indices;
-  input_indices.reserve(names.size());
-  for (auto &n : names)
-  {
-    auto iter =
-      std::find_if(axes.cbegin(), axes.cend(), [&n](const auto &axis) {
-        return axis->get_name() == n;
-      });
-
-    // iter distance is input_indices
-    if (iter == axes.cend())
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "Unable to find the axes named ({}).",
-                    n);
-    }
-    auto index = std::distance(axes.cbegin(), iter);
-    input_indices.push_back(index);
-  }
-
-  std::vector<std::size_t> output_indices = input_indices;
-  for (auto &out : output_indices)
-  {
-    out -= type_axe_count;
-  }
-  return {std::move(input_indices), std::move(output_indices)};
-}
-
-void reset_iteration_space(
-  nvbench::axes_metadata::iteration_space_type &all_spaces,
-  const std::vector<std::size_t> &indices_to_remove)
-{
-  // 1. Find all spaces indices that
-  nvbench::axes_metadata::iteration_space_type reset_space;
-  nvbench::axes_metadata::iteration_space_type to_filter;
-  for (auto &space : all_spaces)
-  {
-    bool added = false;
-    for (auto &i : indices_to_remove)
-    {
-      if (space->contains(i))
-      {
-        // add each item back as linear_axis_space
-        auto as_linear = space->clone_as_linear();
-        to_filter.insert(to_filter.end(),
-                         std::make_move_iterator(as_linear.begin()),
-                         std::make_move_iterator(as_linear.end()));
-        added = true;
-        break;
-      }
-    }
-    if (!added)
-    {
-      // this space doesn't need to be removed
-      reset_space.push_back(std::move(space));
-    }
-  }
-
-  for (auto &iter : to_filter)
-  {
-    bool to_add = true;
-    for (auto &i : indices_to_remove)
-    {
-      if (iter->contains(i))
-      {
-        to_add = false;
-        break;
-      }
-    }
-    if (to_add)
-    {
-      reset_space.push_back(std::move(iter));
-      break;
-    }
-  }
-
-  all_spaces = std::move(reset_space);
-}
-} // namespace
-
-void axes_metadata::zip_axes(std::vector<std::string> names)
-{
-  NVBENCH_THROW_IF((names.size() < 2),
+  NVBENCH_THROW_IF((count < 2),
                    std::runtime_error,
-                   "At least two axi names ( {} provided ) need to be provided "
+                   "At least two axi ( {} provided ) need to be provided "
                    "when using zip_axes.",
-                   names.size());
+                   count);
 
   // compute the numeric indice for each name we have
-  auto [input_indices,
-        output_indices] = get_axes_indices(m_type_axe_count, m_axes, names);
+  std::vector<std::size_t> input_indices(count);
+  std::vector<std::size_t> output_indices(count);
+  std::iota(input_indices.begin(), input_indices.end(), first_index);
+  std::iota(input_indices.begin(),
+            input_indices.end(),
+            first_index - m_type_axe_count);
 
   const auto expected_size = m_axes[input_indices[0]]->get_size();
   for (auto i : input_indices)
@@ -255,22 +173,24 @@ void axes_metadata::zip_axes(std::vector<std::string> names)
                      expected_size);
   }
 
-  // remove any iteration spaces that have axes we need
-  reset_iteration_space(m_value_space, input_indices);
-
   // add the new tied iteration space
   auto tied = std::make_unique<zip_axis_space>(std::move(input_indices),
                                                std::move(output_indices));
   m_value_space.push_back(std::move(tied));
 }
 
-void axes_metadata::user_iteration_axes(
+void axes_metadata::add_user_iteration_space(
   std::function<nvbench::make_user_space_signature> make,
-  std::vector<std::string> names)
+  std::size_t first_index,
+  std::size_t count)
 {
   // compute the numeric indice for each name we have
-  auto [input_indices,
-        output_indices] = get_axes_indices(m_type_axe_count, m_axes, names);
+  std::vector<std::size_t> input_indices(count);
+  std::vector<std::size_t> output_indices(count);
+  std::iota(input_indices.begin(), input_indices.end(), first_index);
+  std::iota(input_indices.begin(),
+            input_indices.end(),
+            first_index - m_type_axe_count);
 
   for (auto i : input_indices)
   {
@@ -280,9 +200,6 @@ void axes_metadata::user_iteration_axes(
                      "user_iteration_axes ( {} ).",
                      m_axes[i]->get_name());
   }
-
-  // remove any iteration spaces that have axes we need
-  reset_iteration_space(m_value_space, input_indices);
 
   auto user_func = make(std::move(input_indices), std::move(output_indices));
   m_value_space.push_back(std::move(user_func));

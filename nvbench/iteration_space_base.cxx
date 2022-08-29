@@ -19,7 +19,6 @@
 #include "iteration_space_base.cuh"
 
 #include <nvbench/type_axis.cuh>
-#include <nvbench/linear_axis_space.cuh>
 
 namespace nvbench
 {
@@ -36,22 +35,6 @@ std::unique_ptr<iteration_space_base> iteration_space_base::clone() const
 {
   auto clone = this->do_clone();
   return clone;
-}
-
-std::vector<std::unique_ptr<iteration_space_base>>
-iteration_space_base::clone_as_linear() const
-{
-  std::vector<std::unique_ptr<iteration_space_base>> clones;
-  clones.reserve(m_input_indices.size());
-
-  for (std::size_t i = 0; i < m_input_indices.size(); ++i)
-  {
-    clones.push_back(
-      std::make_unique<nvbench::linear_axis_space>(m_input_indices[i],
-                                                   m_output_indices[i]));
-  }
-
-  return clones;
 }
 
 namespace
@@ -83,15 +66,6 @@ std::size_t iteration_space_base::get_size(const axes_type &axes) const
 std::size_t iteration_space_base::get_active_count(const axes_type &axes) const
 {
   return this->do_get_active_count(get_axes_info(axes, m_input_indices));
-}
-
-bool iteration_space_base::contains(std::size_t in_index) const
-{
-  auto iter =
-    std::find_if(m_input_indices.cbegin(),
-                 m_input_indices.cend(),
-                 [&in_index](const auto &i) { return i == in_index; });
-  return iter != m_input_indices.end();
 }
 
 } // namespace nvbench

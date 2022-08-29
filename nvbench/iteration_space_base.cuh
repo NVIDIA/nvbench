@@ -36,9 +36,17 @@ namespace nvbench
  *
  * * user_axis_space is equivalant to a transform iterator.
  *
- * We don't immediately construct the iterators as the active elements,
- * name, etc can be changed before execution. This class allows for
- * the deferred iterator creation while keeping the meta data insyc.
+ * The `nvbench::axes_metadata` stores all axes in a std::vector. To represent
+ * which axes each space is 'over' we store those indices. We don't store
+ * the pointers or names for the following reasons:
+ *
+ * * The names of an axis can change after being added. The `nvbench::axes_metadata`
+ * is not aware of the name change, and can't inform this class of it.
+ *
+ * * The `nvbench::axes_metadata` can be deep copied, which would invalidate
+ * any pointers held by this class. By holding onto the index we remove the need
+ * to do any form of fixup on deep copies of `nvbench::axes_metadata`.
+ *
  *
  */
 struct iteration_space_base
@@ -64,15 +72,6 @@ struct iteration_space_base
   virtual ~iteration_space_base();
 
   [[nodiscard]] std::unique_ptr<iteration_space_base> clone() const;
-
-   /*!
-   * Returns a vector of linear spaces one for each axi held.
-   * This is required when a iteration_space is removed as we need
-   * to restore all the assoicated axes to default.
-   *
-   */
-  [[nodiscard]] std::vector<std::unique_ptr<iteration_space_base>>
-  clone_as_linear() const;
 
   /*!
    * Returns the iterator over the @a axis provided
@@ -100,24 +99,6 @@ struct iteration_space_base
    *  Type Axis support inactive elements
    */
   [[nodiscard]] std::size_t get_active_count(const axes_type &axes) const;
-
-  /*!
-   * Returns if this space was constructed with the input index specified
-   * by @a input_index.
-   *
-   * The `nvbench::axes_metadata` stores all axes in a std::vector. To represent
-   * which axes each space is 'over' we store those indices. We don't store
-   * the pointers or names for the following reasons:
-   *
-   * * The names of an axis can change after being added. The `nvbench::axes_metadata`
-   * is not aware of the name change, and can't inform this class of it.
-   *
-   * * The `nvbench::axes_metadata` can be deep copied, which would invalidate
-   * any pointers held by this class. By holding onto the index we remove the need
-   * to do any form of fixup on deep copies of `nvbench::axes_metadata`.
-   *
-   */
-  [[nodiscard]] bool contains(std::size_t input_index) const;
 
 protected:
   std::vector<std::size_t> m_input_indices;
