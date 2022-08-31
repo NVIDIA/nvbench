@@ -74,7 +74,7 @@ void state_iterator::next()
 
   for (auto &&space : this->m_space)
   {
-    auto rolled_over = space.inc();
+    auto rolled_over = space.next();
     if (rolled_over)
     {
       continue;

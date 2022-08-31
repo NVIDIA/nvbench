@@ -80,7 +80,7 @@ struct axis_space_iterator
       , m_update(std::move(update))
   {}
 
-  [[nodiscard]] bool inc()
+  [[nodiscard]] bool next()
   {
     return this->m_advance(m_current_index, m_iteration_size);
   }
