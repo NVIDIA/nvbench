@@ -222,7 +222,7 @@ struct under_diag final : nvbench::user_axis_space
       };
 
     const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
-    return nvbench::detail::make_space_iterator(2,
+    return nvbench::detail::axis_space_iterator(2,
                                                 iteration_length,
                                                 adv_func,
                                                 diag_under);

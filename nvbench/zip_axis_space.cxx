@@ -43,7 +43,7 @@ detail::axis_space_iterator zip_axis_space::do_get_iterator(axes_info info) cons
     }
   };
 
-  return detail::make_space_iterator(locs.size(), info[0].size, update_func);
+  return detail::axis_space_iterator(locs.size(), info[0].size, update_func);
 }
 
 std::size_t zip_axis_space::do_get_size(const axes_info &info) const

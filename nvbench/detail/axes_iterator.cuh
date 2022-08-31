@@ -60,6 +60,26 @@ struct axis_space_iterator
   using UpdateSignature  = void(std::size_t index,
                                std::vector<axis_index> &indices);
 
+  axis_space_iterator(
+    std::size_t axes_count,
+    std::size_t iter_count,
+    std::function<axis_space_iterator::AdvanceSignature> &&advance,
+    std::function<axis_space_iterator::UpdateSignature> &&update)
+      : m_number_of_axes(axes_count)
+      , m_iteration_size(iter_count)
+      , m_advance(std::move(advance))
+      , m_update(std::move(update))
+  {}
+
+  axis_space_iterator(
+    std::size_t axes_count,
+    std::size_t iter_count,
+    std::function<axis_space_iterator::UpdateSignature> &&update)
+      : m_number_of_axes(axes_count)
+      , m_iteration_size(iter_count)
+      , m_update(std::move(update))
+  {}
+
   [[nodiscard]] bool inc()
   {
     return this->m_advance(m_current_index, m_iteration_size);
@@ -82,32 +102,6 @@ struct axis_space_iterator
 private:
   std::size_t m_current_index = 0;
 };
-
-inline axis_space_iterator make_space_iterator(
-  std::size_t axes_count,
-  std::size_t iter_count,
-  std::function<axis_space_iterator::AdvanceSignature> &&advance,
-  std::function<axis_space_iterator::UpdateSignature> &&update)
-{
-  axis_space_iterator iter;
-  iter.m_number_of_axes = axes_count;
-  iter.m_iteration_size = iter_count;
-  iter.m_advance        = std::move(advance);
-  iter.m_update         = std::move(update);
-  return iter;
-}
-
-inline axis_space_iterator make_space_iterator(
-  std::size_t axes_count,
-  std::size_t iter_count,
-  std::function<axis_space_iterator::UpdateSignature> &&update)
-{
-  axis_space_iterator iter;
-  iter.m_number_of_axes = axes_count;
-  iter.m_iteration_size = iter_count;
-  iter.m_update         = std::move(update);
-  return iter;
-}
 
 } // namespace detail
 } // namespace nvbench

@@ -60,7 +60,7 @@ namespace nvbench
  *         indices[locs[i]]        = temp;
  *       }
  *     };
- *    return detail::make_space_iterator(locs.size(), (info[0].size/3), adv_func, update_func);
+ *    return detail::axis_space_iterator(locs.size(), (info[0].size/3), adv_func, update_func);
  *   }
  *
  *   std::size_t do_get_size(const axes_info &info) const { return (info[0].size/3); }
