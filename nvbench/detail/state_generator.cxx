@@ -34,7 +34,8 @@ namespace nvbench::detail
 {
 // state_iterator ==============================================================
 
-void state_iterator::add_iteration_space(const nvbench::detail::axis_space_iterator &iter)
+void state_iterator::add_iteration_space(
+  const nvbench::detail::axis_space_iterator &iter)
 {
   m_axes_count += iter.m_number_of_axes;
   m_max_iteration *= iter.m_iteration_size;
@@ -55,11 +56,13 @@ void state_iterator::init()
 
 [[nodiscard]] std::vector<axis_index> state_iterator::get_current_indices() const
 {
-  std::vector<axis_index> indices(m_axes_count);
+  std::vector<axis_index> indices;
+  indices.reserve(m_axes_count);
   for (auto &m : m_space)
   {
     m.update_indices(indices);
   }
+  // verify length
   return indices;
 }
 
@@ -138,6 +141,7 @@ void state_generator::build_axis_configs()
                         axis.get_input_string(axis_info.index));
     }
   }
+
   for (vi.init(); vi.iter_valid(); vi.next())
   {
     auto &config = m_non_type_axis_configs.emplace_back();

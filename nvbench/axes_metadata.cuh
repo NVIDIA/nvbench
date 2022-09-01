@@ -160,7 +160,7 @@ axes_metadata::axes_metadata(nvbench::type_list<TypeAxes...>)
       const std::size_t type_axis_index = axes.size();
 
       spaces.push_back(
-        std::make_unique<linear_axis_space>(type_axis_index, type_axis_index));
+        std::make_unique<linear_axis_space>(type_axis_index));
 
       // Note:
       // The word "type" appears 6 times in the next line.

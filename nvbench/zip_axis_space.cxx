@@ -23,27 +23,25 @@
 namespace nvbench
 {
 
-zip_axis_space::zip_axis_space(std::vector<std::size_t> input_indices,
-                               std::vector<std::size_t> output_indices)
-    : iteration_space_base(std::move(input_indices), std::move(output_indices))
+zip_axis_space::zip_axis_space(std::vector<std::size_t> input_indices)
+    : iteration_space_base(std::move(input_indices))
 {}
 
 zip_axis_space::~zip_axis_space() = default;
 
 detail::axis_space_iterator zip_axis_space::do_get_iterator(axes_info info) const
 {
-  std::vector<std::size_t> locs = m_output_indices;
-  auto update_func              = [=](std::size_t inc_index,
+  auto update_func = [=](std::size_t inc_index,
                          std::vector<detail::axis_index> &indices) {
     for (std::size_t i = 0; i < info.size(); ++i)
     {
       detail::axis_index temp = info[i];
       temp.index              = inc_index;
-      indices[locs[i]]        = temp;
+      indices.push_back(std::move(temp));
     }
   };
 
-  return detail::axis_space_iterator(locs.size(), info[0].size, update_func);
+  return detail::axis_space_iterator(info.size(), info[0].size, update_func);
 }
 
 std::size_t zip_axis_space::do_get_size(const axes_info &info) const

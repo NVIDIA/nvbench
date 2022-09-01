@@ -23,20 +23,18 @@
 namespace nvbench
 {
 
-linear_axis_space::linear_axis_space(std::size_t in_index,
-                                     std::size_t out_index)
-    : iteration_space_base({in_index}, {out_index})
+linear_axis_space::linear_axis_space(std::size_t in_index)
+    : iteration_space_base({in_index})
 {}
 
 linear_axis_space::~linear_axis_space() = default;
 
 detail::axis_space_iterator linear_axis_space::do_get_iterator(axes_info info) const
 {
-  std::size_t loc{m_output_indices[0]};
   auto update_func = [=](std::size_t inc_index,
                          std::vector<detail::axis_index> &indices) {
-    indices[loc]       = info[0];
-    indices[loc].index = inc_index;
+    indices.push_back(info[0]);
+    indices.back().index = inc_index;
   };
 
   return detail::axis_space_iterator(1, info[0].size, update_func);

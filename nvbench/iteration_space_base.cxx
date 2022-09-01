@@ -23,10 +23,8 @@
 namespace nvbench
 {
 
-iteration_space_base::iteration_space_base(std::vector<std::size_t> input_indices,
-                                 std::vector<std::size_t> output_indices)
+iteration_space_base::iteration_space_base(std::vector<std::size_t> input_indices)
     : m_input_indices(std::move(input_indices))
-    , m_output_indices(std::move(output_indices))
 {}
 
 iteration_space_base::~iteration_space_base() = default;

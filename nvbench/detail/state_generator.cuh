@@ -83,7 +83,7 @@ struct state_iterator
   void next();
 
   std::vector<axis_space_iterator> m_space;
-  std::size_t m_axes_count        = 0;
+  std::size_t  m_axes_count        = 0;
   std::size_t m_current_space     = 0;
   std::size_t m_current_iteration = 0;
   std::size_t m_max_iteration     = 1;

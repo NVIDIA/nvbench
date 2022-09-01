@@ -67,8 +67,7 @@ struct iteration_space_base
    * @param[input_indices] recorded indices of each axi from the axes metadata value space
    * @param[output_indices] requested indices of each axi for output when iterating the type+value space
    */
-  iteration_space_base(std::vector<std::size_t> input_indices,
-                       std::vector<std::size_t> output_indices);
+  iteration_space_base(std::vector<std::size_t> input_indices);
   virtual ~iteration_space_base();
 
   [[nodiscard]] std::unique_ptr<iteration_space_base> clone() const;
@@ -102,7 +101,6 @@ struct iteration_space_base
 
 protected:
   std::vector<std::size_t> m_input_indices;
-  std::vector<std::size_t> m_output_indices;
 
   virtual std::unique_ptr<iteration_space_base> do_clone() const            = 0;
   virtual detail::axis_space_iterator do_get_iterator(axes_info info) const = 0;

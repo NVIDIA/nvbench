@@ -74,7 +74,7 @@ NVBENCH_BENCH(copy_sweep_grid_shape)
 // Zipped iteration of BlockSize and NumBlocks axes.
 // Will generate only 4 invocations of copy_sweep_grid_shape
 NVBENCH_BENCH(copy_sweep_grid_shape)
-  .set_name("tied_copy_sweep_grid_shape")
+  .set_name("zipped_copy_sweep_grid_shape")
   .add_zip_axes(nvbench::int64_axis{"BlockSize", {32, 64, 128, 256}},
                 nvbench::int64_axis{"NumBlocks", {1024, 512, 256, 128}});
 
@@ -89,10 +89,8 @@ NVBENCH_BENCH(copy_sweep_grid_shape)
 //
 struct under_diag final : nvbench::user_axis_space
 {
-  under_diag(std::vector<std::size_t> input_indices,
-             std::vector<std::size_t> output_indices)
-      : nvbench::user_axis_space(std::move(input_indices),
-                                 std::move(output_indices))
+  under_diag(std::vector<std::size_t> input_indices)
+      : nvbench::user_axis_space(std::move(input_indices))
   {}
 
   mutable std::size_t x_pos   = 0;
@@ -116,17 +114,16 @@ struct under_diag final : nvbench::user_axis_space
     };
 
     // our update function
-    std::vector<std::size_t> locs = m_output_indices;
     auto diag_under =
-      [&, locs, info](std::size_t,
-                      std::vector<nvbench::detail::axis_index> &indices) {
+      [&, info](std::size_t,
+                std::vector<nvbench::detail::axis_index> &indices) {
         nvbench::detail::axis_index temp = info[0];
         temp.index                       = x_pos;
-        indices[locs[0]]                 = temp;
+        indices.push_back(std::move(temp));
 
-        temp             = info[1];
-        temp.index       = y_pos;
-        indices[locs[1]] = temp;
+        temp       = info[1];
+        temp.index = y_pos;
+        indices.push_back(std::move(temp));
       };
 
     const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
@@ -169,10 +166,8 @@ NVBENCH_BENCH(copy_sweep_grid_shape)
 struct gauss final : nvbench::user_axis_space
 {
 
-  gauss(std::vector<std::size_t> input_indices,
-        std::vector<std::size_t> output_indices)
-      : nvbench::user_axis_space(std::move(input_indices),
-                                 std::move(output_indices))
+  gauss(std::vector<std::size_t> input_indices)
+      : nvbench::user_axis_space(std::move(input_indices))
   {}
 
   nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
@@ -193,12 +188,11 @@ struct gauss final : nvbench::user_axis_space
     }
 
     // our update function
-    std::vector<std::size_t> locs = m_output_indices;
-    auto gauss_func               = [=](std::size_t index,
+    auto gauss_func = [=](std::size_t index,
                           std::vector<nvbench::detail::axis_index> &indices) {
       nvbench::detail::axis_index temp = info[0];
       temp.index                       = gauss_indices[index];
-      indices[locs[0]]                 = temp;
+      indices.push_back(std::move(temp));
     };
 
     return nvbench::detail::axis_space_iterator(1,

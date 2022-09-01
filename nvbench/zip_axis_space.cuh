@@ -37,8 +37,7 @@ namespace nvbench
  */
 struct zip_axis_space final : iteration_space_base
 {
-  zip_axis_space(std::vector<std::size_t> input_indices,
-      std::vector<std::size_t> output_indices);
+  zip_axis_space(std::vector<std::size_t> input_indices);
   ~zip_axis_space();
 
   std::unique_ptr<iteration_space_base> do_clone() const override;

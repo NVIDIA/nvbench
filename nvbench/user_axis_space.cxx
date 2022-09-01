@@ -23,9 +23,8 @@
 namespace nvbench
 {
 
-user_axis_space::user_axis_space(std::vector<std::size_t> input_indices,
-                                 std::vector<std::size_t> output_indices)
-    : iteration_space_base(std::move(input_indices), std::move(output_indices))
+user_axis_space::user_axis_space(std::vector<std::size_t> input_indices)
+    : iteration_space_base(std::move(input_indices))
 {}
 user_axis_space::~user_axis_space() = default;
 

@@ -137,8 +137,7 @@ void axes_metadata::add_string_axis(std::string name,
 void axes_metadata::add_axis(const axis_base &axis)
 {
   m_value_space.push_back(
-    std::make_unique<linear_axis_space>(m_axes.size(),
-                                        m_axes.size() - m_type_axe_count));
+    std::make_unique<linear_axis_space>(m_axes.size()));
   m_axes.push_back(axis.clone());
 }
 
@@ -152,11 +151,7 @@ void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
 
   // compute the numeric indice for each name we have
   std::vector<std::size_t> input_indices(count);
-  std::vector<std::size_t> output_indices(count);
   std::iota(input_indices.begin(), input_indices.end(), first_index);
-  std::iota(input_indices.begin(),
-            input_indices.end(),
-            first_index - m_type_axe_count);
 
   const auto expected_size = m_axes[input_indices[0]]->get_size();
   for (auto i : input_indices)
@@ -174,8 +169,7 @@ void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
   }
 
   // add the new tied iteration space
-  auto tied = std::make_unique<zip_axis_space>(std::move(input_indices),
-                                               std::move(output_indices));
+  auto tied = std::make_unique<zip_axis_space>(std::move(input_indices));
   m_value_space.push_back(std::move(tied));
 }
 
@@ -186,11 +180,7 @@ void axes_metadata::add_user_iteration_space(
 {
   // compute the numeric indice for each name we have
   std::vector<std::size_t> input_indices(count);
-  std::vector<std::size_t> output_indices(count);
   std::iota(input_indices.begin(), input_indices.end(), first_index);
-  std::iota(input_indices.begin(),
-            input_indices.end(),
-            first_index - m_type_axe_count);
 
   for (auto i : input_indices)
   {
@@ -201,7 +191,7 @@ void axes_metadata::add_user_iteration_space(
                      m_axes[i]->get_name());
   }
 
-  auto user_func = make(std::move(input_indices), std::move(output_indices));
+  auto user_func = make(std::move(input_indices));
   m_value_space.push_back(std::move(user_func));
 }
 

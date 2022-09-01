@@ -31,7 +31,7 @@ namespace nvbench
  */
 struct linear_axis_space final : iteration_space_base
 {
-  linear_axis_space(std::size_t in, std::size_t out);
+  linear_axis_space(std::size_t in);
   ~linear_axis_space();
 
   std::unique_ptr<iteration_space_base> do_clone() const override;

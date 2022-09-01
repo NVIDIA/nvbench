@@ -181,10 +181,8 @@ void test_zip_clone()
 
 struct under_diag final : nvbench::user_axis_space
 {
-  under_diag(std::vector<std::size_t> input_indices,
-             std::vector<std::size_t> output_indices)
-      : nvbench::user_axis_space(std::move(input_indices),
-                                 std::move(output_indices))
+  under_diag(std::vector<std::size_t> input_indices)
+      : nvbench::user_axis_space(std::move(input_indices))
   {}
 
   mutable std::size_t x_pos   = 0;
@@ -208,17 +206,16 @@ struct under_diag final : nvbench::user_axis_space
     };
 
     // our update function
-    std::vector<std::size_t> locs = m_output_indices;
     auto diag_under =
-      [&, locs, info](std::size_t,
-                      std::vector<nvbench::detail::axis_index> &indices) {
+      [&, info](std::size_t,
+                std::vector<nvbench::detail::axis_index> &indices) {
         nvbench::detail::axis_index temp = info[0];
         temp.index                       = x_pos;
-        indices[locs[0]]                 = temp;
+        indices.push_back(std::move(temp));
 
-        temp             = info[1];
-        temp.index       = y_pos;
-        indices[locs[1]] = temp;
+        temp       = info[1];
+        temp.index = y_pos;
+        indices.push_back(std::move(temp));
       };
 
     const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
