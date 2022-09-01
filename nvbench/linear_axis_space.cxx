@@ -32,12 +32,12 @@ linear_axis_space::~linear_axis_space() = default;
 detail::axis_space_iterator linear_axis_space::do_get_iterator(axes_info info) const
 {
   auto update_func = [=](std::size_t inc_index,
-                         std::vector<detail::axis_index> &indices) {
-    indices.push_back(info[0]);
-    indices.back().index = inc_index;
+                         axes_info::iterator start,
+                         axes_info::iterator) {
+    start->index = inc_index;
   };
 
-  return detail::axis_space_iterator(1, info[0].size, update_func);
+  return detail::axis_space_iterator(info, info[0].size, update_func);
 }
 
 std::size_t linear_axis_space::do_get_size(const axes_info &info) const

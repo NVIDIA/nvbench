@@ -42,22 +42,21 @@ namespace nvbench
  *   nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
  *   {
  *     // our increment function
- *     auto adv_func = [&, info](std::size_t &inc_index, std::size_t len) ->
- * bool { inc_index += 3; return inc_index >= len;
+ *     auto adv_func = [&, info](std::size_t &inc_index,
+ *                               std::size_t len) -> bool {
+ *       inc_index += 3; return inc_index >= len;
  *     };
  *
  *     // our update function
- *     auto update_func              = [=](std::size_t inc_index,
- *                            std::vector<axis_index> &indices) {
- *       for (std::size_t i = 0; i < info.size(); ++i)
- *       {
- *         detail::axis_index temp = info[i];
- *         temp.index              = inc_index;
- *         indices.push_back(std::move(temp));
- *       }
+ *     auto update_func = [=](std::size_t inc_index,
+ *                            axes_info::iterator start,
+ *                            axes_info::iterator end) {
+ *           for (; start != end; ++start) {
+ *              start->index = inc_index;
+ *           }
  *     };
- *    return detail::axis_space_iterator(locs.size(), (info[0].size/3),
- * adv_func, update_func);
+ *    return detail::axis_space_iterator(info, (info[0].size/3),
+ *                                       adv_func, update_func);
  *   }
  *
  *   std::size_t do_get_size(const axes_info &info) const { return

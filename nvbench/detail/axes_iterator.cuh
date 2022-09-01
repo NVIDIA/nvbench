@@ -56,26 +56,28 @@ struct axis_index
 
 struct axis_space_iterator
 {
+  using axes_info        = std::vector<detail::axis_index>;
   using AdvanceSignature = bool(std::size_t &current_index, std::size_t length);
   using UpdateSignature  = void(std::size_t index,
-                               std::vector<axis_index> &indices);
+                               axes_info::iterator start,
+                               axes_info::iterator end);
 
   axis_space_iterator(
-    std::size_t axes_count,
+    std::vector<detail::axis_index> info,
     std::size_t iter_count,
     std::function<axis_space_iterator::AdvanceSignature> &&advance,
     std::function<axis_space_iterator::UpdateSignature> &&update)
-      : m_number_of_axes(axes_count)
+      : m_info(info)
       , m_iteration_size(iter_count)
       , m_advance(std::move(advance))
       , m_update(std::move(update))
   {}
 
   axis_space_iterator(
-    std::size_t axes_count,
+    std::vector<detail::axis_index> info,
     std::size_t iter_count,
     std::function<axis_space_iterator::UpdateSignature> &&update)
-      : m_number_of_axes(axes_count)
+      : m_info(info)
       , m_iteration_size(iter_count)
       , m_update(std::move(update))
   {}
@@ -87,10 +89,13 @@ struct axis_space_iterator
 
   void update_indices(std::vector<axis_index> &indices) const
   {
-    this->m_update(m_current_index, indices);
+    indices.insert(indices.end(), m_info.begin(), m_info.end());
+    axes_info::iterator end   = indices.end();
+    axes_info::iterator start = end - m_info.size();
+    this->m_update(m_current_index, start, end);
   }
 
-  std::size_t m_number_of_axes              = 1;
+  axes_info m_info;
   std::size_t m_iteration_size              = 1;
   std::function<AdvanceSignature> m_advance = [](std::size_t &current_index,
                                                  std::size_t length) {

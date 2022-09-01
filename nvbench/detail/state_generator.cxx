@@ -37,7 +37,7 @@ namespace nvbench::detail
 void state_iterator::add_iteration_space(
   const nvbench::detail::axis_space_iterator &iter)
 {
-  m_axes_count += iter.m_number_of_axes;
+  m_axes_count += iter.m_info.size();
   m_max_iteration *= iter.m_iteration_size;
 
   m_space.push_back(std::move(iter));

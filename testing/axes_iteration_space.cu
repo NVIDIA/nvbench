@@ -208,18 +208,14 @@ struct under_diag final : nvbench::user_axis_space
     // our update function
     auto diag_under =
       [&, info](std::size_t,
-                std::vector<nvbench::detail::axis_index> &indices) {
-        nvbench::detail::axis_index temp = info[0];
-        temp.index                       = x_pos;
-        indices.push_back(std::move(temp));
-
-        temp       = info[1];
-        temp.index = y_pos;
-        indices.push_back(std::move(temp));
+                std::vector<nvbench::detail::axis_index>::iterator start,
+                std::vector<nvbench::detail::axis_index>::iterator end) {
+        start->index = x_pos;
+        end->index   = y_pos;
       };
 
     const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
-    return nvbench::detail::axis_space_iterator(2,
+    return nvbench::detail::axis_space_iterator(info,
                                                 iteration_length,
                                                 adv_func,
                                                 diag_under);
