@@ -53,7 +53,7 @@ void nvpw_call(const NVPA_Status status)
 {
   if (status != NVPA_STATUS_SUCCESS)
   {
-    NVBENCH_THROW(std::runtime_error, "NVPW call returned error: {}", status);
+    NVBENCH_THROW(std::runtime_error, "NVPW call returned error: {}", static_cast<int>(status));
   }
 }
 
