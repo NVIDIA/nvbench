@@ -129,13 +129,13 @@ void test_type_axes()
   fmt::memory_buffer buffer;
   for (const auto &axis : axes.get_axes())
   {
-    fmt::format_to(buffer, "Axis: {}\n", axis->get_name());
+    fmt::format_to(std::back_inserter(buffer), "Axis: {}\n", axis->get_name());
     const auto num_values = axis->get_size();
     for (std::size_t i = 0; i < num_values; ++i)
     {
       auto input_string = axis->get_input_string(i);
       auto description  = axis->get_description(i);
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      " - {}{}\n",
                      input_string,
                      description.empty() ? ""

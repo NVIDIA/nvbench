@@ -185,7 +185,7 @@ std::string state::get_axis_values_as_string(bool color) const
       constexpr auto key_format   = fmt::emphasis::italic;
       constexpr auto value_format = fmt::emphasis::bold;
 
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      "{}{}={}",
                      buffer.size() == 0 ? "" : " ",
                      fmt::format(style(key_format), "{}", key),
