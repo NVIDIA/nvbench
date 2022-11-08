@@ -57,8 +57,8 @@ states_to_string(const std::vector<nvbench::state> &states)
   std::string table_format = "| {:^5} | {:^10} | {:^4} | {:^4} | {:^4} "
                              "| {:^4} | {:^6} | {:^8} |\n";
 
-  fmt::format_to(buffer, "\n");
-  fmt::format_to(buffer,
+  fmt::format_to(std::back_inserter(buffer), "\n");
+  fmt::format_to(std::back_inserter(buffer),
                  table_format,
                  "State",
                  "TypeConfig",
@@ -72,7 +72,7 @@ states_to_string(const std::vector<nvbench::state> &states)
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    table_format,
                    config++,
                    state.get_type_config_index(),

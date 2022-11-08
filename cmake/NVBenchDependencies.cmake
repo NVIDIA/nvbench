@@ -11,6 +11,10 @@ rapids_cpm_find(fmt 7.1.3
       "CMAKE_POSITION_INDEPENDENT_CODE ON"
 )
 
+if(TARGET fmt::fmt AND NOT TARGET fmt)
+  add_library(fmt ALIAS fmt::fmt)
+endif()
+
 ################################################################################
 # nlohmann/json
 #
