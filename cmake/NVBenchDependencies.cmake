@@ -1,9 +1,9 @@
 ################################################################################
 # fmtlib/fmt
-rapids_cpm_find(fmt 9.1.0
+rapids_cpm_find(fmt 7.1.3
   CPM_ARGS
     GITHUB_REPOSITORY fmtlib/fmt
-    GIT_TAG 9.1.0
+    GIT_TAG 7.1.3
     GIT_SHALLOW TRUE
     OPTIONS
       # Force static to keep fmt internal.
