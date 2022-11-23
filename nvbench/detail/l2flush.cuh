@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <nvbench/cuda_call.cuh>
-
 #include <cuda_runtime_api.h>
+
+#include <nvbench/cuda_call.cuh>
 
 namespace nvbench::detail
 {
@@ -31,7 +31,7 @@ struct l2flush
   {
     int dev_id{};
     NVBENCH_CUDA_CALL(cudaGetDevice(&dev_id));
-    NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&m_l2_size, cudaDevAttrL2CacheSize, dev_id));
+    NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&dev_id, cudaDevAttrL2CacheSize, dev_id));
     if (m_l2_size > 0)
     {
       void *buffer = m_l2_buffer;
@@ -57,7 +57,7 @@ struct l2flush
   }
 
 private:
-  int m_l2_size{};
+  size_t m_l2_size{};
   int *m_l2_buffer{};
 };
 

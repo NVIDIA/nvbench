@@ -16,15 +16,14 @@
  *  limitations under the License.
  */
 
-#include <nvbench/type_axis.cuh>
-
 #include <nvbench/detail/throw.cuh>
-
-#include <fmt/format.h>
-#include <fmt/ranges.h>
+#include <nvbench/type_axis.cuh>
 
 #include <algorithm>
 #include <stdexcept>
+
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 
 namespace nvbench
 {
@@ -67,7 +66,7 @@ std::size_t type_axis::get_type_index(const std::string &input_string) const
                   m_input_strings);
   }
 
-  return it - m_input_strings.cbegin();
+  return static_cast<size_t>(it - m_input_strings.cbegin());
 }
 
 } // namespace nvbench

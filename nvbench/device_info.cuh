@@ -18,16 +18,17 @@
 
 #pragma once
 
+#include <cuda_runtime_api.h>
+
 #include <nvbench/config.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
 
-#include <cuda_runtime_api.h>
-
 #include <cstdint> // CHAR_BIT
 #include <stdexcept>
-#include <string_view>
 #include <utility>
+
+#include <string_view>
 
 // forward declare this for internal storage
 struct nvmlDevice_st;
@@ -154,7 +155,7 @@ struct device_info
   [[nodiscard]] std::size_t get_global_memory_bus_bandwidth() const
   { // 2 is for DDR, CHAR_BITS to convert bus_width to bytes.
     return 2 * this->get_global_memory_bus_peak_clock_rate() *
-           (this->get_global_memory_bus_width() / CHAR_BIT);
+           (static_cast<size_t>(this->get_global_memory_bus_width()) / CHAR_BIT);
   }
 
   /// @return The size of the L2 cache in bytes.
