@@ -16,23 +16,17 @@
  *  limitations under the License.
  */
 
-#include <nvbench/json_printer.cuh>
-
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/config.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
+#include <nvbench/json_printer.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/version.cuh>
-
-#include <nvbench/detail/throw.cuh>
-
-#include <fmt/format.h>
-
-#include <nlohmann/json.hpp>
 
 #include <cstdint>
 #include <fstream>
@@ -43,7 +37,10 @@
 #include <utility>
 #include <vector>
 
-#ifdef __GNUC__
+#include <fmt/format.h>
+#include <nlohmann/json.hpp>
+
+#if defined __GNUC__ && !defined __clang__
 #include <experimental/filesystem>
 #else
 #include <filesystem>
@@ -140,7 +137,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
 
   if (hint == "sample_times")
   {
-#ifdef __GNUC__
+#if defined __GNUC__ && !defined __clang__
     namespace fs = std::experimental::filesystem;
 #else
     namespace fs = std::filesystem;
