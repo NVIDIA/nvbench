@@ -31,11 +31,11 @@ struct l2flush
   {
     int dev_id{};
     NVBENCH_CUDA_CALL(cudaGetDevice(&dev_id));
-    NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&dev_id, cudaDevAttrL2CacheSize, dev_id));
+    NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&m_l2_size, cudaDevAttrL2CacheSize, dev_id));
     if (m_l2_size > 0)
     {
       void *buffer = m_l2_buffer;
-      NVBENCH_CUDA_CALL(cudaMalloc(&buffer, m_l2_size));
+      NVBENCH_CUDA_CALL(cudaMalloc(&buffer, static_cast<size_t>(m_l2_size)));
       m_l2_buffer = reinterpret_cast<int *>(buffer);
     }
   }
@@ -52,12 +52,12 @@ struct l2flush
   {
     if (m_l2_size > 0)
     {
-      NVBENCH_CUDA_CALL(cudaMemsetAsync(m_l2_buffer, 0, m_l2_size, stream));
+      NVBENCH_CUDA_CALL(cudaMemsetAsync(m_l2_buffer, 0, static_cast<size_t>(m_l2_size), stream));
     }
   }
 
 private:
-  size_t m_l2_size{};
+  int m_l2_size{};
   int *m_l2_buffer{};
 };
 
