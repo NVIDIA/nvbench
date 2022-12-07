@@ -18,11 +18,14 @@
 
 #pragma once
 
-#include <nvbench/cuda_call.cuh>
-
 #include <cuda_runtime_api.h>
 
+#include <nvbench/cuda_call.cuh>
+#include <nvbench/detail/device_scope.cuh>
+#include <nvbench/device_info.cuh>
+
 #include <memory>
+#include <optional>
 
 namespace nvbench
 {
@@ -42,10 +45,18 @@ struct cuda_stream
    * Constructs a cuda_stream that owns a new stream, created with
    * `cudaStreamCreate`.
    */
-  cuda_stream()
-      : m_stream{[]() {
+  cuda_stream(std::optional<nvbench::device_info> device)
+      : m_stream{[device]() {
                    cudaStream_t s;
-                   NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   if (device.has_value())
+                   {
+                     nvbench::detail::device_scope scope_guard{device.value().get_id()};
+                     NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   }
+                   else
+                   {
+                     NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   }
                    return s;
                  }(),
                  stream_deleter{true}}

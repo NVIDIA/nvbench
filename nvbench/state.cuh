@@ -261,7 +261,6 @@ private:
         std::optional<nvbench::device_info> device,
         std::size_t type_config_index);
 
-  nvbench::cuda_stream m_cuda_stream;
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;
@@ -276,6 +275,8 @@ private:
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
+
+  nvbench::cuda_stream m_cuda_stream;
 
   // Deadlock protection. See blocking_kernel's class doc for details.
   nvbench::float64_t m_blocking_kernel_timeout{30.0};
