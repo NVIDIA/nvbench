@@ -42,10 +42,12 @@ namespace nvbench
 struct cuda_stream
 {
   /**
-   * Constructs a cuda_stream that owns a new stream, created with
-   * `cudaStreamCreate`.
+   * Constructs a cuda_stream that owns a new stream, created with `cudaStreamCreate`.
+   *
+   * @param device The device that this stream should be associated with. If no device is provided,
+   * the stream will be associated with the device that is active at the call time.
    */
-  cuda_stream(std::optional<nvbench::device_info> device)
+  explicit cuda_stream(std::optional<nvbench::device_info> device)
       : m_stream{[device]() {
                    cudaStream_t s;
                    if (device.has_value())
