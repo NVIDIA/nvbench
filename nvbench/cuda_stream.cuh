@@ -65,6 +65,14 @@ struct cuda_stream
   {}
 
   /**
+   * @brief Constructs a new cuda_stream tha is asociated with the device that is active at the call
+   * time.
+   */
+  cuda_stream()
+      : cuda_stream(std::nullopt)
+  {}
+
+  /**
    * Constructs a `cuda_stream` from an explicit cudaStream_t.
    *
    * @param owning If true, `cudaStreamCreate(stream)` will be called from this
