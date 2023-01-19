@@ -35,11 +35,11 @@ namespace
 int get_device_of_stream(cudaStream_t cuda_stream)
 {
   CUcontext ctx;
-  cuStreamGetCtx(CUstream{cuda_stream}, &ctx);
-  cuCtxPushCurrent(ctx);
+  NVBENCH_DRIVER_API_CALL(cuStreamGetCtx(CUstream{cuda_stream}, &ctx));
+  NVBENCH_DRIVER_API_CALL(cuCtxPushCurrent(ctx));
   CUdevice device_id{};
-  cuCtxGetDevice(&device_id);
-  cuCtxPopCurrent(&ctx);
+  NVBENCH_DRIVER_API_CALL(cuCtxGetDevice(&device_id));
+  NVBENCH_DRIVER_API_CALL(cuCtxPopCurrent(&ctx));
   return static_cast<int>(device_id);
 }
 } // namespace
