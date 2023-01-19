@@ -3,6 +3,7 @@ set(test_srcs
   benchmark.cu
   create.cu
   cuda_timer.cu
+  cuda_stream.cu
   cpu_timer.cu
   enum_type_list.cu
   float64_axis.cu
