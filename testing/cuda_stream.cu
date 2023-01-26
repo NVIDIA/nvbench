@@ -16,6 +16,7 @@
  *  limitations under the License.
  */
 
+#include <nvbench/config.cuh>
 #include <nvbench/cuda_stream.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/types.cuh>
@@ -26,6 +27,7 @@
 
 namespace
 {
+#ifdef NVBENCH_HAS_CUPTI
 /**
  * @brief Queries and returns the device id that the given \p cuda_stream is associated with
  *
@@ -42,10 +44,12 @@ int get_device_of_stream(cudaStream_t cuda_stream)
   NVBENCH_DRIVER_API_CALL(cuCtxPopCurrent(&ctx));
   return static_cast<int>(device_id);
 }
+#endif
 } // namespace
 
 void test_basic()
 {
+#ifdef NVBENCH_HAS_CUPTI
   // Get devices
   auto devices = nvbench::device_manager::get().get_devices();
 
@@ -67,6 +71,7 @@ void test_basic()
     // Verify the cuda stream was in fact associated with the currently active device
     ASSERT(get_device_of_stream(current_device_stream.get_stream()) == device_info.get_id());
   }
+#endif
 }
 
 int main() { test_basic(); }
