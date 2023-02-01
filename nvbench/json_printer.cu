@@ -16,17 +16,23 @@
  *  limitations under the License.
  */
 
+#include <nvbench/json_printer.cuh>
+
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/config.cuh>
-#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
-#include <nvbench/json_printer.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/version.cuh>
+
+#include <nvbench/detail/throw.cuh>
+
+#include <fmt/format.h>
+
+#include <nlohmann/json.hpp>
 
 #include <cstdint>
 #include <fstream>
@@ -37,8 +43,6 @@
 #include <utility>
 #include <vector>
 
-#include <fmt/format.h>
-#include <nlohmann/json.hpp>
 
 #if defined __GNUC__ && !defined __clang__
 #include <experimental/filesystem>
