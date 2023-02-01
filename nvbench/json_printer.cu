@@ -43,7 +43,6 @@
 #include <utility>
 #include <vector>
 
-
 #if defined __GNUC__ && !defined __clang__
 #include <experimental/filesystem>
 #else
