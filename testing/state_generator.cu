@@ -22,7 +22,6 @@
 #include <nvbench/axis_base.cuh>
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
-#include <nvbench/device_info.cuh>
 
 #include "test_asserts.cuh"
 
@@ -720,44 +719,20 @@ void test_create_with_masked_types()
 
 void test_devices()
 {
-  // Get devices
-  auto devices = nvbench::device_manager::get().get_devices();
-
-  // Generate reference table
-  std::string ref                            = R"expected(
-| State | Device |   S   |  I  |)expected";
-  const std::vector<std::string> device_refs = {
-    R"expected(
-|   0   |   0    |  foo  |  2  |
-|   1   |   0    |  bar  |  2  |
-|   2   |   0    |  foo  |  4  |
-|   3   |   0    |  bar  |  4  |)expected",
-    R"expected(|   4   |   1    |  foo  |  2  |
-|   5   |   1    |  bar  |  2  |
-|   6   |   1    |  foo  |  4  |
-|   7   |   1    |  bar  |  4  |)expected",
-    R"expected(|   8   |   2    |  foo  |  2  |
-|   9   |   2    |  bar  |  2  |
-|  10   |   2    |  foo  |  4  |
-|  11   |   2    |  bar  |  4  |)expected"};
-
-  const auto num_devices_to_test = std::min(devices.size(), device_refs.size());
-  std::vector<nvbench::device_info> devices_to_test{};
-  for (std::size_t device_id = 0; device_id < num_devices_to_test; device_id++)
-  {
-    ref += device_refs[device_id] + "\n";
-    devices_to_test.push_back(devices[device_id]);
-  }
+  const auto device_0 = nvbench::device_info{0, {}};
+  const auto device_1 = nvbench::device_info{1, {}};
+  const auto device_2 = nvbench::device_info{2, {}};
 
   dummy_bench bench;
-  bench.set_devices(devices_to_test);
+  bench.set_devices({device_0, device_1, device_2});
   bench.add_string_axis("S", {"foo", "bar"});
   bench.add_int64_axis("I", {2, 4});
 
-  const std::vector<nvbench::state> states = nvbench::detail::state_generator::create(bench);
+  const std::vector<nvbench::state> states =
+    nvbench::detail::state_generator::create(bench);
 
-  // N devices * 4 axis configs = 4N total states
-  ASSERT(states.size() == 4 * devices_to_test.size());
+  // 3 devices * 4 axis configs = 12 total states
+  ASSERT(states.size() == 12);
 
   fmt::memory_buffer buffer;
   const std::string table_format = "| {:^5} | {:^6} | {:^5} | {:^3} |\n";
@@ -775,6 +750,23 @@ void test_devices()
                    state.get_string("S"),
                    state.get_int64("I"));
   }
+
+  const std::string ref =
+    R"expected(
+| State | Device |   S   |  I  |
+|   0   |   0    |  foo  |  2  |
+|   1   |   0    |  bar  |  2  |
+|   2   |   0    |  foo  |  4  |
+|   3   |   0    |  bar  |  4  |
+|   4   |   1    |  foo  |  2  |
+|   5   |   1    |  bar  |  2  |
+|   6   |   1    |  foo  |  4  |
+|   7   |   1    |  bar  |  4  |
+|   8   |   2    |  foo  |  2  |
+|   9   |   2    |  bar  |  2  |
+|  10   |   2    |  foo  |  4  |
+|  11   |   2    |  bar  |  4  |
+)expected";
 
   const std::string test = fmt::to_string(buffer);
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
