@@ -55,9 +55,11 @@
 #endif
 
 #ifndef NVBENCH_ENVIRONMENT
+namespace nvbench {
 struct no_environment
 {};
-#define NVBENCH_ENVIRONMENT no_environment
+}
+#define NVBENCH_ENVIRONMENT nvbench::no_environment
 #endif
 
 #define NVBENCH_MAIN_PARSE(argc, argv)                                                             \
