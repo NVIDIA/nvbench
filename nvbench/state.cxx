@@ -59,7 +59,7 @@ state::state(const benchmark_base &bench,
     , m_max_noise{bench.get_max_noise()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
-    , m_cuda_stream{m_device}
+    , m_cuda_stream{std::nullopt}
 {}
 
 nvbench::int64_t state::get_int64(const std::string &axis_name) const

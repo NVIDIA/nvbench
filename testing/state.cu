@@ -57,6 +57,9 @@ void test_streams()
 
   state_tester state{bench};
 
+  // Confirm that the stream hasn't been initialized yet
+  ASSERT(!state.get_cuda_stream().has_value());
+
   // Test non-owning stream
   cudaStream_t default_stream = 0;
   state.set_cuda_stream(nvbench::cuda_stream{default_stream, false});

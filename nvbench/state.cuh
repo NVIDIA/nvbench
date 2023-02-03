@@ -63,7 +63,10 @@ struct state
   state &operator=(const state &) = delete;
   state &operator=(state &&)      = default;
 
-  [[nodiscard]] const nvbench::cuda_stream &get_cuda_stream() const { return m_cuda_stream; }
+  [[nodiscard]] const std::optional<nvbench::cuda_stream> &get_cuda_stream() const
+  {
+    return m_cuda_stream;
+  }
   void set_cuda_stream(nvbench::cuda_stream &&stream) { m_cuda_stream = std::move(stream); }
 
   /// The CUDA device associated with with this benchmark state. May be
@@ -276,7 +279,7 @@ private:
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
 
-  nvbench::cuda_stream m_cuda_stream;
+  std::optional<nvbench::cuda_stream> m_cuda_stream;
 
   // Deadlock protection. See blocking_kernel's class doc for details.
   nvbench::float64_t m_blocking_kernel_timeout{30.0};
