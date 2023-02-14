@@ -1,6 +1,7 @@
 ################################################################################
 # fmtlib/fmt
 rapids_cpm_find(fmt 9.1.0
+  GLOBAL_TARGETS fmt fmt::fmt
   CPM_ARGS
     GITHUB_REPOSITORY fmtlib/fmt
     GIT_TAG 9.1.0
