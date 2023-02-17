@@ -76,10 +76,25 @@ target_link_libraries(nvbench
   PUBLIC
     ${ctk_libraries}
   PRIVATE
-    fmt::fmt
     nvbench_json
     nvbench_git_revision
 )
+
+# ##################################################################################################
+# * conda environment -----------------------------------------------------------------------------
+rapids_cmake_support_conda_env(conda_env MODIFY_PREFIX_PATH)
+if(TARGET conda_env)
+  # When we are inside a conda env the linker will be set to
+  # `ld.bfd` which will try to resolve all undefined symbols at link time.
+  #
+  # Since we could be using a shared library version of fmt we need
+  # it on the final link line of consumers
+  target_link_libraries(nvbench PRIVATE $<BUILD_INTERFACE:conda_env>
+                        PUBLIC fmt::fmt)
+else()
+  target_link_libraries(nvbench PRIVATE fmt::fmt)
+endif()
+
 target_compile_features(nvbench PUBLIC cuda_std_17 PRIVATE cxx_std_17)
 add_dependencies(nvbench.all nvbench)
 
