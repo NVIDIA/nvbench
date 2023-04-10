@@ -436,4 +436,66 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
   m_ostream << root.dump(2) << "\n";
 }
 
+void json_printer::do_print_benchmark_list(const benchmark_vector &benches)
+{
+  if (benches.empty())
+  {
+    return;
+  }
+
+  nlohmann::ordered_json root;
+  auto &benchmarks = root["benchmarks"];
+
+  for (const auto &bench_ptr : benches)
+  {
+    const auto bench_index = benchmarks.size();
+    auto &bench            = benchmarks.emplace_back();
+
+    bench["name"]  = bench_ptr->get_name();
+    bench["index"] = bench_index;
+
+    // We have to ensure that the axes are represented as an array, not an
+    // nil object when there are no axes.
+    auto &axes = bench["axes"] = nlohmann::json::array();
+
+    for (const auto &axis_ptr : bench_ptr->get_axes().get_axes())
+    {
+      auto &axis = axes.emplace_back();
+
+      axis["name"]  = axis_ptr->get_name();
+      axis["type"]  = axis_ptr->get_type_as_string();
+      axis["flags"] = axis_ptr->get_flags_as_string();
+
+      auto &values         = axis["values"];
+      const auto axis_size = axis_ptr->get_size();
+      for (std::size_t i = 0; i < axis_size; ++i)
+      {
+        auto &value           = values.emplace_back();
+        value["input_string"] = axis_ptr->get_input_string(i);
+        value["description"]  = axis_ptr->get_description(i);
+
+        switch (axis_ptr->get_type())
+        {
+          case nvbench::axis_type::int64:
+            value["value"] = static_cast<int64_axis &>(*axis_ptr).get_value(i);
+            break;
+
+          case nvbench::axis_type::float64:
+            value["value"] = static_cast<float64_axis &>(*axis_ptr).get_value(i);
+            break;
+
+          case nvbench::axis_type::string:
+            value["value"] = static_cast<string_axis &>(*axis_ptr).get_value(i);
+            break;
+
+          default:
+            break;
+        } // end switch (axis type)
+      }   // end foreach axis value
+    }
+  } // end foreach bench
+
+  m_ostream << root.dump(2) << "\n";
+}
+
 } // namespace nvbench
