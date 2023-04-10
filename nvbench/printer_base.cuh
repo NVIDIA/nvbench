@@ -22,6 +22,7 @@
 
 #include <iosfwd>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -191,7 +192,12 @@ protected:
                                             const std::string &,
                                             const std::string &,
                                             const std::vector<nvbench::float64_t> &){};
-  virtual void do_print_benchmark_list(const benchmark_vector &) {}
+
+  virtual void do_print_benchmark_list(const benchmark_vector &) 
+  {
+    throw std::runtime_error{"nvbench::do_print_benchmark_list is not supported by this printer."};
+  }
+
   virtual void do_print_benchmark_results(const benchmark_vector &) {}
 
   virtual void do_set_completed_state_count(std::size_t states);
