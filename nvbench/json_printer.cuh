@@ -68,6 +68,7 @@ protected:
                                     const std::string &hint,
                                     const std::vector<nvbench::float64_t> &data) override;
   void do_print_benchmark_results(const benchmark_vector &benches) override;
+  void do_print_benchmark_list(const benchmark_vector &) override;
 
   bool m_enable_binary_output{false};
   std::size_t m_num_jsonbin_files{};

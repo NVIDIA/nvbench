@@ -399,7 +399,14 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
     else if (arg == "--list" || arg == "-l")
     {
-      this->print_list();
+      nvbench::markdown_printer printer{std::cout};
+      this->print_list(printer);
+      std::exit(0);
+    }
+    else if (arg == "--jsonlist" || arg == "-l")
+    {
+      nvbench::json_printer printer{std::cout};
+      this->print_list(printer);
       std::exit(0);
     }
     else if (arg == "--persistence-mode" || arg == "--pm")
@@ -580,12 +587,9 @@ void option_parser::print_version() const
              NVBENCH_GIT_VERSION);
 }
 
-void option_parser::print_list() const
+void option_parser::print_list(printer_base& printer) const
 {
   const auto &bench_mgr = nvbench::benchmark_manager::get();
-
-  nvbench::markdown_printer printer{std::cout};
-  printer.print_device_info();
   printer.print_benchmark_list(bench_mgr.get_benchmarks());
 }
 
