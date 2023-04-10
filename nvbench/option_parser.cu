@@ -585,7 +585,6 @@ void option_parser::print_list() const
   const auto &bench_mgr = nvbench::benchmark_manager::get();
 
   nvbench::markdown_printer printer{std::cout};
-  printer.print_device_info();
   printer.print_benchmark_list(bench_mgr.get_benchmarks());
 }
 
