@@ -85,7 +85,7 @@ struct no_environment
     printer.set_total_state_count(total_states);                                                   \
                                                                                                    \
     printer.set_completed_state_count(0);                                                          \
-    NVBENCH_ENVIRONMENT{};                                                                         \
+    auto env_state = NVBENCH_ENVIRONMENT{};                                                                         \
     for (auto &bench_ptr : benchmarks)                                                             \
     {                                                                                              \
       bench_ptr->set_printer(printer);                                                             \
