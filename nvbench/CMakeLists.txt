@@ -89,8 +89,17 @@ if(TARGET conda_env)
   #
   # Since we could be using a shared library version of fmt we need
   # it on the final link line of consumers
-  target_link_libraries(nvbench PRIVATE $<BUILD_INTERFACE:conda_env>
-                        PUBLIC fmt::fmt)
+  target_link_libraries(nvbench PRIVATE $<BUILD_INTERFACE:conda_env>)
+endif()
+
+
+# When we are inside a conda env the linker will be set to
+# `ld.bfd` which will try to resolve all undefined symbols at link time.
+#
+# Since we could be using a shared library version of fmt we need
+# it on the final link line of consumers
+if(TARGET conda_env AND fmt_is_external)
+  target_link_libraries(nvbench PUBLIC fmt::fmt)
 else()
   target_link_libraries(nvbench PRIVATE fmt::fmt)
 endif()
