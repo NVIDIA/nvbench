@@ -10,6 +10,9 @@ rapids_cpm_find(fmt 9.1.0
       "BUILD_SHARED_LIBS OFF"
       "CMAKE_POSITION_INDEPENDENT_CODE ON"
 )
+if(NOT fmt_ADDED)
+  set(fmt_is_external TRUE)
+endif()
 
 if(TARGET fmt::fmt AND NOT TARGET fmt)
   add_library(fmt ALIAS fmt::fmt)
