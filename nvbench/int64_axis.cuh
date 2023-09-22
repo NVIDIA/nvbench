@@ -69,13 +69,16 @@ struct int64_axis final : public axis_base
   int64_axis_flags get_flags() const { return m_flags; }
 
   // Helper functions for pow2 conversions:
-  static nvbench::int64_t compute_pow2(nvbench::int64_t exponent) { return 1ll << exponent; }
+  static nvbench::int64_t compute_pow2(nvbench::int64_t exponent)
+  {
+    return nvbench::int64_t{1} << exponent;
+  }
 
   // UB if value < 0.
   static nvbench::int64_t compute_log2(nvbench::int64_t value)
   {
     // TODO use <bit> functions in C++20?
-    nvbench::uint64_t bits    = static_cast<nvbench::int64_t>(value);
+    nvbench::uint64_t bits    = static_cast<nvbench::uint64_t>(value);
     nvbench::int64_t exponent = 0;
     while ((bits >>= 1) != 0ull)
     {

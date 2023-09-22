@@ -34,6 +34,15 @@ namespace nvbench::detail
 template <typename T>
 struct ring_buffer
 {
+private:
+  using buffer_t = typename std::vector<T>;
+  using diff_t   = typename buffer_t::difference_type;
+
+  buffer_t m_buffer;
+  std::size_t m_index{0};
+  bool m_full{false};
+
+public:
   /**
    * Create a new ring buffer with the requested capacity.
    */
@@ -49,9 +58,9 @@ struct ring_buffer
   [[nodiscard]] auto begin()        { return m_buffer.begin(); }
   [[nodiscard]] auto begin() const  { return m_buffer.begin(); }
   [[nodiscard]] auto cbegin() const { return m_buffer.cbegin(); }
-  [[nodiscard]] auto end()        { return m_buffer.begin()  + this->size(); }
-  [[nodiscard]] auto end() const  { return m_buffer.begin()  + this->size(); }
-  [[nodiscard]] auto cend() const { return m_buffer.cbegin() + this->size(); }
+  [[nodiscard]] auto end()        { return m_buffer.begin()  + static_cast<diff_t>(this->size()); }
+  [[nodiscard]] auto end() const  { return m_buffer.begin()  + static_cast<diff_t>(this->size()); }
+  [[nodiscard]] auto cend() const { return m_buffer.cbegin() + static_cast<diff_t>(this->size()); }
   // clang-format on
   /** @} */
 
@@ -113,11 +122,6 @@ struct ring_buffer
     return m_buffer[back_index];
   }
   /**@}*/
-
-private:
-  std::vector<T> m_buffer;
-  std::size_t m_index{0};
-  bool m_full{false};
 };
 
 } // namespace nvbench::detail

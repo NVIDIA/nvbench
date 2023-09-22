@@ -43,9 +43,9 @@ struct launch
 
   // move-only
   launch(const launch &)            = delete;
-  launch(launch &&)                 = default;
+  launch(launch &&)                 = delete;
   launch &operator=(const launch &) = delete;
-  launch &operator=(launch &&)      = default;
+  launch &operator=(launch &&)      = delete;
 
   /**
    * @return a CUDA stream that all kernels and other stream-ordered CUDA work
