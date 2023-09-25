@@ -80,7 +80,7 @@ struct printer_base
   printer_base(const printer_base &)            = delete;
   printer_base(printer_base &&)                 = default;
   printer_base &operator=(const printer_base &) = delete;
-  printer_base &operator=(printer_base &&)      = default;
+  printer_base &operator=(printer_base &&)      = delete;
 
   /*!
    * Called once with the command line arguments used to invoke the current

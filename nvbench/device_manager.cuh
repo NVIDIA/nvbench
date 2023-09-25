@@ -54,7 +54,7 @@ struct device_manager
   /**
    * @return The device_info object corresponding to `id`.
    */
-  [[nodiscard]] const nvbench::device_info &get_device(int id) { return m_devices.at(id); }
+  [[nodiscard]] const nvbench::device_info &get_device(int id);
 
   /**
    * @return A vector containing device_info objects for all detected CUDA

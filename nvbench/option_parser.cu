@@ -365,7 +365,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
   }
 
   auto check_params = [&first, &last](std::size_t num_params) {
-    const std::size_t rem_args = std::distance(first, last) - 1;
+    const std::size_t rem_args = static_cast<std::size_t>(std::distance(first, last) - 1);
     if (rem_args < num_params)
     {
       NVBENCH_THROW(std::runtime_error,
@@ -444,7 +444,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->disable_blocking_kernel();
       first += 1;
     }
-    else if (arg == "--quiet" | arg == "-q")
+    else if (arg == "--quiet" || arg == "-q")
     {
       // Setting this flag prevents the default stdout printer from being
       // added.
@@ -726,7 +726,7 @@ try
   catch (std::invalid_argument &)
   {}
 
-  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(idx).clone()
+  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(static_cast<std::size_t>(idx)).clone()
                                   : mgr.get_benchmark(name).clone());
 
   // Initialize the new benchmark with any global arguments:

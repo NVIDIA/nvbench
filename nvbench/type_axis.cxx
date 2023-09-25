@@ -67,7 +67,7 @@ std::size_t type_axis::get_type_index(const std::string &input_string) const
                   m_input_strings);
   }
 
-  return it - m_input_strings.cbegin();
+  return static_cast<std::size_t>(it - m_input_strings.cbegin());
 }
 
 } // namespace nvbench
