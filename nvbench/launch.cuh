@@ -43,7 +43,7 @@ struct launch
 
   // move-only
   launch(const launch &)            = delete;
-  launch(launch &&)                 = delete;
+  launch(launch &&)                 = default;
   launch &operator=(const launch &) = delete;
   launch &operator=(launch &&)      = delete;
 
