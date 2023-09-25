@@ -16,12 +16,13 @@
  *  limitations under the License.
  */
 
+#include <nvbench/device_manager.cuh>
+
 #include <cuda_runtime_api.h>
 
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
 #include <nvbench/detail/throw.cuh>
-#include <nvbench/device_manager.cuh>
 
 namespace nvbench
 {
