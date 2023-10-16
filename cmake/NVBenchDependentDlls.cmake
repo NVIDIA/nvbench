@@ -12,14 +12,6 @@ else()
   set(NVBench_ADD_DEPENDENT_DLLS_TO_BUILD OFF)
 endif()
 
-if (NVBench_ADD_DEPENDENT_DLLS_TO_BUILD)
-  message(STATUS
-    "CMake 3.21.0 is required when NVBench_ADD_DEPENDENT_DLLS_TO_BUILD "
-    "is enabled."
-  )
-  cmake_minimum_required(VERSION 3.21.0)
-endif()
-
 function(nvbench_setup_dep_dlls target_name)
   # The custom command below fails when there aren't any runtime DLLs to copy,
   # so only enable it when a relevant dependency is enabled:
