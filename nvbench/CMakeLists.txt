@@ -65,7 +65,7 @@ nvbench_write_config_header(config.cuh.in
 )
 
 # nvbench (nvbench::nvbench)
-add_library(nvbench SHARED ${srcs})
+add_library(nvbench ${srcs})
 nvbench_config_target(nvbench)
 target_include_directories(nvbench PUBLIC
   "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
@@ -76,8 +76,8 @@ target_link_libraries(nvbench
   PUBLIC
     ${ctk_libraries}
   PRIVATE
+    fmt::fmt
     nvbench_json
-    nvbench_git_revision
 )
 
 # ##################################################################################################
@@ -90,18 +90,15 @@ if(TARGET conda_env)
   # Since we could be using a shared library version of fmt we need
   # it on the final link line of consumers
   target_link_libraries(nvbench PRIVATE $<BUILD_INTERFACE:conda_env>)
-endif()
 
-
-# When we are inside a conda env the linker will be set to
-# `ld.bfd` which will try to resolve all undefined symbols at link time.
-#
-# Since we could be using a shared library version of fmt we need
-# it on the final link line of consumers
-if(TARGET conda_env AND fmt_is_external)
-  target_link_libraries(nvbench PUBLIC fmt::fmt)
-else()
-  target_link_libraries(nvbench PRIVATE fmt::fmt)
+  # When we are inside a conda env the linker will be set to
+  # `ld.bfd` which will try to resolve all undefined symbols at link time.
+  #
+  # Since we could be using a shared library version of fmt we need
+  # it on the final link line of consumers
+  if(fmt_is_external)
+    target_link_libraries(nvbench PUBLIC fmt::fmt)
+  endif()
 endif()
 
 target_compile_features(nvbench PUBLIC cuda_std_17 PRIVATE cxx_std_17)
@@ -130,4 +127,15 @@ if (json_is_cu)
     # (the end of the function in hash.hpp(114) is unreachable)
     $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--diag_suppress=940>
   )
+endif()
+
+# Use `nvbench_git_revision` but don't expose it as part of our export information
+# In CMake 3.27 this is easily done with $<COMPILE_ONLY>, before that we have to
+# manual copy the include path
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
+  target_link_libraries(nvbench PRIVATE $<COMPILE_ONLY:nvbench_git_revision>)
+else()
+  add_dependencies(nvbench nvbench_git_revision)
+  get_target_property(_include_dir nvbench_git_revision INTERFACE_INCLUDE_DIRECTORIES)
+  target_include_directories(nvbench PRIVATE "$<BUILD_INTERFACE:${_include_dir}>")
 endif()

@@ -1,6 +1,5 @@
-# 3.20.1 required for rapids-cmake
-# 3.21.0 required for NVBench_ADD_DEPENDENT_DLLS_TO_* (MSVC only)
-cmake_minimum_required(VERSION 3.20.1)
+# 3.23.1 required for rapids-cmake
+cmake_minimum_required(VERSION 3.23.1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
@@ -28,6 +27,8 @@ set(cupti_default ON)
 if (${CUDAToolkit_VERSION} VERSION_LESS 11.3)
   set(cupti_default OFF)
 endif()
+
+option(BUILD_SHARED_LIBS "Build NVBench as a shared library" ON)
 
 option(NVBench_ENABLE_NVML "Build with NVML support from the Cuda Toolkit." ON)
 option(NVBench_ENABLE_CUPTI "Build NVBench with CUPTI." ${cupti_default})
