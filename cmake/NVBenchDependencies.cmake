@@ -2,7 +2,7 @@
 # fmtlib/fmt
 include("${rapids-cmake-dir}/cpm/fmt.cmake")
 
-if(NOT BUILD_SHARED_LIBS)
+if(NOT BUILD_SHARED_LIBS AND NVBench_ENABLE_INSTALL_RULES)
 set(export_set_details BUILD_EXPORT_SET nvbench-targets
                        INSTALL_EXPORT_SET nvbench-targets)
 endif()

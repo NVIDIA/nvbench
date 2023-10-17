@@ -39,6 +39,7 @@ option(NVBench_ENABLE_DEVICE_TESTING
   OFF
 )
 option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
+option(NVBench_ENABLE_INSTALL_RULES "Install NVBench." ${NVBench_TOPLEVEL_PROJECT})
 
 include(cmake/NVBenchConfigTarget.cmake)
 include(cmake/NVBenchDependentDlls.cmake)
