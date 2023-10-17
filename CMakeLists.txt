@@ -1,5 +1,4 @@
 # 3.23.1 required for rapids-cmake
-# 3.21.0 required for NVBench_ADD_DEPENDENT_DLLS_TO_* (MSVC only)
 cmake_minimum_required(VERSION 3.23.1)
 
 set(CMAKE_CXX_STANDARD 17)
