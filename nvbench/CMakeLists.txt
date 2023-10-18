@@ -135,7 +135,9 @@ endif()
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
   target_link_libraries(nvbench PRIVATE $<COMPILE_ONLY:nvbench_git_revision>)
 else()
-  add_dependencies(nvbench nvbench_git_revision)
+  # Need to add dependencies on the internal implementation targets from rapids-cmake
+  # so that we generate the git header before using it
+  add_dependencies(nvbench nvbench_git_revision nvbench_git_revision_compute_git_info)
   get_target_property(_include_dir nvbench_git_revision INTERFACE_INCLUDE_DIRECTORIES)
   target_include_directories(nvbench PRIVATE "$<BUILD_INTERFACE:${_include_dir}>")
 endif()
