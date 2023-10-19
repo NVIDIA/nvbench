@@ -129,10 +129,6 @@ if (json_is_cu)
   )
 endif()
 
-# Use `nvbench_git_revision` but don't expose it as part of our export information
-# In CMake 3.27 this is easily done with $<COMPILE_ONLY>, before that we have to
-# manual copy the include path
-#
 # The call to `rapids_cmake_write_git_revision_file` must be in the same
 # CMakeLists.txt as the consumer ( nvbench ) for CMake to get the dependency
 # graph correct.
@@ -140,12 +136,10 @@ rapids_cmake_write_git_revision_file(
   nvbench_git_revision
   "${NVBench_BINARY_DIR}/nvbench/detail/git_revision.cuh"
 )
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
-  target_link_libraries(nvbench PRIVATE $<COMPILE_ONLY:nvbench_git_revision>)
-else()
-  # Need to add dependencies on the internal implementation targets from rapids-cmake
-  # so that we generate the git header before using it
-  add_dependencies(nvbench nvbench_git_revision_compute_git_info)
-  get_target_property(_include_dir nvbench_git_revision INTERFACE_INCLUDE_DIRECTORIES)
-  target_include_directories(nvbench PRIVATE "$<BUILD_INTERFACE:${_include_dir}>")
+target_link_libraries(nvbench PRIVATE nvbench_git_revision)
+
+if(NOT BUILD_SHARED_LIBS)
+  # Need to ensure that for static builds we export the nvbench_git_revision
+  # target
+  nvbench_install_libraries(nvbench_git_revision)
 endif()
