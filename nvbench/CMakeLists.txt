@@ -137,9 +137,9 @@ endif()
 # CMakeLists.txt as the consumer ( nvbench ) for CMake to get the dependency
 # graph correct.
 rapids_cmake_write_git_revision_file(
-    nvbench_git_revision
-    "${NVBench_BINARY_DIR}/nvbench/detail/git_revision.cuh"
-  )
+  nvbench_git_revision
+  "${NVBench_BINARY_DIR}/nvbench/detail/git_revision.cuh"
+)
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
   target_link_libraries(nvbench PRIVATE $<COMPILE_ONLY:nvbench_git_revision>)
 else()
