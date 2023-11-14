@@ -24,14 +24,12 @@ set(srcs
   detail/measure_cold.cu
   detail/measure_hot.cu
   detail/state_generator.cxx
+
+  internal/nvml.cxx
 )
 
 if (NVBench_ENABLE_CUPTI)
   list(APPEND srcs detail/measure_cupti.cu cupti_profiler.cxx)
-endif()
-
-if (NVBench_ENABLE_NVML)
-  list(APPEND srcs internal/nvml.cxx)
 endif()
 
 # CUDA 11.0 can't compile json_printer without crashing

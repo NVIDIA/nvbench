@@ -32,6 +32,16 @@
 namespace nvbench::nvml
 {
 
+// RAII struct that initializes and shuts down NVML
+// Beeds to be constructed and kept alive while using nvml
+struct NVMLLifetimeManager
+{
+  NVMLLifetimeManager();
+  ~NVMLLifetimeManager();
+private:
+  bool m_inited{false};
+};
+
 /// Base class for NVML-specific exceptions
 struct error : std::runtime_error
 {
