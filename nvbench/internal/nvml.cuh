@@ -33,7 +33,7 @@ namespace nvbench::nvml
 {
 
 // RAII struct that initializes and shuts down NVML
-// Beeds to be constructed and kept alive while using nvml
+// Needs to be constructed and kept alive while using nvml
 struct NVMLLifetimeManager
 {
   NVMLLifetimeManager();
