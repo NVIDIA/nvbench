@@ -45,6 +45,9 @@ device_info::device_info(int id)
     , m_nvml_device(nullptr)
 {
   NVBENCH_CUDA_CALL(cudaGetDeviceProperties(&m_prop, m_id));
+  // NVML's lifetime should extend for the entirety of the process, so store in a
+  // global.
+  [[maybe_unused]] static auto nvml_lifetime = nvbench::nvml::NVMLLifetimeManager();
 
 #ifdef NVBENCH_HAS_NVML
   // Retrieve the current device's pci_id as a null-terminated string.

@@ -21,6 +21,18 @@ macro(nvbench_generate_exports)
       )
     endif()
 
+    if (TARGET nvbench_json)
+      set(nvbench_json_code_block
+        [=[
+        add_library(nvbench_json INTERFACE IMPORTED)
+        if (TARGET nlohmann_json::nlohmann_json)
+          target_link_libraries(nvbench_json INTERFACE nlohmann_json::nlohmann_json)
+        endif()
+        ]=])
+      string(APPEND nvbench_build_export_code_block ${nvbench_json_code_block})
+      string(APPEND nvbench_install_export_code_block ${nvbench_json_code_block})
+    endif()
+
     rapids_export(BUILD NVBench
       EXPORT_SET nvbench-targets
       NAMESPACE "nvbench::"
