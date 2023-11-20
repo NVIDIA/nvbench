@@ -60,7 +60,7 @@ struct type_axis final : public axis_base
   [[nodiscard]] std::size_t get_type_index(const std::string &input_string) const;
 
 private:
-  std::unique_ptr<axis_base> do_clone() const { return std::make_unique<type_axis>(*this); }
+  std::unique_ptr<axis_base> do_clone() const final { return std::make_unique<type_axis>(*this); }
   std::size_t do_get_size() const final { return m_input_strings.size(); }
   std::string do_get_input_string(std::size_t i) const final { return m_input_strings[i]; }
   std::string do_get_description(std::size_t i) const final { return m_descriptions[i]; }
