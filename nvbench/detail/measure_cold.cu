@@ -39,7 +39,13 @@ namespace nvbench::detail
 
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
-    , m_launch{m_state.get_cuda_stream()}
+    , m_launch{nvbench::launch([this]() -> decltype(auto) {
+      if (!m_state.get_cuda_stream().has_value())
+      {
+        m_state.set_cuda_stream(nvbench::cuda_stream{m_state.get_device()});
+      }
+      return m_state.get_cuda_stream().value();
+    }())}
     , m_run_once{exec_state.get_run_once()}
     , m_no_block{exec_state.get_disable_blocking_kernel()}
     , m_min_samples{exec_state.get_min_samples()}

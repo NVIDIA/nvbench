@@ -43,8 +43,7 @@ struct state_tester : public nvbench::state
   void set_param(std::string name, T &&value)
   {
     this->state::m_axis_values.set_value(std::move(name),
-                                         nvbench::named_values::value_type{
-                                           std::forward<T>(value)});
+                                         nvbench::named_values::value_type{std::forward<T>(value)});
   }
 };
 } // namespace nvbench::detail
@@ -56,6 +55,9 @@ void test_streams()
   dummy_bench bench;
 
   state_tester state{bench};
+
+  // Confirm that the stream hasn't been initialized yet
+  ASSERT(!state.get_cuda_stream().has_value());
 
   // Test non-owning stream
   cudaStream_t default_stream = 0;
