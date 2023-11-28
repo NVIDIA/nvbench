@@ -22,11 +22,90 @@
 
 #include <nvbench/detail/statistics.cuh>
 
+#include <cstddef>
+#include <iterator>
 #include <cassert>
 #include <vector>
 
 namespace nvbench::detail
 {
+
+template <class T>
+class ring_buffer_iterator
+{
+  std::ptrdiff_t m_index;
+  std::ptrdiff_t m_capacity;
+  T *m_ptr;
+
+public:
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type        = T;
+  using difference_type   = std::ptrdiff_t;
+  using pointer           = T *;
+  using reference         = T &;
+
+  ring_buffer_iterator(std::ptrdiff_t index, std::ptrdiff_t capacity, pointer ptr)
+      : m_index{index}
+      , m_capacity{capacity}
+      , m_ptr{ptr}
+  {}
+
+  ring_buffer_iterator operator++()
+  {
+    ++m_index;
+    return *this;
+  }
+
+  ring_buffer_iterator operator++(int)
+  {
+    ring_buffer_iterator temp = *this;
+    ++(*this);
+    return temp;
+  }
+
+  ring_buffer_iterator &operator--()
+  {
+    --m_index;
+    return *this;
+  }
+
+  ring_buffer_iterator operator--(int)
+  {
+    ring_buffer_iterator temp = *this;
+    --(*this);
+    return temp;
+  }
+
+  ring_buffer_iterator operator+(difference_type n) const 
+  { 
+    return ring_buffer_iterator(m_index + n, m_capacity, m_ptr); 
+  }
+
+  ring_buffer_iterator operator-(difference_type n) const 
+  { 
+    return ring_buffer_iterator(m_index - n, m_capacity, m_ptr); 
+  }
+
+  difference_type operator-(const ring_buffer_iterator &other) const
+  {
+    return m_index - other.m_index;
+  }
+
+  reference operator*() const { return m_ptr[m_index % m_capacity]; }
+  pointer operator->() const { return &(operator*()); }
+
+  reference operator[](difference_type n) const { return *(*this + n); }
+
+  bool operator==(const ring_buffer_iterator &other) const
+  {
+    return m_ptr == other.m_ptr && m_index == other.m_index;
+  }
+  bool operator!=(const ring_buffer_iterator &other) const { return !(*this == other); }
+  bool operator<(const ring_buffer_iterator &other) const { return m_index < other.m_index; }
+  bool operator>(const ring_buffer_iterator &other) const { return m_index > other.m_index; }
+  bool operator<=(const ring_buffer_iterator &other) const { return !(*this > other); }
+  bool operator>=(const ring_buffer_iterator &other) const { return !(*this < other); }
+};
 
 /**
  * @brief A simple, dynamically sized ring buffer.
@@ -42,7 +121,13 @@ private:
   std::size_t m_index{0};
   bool m_full{false};
 
+  std::size_t get_front_index() const 
+  {
+    return m_full ? m_index : 0;
+  }
+
 public:
+
   /**
    * Create a new ring buffer with the requested capacity.
    */
@@ -51,17 +136,48 @@ public:
   {}
 
   /**
-   * Iterators provide all values in the ring buffer in unspecified order.
+   * Iterators provide all values in the ring buffer in FIFO order.
    * @{
    */
-  // clang-format off
-  [[nodiscard]] auto begin()        { return m_buffer.begin(); }
-  [[nodiscard]] auto begin() const  { return m_buffer.begin(); }
-  [[nodiscard]] auto cbegin() const { return m_buffer.cbegin(); }
-  [[nodiscard]] auto end()        { return m_buffer.begin()  + static_cast<diff_t>(this->size()); }
-  [[nodiscard]] auto end() const  { return m_buffer.begin()  + static_cast<diff_t>(this->size()); }
-  [[nodiscard]] auto cend() const { return m_buffer.cbegin() + static_cast<diff_t>(this->size()); }
-  // clang-format on
+  [[nodiscard]] ring_buffer_iterator<T> begin()
+  {
+    return {static_cast<std::ptrdiff_t>(get_front_index()),
+            static_cast<std::ptrdiff_t>(capacity()),
+            m_buffer.data()};
+  }
+
+  [[nodiscard]] ring_buffer_iterator<T> end()
+  {
+    return {static_cast<std::ptrdiff_t>(get_front_index() + size()),
+            static_cast<std::ptrdiff_t>(capacity()),
+            m_buffer.data()};
+  }
+  [[nodiscard]] ring_buffer_iterator<const T> begin() const
+  {
+    return {static_cast<std::ptrdiff_t>(get_front_index()),
+            static_cast<std::ptrdiff_t>(capacity()),
+            m_buffer.data()};
+  }
+
+  [[nodiscard]] ring_buffer_iterator<const T> end() const
+  {
+    return {static_cast<std::ptrdiff_t>(get_front_index() + size()),
+            static_cast<std::ptrdiff_t>(capacity()),
+            m_buffer.data()};
+  }
+  [[nodiscard]] ring_buffer_iterator<const T> cbegin() const
+  {
+    return {static_cast<std::ptrdiff_t>(get_front_index()),
+            static_cast<std::ptrdiff_t>(capacity()),
+            m_buffer.data()};
+  }
+
+  [[nodiscard]] ring_buffer_iterator<const T> cend() const
+  {
+    return {static_cast<std::ptrdiff_t>(get_front_index() + size()),
+            static_cast<std::ptrdiff_t>(capacity()),
+            m_buffer.data()};
+  }
   /** @} */
 
   /**

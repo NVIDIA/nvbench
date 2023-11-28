@@ -25,15 +25,14 @@
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
-#include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/detail/statistics.cuh>
 
 #include <cuda_runtime.h>
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -87,12 +86,13 @@ protected:
   nvbench::detail::l2flush m_l2flush;
   nvbench::blocking_kernel m_blocker;
 
+  nvbench::criterion_params m_criterion_params;
+  nvbench::stopping_criterion* m_stopping_criterion{};
+
   bool m_run_once{false};
   bool m_no_block{false};
 
   nvbench::int64_t m_min_samples{};
-  nvbench::float64_t m_max_noise{}; // rel stdev
-  nvbench::float64_t m_min_time{};
 
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
@@ -101,9 +101,6 @@ protected:
   nvbench::float64_t m_total_cuda_time{};
   nvbench::float64_t m_total_cpu_time{};
   nvbench::float64_t m_cpu_noise{}; // rel stdev
-
-  // Trailing history of noise measurements for convergence tests
-  nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;

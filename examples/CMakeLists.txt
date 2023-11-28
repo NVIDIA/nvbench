@@ -7,6 +7,7 @@ set(example_srcs
   stream.cu
   throughput.cu
   auto_throughput.cu
+  custom_criterion.cu
 )
 
 # Metatarget for all examples:

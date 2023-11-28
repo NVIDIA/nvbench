@@ -20,10 +20,14 @@ set(srcs
   string_axis.cxx
   type_axis.cxx
   type_strings.cxx
+  criterion_registry.cxx
+  stopping_criterion.cxx
 
   detail/measure_cold.cu
   detail/measure_hot.cu
   detail/state_generator.cxx
+  detail/stdrel_criterion.cxx
+  detail/entropy_criterion.cxx
 
   internal/nvml.cxx
 )
