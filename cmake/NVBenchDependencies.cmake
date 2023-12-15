@@ -1,18 +1,21 @@
 ################################################################################
 # fmtlib/fmt
-rapids_cpm_find(fmt 9.1.0
+include("${rapids-cmake-dir}/cpm/fmt.cmake")
+
+if(NOT BUILD_SHARED_LIBS AND NVBench_ENABLE_INSTALL_RULES)
+set(export_set_details BUILD_EXPORT_SET nvbench-targets
+                       INSTALL_EXPORT_SET nvbench-targets)
+endif()
+
+rapids_cpm_fmt(${export_set_details}
   CPM_ARGS
-    GITHUB_REPOSITORY fmtlib/fmt
-    GIT_TAG 9.1.0
-    GIT_SHALLOW TRUE
     OPTIONS
       # Force static to keep fmt internal.
       "BUILD_SHARED_LIBS OFF"
-      "CMAKE_POSITION_INDEPENDENT_CODE ON"
 )
 
-if(TARGET fmt::fmt AND NOT TARGET fmt)
-  add_library(fmt ALIAS fmt::fmt)
+if(NOT fmt_ADDED)
+  set(fmt_is_external TRUE)
 endif()
 
 ################################################################################

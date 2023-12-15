@@ -60,6 +60,8 @@ struct json_printer : nvbench::printer_base
   [[nodiscard]] bool get_enable_binary_output() const { return m_enable_binary_output; }
   void set_enable_binary_output(bool b) { m_enable_binary_output = b; }
 
+  void print_devices_json();
+
 protected:
   // Virtual API from printer_base:
   void do_log_argv(const std::vector<std::string> &argv) override { m_argv = argv; }
@@ -68,6 +70,7 @@ protected:
                                     const std::string &hint,
                                     const std::vector<nvbench::float64_t> &data) override;
   void do_print_benchmark_results(const benchmark_vector &benches) override;
+  void do_print_benchmark_list(const benchmark_vector &) override;
 
   bool m_enable_binary_output{false};
   std::size_t m_num_jsonbin_files{};

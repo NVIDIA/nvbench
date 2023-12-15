@@ -57,6 +57,7 @@ else()
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wunused-parameter")
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wvla")
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wgnu")
+  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wno-gnu-line-marker") # WAR 3916341
 
   if (NVBench_ENABLE_WERROR)
     nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")

@@ -18,10 +18,11 @@
 
 #include <nvbench/device_manager.cuh>
 
+#include <cuda_runtime_api.h>
+
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
-
-#include <cuda_runtime_api.h>
+#include <nvbench/detail/throw.cuh>
 
 namespace nvbench
 {
@@ -42,6 +43,15 @@ device_manager::device_manager()
   {
     m_devices.emplace_back(i);
   }
+}
+
+const nvbench::device_info &device_manager::get_device(int id) 
+{ 
+  if (id < 0) 
+  {
+    NVBENCH_THROW(std::runtime_error, "Negative index: {}.", id);
+  }
+  return m_devices.at(static_cast<std::size_t>(id)); 
 }
 
 } // namespace nvbench

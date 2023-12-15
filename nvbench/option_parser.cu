@@ -365,7 +365,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
   }
 
   auto check_params = [&first, &last](std::size_t num_params) {
-    const std::size_t rem_args = std::distance(first, last) - 1;
+    const std::size_t rem_args = static_cast<std::size_t>(std::distance(first, last) - 1);
     if (rem_args < num_params)
     {
       NVBENCH_THROW(std::runtime_error,
@@ -399,7 +399,21 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
     else if (arg == "--list" || arg == "-l")
     {
-      this->print_list();
+      nvbench::markdown_printer printer{std::cout};
+      this->print_list(printer);
+      std::exit(0);
+    }
+    else if (arg == "--jsonlist-benches")
+    {
+      nvbench::json_printer printer{std::cout};
+      const auto &bench_mgr = nvbench::benchmark_manager::get();
+      printer.print_benchmark_list(bench_mgr.get_benchmarks());
+      std::exit(0);
+    }
+    else if (arg == "--jsonlist-devices")
+    {
+      nvbench::json_printer printer{std::cout};
+      printer.print_devices_json();
       std::exit(0);
     }
     else if (arg == "--persistence-mode" || arg == "--pm")
@@ -430,7 +444,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->disable_blocking_kernel();
       first += 1;
     }
-    else if (arg == "--quiet" | arg == "-q")
+    else if (arg == "--quiet" || arg == "-q")
     {
       // Setting this flag prevents the default stdout printer from being
       // added.
@@ -580,11 +594,9 @@ void option_parser::print_version() const
              NVBENCH_GIT_VERSION);
 }
 
-void option_parser::print_list() const
+void option_parser::print_list(printer_base& printer) const
 {
   const auto &bench_mgr = nvbench::benchmark_manager::get();
-
-  nvbench::markdown_printer printer{std::cout};
   printer.print_device_info();
   printer.print_benchmark_list(bench_mgr.get_benchmarks());
 }
@@ -714,7 +726,7 @@ try
   catch (std::invalid_argument &)
   {}
 
-  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(idx).clone()
+  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(static_cast<std::size_t>(idx)).clone()
                                   : mgr.get_benchmark(name).clone());
 
   // Initialize the new benchmark with any global arguments:
