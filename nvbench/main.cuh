@@ -55,10 +55,13 @@
 #endif
 
 #ifndef NVBENCH_ENVIRONMENT
-namespace nvbench {
+namespace nvbench
+{
 struct no_environment
-{};
-}
+{
+  no_environment(int, char const *const *) {}
+};
+} // namespace nvbench
 #define NVBENCH_ENVIRONMENT nvbench::no_environment
 #endif
 
@@ -85,7 +88,7 @@ struct no_environment
     printer.set_total_state_count(total_states);                                                   \
                                                                                                    \
     printer.set_completed_state_count(0);                                                          \
-    auto env_state = NVBENCH_ENVIRONMENT{};                                                                         \
+    [[maybe_unused]] auto env_state = NVBENCH_ENVIRONMENT(argc, argv);                             \
     for (auto &bench_ptr : benchmarks)                                                             \
     {                                                                                              \
       bench_ptr->set_printer(printer);                                                             \

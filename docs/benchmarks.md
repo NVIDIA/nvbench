@@ -456,3 +456,6 @@ The `NVBENCH_ENVIRONMENT` must be defined before including `nvbench.cuh`.
 
 The `(int, char const*)` parameters are the `argc, argv` variables passed through
 from the command line invocation.
+
+Note this feature is only usable if you call `NVBENCH_MAIN` directly and not
+when using the `nvbench::main` target.
