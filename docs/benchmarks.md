@@ -442,7 +442,7 @@ using `#define NVBENCH_ENVIRONMENT`.
 
 ```cpp
 struct my_env {
-  my_env() {
+  my_env(int, char const*) {
     printf("setup\n");
   }
   ~my_env() {
@@ -453,3 +453,6 @@ struct my_env {
 ```
 
 The `NVBENCH_ENVIRONMENT` must be defined before including `nvbench.cuh`.
+
+The `(int, char const*)` parameters are the `argc, argv` variables passed through
+from the command line invocation.
