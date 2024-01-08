@@ -26,6 +26,7 @@ namespace nvbench::detail
 {
 
 entropy_criterion::entropy_criterion()
+  : stopping_criterion{"entropy"}
 {
   m_freq_tracker.reserve(m_entropy_tracker.capacity() * 2);
   m_ps.reserve(m_entropy_tracker.capacity() * 2);
@@ -33,19 +34,20 @@ entropy_criterion::entropy_criterion()
 
 void entropy_criterion::initialize(const criterion_params &params)
 {
+  m_params = params;
   m_total_samples = 0;
   m_total_cuda_time = 0.0;
   m_entropy_tracker.clear();
   m_freq_tracker.clear();
 
-  if (params.has_value("max-angle"))
+  if (m_params.has_value("max-angle"))
   {
-    m_max_angle = params.get_float64("max-angle");
+    m_max_angle = m_params.get_float64("max-angle");
   }
 
-  if (params.has_value("min-r2"))
+  if (m_params.has_value("min-r2"))
   {
-    m_min_r2 = params.get_float64("min-r2");
+    m_min_r2 = m_params.get_float64("min-r2");
   }
 }
 

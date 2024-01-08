@@ -28,43 +28,45 @@ criterion_manager::criterion_manager()
   m_map.emplace("entropy", std::make_unique<nvbench::detail::entropy_criterion>());
 }
 
-criterion_manager &criterion_manager::instance()
+criterion_manager &criterion_manager::get()
 {
   static criterion_manager registry;
   return registry;
 }
 
-stopping_criterion* criterion_manager::get(const std::string& name)
+stopping_criterion& criterion_manager::get_criterion(const std::string& name)
 {
-  criterion_manager& registry = instance();
+  criterion_manager& registry = criterion_manager::get();
 
   auto iter = registry.m_map.find(name);
   if (iter == registry.m_map.end())
   {
     NVBENCH_THROW(std::runtime_error, "No stopping criterion named \"{}\".", name);
   }
-  return iter->second.get();
+  return *iter->second.get();
 }
 
-bool criterion_manager::register_criterion(std::string name,
-                                           std::unique_ptr<stopping_criterion> criterion)
+stopping_criterion &criterion_manager::add(std::unique_ptr<stopping_criterion> criterion)
 {
-  criterion_manager& manager = instance();
+  criterion_manager& manager = criterion_manager::get();
+  const std::string name = criterion->get_name();
 
-  if (manager.m_map.find(name) != manager.m_map.end())
+  auto [it, success] = manager.m_map.emplace(name, std::move(criterion));
+
+  if (!success) 
   {
     NVBENCH_THROW(std::runtime_error,
                   "Stopping criterion \"{}\" is already registered.", name);
   }
 
-  return manager.m_map.emplace(std::move(name), std::move(criterion)).second;
+  return *it->second.get();
 }
 
 nvbench::stopping_criterion::params_description criterion_manager::get_params_description()
 {
   nvbench::stopping_criterion::params_description desc;
 
-  criterion_manager &manager = instance();
+  criterion_manager& manager = criterion_manager::get();
   for (auto &[criterion_name, criterion] : manager.m_map)
   {
     for (auto param : criterion->get_params_description())

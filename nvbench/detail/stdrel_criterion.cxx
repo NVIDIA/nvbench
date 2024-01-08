@@ -21,21 +21,26 @@
 namespace nvbench::detail
 {
 
+stdrel_criterion::stdrel_criterion()
+    : stopping_criterion{"stdrel"}
+{}
+
 void stdrel_criterion::initialize(const criterion_params &params)
 {
+  m_params = params;
   m_total_samples = 0;
   m_total_cuda_time = 0.0;
   m_cuda_times.clear();
   m_noise_tracker.clear();
 
-  if (params.has_value("max-noise"))
+  if (m_params.has_value("max-noise"))
   {
-    m_max_noise = params.get_float64("max-noise");
+    m_max_noise = m_params.get_float64("max-noise");
   }
 
-  if (params.has_value("min-time"))
+  if (m_params.has_value("min-time"))
   {
-    m_min_time = params.get_float64("min-time");
+    m_min_time = m_params.get_float64("min-time");
   }
 }
 

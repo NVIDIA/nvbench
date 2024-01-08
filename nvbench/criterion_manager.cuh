@@ -37,12 +37,16 @@ class criterion_manager
   criterion_manager();
 
 public:
-  static criterion_manager &instance();
+  /**
+   * @return The singleton criterion_manager instance.
+   */
+  static criterion_manager& get();
 
-  static nvbench::stopping_criterion* get(const std::string& name);
-
-  static bool register_criterion(std::string name,
-                                 std::unique_ptr<nvbench::stopping_criterion> criterion);
+  /**
+   * Register a new stopping criterion.
+   */
+  nvbench::stopping_criterion& add(std::unique_ptr<nvbench::stopping_criterion> criterion);
+  nvbench::stopping_criterion& get_criterion(const std::string& name);
 
   static nvbench::stopping_criterion::params_description get_params_description();
 };

@@ -34,7 +34,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{m_state.get_cuda_stream()}
     , m_criterion_params{exec_state.get_criterion_params()}
-    , m_stopping_criterion{nvbench::criterion_manager::get(exec_state.get_stopping_criterion())}
+    , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_no_block{exec_state.get_disable_blocking_kernel()}
     , m_min_samples{exec_state.get_min_samples()}
@@ -71,7 +71,7 @@ void measure_cold_base::initialize()
   m_cpu_times.clear();
   m_max_time_exceeded = false;
 
-  m_stopping_criterion->initialize(m_criterion_params);
+  m_stopping_criterion.initialize(m_criterion_params);
 }
 
 void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
@@ -87,7 +87,7 @@ void measure_cold_base::record_measurements()
   m_total_cpu_time += cur_cpu_time;
   ++m_total_samples;
 
-  m_stopping_criterion->add_measurement(cur_cuda_time);
+  m_stopping_criterion.add_measurement(cur_cuda_time);
 }
 
 bool measure_cold_base::is_finished()
@@ -100,7 +100,7 @@ bool measure_cold_base::is_finished()
   // Check that we've gathered enough samples:
   if (m_total_samples > m_min_samples)
   {
-    if (m_stopping_criterion->is_finished())
+    if (m_stopping_criterion.is_finished())
     {
       return true;
     }

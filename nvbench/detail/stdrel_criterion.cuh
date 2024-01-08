@@ -40,6 +40,8 @@ class stdrel_criterion final : public stopping_criterion
   nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
 
 public:
+  stdrel_criterion();
+
   virtual void initialize(const criterion_params &params) override;
   virtual void add_measurement(nvbench::float64_t measurement) override;
   virtual bool is_finished() override;

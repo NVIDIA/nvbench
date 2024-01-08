@@ -27,15 +27,19 @@
 // Inherit from the stopping_criterion class:
 class fixed_criterion final : public nvbench::stopping_criterion 
 {
+  nvbench::criterion_params m_params{};
   nvbench::int64_t m_max_samples{};
   nvbench::int64_t m_num_samples{};
 
 public:
+  fixed_criterion() : nvbench::stopping_criterion{"fixed"} {}
+
   // Setup the criterion in the `initialize()` method:
   virtual void initialize(const nvbench::criterion_params &params) override 
   {
+    m_params = params;
     m_num_samples = 0;
-    m_max_samples = params.has_value("max-samples") ? params.get_int64("max-samples") : 42;
+    m_max_samples = m_params.has_value("max-samples") ? m_params.get_int64("max-samples") : 42;
   }
 
   // Process new measurements in the `add_measurement()` method:
@@ -61,9 +65,8 @@ public:
 };
 
 // Register the criterion with NVBench:
-static bool registered = //
-  nvbench::criterion_manager::register_criterion("fixed",
-                                                  std::make_unique<fixed_criterion>());
+static nvbench::stopping_criterion& criterion_ref = //
+  nvbench::criterion_manager::get().add(std::make_unique<fixed_criterion>());
 
 void throughput_bench(nvbench::state &state)
 {
