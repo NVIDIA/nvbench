@@ -16,15 +16,15 @@
  *  limitations under the License.
  */
 
-#include <nvbench/criterion_registry.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/types.cuh>
 
 #include "test_asserts.cuh"
 
 void test_standard_criteria_exist()
 {
-  ASSERT(nvbench::criterion_registry::get("stdrel") != nullptr);
-  ASSERT(nvbench::criterion_registry::get("entropy") != nullptr);
+  ASSERT(nvbench::criterion_manager::get("stdrel") != nullptr);
+  ASSERT(nvbench::criterion_manager::get("entropy") != nullptr);
 }
 
 class custom_criterion : public nvbench::stopping_criterion
@@ -45,7 +45,7 @@ void test_no_duplicates_are_allowed()
   bool exception_triggered = false;
 
   try {
-    nvbench::stopping_criterion* custom = nvbench::criterion_registry::get("custom");
+    nvbench::stopping_criterion* custom = nvbench::criterion_manager::get("custom");
   } catch(...) {
     exception_triggered = true;
   }
@@ -53,14 +53,14 @@ void test_no_duplicates_are_allowed()
 
   std::unique_ptr<custom_criterion> custom_ptr = std::make_unique<custom_criterion>();
   custom_criterion* custom_raw = custom_ptr.get();
-  ASSERT(nvbench::criterion_registry::register_criterion("custom", std::move(custom_ptr)));
+  ASSERT(nvbench::criterion_manager::register_criterion("custom", std::move(custom_ptr)));
 
-  nvbench::stopping_criterion* custom = nvbench::criterion_registry::get("custom");
+  nvbench::stopping_criterion* custom = nvbench::criterion_manager::get("custom");
   ASSERT(custom_raw == custom);
 
   exception_triggered = false;
   try {
-    nvbench::criterion_registry::register_criterion("custom", std::make_unique<custom_criterion>());
+    nvbench::criterion_manager::register_criterion("custom", std::make_unique<custom_criterion>());
   } catch(...) {
     exception_triggered = true;
   }

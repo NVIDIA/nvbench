@@ -30,14 +30,14 @@
 namespace nvbench
 {
 
-class criterion_registry
+class criterion_manager
 {
   std::unordered_map<std::string, std::unique_ptr<nvbench::stopping_criterion>> m_map;
 
-  criterion_registry();
+  criterion_manager();
 
 public:
-  static criterion_registry &instance();
+  static criterion_manager &instance();
 
   static nvbench::stopping_criterion* get(const std::string& name);
 

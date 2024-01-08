@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-#include <nvbench/criterion_registry.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/types.cuh>
 
 #include "test_asserts.cuh"

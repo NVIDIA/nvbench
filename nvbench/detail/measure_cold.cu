@@ -17,7 +17,7 @@
  */
 
 #include <nvbench/benchmark_base.cuh>
-#include <nvbench/criterion_registry.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/measure_cold.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
@@ -34,7 +34,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{m_state.get_cuda_stream()}
     , m_criterion_params{exec_state.get_criterion_params()}
-    , m_stopping_criterion{nvbench::criterion_registry::get(exec_state.get_stopping_criterion())}
+    , m_stopping_criterion{nvbench::criterion_manager::get(exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_no_block{exec_state.get_disable_blocking_kernel()}
     , m_min_samples{exec_state.get_min_samples()}

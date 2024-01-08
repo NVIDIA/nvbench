@@ -4,7 +4,7 @@ set(srcs
   benchmark_base.cxx
   benchmark_manager.cxx
   blocking_kernel.cu
-  criterion_registry.cxx
+  criterion_manager.cxx
   csv_printer.cu
   cuda_call.cu
   device_info.cu

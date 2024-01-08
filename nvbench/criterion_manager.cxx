@@ -16,27 +16,27 @@
  *  limitations under the License.
  */
 
-#include <nvbench/criterion_registry.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/throw.cuh>
 
 namespace nvbench
 {
 
-criterion_registry::criterion_registry()
+criterion_manager::criterion_manager()
 {
   m_map.emplace("stdrel", std::make_unique<nvbench::detail::stdrel_criterion>());
   m_map.emplace("entropy", std::make_unique<nvbench::detail::entropy_criterion>());
 }
 
-criterion_registry &criterion_registry::instance()
+criterion_manager &criterion_manager::instance()
 {
-  static criterion_registry registry;
+  static criterion_manager registry;
   return registry;
 }
 
-stopping_criterion* criterion_registry::get(const std::string& name)
+stopping_criterion* criterion_manager::get(const std::string& name)
 {
-  criterion_registry& registry = instance();
+  criterion_manager& registry = instance();
 
   auto iter = registry.m_map.find(name);
   if (iter == registry.m_map.end())
@@ -46,26 +46,26 @@ stopping_criterion* criterion_registry::get(const std::string& name)
   return iter->second.get();
 }
 
-bool criterion_registry::register_criterion(std::string name,
-                                            std::unique_ptr<stopping_criterion> criterion)
+bool criterion_manager::register_criterion(std::string name,
+                                           std::unique_ptr<stopping_criterion> criterion)
 {
-  criterion_registry& registry = instance();
+  criterion_manager& manager = instance();
 
-  if (registry.m_map.find(name) != registry.m_map.end())
+  if (manager.m_map.find(name) != manager.m_map.end())
   {
     NVBENCH_THROW(std::runtime_error,
                   "Stopping criterion \"{}\" is already registered.", name);
   }
 
-  return registry.m_map.emplace(std::move(name), std::move(criterion)).second;
+  return manager.m_map.emplace(std::move(name), std::move(criterion)).second;
 }
 
-nvbench::stopping_criterion::params_description criterion_registry::get_params_description()
+nvbench::stopping_criterion::params_description criterion_manager::get_params_description()
 {
   nvbench::stopping_criterion::params_description desc;
 
-  criterion_registry &registry = instance();
-  for (auto &[criterion_name, criterion] : registry.m_map)
+  criterion_manager &manager = instance();
+  for (auto &[criterion_name, criterion] : manager.m_map)
   {
     for (auto param : criterion->get_params_description())
     {

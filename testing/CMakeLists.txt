@@ -4,7 +4,7 @@ set(test_srcs
   create.cu
   cuda_timer.cu
   cpu_timer.cu
-  criterion_registry.cu
+  criterion_manager.cu
   criterion_params.cu
   enum_type_list.cu
   entropy_criterion.cu

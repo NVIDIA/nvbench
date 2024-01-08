@@ -21,7 +21,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_printer.cuh>
-#include <nvbench/criterion_registry.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
@@ -378,7 +378,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
   };
 
   const nvbench::stopping_criterion::params_description criterion_params =
-    nvbench::criterion_registry::get_params_description();
+    nvbench::criterion_manager::get_params_description();
 
   while (first < last)
   {
