@@ -65,8 +65,7 @@ public:
 };
 
 // Register the criterion with NVBench:
-static nvbench::stopping_criterion& criterion_ref = //
-  nvbench::criterion_manager::get().add(std::make_unique<fixed_criterion>());
+NVBENCH_REGISTER_CRITERION(fixed_criterion);
 
 void throughput_bench(nvbench::state &state)
 {

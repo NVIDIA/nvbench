@@ -51,4 +51,13 @@ public:
   static nvbench::stopping_criterion::params_description get_params_description();
 };
 
+/**
+ * Given a stopping criterion type `TYPE`, registers it in the criterion manager
+ *
+ * See the `custom_criterion.cu` example for usage.
+ */
+#define NVBENCH_REGISTER_CRITERION(TYPE) \
+  static nvbench::stopping_criterion& NVBENCH_UNIQUE_IDENTIFIER(TYPE) = \
+    nvbench::criterion_manager::get().add(std::make_unique<TYPE>()) \
+
 } // namespace nvbench
