@@ -67,7 +67,7 @@ nvbench::stopping_criterion::params_description criterion_registry::get_params_d
   criterion_registry &registry = instance();
   for (auto &[criterion_name, criterion] : registry.m_map)
   {
-    for (auto param : criterion->get_params())
+    for (auto param : criterion->get_params_description())
     {
       if (std::find_if(desc.begin(), desc.end(), [&](auto d) {
             return d.first == param.first && d.second != param.second;

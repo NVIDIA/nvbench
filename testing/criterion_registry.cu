@@ -33,7 +33,7 @@ public:
   virtual void initialize(const nvbench::criterion_params &) override {}
   virtual void add_measurement(nvbench::float64_t /* measurement */) override {}
   virtual bool is_finished() override { return true; }
-  virtual const params_description &get_params() const override
+  virtual const params_description &get_params_description() const override
   {
     static const params_description desc{};
     return desc;

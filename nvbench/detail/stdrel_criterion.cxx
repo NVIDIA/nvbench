@@ -99,7 +99,7 @@ bool stdrel_criterion::is_finished()
   return false;
 }
 
-const stdrel_criterion::params_description &stdrel_criterion::get_params() const
+const stdrel_criterion::params_description &stdrel_criterion::get_params_description() const
 {
   static const params_description desc{
     {"max-noise", nvbench::named_values::type::float64},

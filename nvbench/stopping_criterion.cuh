@@ -80,7 +80,7 @@ public:
   /**
    * Return the parameter names and types for this criterion
    */
-  virtual const params_description &get_params() const = 0;
+  virtual const params_description &get_params_description() const = 0;
 };
 
 } // namespace nvbench

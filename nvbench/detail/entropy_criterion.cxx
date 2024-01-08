@@ -141,7 +141,7 @@ bool entropy_criterion::is_finished()
   return true;
 }
 
-const entropy_criterion::params_description &entropy_criterion::get_params() const
+const entropy_criterion::params_description &entropy_criterion::get_params_description() const
 {
   static const params_description desc{
     {"max-angle", nvbench::named_values::type::float64},
