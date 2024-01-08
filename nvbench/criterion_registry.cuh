@@ -18,13 +18,14 @@
 
 #pragma once
 
-#include <nvbench/types.cuh>
-#include <nvbench/stopping_criterion.cuh>
-#include <nvbench/detail/stdrel_criterion.cuh>
 #include <nvbench/detail/entropy_criterion.cuh>
+#include <nvbench/detail/stdrel_criterion.cuh>
+#include <nvbench/stopping_criterion.cuh>
+#include <nvbench/types.cuh>
+
+#include <memory>
 
 #include <unordered_map>
-#include <memory>
 
 namespace nvbench
 {

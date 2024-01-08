@@ -1,13 +1,13 @@
 set(example_srcs
+  auto_throughput.cu
   axes.cu
+  custom_criterion.cu
   enums.cu
   exec_tag_sync.cu
   exec_tag_timer.cu
   skip.cu
   stream.cu
   throughput.cu
-  auto_throughput.cu
-  custom_criterion.cu
 )
 
 # Metatarget for all examples:
