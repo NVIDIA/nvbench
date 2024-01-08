@@ -77,8 +77,6 @@ void throughput_bench(nvbench::state &state)
   state.add_global_memory_reads<nvbench::int32_t>(num_values, "DataSize");
   state.add_global_memory_writes<nvbench::int32_t>(num_values);
 
-  state.set_stopping_criterion("fixed");
-
   state.exec(nvbench::exec_tag::no_batch, [&input, &output, num_values](nvbench::launch &launch) {
     nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(
       thrust::raw_pointer_cast(input.data()),
@@ -86,4 +84,4 @@ void throughput_bench(nvbench::state &state)
       num_values);
   });
 }
-NVBENCH_BENCH(throughput_bench);
+NVBENCH_BENCH(throughput_bench).set_stopping_criterion("fixed");
