@@ -116,7 +116,8 @@ bool entropy_criterion::is_finished()
     return false;
   }
 
-  // About 20% faster than the stdrel method
+  // Even number of samples is used to reduce the overhead and not required to compute entropy.
+  // This makes `is_finished()` about 20% faster than corresponding stdrel method.
   if (m_total_samples % 2 != 0)
   {
     return false;
