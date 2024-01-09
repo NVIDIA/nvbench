@@ -37,6 +37,8 @@ class entropy_criterion final : public stopping_criterion
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
   std::vector<std::pair<nvbench::float64_t, nvbench::int64_t>> m_freq_tracker;
+
+  // TODO The window size should be user-configurable
   nvbench::detail::ring_buffer<nvbench::float64_t> m_entropy_tracker{299};
   std::vector<nvbench::float64_t> m_ps;
 
