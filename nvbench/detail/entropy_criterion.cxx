@@ -126,16 +126,17 @@ bool entropy_criterion::is_finished()
   }
 
   auto begin = m_entropy_tracker.cbegin();
-  auto end = m_entropy_tracker.cend();
+  auto end   = m_entropy_tracker.cend();
+  auto mean  = statistics::compute_mean(begin, end);
 
-  const auto [slope, intercept] = statistics::compute_linear_regression(begin, end);
+  const auto [slope, intercept] = statistics::compute_linear_regression(begin, end, mean);
 
   if (statistics::slope2deg(slope) > m_max_angle) 
   {
     return false;
   }
 
-  const auto r2 = statistics::compute_r2(begin, end, slope, intercept);
+  const auto r2 = statistics::compute_r2(begin, end, mean, slope, intercept);
   if (r2 < m_min_r2)
   {
     return false;

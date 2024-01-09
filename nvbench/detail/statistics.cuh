@@ -62,13 +62,22 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
   return std::sqrt(variance);
 }
 
+template <class It>
+nvbench::float64_t compute_mean(It first, It last)
+{
+  const auto n = std::distance(first, last);
+  return std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(n);
+}
+
 /**
  * Computes linear regression and returns the slope and intercept
  *
+ * This version takes precomputed mean of [first, last).
  * If the input has fewer than 2 samples, infinity is returned for both slope and intercept.
  */
 template <class It>
-std::pair<nvbench::float64_t, nvbench::float64_t> compute_linear_regression(It first, It last)
+std::pair<nvbench::float64_t, nvbench::float64_t>
+compute_linear_regression(It first, It last, nvbench::float64_t mean_y)
 {
   const std::size_t n = static_cast<std::size_t>(std::distance(first, last));
 
@@ -80,10 +89,9 @@ std::pair<nvbench::float64_t, nvbench::float64_t> compute_linear_regression(It f
 
   // Assuming x starts from 0
   const nvbench::float64_t mean_x = (static_cast<nvbench::float64_t>(n) - 1.0) / 2.0;
-  const nvbench::float64_t mean_y = std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(n);
 
   // Calculate the numerator and denominator for the slope
-  nvbench::float64_t numerator = 0.0;
+  nvbench::float64_t numerator   = 0.0;
   nvbench::float64_t denominator = 0.0;
 
   for (std::size_t i = 0; i < n; ++i, ++first)
@@ -94,21 +102,36 @@ std::pair<nvbench::float64_t, nvbench::float64_t> compute_linear_regression(It f
   }
 
   // Calculate the slope and intercept
-  const nvbench::float64_t slope = numerator / denominator;
+  const nvbench::float64_t slope     = numerator / denominator;
   const nvbench::float64_t intercept = mean_y - slope * mean_x;
 
   return std::make_pair(slope, intercept);
 }
 
 /**
- * Computes and returns the R^2 (coefficient of determination)
- */ 
+ * Computes linear regression and returns the slope and intercept
+ *
+ * If the input has fewer than 2 samples, infinity is returned for both slope and intercept.
+ */
 template <class It>
-nvbench::float64_t compute_r2(It first, It last, nvbench::float64_t slope, nvbench::float64_t intercept)
+std::pair<nvbench::float64_t, nvbench::float64_t> compute_linear_regression(It first, It last)
+{
+  return compute_linear_regression(first, last, compute_mean(first, last));
+}
+
+/**
+ * Computes and returns the R^2 (coefficient of determination)
+ *
+ * This version takes precomputed mean of [first, last).
+ */
+template <class It>
+nvbench::float64_t compute_r2(It first,
+                              It last,
+                              nvbench::float64_t mean_y,
+                              nvbench::float64_t slope,
+                              nvbench::float64_t intercept)
 {
   const std::size_t n = static_cast<std::size_t>(std::distance(first, last));
-
-  const nvbench::float64_t mean_y = std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(n);
 
   nvbench::float64_t ss_tot = 0.0;
   nvbench::float64_t ss_res = 0.0;
@@ -128,6 +151,16 @@ nvbench::float64_t compute_r2(It first, It last, nvbench::float64_t slope, nvben
   }
 
   return 1.0 - ss_res / ss_tot;
+}
+
+/**
+ * Computes and returns the R^2 (coefficient of determination)
+ */
+template <class It>
+nvbench::float64_t
+compute_r2(It first, It last, nvbench::float64_t slope, nvbench::float64_t intercept)
+{
+  return compute_r2(first, last, compute_mean(first, last), slope, intercept);
 }
 
 inline nvbench::float64_t rad2deg(nvbench::float64_t rad)
