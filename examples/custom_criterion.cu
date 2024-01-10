@@ -27,7 +27,6 @@
 // Inherit from the stopping_criterion class:
 class fixed_criterion final : public nvbench::stopping_criterion 
 {
-  nvbench::criterion_params m_params{};
   nvbench::int64_t m_max_samples{};
   nvbench::int64_t m_num_samples{};
 
