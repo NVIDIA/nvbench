@@ -62,11 +62,22 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
   return std::sqrt(variance);
 }
 
+/**
+ * Computes and returns the mean.
+ *
+ * If the input has fewer than 1 sample, infinity is returned.
+ */
 template <class It>
 nvbench::float64_t compute_mean(It first, It last)
 {
-  const auto n = std::distance(first, last);
-  return std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(n);
+  const auto num = std::distance(first, last);
+
+  if (num < 1)
+  {
+    return std::numeric_limits<nvbench::float64_t>::infinity();
+  }
+
+  return std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(num);
 }
 
 /**

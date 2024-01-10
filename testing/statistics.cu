@@ -25,6 +25,22 @@
 
 namespace statistics = nvbench::detail::statistics;
 
+void test_mean()
+{
+  {
+    std::vector<nvbench::float64_t> data{1.0, 2.0, 3.0, 4.0, 5.0};
+    const nvbench::float64_t actual = statistics::compute_mean(std::begin(data), std::end(data));
+    const nvbench::float64_t expected = 3.0;
+    ASSERT(std::abs(actual - expected) < 0.001);
+  }
+
+  {
+    std::vector<nvbench::float64_t> data;
+    const bool finite = std::isfinite(statistics::compute_mean(std::begin(data), std::end(data)));
+    ASSERT(!finite);
+  }
+}
+
 void test_std()
 {
   std::vector<nvbench::float64_t> data{1.0, 2.0, 3.0, 4.0, 5.0};
@@ -104,6 +120,7 @@ void test_slope_conversion()
 
 int main()
 {
+  test_mean();
   test_std();
   test_lin_regression();
   test_r2();
