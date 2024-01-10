@@ -36,10 +36,18 @@ criterion_manager &criterion_manager::get()
 
 stopping_criterion& criterion_manager::get_criterion(const std::string& name)
 {
-  criterion_manager& registry = criterion_manager::get();
+  auto iter = m_map.find(name);
+  if (iter == m_map.end())
+  {
+    NVBENCH_THROW(std::runtime_error, "No stopping criterion named \"{}\".", name);
+  }
+  return *iter->second.get();
+}
 
-  auto iter = registry.m_map.find(name);
-  if (iter == registry.m_map.end())
+const nvbench::stopping_criterion& criterion_manager::get_criterion(const std::string& name) const
+{
+  auto iter = m_map.find(name);
+  if (iter == m_map.end())
   {
     NVBENCH_THROW(std::runtime_error, "No stopping criterion named \"{}\".", name);
   }
@@ -48,10 +56,9 @@ stopping_criterion& criterion_manager::get_criterion(const std::string& name)
 
 stopping_criterion &criterion_manager::add(std::unique_ptr<stopping_criterion> criterion)
 {
-  criterion_manager& manager = criterion_manager::get();
   const std::string name = criterion->get_name();
 
-  auto [it, success] = manager.m_map.emplace(name, std::move(criterion));
+  auto [it, success] = m_map.emplace(name, std::move(criterion));
 
   if (!success) 
   {
@@ -66,8 +73,7 @@ nvbench::stopping_criterion::params_description criterion_manager::get_params_de
 {
   nvbench::stopping_criterion::params_description desc;
 
-  criterion_manager& manager = criterion_manager::get();
-  for (auto &[criterion_name, criterion] : manager.m_map)
+  for (auto &[criterion_name, criterion] : m_map)
   {
     for (auto param : criterion->get_params_description())
     {
