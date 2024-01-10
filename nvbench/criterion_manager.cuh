@@ -48,7 +48,7 @@ public:
   nvbench::stopping_criterion& add(std::unique_ptr<nvbench::stopping_criterion> criterion);
   nvbench::stopping_criterion& get_criterion(const std::string& name);
 
-  static nvbench::stopping_criterion::params_description get_params_description();
+  nvbench::stopping_criterion::params_description get_params_description() const;
 };
 
 /**

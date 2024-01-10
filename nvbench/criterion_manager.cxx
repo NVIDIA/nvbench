@@ -62,7 +62,7 @@ stopping_criterion &criterion_manager::add(std::unique_ptr<stopping_criterion> c
   return *it->second.get();
 }
 
-nvbench::stopping_criterion::params_description criterion_manager::get_params_description()
+nvbench::stopping_criterion::params_description criterion_manager::get_params_description() const
 {
   nvbench::stopping_criterion::params_description desc;
 
