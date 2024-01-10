@@ -40,7 +40,9 @@ class entropy_criterion final : public stopping_criterion
 
   // TODO The window size should be user-configurable
   nvbench::detail::ring_buffer<nvbench::float64_t> m_entropy_tracker{299};
-  std::vector<nvbench::float64_t> m_ps;
+
+  // Used to avoid re-allocating temporary memory
+  std::vector<nvbench::float64_t> m_probabilities; 
 
   nvbench::float64_t compute_entropy();
 

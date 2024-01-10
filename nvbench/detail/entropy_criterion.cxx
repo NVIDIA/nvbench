@@ -29,7 +29,7 @@ entropy_criterion::entropy_criterion()
   : stopping_criterion{"entropy"}
 {
   m_freq_tracker.reserve(m_entropy_tracker.capacity() * 2);
-  m_ps.reserve(m_entropy_tracker.capacity() * 2);
+  m_probabilities.reserve(m_entropy_tracker.capacity() * 2);
 }
 
 void entropy_criterion::initialize(const criterion_params &params)
@@ -59,15 +59,15 @@ nvbench::float64_t entropy_criterion::compute_entropy()
     return 0.0;
   }
 
-  m_ps.resize(n);
+  m_probabilities.resize(n);
   for (std::size_t i = 0; i < n; i++)
   {
-    m_ps[i] = static_cast<nvbench::float64_t>(m_freq_tracker[i].second) /
-              static_cast<nvbench::float64_t>(m_total_samples);
+    m_probabilities[i] = static_cast<nvbench::float64_t>(m_freq_tracker[i].second) /
+                         static_cast<nvbench::float64_t>(m_total_samples);
   }
 
   nvbench::float64_t entropy{};
-  for (nvbench::float64_t p : m_ps)
+  for (nvbench::float64_t p : m_probabilities)
   {
     entropy -= p * std::log2(p);
   }
