@@ -29,10 +29,6 @@ namespace nvbench::detail
 
 class stdrel_criterion final : public stopping_criterion
 {
-  // parameters
-  nvbench::float64_t m_min_time{nvbench::detail::compat_min_time()};
-  nvbench::float64_t m_max_noise{nvbench::detail::compat_max_noise()}; 
-
   // state
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
@@ -42,10 +38,11 @@ class stdrel_criterion final : public stopping_criterion
 public:
   stdrel_criterion();
 
-  virtual void initialize(const criterion_params &params) override;
   virtual void add_measurement(nvbench::float64_t measurement) override;
   virtual bool is_finished() override;
-  virtual const params_description &get_params_description() const override;
+
+protected:
+  virtual void do_initialize() override;
 };
 
 } // namespace nvbench::detail

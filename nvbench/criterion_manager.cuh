@@ -49,7 +49,8 @@ public:
   nvbench::stopping_criterion& get_criterion(const std::string& name);
   const nvbench::stopping_criterion& get_criterion(const std::string& name) const;
 
-  nvbench::stopping_criterion::params_description get_params_description() const;
+  using params_description = std::vector<std::pair<std::string, nvbench::named_values::type>>;
+  params_description get_params_description() const;
 };
 
 /**

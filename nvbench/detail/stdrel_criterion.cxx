@@ -22,26 +22,17 @@ namespace nvbench::detail
 {
 
 stdrel_criterion::stdrel_criterion()
-    : stopping_criterion{"stdrel"}
+    : stopping_criterion{"stdrel",
+                         {{"max-noise", nvbench::detail::compat_max_noise()},
+                          {"min-time", nvbench::detail::compat_min_time()}}}
 {}
 
-void stdrel_criterion::initialize(const criterion_params &params)
+void stdrel_criterion::do_initialize()
 {
-  m_params = params;
   m_total_samples = 0;
   m_total_cuda_time = 0.0;
   m_cuda_times.clear();
   m_noise_tracker.clear();
-
-  if (m_params.has_value("max-noise"))
-  {
-    m_max_noise = m_params.get_float64("max-noise");
-  }
-
-  if (m_params.has_value("min-time"))
-  {
-    m_min_time = m_params.get_float64("min-time");
-  }
 }
 
 void stdrel_criterion::add_measurement(nvbench::float64_t measurement)
@@ -64,13 +55,13 @@ void stdrel_criterion::add_measurement(nvbench::float64_t measurement)
 
 bool stdrel_criterion::is_finished()
 {
-  if (m_total_cuda_time <= m_min_time) 
+  if (m_total_cuda_time <= m_params.get_float64("min-time"))
   {
     return false;
   }
 
   // Noise has dropped below threshold
-  if (m_noise_tracker.back() < m_max_noise)
+  if (m_noise_tracker.back() < m_params.get_float64("max-noise"))
   {
     return true;
   }
@@ -102,15 +93,6 @@ bool stdrel_criterion::is_finished()
   }
 
   return false;
-}
-
-const stdrel_criterion::params_description &stdrel_criterion::get_params_description() const
-{
-  static const params_description desc{
-    {"max-noise", nvbench::named_values::type::float64},
-    {"min-time", nvbench::named_values::type::float64},
-  };
-  return desc;
 }
 
 } // namespace nvbench::detail

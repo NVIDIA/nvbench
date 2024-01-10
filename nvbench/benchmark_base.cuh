@@ -184,7 +184,10 @@ struct benchmark_base
 
   /// Accumulate at least this many seconds of timing data per measurement.
   /// Only applies to `stdrel` stopping criterion. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_criterion_params.get_float64("min-time"); }
+  [[nodiscard]] nvbench::float64_t get_min_time() const
+  {
+    return m_criterion_params.get_float64("min-time");
+  }
   benchmark_base &set_min_time(nvbench::float64_t min_time)
   {
     m_criterion_params.set_float64("min-time", min_time);
@@ -196,7 +199,10 @@ struct benchmark_base
   /// Noise is the relative standard deviation:
   /// `noise = stdev / mean_time`. 
   /// Only applies to `stdrel` stopping criterion. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_criterion_params.get_float64("max-noise"); }
+  [[nodiscard]] nvbench::float64_t get_max_noise() const
+  {
+    return m_criterion_params.get_float64("max-noise");
+  }
   benchmark_base &set_max_noise(nvbench::float64_t max_noise)
   {
     m_criterion_params.set_float64("max-noise", max_noise);

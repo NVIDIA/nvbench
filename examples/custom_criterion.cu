@@ -27,19 +27,12 @@
 // Inherit from the stopping_criterion class:
 class fixed_criterion final : public nvbench::stopping_criterion 
 {
-  nvbench::int64_t m_max_samples{};
   nvbench::int64_t m_num_samples{};
 
 public:
-  fixed_criterion() : nvbench::stopping_criterion{"fixed"} {}
-
-  // Setup the criterion in the `initialize()` method:
-  virtual void initialize(const nvbench::criterion_params &params) override 
-  {
-    m_params = params;
-    m_num_samples = 0;
-    m_max_samples = m_params.has_value("max-samples") ? m_params.get_int64("max-samples") : 42;
-  }
+  fixed_criterion()
+      : nvbench::stopping_criterion{"fixed", {{"max-samples", nvbench::int64_t{42}}}}
+  {}
 
   // Process new measurements in the `add_measurement()` method:
   virtual void add_measurement(nvbench::float64_t /* measurement */) override
@@ -50,16 +43,14 @@ public:
   // Check if the stopping criterion is met in the `is_finished()` method:
   virtual bool is_finished() override
   {
-    return m_num_samples >= m_max_samples;
+    return m_num_samples >= m_params.get_int64("max-samples");
   }
 
-  // Describe criterion parameters in the `get_params_description()` method:
-  virtual const params_description &get_params_description() const override
+protected:
+  // Setup the criterion in the `do_initialize()` method:
+  virtual void do_initialize() override 
   {
-    static const params_description desc{
-      {"max-samples", nvbench::named_values::type::int64}
-    };
-    return desc;
+    m_num_samples = 0;
   }
 };
 

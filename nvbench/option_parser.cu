@@ -377,7 +377,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
   };
 
-  const nvbench::stopping_criterion::params_description criterion_params =
+  const nvbench::criterion_manager::params_description criterion_params =
     nvbench::criterion_manager::get().get_params_description();
 
   while (first < last)

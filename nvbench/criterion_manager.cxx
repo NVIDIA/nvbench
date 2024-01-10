@@ -69,25 +69,28 @@ stopping_criterion &criterion_manager::add(std::unique_ptr<stopping_criterion> c
   return *it->second.get();
 }
 
-nvbench::stopping_criterion::params_description criterion_manager::get_params_description() const
+nvbench::criterion_manager::params_description criterion_manager::get_params_description() const
 {
-  nvbench::stopping_criterion::params_description desc;
+  nvbench::criterion_manager::params_description desc;
 
   for (auto &[criterion_name, criterion] : m_map)
   {
-    for (auto param : criterion->get_params_description())
+    nvbench::criterion_params params = criterion->get_params();
+
+    for (auto param : params.get_names())
     {
+      nvbench::named_values::type type = params.get_type(param);
       if (std::find_if(desc.begin(), desc.end(), [&](auto d) {
-            return d.first == param.first && d.second != param.second;
+            return d.first == param && d.second != type;
           }) != desc.end())
       {
         NVBENCH_THROW(std::runtime_error,
                       "Stopping criterion \"{}\" parameter \"{}\" is already used by another "
                       "criterion with a different type.",
                       criterion_name,
-                      param.first);
+                      param);
       }
-      desc.push_back(param);
+      desc.emplace_back(param, type);
     }
   }
 

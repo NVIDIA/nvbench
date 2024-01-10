@@ -30,16 +30,15 @@ void test_standard_criteria_exist()
 class custom_criterion : public nvbench::stopping_criterion
 {
 public:
-  custom_criterion() : nvbench::stopping_criterion("custom") {}
+  custom_criterion()
+      : nvbench::stopping_criterion("custom", nvbench::criterion_params{})
+  {}
 
-  virtual void initialize(const nvbench::criterion_params &) override {}
   virtual void add_measurement(nvbench::float64_t /* measurement */) override {}
   virtual bool is_finished() override { return true; }
-  virtual const params_description &get_params_description() const override
-  {
-    static const params_description desc{};
-    return desc;
-  }
+
+protected:
+  virtual void do_initialize() override {}
 };
 
 void test_no_duplicates_are_allowed()

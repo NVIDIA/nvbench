@@ -29,10 +29,6 @@ namespace nvbench::detail
 
 class entropy_criterion final : public stopping_criterion
 {
-  // parameters
-  nvbench::float64_t m_max_angle{0.048};
-  nvbench::float64_t m_min_r2{0.36};
-
   // state
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
@@ -49,10 +45,11 @@ class entropy_criterion final : public stopping_criterion
 public:
   entropy_criterion();
 
-  virtual void initialize(const criterion_params &params) override;
   virtual void add_measurement(nvbench::float64_t measurement) override;
   virtual bool is_finished() override;
-  virtual const params_description &get_params_description() const override;
+  
+protected:
+  virtual void do_initialize() override;
 };
 
 } // namespace nvbench::detail

@@ -26,29 +26,19 @@ namespace nvbench::detail
 {
 
 entropy_criterion::entropy_criterion()
-  : stopping_criterion{"entropy"}
+    : stopping_criterion{"entropy",
+                         {{"max-angle", 0.048}, {"min-r2", 0.36}}}
 {
   m_freq_tracker.reserve(m_entropy_tracker.capacity() * 2);
   m_probabilities.reserve(m_entropy_tracker.capacity() * 2);
 }
 
-void entropy_criterion::initialize(const criterion_params &params)
+void entropy_criterion::do_initialize()
 {
-  m_params = params;
-  m_total_samples = 0;
+  m_total_samples   = 0;
   m_total_cuda_time = 0.0;
   m_entropy_tracker.clear();
   m_freq_tracker.clear();
-
-  if (m_params.has_value("max-angle"))
-  {
-    m_max_angle = m_params.get_float64("max-angle");
-  }
-
-  if (m_params.has_value("min-r2"))
-  {
-    m_min_r2 = m_params.get_float64("min-r2");
-  }
 }
 
 nvbench::float64_t entropy_criterion::compute_entropy() 
@@ -131,27 +121,18 @@ bool entropy_criterion::is_finished()
 
   const auto [slope, intercept] = statistics::compute_linear_regression(begin, end, mean);
 
-  if (statistics::slope2deg(slope) > m_max_angle) 
+  if (statistics::slope2deg(slope) > m_params.get_float64("max-angle")) 
   {
     return false;
   }
 
   const auto r2 = statistics::compute_r2(begin, end, mean, slope, intercept);
-  if (r2 < m_min_r2)
+  if (r2 < m_params.get_float64("min-r2"))
   {
     return false;
   }
 
   return true;
-}
-
-const entropy_criterion::params_description &entropy_criterion::get_params_description() const
-{
-  static const params_description desc{
-    {"max-angle", nvbench::named_values::type::float64},
-    {"min-r2", nvbench::named_values::type::float64},
-  };
-  return desc;
 }
 
 } // namespace nvbench::detail
