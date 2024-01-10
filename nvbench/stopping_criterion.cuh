@@ -62,7 +62,7 @@ protected:
   criterion_params m_params;
 
 public:
-  stopping_criterion(std::string name) : m_name(std::move(name)) { }
+  explicit stopping_criterion(std::string name) : m_name(std::move(name)) { }
 
   [[nodiscard]] const std::string &get_name() const { return m_name; }
 
