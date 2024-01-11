@@ -27,7 +27,7 @@
 namespace nvbench::detail
 {
 
-class stdrel_criterion final : public stopping_criterion
+class stdrel_criterion final : public stopping_criterion_base
 {
   // state
   nvbench::int64_t m_total_samples{};

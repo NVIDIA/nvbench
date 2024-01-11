@@ -34,7 +34,7 @@ criterion_manager &criterion_manager::get()
   return registry;
 }
 
-stopping_criterion& criterion_manager::get_criterion(const std::string& name)
+stopping_criterion_base& criterion_manager::get_criterion(const std::string& name)
 {
   auto iter = m_map.find(name);
   if (iter == m_map.end())
@@ -44,7 +44,7 @@ stopping_criterion& criterion_manager::get_criterion(const std::string& name)
   return *iter->second.get();
 }
 
-const nvbench::stopping_criterion& criterion_manager::get_criterion(const std::string& name) const
+const nvbench::stopping_criterion_base& criterion_manager::get_criterion(const std::string& name) const
 {
   auto iter = m_map.find(name);
   if (iter == m_map.end())
@@ -54,7 +54,7 @@ const nvbench::stopping_criterion& criterion_manager::get_criterion(const std::s
   return *iter->second.get();
 }
 
-stopping_criterion &criterion_manager::add(std::unique_ptr<stopping_criterion> criterion)
+stopping_criterion_base &criterion_manager::add(std::unique_ptr<stopping_criterion_base> criterion)
 {
   const std::string name = criterion->get_name();
 

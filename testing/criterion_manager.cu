@@ -27,11 +27,11 @@ void test_standard_criteria_exist()
   ASSERT(nvbench::criterion_manager::get().get_criterion("entropy").get_name() == "entropy");
 }
 
-class custom_criterion : public nvbench::stopping_criterion
+class custom_criterion : public nvbench::stopping_criterion_base
 {
 public:
   custom_criterion()
-      : nvbench::stopping_criterion("custom", nvbench::criterion_params{})
+      : nvbench::stopping_criterion_base("custom", nvbench::criterion_params{})
   {}
 
   virtual void add_measurement(nvbench::float64_t /* measurement */) override {}
@@ -47,7 +47,7 @@ void test_no_duplicates_are_allowed()
   bool exception_triggered = false;
 
   try {
-    nvbench::stopping_criterion& custom = manager.get_criterion("custom");
+    nvbench::stopping_criterion_base& custom = manager.get_criterion("custom");
   } catch(...) {
     exception_triggered = true;
   }
@@ -57,7 +57,7 @@ void test_no_duplicates_are_allowed()
   custom_criterion* custom_raw = custom_ptr.get();
   ASSERT(&manager.add(std::move(custom_ptr)) == custom_raw);
 
-  nvbench::stopping_criterion& custom = nvbench::criterion_manager::get().get_criterion("custom");
+  nvbench::stopping_criterion_base& custom = nvbench::criterion_manager::get().get_criterion("custom");
   ASSERT(custom_raw == &custom);
 
   exception_triggered = false;

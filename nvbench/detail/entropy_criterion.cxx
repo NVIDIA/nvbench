@@ -26,8 +26,7 @@ namespace nvbench::detail
 {
 
 entropy_criterion::entropy_criterion()
-    : stopping_criterion{"entropy",
-                         {{"max-angle", 0.048}, {"min-r2", 0.36}}}
+    : stopping_criterion_base{"entropy", {{"max-angle", 0.048}, {"min-r2", 0.36}}}
 {
   m_freq_tracker.reserve(m_entropy_tracker.capacity() * 2);
   m_probabilities.reserve(m_entropy_tracker.capacity() * 2);

@@ -32,7 +32,7 @@ namespace nvbench
 
 class criterion_manager
 {
-  std::unordered_map<std::string, std::unique_ptr<nvbench::stopping_criterion>> m_map;
+  std::unordered_map<std::string, std::unique_ptr<nvbench::stopping_criterion_base>> m_map;
 
   criterion_manager();
 
@@ -45,9 +45,9 @@ public:
   /**
    * Register a new stopping criterion.
    */
-  nvbench::stopping_criterion& add(std::unique_ptr<nvbench::stopping_criterion> criterion);
-  nvbench::stopping_criterion& get_criterion(const std::string& name);
-  const nvbench::stopping_criterion& get_criterion(const std::string& name) const;
+  nvbench::stopping_criterion_base& add(std::unique_ptr<nvbench::stopping_criterion_base> criterion);
+  nvbench::stopping_criterion_base& get_criterion(const std::string& name);
+  const nvbench::stopping_criterion_base& get_criterion(const std::string& name) const;
 
   using params_description = std::vector<std::pair<std::string, nvbench::named_values::type>>;
   params_description get_params_description() const;
@@ -58,8 +58,8 @@ public:
  *
  * See the `custom_criterion.cu` example for usage.
  */
-#define NVBENCH_REGISTER_CRITERION(TYPE) \
-  static nvbench::stopping_criterion& NVBENCH_UNIQUE_IDENTIFIER(TYPE) = \
-    nvbench::criterion_manager::get().add(std::make_unique<TYPE>()) \
+#define NVBENCH_REGISTER_CRITERION(TYPE)                                                           \
+  static nvbench::stopping_criterion_base &NVBENCH_UNIQUE_IDENTIFIER(TYPE) =                       \
+    nvbench::criterion_manager::get().add(std::make_unique<TYPE>())
 
 } // namespace nvbench

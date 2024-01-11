@@ -87,7 +87,7 @@ protected:
   nvbench::blocking_kernel m_blocker;
 
   nvbench::criterion_params m_criterion_params;
-  nvbench::stopping_criterion& m_stopping_criterion;
+  nvbench::stopping_criterion_base& m_stopping_criterion;
 
   bool m_run_once{false};
   bool m_no_block{false};

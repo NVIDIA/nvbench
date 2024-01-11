@@ -70,7 +70,7 @@ public:
 /**
  * Stopping criterion interface
  */
-class stopping_criterion
+class stopping_criterion_base
 {
 protected:
   std::string m_name;
@@ -81,7 +81,7 @@ public:
    * @param name Unique name of the criterion
    * @param params Default values for all parameters of the criterion
    */
-  explicit stopping_criterion(std::string name, criterion_params params)
+  explicit stopping_criterion_base(std::string name, criterion_params params)
       : m_name{std::move(name)}
       , m_params{params}
   {}

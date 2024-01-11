@@ -24,14 +24,14 @@
 // Thrust vectors simplify memory management:
 #include <thrust/device_vector.h>
 
-// Inherit from the stopping_criterion class:
-class fixed_criterion final : public nvbench::stopping_criterion 
+// Inherit from the stopping_criterion_base class:
+class fixed_criterion final : public nvbench::stopping_criterion_base
 {
   nvbench::int64_t m_num_samples{};
 
 public:
   fixed_criterion()
-      : nvbench::stopping_criterion{"fixed", {{"max-samples", nvbench::int64_t{42}}}}
+      : nvbench::stopping_criterion_base{"fixed", {{"max-samples", nvbench::int64_t{42}}}}
   {}
 
   // Process new measurements in the `add_measurement()` method:

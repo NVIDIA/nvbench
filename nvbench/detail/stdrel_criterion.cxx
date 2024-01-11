@@ -22,9 +22,9 @@ namespace nvbench::detail
 {
 
 stdrel_criterion::stdrel_criterion()
-    : stopping_criterion{"stdrel",
-                         {{"max-noise", nvbench::detail::compat_max_noise()},
-                          {"min-time", nvbench::detail::compat_min_time()}}}
+    : stopping_criterion_base{"stdrel",
+                              {{"max-noise", nvbench::detail::compat_max_noise()},
+                               {"min-time", nvbench::detail::compat_min_time()}}}
 {}
 
 void stdrel_criterion::do_initialize()
