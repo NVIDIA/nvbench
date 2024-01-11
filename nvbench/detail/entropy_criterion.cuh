@@ -45,11 +45,11 @@ class entropy_criterion final : public stopping_criterion_base
 public:
   entropy_criterion();
 
-  virtual void add_measurement(nvbench::float64_t measurement) override;
-  virtual bool is_finished() override;
-  
 protected:
   virtual void do_initialize() override;
+  virtual void do_add_measurement(nvbench::float64_t measurement) override;
+  virtual bool do_is_finished() override;
+  
 };
 
 } // namespace nvbench::detail

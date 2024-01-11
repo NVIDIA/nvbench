@@ -97,24 +97,40 @@ public:
   void initialize(const criterion_params &params) 
   {
     m_params.set_from(params);
-    do_initialize();
+    this->do_initialize();
   }
 
   /**
    * Add the latest measurement to the criterion
    */
-  virtual void add_measurement(nvbench::float64_t measurement) = 0;
+  void add_measurement(nvbench::float64_t measurement)
+  {
+    this->do_add_measurement(measurement);
+  }
 
   /**
    * Check if the criterion has been met for all measurements processed by `add_measurement`
    */
-  virtual bool is_finished() = 0;
+  bool is_finished()
+  {
+    return this->do_is_finished();
+  }
 
 protected:
   /**
    * Initialize the criterion after updaring the parameters
    */
   virtual void do_initialize() = 0;
+
+  /**
+   * Add the latest measurement to the criterion
+   */
+  virtual void do_add_measurement(nvbench::float64_t measurement) = 0;
+
+  /**
+   * Check if the criterion has been met for all measurements processed by `add_measurement`
+   */
+  virtual bool do_is_finished() = 0;
 };
 
 } // namespace nvbench

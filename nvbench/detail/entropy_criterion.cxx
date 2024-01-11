@@ -64,7 +64,7 @@ nvbench::float64_t entropy_criterion::compute_entropy()
   return entropy;
 }
 
-void entropy_criterion::add_measurement(nvbench::float64_t measurement)
+void entropy_criterion::do_add_measurement(nvbench::float64_t measurement)
 {
   m_total_samples++;
   m_total_cuda_time += measurement;
@@ -100,7 +100,7 @@ void entropy_criterion::add_measurement(nvbench::float64_t measurement)
   m_entropy_tracker.push_back(compute_entropy());
 }
 
-bool entropy_criterion::is_finished()
+bool entropy_criterion::do_is_finished()
 {
   if (m_entropy_tracker.size() < 2)
   {

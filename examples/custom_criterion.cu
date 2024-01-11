@@ -34,24 +34,25 @@ public:
       : nvbench::stopping_criterion_base{"fixed", {{"max-samples", nvbench::int64_t{42}}}}
   {}
 
-  // Process new measurements in the `add_measurement()` method:
-  virtual void add_measurement(nvbench::float64_t /* measurement */) override
-  {
-    m_num_samples++;
-  }
-
-  // Check if the stopping criterion is met in the `is_finished()` method:
-  virtual bool is_finished() override
-  {
-    return m_num_samples >= m_params.get_int64("max-samples");
-  }
-
 protected:
   // Setup the criterion in the `do_initialize()` method:
   virtual void do_initialize() override 
   {
     m_num_samples = 0;
   }
+
+  // Process new measurements in the `add_measurement()` method:
+  virtual void do_add_measurement(nvbench::float64_t /* measurement */) override
+  {
+    m_num_samples++;
+  }
+
+  // Check if the stopping criterion is met in the `is_finished()` method:
+  virtual bool do_is_finished() override
+  {
+    return m_num_samples >= m_params.get_int64("max-samples");
+  }
+
 };
 
 // Register the criterion with NVBench:

@@ -35,7 +35,7 @@ void stdrel_criterion::do_initialize()
   m_noise_tracker.clear();
 }
 
-void stdrel_criterion::add_measurement(nvbench::float64_t measurement)
+void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
 {
   m_total_samples++;
   m_total_cuda_time += measurement;
@@ -53,7 +53,7 @@ void stdrel_criterion::add_measurement(nvbench::float64_t measurement)
   }
 }
 
-bool stdrel_criterion::is_finished()
+bool stdrel_criterion::do_is_finished()
 {
   if (m_total_cuda_time <= m_params.get_float64("min-time"))
   {
