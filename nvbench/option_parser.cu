@@ -522,7 +522,12 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
     else
     { // Try criterion params
-      std::string_view name(first[0].c_str() + 2, first[0].size() - 2);
+      if (arg.size() < 3 || arg[0] != '-' || arg[1] != '-')
+      {
+        NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+      }
+
+      std::string_view name(arg.c_str() + 2, arg.size() - 2);
       auto it = std::find_if(criterion_params.begin(),
                              criterion_params.end(),
                              [&name](const auto &param) { return param.first == name; });
