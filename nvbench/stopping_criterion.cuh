@@ -83,7 +83,7 @@ public:
    */
   explicit stopping_criterion_base(std::string name, criterion_params params)
       : m_name{std::move(name)}
-      , m_params{params}
+      , m_params{std::move(params)}
   {}
 
   [[nodiscard]] const std::string &get_name() const { return m_name; }
