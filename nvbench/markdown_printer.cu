@@ -405,17 +405,17 @@ std::string markdown_printer::do_format_item_rate(const summary &data)
 std::string markdown_printer::do_format_bytes(const summary &data)
 {
   const auto bytes = static_cast<nvbench::float64_t>(data.get_int64("value"));
-  if (bytes >= 1024. * 1024. * 1024.) // 1 GiB
+  if (bytes >= 1e9)
   {
-    return fmt::format("{:0.3f} GiB", bytes / (1024. * 1024. * 1024.));
+    return fmt::format("{:0.3f} GB", bytes * 1e-9);
   }
-  else if (bytes >= 1024. * 1024.) // 1 MiB
+  else if (bytes >= 1e6)
   {
-    return fmt::format("{:0.3f} MiB", bytes / (1024. * 1024.));
+    return fmt::format("{:0.3f} MB", bytes * 1e-6);
   }
-  else if (bytes >= 1024) // 1 KiB.
+  else if (bytes >= 1e3)
   {
-    return fmt::format("{:0.3f} KiB", bytes / 1024.);
+    return fmt::format("{:0.3f} KB", bytes * 1e-3);
   }
   else
   {
