@@ -89,8 +89,15 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--stopping-criterion <criterion>`
+  * After `--min-samples` is satisfied, use `<criterion>` to detect if enough 
+    samples were collected.
+  * Only applies to Cold measurements.
+  * Default is stdrel (`--stopping-criterion stdrel`)
+
 * `--min-time <seconds>`
   * Accumulate at least `<seconds>` of execution time per measurement.
+  * Only applies to `stdrel` stopping criterion.
   * Default is 0.5 seconds.
   * If both GPU and CPU times are gathered, this applies to GPU time only.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
@@ -100,6 +107,7 @@
   * Gather samples until the error in the measurement drops below `<value>`.
   * Noise is specified as the percent relative standard deviation.
   * Default is 0.5% (`--max-noise 0.5`)
+  * Only applies to `stdrel` stopping criterion.
   * Only applies to Cold measurements.
   * If both GPU and CPU times are gathered, this applies to GPU noise only.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified

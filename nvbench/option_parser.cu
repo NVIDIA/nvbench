@@ -21,6 +21,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_printer.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
@@ -376,6 +377,9 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
   };
 
+  const nvbench::criterion_manager::params_description criterion_params =
+    nvbench::criterion_manager::get().get_params_description();
+
   while (first < last)
   {
     const auto &arg = *first;
@@ -432,6 +436,12 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     {
       this->enable_run_once();
       first += 1;
+    }
+    else if (arg == "--stopping-criterion")
+    {
+      check_params(1);
+      this->set_stopping_criterion(first[1]);
+      first += 2;
     }
     else if (arg == "--disable-blocking-kernel")
     {
@@ -504,16 +514,34 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--min-time" || arg == "--max-noise" || arg == "--skip-time" ||
-             arg == "--timeout")
+    else if (arg == "--skip-time" || arg == "--timeout")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
       first += 2;
     }
     else
-    {
-      NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+    { // Try criterion params
+      if (arg.size() < 3 || arg[0] != '-' || arg[1] != '-')
+      {
+        NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+      }
+
+      std::string_view name(arg.c_str() + 2, arg.size() - 2);
+      auto it = std::find_if(criterion_params.begin(),
+                             criterion_params.end(),
+                             [&name](const auto &param) { return param.first == name; });
+
+      if (it != criterion_params.end())
+      {
+        check_params(1);
+        this->update_criterion_prop(first[0], first[1], it->second);
+        first += 2;
+      }
+      else
+      {
+        NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+      }
     }
   }
 }
@@ -696,6 +724,20 @@ void option_parser::enable_run_once()
 
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_run_once(true);
+}
+
+void option_parser::set_stopping_criterion(const std::string &criterion)
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--stopping-criterion");
+    m_global_benchmark_args.push_back(criterion);
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_stopping_criterion(criterion);
 }
 
 void option_parser::disable_blocking_kernel()
@@ -933,6 +975,58 @@ catch (std::exception &e)
                 e.what());
 }
 
+void option_parser::update_criterion_prop(
+  const std::string &prop_arg,
+  const std::string &prop_val,
+  const nvbench::named_values::type type)
+try 
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back(prop_arg);
+    m_global_benchmark_args.push_back(prop_val);
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  nvbench::criterion_params& criterion_params = bench.get_criterion_params();
+  std::string name(prop_arg.begin() + 2, prop_arg.end());
+  if (type == nvbench::named_values::type::float64) 
+  {
+    nvbench::float64_t value{};
+    ::parse(prop_val, value);
+
+    if (prop_arg == "--max-noise")
+    { // Specified as percentage, stored as ratio:
+      value /= 100.0;
+    }
+    criterion_params.set_float64(name, value);
+  }
+  else if (type == nvbench::named_values::type::int64) 
+  {
+    nvbench::int64_t value{};
+    ::parse(prop_val, value);
+    criterion_params.set_int64(name, value);
+  }
+  else if (type == nvbench::named_values::type::string) 
+  {
+    criterion_params.set_string(name, prop_val);
+  }
+  else 
+  {
+    NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
+  }
+}
+catch (std::exception& e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `{} {}`:\n{}",
+                prop_arg,
+                prop_val,
+                e.what());
+}
+
 void option_parser::update_float64_prop(const std::string &prop_arg, const std::string &prop_val)
 try
 {
@@ -948,15 +1042,7 @@ try
 
   nvbench::float64_t value{};
   ::parse(prop_val, value);
-  if (prop_arg == "--min-time")
-  {
-    bench.set_min_time(value);
-  }
-  else if (prop_arg == "--max-noise")
-  { // Specified as percentage, stored as ratio:
-    bench.set_max_noise(value / 100.);
-  }
-  else if (prop_arg == "--skip-time")
+  if (prop_arg == "--skip-time")
   {
     bench.set_skip_time(value);
   }

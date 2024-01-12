@@ -20,6 +20,7 @@
 
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_multiplex.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <iosfwd>
 #include <memory>
@@ -86,6 +87,7 @@ private:
   void set_persistence_mode(const std::string &state);
   void lock_gpu_clocks(const std::string &rate);
 
+  void set_stopping_criterion(const std::string &criterion);
   void enable_run_once();
   void disable_blocking_kernel();
 
@@ -110,6 +112,10 @@ private:
 
   void update_int64_prop(const std::string &prop_arg, const std::string &prop_val);
   void update_float64_prop(const std::string &prop_arg, const std::string &prop_val);
+
+  void update_criterion_prop(const std::string &prop_arg,
+                             const std::string &prop_val,
+                             const nvbench::named_values::type type);
 
   void update_used_device_state() const;
 
