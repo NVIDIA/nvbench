@@ -432,3 +432,30 @@ immensely with keeping compile / run times manageable.
 
 Splitting a single large configuration space into multiple, more focused
 benchmarks with reduced dimensionality will likely be worth the effort as well.
+
+# Global Setup and Tear Down
+
+An optional class or struct may be specified for custom global setup or tear down
+logic. The class is instantiated before calling the first benchmark and destroyed
+after all benchmarks are complete. Specify the name of the class
+using `#define NVBENCH_ENVIRONMENT`.
+
+```cpp
+struct my_env {
+  my_env(int, char const* const*) {
+    printf("setup\n");
+  }
+  ~my_env() {
+    printf("tear down\n");
+  }
+};
+#define NVBENCH_ENVIRONMENT my_env
+```
+
+The `NVBENCH_ENVIRONMENT` must be defined before including `nvbench.cuh`.
+
+The `(int, char const* const*)` parameters are the `argc, argv` variables passed through
+from the command line invocation.
+
+Note this feature is only usable if you call `NVBENCH_MAIN` directly and not
+when using the `nvbench::main` target.
