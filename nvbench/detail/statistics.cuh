@@ -26,8 +26,13 @@
 #include <iterator>
 #include <limits>
 #include <numeric>
+#include <cmath>
 
 #include <type_traits>
+
+#ifndef M_PI
+  #define M_PI 3.14159265358979323846
+#endif
 
 namespace nvbench::detail::statistics
 {

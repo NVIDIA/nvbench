@@ -30,15 +30,17 @@ foreach(example_src IN LISTS example_srcs)
 endforeach()
 
 # Silence some warnings from old thrust headers:
-set(thrust_examples
+set(nvbench_examples
   auto_throughput
   axes
+  custom_criterion
   exec_tag_sync
   exec_tag_timer
   skip
+  stream
   throughput
 )
-foreach (example IN LISTS thrust_examples)
+foreach (example IN LISTS nvbench_examples)
   if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # C4324: structure was padded due to alignment specifier
     nvbench_add_cxx_flag(nvbench.example.${example} PRIVATE "/wd4324")
