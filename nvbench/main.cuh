@@ -25,7 +25,15 @@
 #include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 
+#include <cstdlib>
 #include <iostream>
+
+static int _nvbench_env [[maybe_unused]] = []() -> int
+{
+  // See NVIDIA/NVBench#136
+  int retval = setenv("CUDA_MODULE_LOADING", "EAGER", 1);
+  return retval;
+}();
 
 #define NVBENCH_MAIN                                                                               \
   int main(int argc, char const *const *argv)                                                      \
