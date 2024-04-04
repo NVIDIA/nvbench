@@ -1,5 +1,8 @@
 build*/
+.aws
+.vscode
 .cache
+.config
 .idea
 cmake-build-*
 *~
