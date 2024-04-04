@@ -31,7 +31,11 @@
 static int _nvbench_env [[maybe_unused]] = []() -> int
 {
   // See NVIDIA/NVBench#136
+#ifdef _MSC_VER
+  int retval = _putenv_s("CUDA_MODULE_LOADING", "EAGER");
+#else
   int retval = setenv("CUDA_MODULE_LOADING", "EAGER", 1);
+#endif
   return retval;
 }();
 
