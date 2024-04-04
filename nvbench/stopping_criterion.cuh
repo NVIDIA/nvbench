@@ -86,6 +86,8 @@ public:
       , m_params{std::move(params)}
   {}
 
+  virtual ~stopping_criterion_base() = default;
+
   [[nodiscard]] const std::string &get_name() const { return m_name; }
   [[nodiscard]] const criterion_params &get_params() const { return m_params; }
 
