@@ -43,10 +43,14 @@
 #include <utility>
 #include <vector>
 
-#if defined __GNUC__ && !defined __clang__
-#include <experimental/filesystem>
-#else
+#if __has_include(<filesystem>)
 #include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+static_assert(false, "No <filesystem> or <experimental/filesystem> found.");
 #endif
 
 #if NVBENCH_CPP_DIALECT >= 2020
@@ -140,12 +144,6 @@ void json_printer::do_process_bulk_data_float64(state &state,
 
   if (hint == "sample_times")
   {
-#if defined __GNUC__ && !defined __clang__
-    namespace fs = std::experimental::filesystem;
-#else
-    namespace fs = std::filesystem;
-#endif
-
     nvbench::cpu_timer timer;
     timer.start();
 
