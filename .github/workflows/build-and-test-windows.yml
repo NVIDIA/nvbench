@@ -10,7 +10,7 @@ on:
 
 jobs:
   prepare:
-    name: Build/Test ${{inputs.test_name}}
+    name: Build Only ${{inputs.test_name}}
     runs-on: windows-amd64-cpu16
     permissions:
       id-token: write
@@ -46,4 +46,4 @@ jobs:
                                                                     cd nvbench;
                                                                     git fetch --all;
                                                                     git checkout ${{github.ref_name}};
-                                                                    ${{inputs.test_script}};"
+                                                                    ${{inputs.build_script}};"
