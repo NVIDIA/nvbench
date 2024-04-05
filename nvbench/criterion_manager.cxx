@@ -19,6 +19,13 @@
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/throw.cuh>
 
+#include <algorithm>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <utility>
+
 namespace nvbench
 {
 
@@ -60,7 +67,7 @@ stopping_criterion_base &criterion_manager::add(std::unique_ptr<stopping_criteri
 
   auto [it, success] = m_map.emplace(name, std::move(criterion));
 
-  if (!success) 
+  if (!success)
   {
     NVBENCH_THROW(std::runtime_error,
                   "Stopping criterion \"{}\" is already registered.", name);
