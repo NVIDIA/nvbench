@@ -91,7 +91,7 @@ NVBENCH_BENCH(runtime_enum_sweep_string)
 // ```
 void runtime_enum_sweep_int64(nvbench::state &state)
 {
-  const auto enum_value = static_cast<MyEnum>(state.get_int64("MyEnum"));
+  [[maybe_unused]] const auto enum_value = static_cast<MyEnum>(state.get_int64("MyEnum"));
 
   // Do stuff with enum_value.
   // Create inputs, etc, configure runtime kernel parameters, etc.

@@ -133,7 +133,7 @@ void copy_type_conversion_sweep(nvbench::state &state,
                                 nvbench::type_list<InputType, OutputType>)
 {
   // Optional: Skip narrowing conversions.
-  if (sizeof(InputType) > sizeof(OutputType))
+  if constexpr(sizeof(InputType) > sizeof(OutputType))
   {
     state.skip("Narrowing conversion: sizeof(InputType) > sizeof(OutputType).");
     return;

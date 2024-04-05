@@ -33,9 +33,11 @@ endforeach()
 set(thrust_examples
   auto_throughput
   axes
+  custom_criterion
   exec_tag_sync
   exec_tag_timer
   skip
+  stream
   throughput
 )
 foreach (example IN LISTS thrust_examples)
