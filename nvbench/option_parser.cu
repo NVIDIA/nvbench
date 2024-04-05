@@ -22,6 +22,7 @@
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_printer.cuh>
 #include <nvbench/criterion_manager.cuh>
+#include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
@@ -781,6 +782,8 @@ catch (std::exception &e)
 
 void option_parser::replay_global_args()
 {
+  // Initialize benchmark with all devices:
+  m_benchmarks.back()->set_devices(nvbench::device_manager::get().get_devices());
   this->parse_range(m_global_benchmark_args.cbegin(), m_global_benchmark_args.cend());
 }
 

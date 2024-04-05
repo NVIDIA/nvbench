@@ -28,17 +28,6 @@
 #include <cstdlib>
 #include <iostream>
 
-static int _nvbench_env [[maybe_unused]] = []() -> int
-{
-  // See NVIDIA/NVBench#136
-#ifdef _MSC_VER
-  int retval = _putenv_s("CUDA_MODULE_LOADING", "EAGER");
-#else
-  int retval = setenv("CUDA_MODULE_LOADING", "EAGER", 1);
-#endif
-  return retval;
-}();
-
 #define NVBENCH_MAIN                                                                               \
   int main(int argc, char const *const *argv)                                                      \
   try                                                                                              \
@@ -70,9 +59,17 @@ static int _nvbench_env [[maybe_unused]] = []() -> int
   nvbench::option_parser parser;                                                                   \
   parser.parse(argc, argv)
 
+// See NVIDIA/NVBench#136 for CUDA_MODULE_LOADING
+#ifdef _MSC_VER
+#define NVBENCH_INITIALIZE_CUDA_ENV _putenv_s("CUDA_MODULE_LOADING", "EAGER")
+#else
+#define NVBENCH_INITIALIZE_CUDA_ENV setenv("CUDA_MODULE_LOADING", "EAGER", 1)
+#endif
+
 #define NVBENCH_MAIN_BODY(argc, argv)                                                              \
   do                                                                                               \
   {                                                                                                \
+    NVBENCH_INITIALIZE_CUDA_ENV;                                                                   \
     NVBENCH_INITIALIZE_DRIVER_API;                                                                 \
     NVBENCH_MAIN_PARSE(argc, argv);                                                                \
     auto &printer = parser.get_printer();                                                          \
