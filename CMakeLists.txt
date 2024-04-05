@@ -41,13 +41,15 @@ option(NVBench_ENABLE_DEVICE_TESTING
 option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
 option(NVBench_ENABLE_INSTALL_RULES "Install NVBench." ${NVBench_TOPLEVEL_PROJECT})
 
+include(cmake/NVBenchUtilities.cmake) # Must be first
+include(cmake/NVBenchClangdCompileInfo.cmake) # Must be before any targets are created
+
 include(cmake/NVBenchConfigTarget.cmake)
 include(cmake/NVBenchDependentDlls.cmake)
 include(cmake/NVBenchExports.cmake)
 include(cmake/NVBenchWriteConfigHeader.cmake)
 include(cmake/NVBenchDependencies.cmake)
 include(cmake/NVBenchInstallRules.cmake)
-include(cmake/NVBenchUtilities.cmake)
 
 message(STATUS "NVBench CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
 

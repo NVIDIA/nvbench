@@ -6,3 +6,5 @@ build*/
 .idea
 cmake-build-*
 *~
+compile_commands.json
+CMakeUserPresets.json
