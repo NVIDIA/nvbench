@@ -159,7 +159,7 @@ Axis: Other
   const std::string test = fmt::to_string(buffer);
   const auto diff =
     std::mismatch(ref.cbegin(), ref.cend(), test.cbegin(), test.cend());
-  const auto idx = diff.second - test.cbegin();
+  const auto idx = static_cast<std::size_t>(diff.second - test.cbegin());
   ASSERT_MSG(test == ref,
              "Differs at character {}.\n"
              "Expected:\n\"{}\"\n\n"

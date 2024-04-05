@@ -36,7 +36,7 @@ public:
 
 protected:
   // Setup the criterion in the `do_initialize()` method:
-  virtual void do_initialize() override 
+  virtual void do_initialize() override
   {
     m_num_samples = 0;
   }
@@ -71,6 +71,7 @@ void throughput_bench(nvbench::state &state)
   state.add_global_memory_writes<nvbench::int32_t>(num_values);
 
   state.exec(nvbench::exec_tag::no_batch, [&input, &output, num_values](nvbench::launch &launch) {
+    (void) num_values; // clang thinks this is unused...
     nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(
       thrust::raw_pointer_cast(input.data()),
       thrust::raw_pointer_cast(output.data()),
