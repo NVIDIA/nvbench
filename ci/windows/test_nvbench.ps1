@@ -8,7 +8,7 @@ Param(
     [Parameter(Mandatory = $false)]
     [Alias("cmake-options")]
     [ValidateNotNullOrEmpty()]
-    [int]$ARG_CMAKE_OPTIONS = ""
+    [string]$ARG_CMAKE_OPTIONS = ""
 )
 
 $CURRENT_PATH = Split-Path $pwd -leaf
