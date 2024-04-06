@@ -782,8 +782,6 @@ catch (std::exception &e)
 
 void option_parser::replay_global_args()
 {
-  // Initialize benchmark with all devices:
-  m_benchmarks.back()->set_devices(nvbench::device_manager::get().get_devices());
   this->parse_range(m_global_benchmark_args.cbegin(), m_global_benchmark_args.cend());
 }
 

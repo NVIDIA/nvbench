@@ -39,6 +39,15 @@ struct benchmark_manager
   [[nodiscard]] static benchmark_manager &get();
 
   /**
+   * Setup any default values for the benchmarks. Invoked from `main`.
+   *
+   * Specifically, any CUDA calls (e.g. cudaGetDeviceProperties, etc) needed to initialize the
+   * benchmarks should be done here to avoid creating a CUDA context before we configure the CUDA
+   * environment in `main`.
+   */
+   void initialize();
+
+  /**
    * Register a new benchmark.
    */
   benchmark_base &add(std::unique_ptr<benchmark_base> bench);
