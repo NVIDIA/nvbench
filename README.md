@@ -26,6 +26,15 @@ features:
     * Executes the benchmark multiple times back-to-back and records total time.
     * Reports the average execution time (total time / number of executions).
 
+# Supported Compilers and Tools
+
+- CMake > 2.23.1
+- CUDA Toolkit + nvcc: 11.1 -> 12.4
+- g++: 7 -> 12
+- clang++: 9 -> 18
+- cl.exe: 2019 -> 2022 (19.29, 29.39)
+- Headers are tested with C++17 -> C++20.
+
 # Getting Started
 
 ## Minimal Benchmark
@@ -34,7 +43,7 @@ A basic kernel benchmark can be created with just a few lines of CUDA C++:
 
 ```cpp
 void my_benchmark(nvbench::state& state) {
-  state.exec([](nvbench::launch& launch) { 
+  state.exec([](nvbench::launch& launch) {
     my_kernel<<<num_blocks, 256, 0, launch.get_stream()>>>();
   });
 }
@@ -72,7 +81,7 @@ mkdir -p build
 cd build
 cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURES=70 .. && make
 ```
-Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on. 
+Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on.
 
 Examples are built by default into `build/bin` and are prefixed with `nvbench.example`.
 
@@ -119,7 +128,7 @@ Pass: Batch: 0.261963ms GPU, 7.18s total GPU, 27394x
 ## Demo Project
 
 To get started using NVBench with your own kernels, consider trying out
-the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo). 
+the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo).
 
 `nvbench_demo` provides a simple CMake project that uses NVBench to build an
 example benchmark. It's a great way to experiment with the library without a lot
@@ -129,7 +138,7 @@ of investment.
 
 Contributions are welcome!
 
-For current issues, see the [issue board](https://github.com/NVIDIA/nvbench/issues). Issues labeled with [![](https://img.shields.io/github/labels/NVIDIA/nvbench/good%20first%20issue)](https://github.com/NVIDIA/nvbench/labels/good%20first%20issue) are good for first time contributors. 
+For current issues, see the [issue board](https://github.com/NVIDIA/nvbench/issues). Issues labeled with [![](https://img.shields.io/github/labels/NVIDIA/nvbench/good%20first%20issue)](https://github.com/NVIDIA/nvbench/labels/good%20first%20issue) are good for first time contributors.
 
 ## Tests
 
@@ -146,7 +155,7 @@ To run all tests:
 ```
 make test
 ```
-or 
+or
 ```
 ctest
 ```
