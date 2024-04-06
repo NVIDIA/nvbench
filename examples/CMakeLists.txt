@@ -26,6 +26,12 @@ foreach(example_src IN LISTS example_srcs)
     COMMAND "$<TARGET_FILE:${example_name}>" --timeout 0.1 --min-time 1e-5
   )
 
+  # These should not deadlock. If they do, it may be that the CUDA context was created before
+  # setting CUDA_MODULE_LOAD=EAGER in main, see NVIDIA/nvbench#136.
+  set_tests_properties(${example_name} PROPERTIES
+    FAIL_REGULAR_EXPRESSION "Possible Deadlock Detected"
+  )
+
   add_dependencies(nvbench.example.all ${example_name})
 endforeach()
 

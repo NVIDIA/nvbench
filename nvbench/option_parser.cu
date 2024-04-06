@@ -22,6 +22,7 @@
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/csv_printer.cuh>
 #include <nvbench/criterion_manager.cuh>
+#include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
