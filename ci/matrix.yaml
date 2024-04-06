@@ -1,5 +1,5 @@
 
-cuda_prev_min: &cuda_prev_min '11.1' # Does not support the CUPTI APIs we uses (added in 11.3)
+cuda_prev_min: &cuda_prev_min '11.1' # Does not support the CUPTI APIs we use (added in 11.3)
 cuda_prev_max: &cuda_prev_max '11.8'
 cuda_curr_min: &cuda_curr_min '12.0'
 cuda_curr_max: &cuda_curr_max '12.4'
@@ -26,7 +26,6 @@ llvm15: &llvm15 { name: 'llvm', version: '15', exe: 'clang++' }
 llvm16: &llvm16 { name: 'llvm', version: '16', exe: 'clang++' }
 
 # MSVC configs
-msvc2017: &msvc2017 { name: 'cl', version: '14.16', exe: 'cl++' }
 msvc2019: &msvc2019 { name: 'cl', version: '14.29', exe: 'cl++' }
 msvc2022: &msvc2022 { name: 'cl', version: '14.39', exe: 'cl++' }
 
