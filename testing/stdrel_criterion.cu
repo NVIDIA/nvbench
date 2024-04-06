@@ -41,8 +41,8 @@ void test_const()
 
 std::vector<double> generate(double mean, double rel_std_dev, int size)
 {
-  std::random_device rd;
-  std::mt19937 gen(rd());
+  static std::mt19937::result_type seed = 0;
+  std::mt19937 gen(seed++);
   std::vector<nvbench::float64_t> v(static_cast<std::size_t>(size));
   std::normal_distribution<nvbench::float64_t> dist(mean, mean * rel_std_dev);
   std::generate(v.begin(), v.end(), [&]{ return dist(gen); });
