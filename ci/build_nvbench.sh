@@ -4,7 +4,7 @@ source "$(dirname "$0")/build_common.sh"
 
 print_environment_details
 
-PRESET="nvbench-cpp$CXX_STANDARD"
+PRESET="nvbench-ci"
 
 CMAKE_OPTIONS=""
 

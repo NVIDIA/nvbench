@@ -1,10 +1,5 @@
 
 Param(
-    [Parameter(Mandatory = $true)]
-    [Alias("std")]
-    [ValidateNotNullOrEmpty()]
-    [ValidateSet(17)]
-    [int]$CXX_STANDARD = 17,
     [Parameter(Mandatory = $false)]
     [Alias("cmake-options")]
     [ValidateNotNullOrEmpty()]
@@ -18,9 +13,9 @@ If($CURRENT_PATH -ne "ci") {
 }
 
 Remove-Module -Name build_common
-Import-Module $PSScriptRoot/build_common.psm1 -ArgumentList $CXX_STANDARD
+Import-Module $PSScriptRoot/build_common.psm1 -ArgumentList 17
 
-$PRESET = "nvbench-cpp$CXX_STANDARD"
+$PRESET = "nvbench-ci"
 $CMAKE_OPTIONS = ""
 
 # Append any arguments pass in on the command line

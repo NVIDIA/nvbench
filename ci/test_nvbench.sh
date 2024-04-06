@@ -11,7 +11,7 @@ print_environment_details
 
 ./build_nvbench.sh "$@"
 
-PRESET="nvbench-cpp$CXX_STANDARD"
+PRESET="nvbench-ci"
 
 test_preset "NVBench" ${PRESET}
 
