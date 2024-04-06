@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <nvbench/types.cuh>
+
 #include <cuda/std/chrono>
 
 #include <cuda_runtime.h>
