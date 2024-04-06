@@ -32,7 +32,7 @@ void test_const()
   nvbench::detail::stdrel_criterion criterion;
 
   criterion.initialize(params);
-  for (int i = 0; i < 5; i++) 
+  for (int i = 0; i < 5; i++)
   { // nvbench wants at least 5 to compute the standard deviation
     criterion.add_measurement(42.0);
   }
@@ -43,7 +43,7 @@ std::vector<double> generate(double mean, double rel_std_dev, int size)
 {
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::vector<nvbench::float64_t> v(size);
+  std::vector<nvbench::float64_t> v(static_cast<std::size_t>(size));
   std::normal_distribution<nvbench::float64_t> dist(mean, mean * rel_std_dev);
   std::generate(v.begin(), v.end(), [&]{ return dist(gen); });
   return v;
@@ -61,7 +61,7 @@ void test_stdrel()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  for (nvbench::float64_t measurement: generate(mean, max_noise / 2, size)) 
+  for (nvbench::float64_t measurement: generate(mean, max_noise / 2, size))
   {
     criterion.add_measurement(measurement);
   }
@@ -70,7 +70,7 @@ void test_stdrel()
   params.set_float64("max-noise", max_noise);
   criterion.initialize(params);
 
-  for (nvbench::float64_t measurement: generate(mean, max_noise * 2, size)) 
+  for (nvbench::float64_t measurement: generate(mean, max_noise * 2, size))
   {
     criterion.add_measurement(measurement);
   }

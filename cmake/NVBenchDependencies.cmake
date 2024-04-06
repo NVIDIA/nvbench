@@ -24,24 +24,16 @@ endif()
 # Following recipe from
 # http://github.com/cpm-cmake/CPM.cmake/blob/master/examples/json/CMakeLists.txt
 # Download the zips because the repo takes an excessively long time to clone.
-rapids_cpm_find(nlohmann_json 3.9.1
-  # Release:
+rapids_cpm_find(nlohmann_json 3.11.3
   CPM_ARGS
-    URL https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
-    URL_HASH SHA256=6bea5877b1541d353bd77bdfbdb2696333ae5ed8f9e8cc22df657192218cad91
-    PATCH_COMMAND
-      # Work around compiler bug in nvcc 11.0, see NVIDIA/NVBench#18
-      ${CMAKE_COMMAND} -E copy
-        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/nlohmann_json.hpp"
-        "./include/nlohmann/json.hpp"
-
-  # Development version:
-  # I'm waiting for https://github.com/nlohmann/json/issues/2676 to be fixed,
-  # leave this in to simplify testing patches as they come out.
-  #  CPM_ARGS
-  #    VERSION develop
-  #    URL https://github.com/nlohmann/json/archive/refs/heads/develop.zip
-  #    OPTIONS JSON_MultipleHeaders ON
+    URL https://github.com/nlohmann/json/releases/download/v3.11.3/include.zip
+    URL_HASH SHA256=a22461d13119ac5c78f205d3df1db13403e58ce1bb1794edc9313677313f4a9d
+  PATCH_COMMAND
+    ${CMAKE_COMMAND}
+      -D "CUDA_VERSION=${CMAKE_CUDA_COMPILER_VERSION}"
+      -D "CXX_VERSION=${CMAKE_CXX_COMPILER_VERSION}"
+      -D "CXX_ID=${CMAKE_CXX_COMPILER_ID}"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/json_unordered_map_ice.cmake"
 )
 
 add_library(nvbench_json INTERFACE IMPORTED)

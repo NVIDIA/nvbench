@@ -21,6 +21,7 @@
 
 #include "test_asserts.cuh"
 
+#include <algorithm>
 #include <vector>
 
 namespace statistics = nvbench::detail::statistics;
