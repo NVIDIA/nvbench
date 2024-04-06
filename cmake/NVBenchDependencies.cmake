@@ -28,6 +28,12 @@ rapids_cpm_find(nlohmann_json 3.11.3
   CPM_ARGS
     URL https://github.com/nlohmann/json/releases/download/v3.11.3/include.zip
     URL_HASH SHA256=a22461d13119ac5c78f205d3df1db13403e58ce1bb1794edc9313677313f4a9d
+  PATCH_COMMAND
+    ${CMAKE_COMMAND}
+      -D "CUDA_VERSION=${CMAKE_CUDA_COMPILER_VERSION}"
+      -D "CXX_VERSION=${CMAKE_CXX_COMPILER_VERSION}"
+      -D "CXX_ID=${CMAKE_CXX_COMPILER_ID}"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/json_unordered_map_ice.cmake"
 )
 
 add_library(nvbench_json INTERFACE IMPORTED)
