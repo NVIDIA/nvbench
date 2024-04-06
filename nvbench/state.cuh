@@ -24,6 +24,7 @@
 #include <nvbench/named_values.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <functional>
 #include <optional>
@@ -122,6 +123,17 @@ struct state
   void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
   /// @}
 
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
+  {
+    return m_criterion_params;
+  }
+
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
+  void set_stopping_criterion(std::string criterion) { m_stopping_criterion = std::move(criterion); }
+  /// @}
+
   /// If true, the benchmark is only run once, skipping all warmup runs and only
   /// executing a single non-batched measurement. This is intended for use with
   /// external profiling tools. @{
@@ -135,16 +147,30 @@ struct state
   void set_disable_blocking_kernel(bool v) { m_disable_blocking_kernel = v; }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
-  void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
+  /// Accumulate at least this many seconds of timing data per measurement. 
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const
+  {
+    return m_criterion_params.get_float64("min-time");
+  }
+  void set_min_time(nvbench::float64_t min_time)
+  {
+    m_criterion_params.set_float64("min-time", min_time);
+  }
   /// @}
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
-  void set_max_noise(nvbench::float64_t max_noise) { m_max_noise = max_noise; }
+  /// `noise = stdev / mean_time`.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const
+  {
+    return m_criterion_params.get_float64("max-noise");
+  }
+  void set_max_noise(nvbench::float64_t max_noise)
+  {
+    m_criterion_params.set_float64("max-noise", max_noise);
+  }
   /// @}
 
   /// If a warmup run finishes in less than `skip_time`, the measurement will
@@ -270,9 +296,11 @@ private:
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 
+
+  nvbench::criterion_params m_criterion_params;
+  std::string m_stopping_criterion;
+
   nvbench::int64_t m_min_samples;
-  nvbench::float64_t m_min_time;
-  nvbench::float64_t m_max_noise;
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;

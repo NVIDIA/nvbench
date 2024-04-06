@@ -27,7 +27,7 @@
 
 #include <cuda_runtime.h>
 
-#include <utility>
+#include <algorithm>
 
 namespace nvbench
 {

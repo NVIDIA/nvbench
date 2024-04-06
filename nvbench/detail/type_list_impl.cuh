@@ -22,8 +22,8 @@ namespace tl::detail
 template <typename... Ts>
 auto size(nvbench::type_list<Ts...>) -> std::integral_constant<std::size_t, sizeof...(Ts)>;
 
-template <std::size_t I, typename... Ts>
-auto get(nvbench::type_list<Ts...>) -> std::tuple_element_t<I, std::tuple<Ts...>>;
+template <std::size_t Idx, typename... Ts>
+auto get(nvbench::type_list<Ts...>) -> std::tuple_element_t<Idx, std::tuple<Ts...>>;
 
 template <typename... Ts, typename... Us>
 auto concat(nvbench::type_list<Ts...>, nvbench::type_list<Us...>)

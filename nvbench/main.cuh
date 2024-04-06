@@ -25,6 +25,7 @@
 #include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 
+#include <cstdlib>
 #include <iostream>
 
 #define NVBENCH_MAIN                                                                               \
@@ -69,10 +70,22 @@ struct no_environment
   nvbench::option_parser parser;                                                                   \
   parser.parse(argc, argv)
 
+// See NVIDIA/NVBench#136 for CUDA_MODULE_LOADING
+#ifdef _MSC_VER
+#define NVBENCH_INITIALIZE_CUDA_ENV _putenv_s("CUDA_MODULE_LOADING", "EAGER")
+#else
+#define NVBENCH_INITIALIZE_CUDA_ENV setenv("CUDA_MODULE_LOADING", "EAGER", 1)
+#endif
+
+#define NVBENCH_INITIALIZE_BENCHMARKS()                                                            \
+  nvbench::benchmark_manager::get().initialize()
+
 #define NVBENCH_MAIN_BODY(argc, argv)                                                              \
   do                                                                                               \
   {                                                                                                \
+    NVBENCH_INITIALIZE_CUDA_ENV;                                                                   \
     NVBENCH_INITIALIZE_DRIVER_API;                                                                 \
+    NVBENCH_INITIALIZE_BENCHMARKS();                                                               \
     NVBENCH_MAIN_PARSE(argc, argv);                                                                \
     auto &printer = parser.get_printer();                                                          \
                                                                                                    \
