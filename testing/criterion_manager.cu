@@ -46,7 +46,7 @@ void test_no_duplicates_are_allowed()
   bool exception_triggered = false;
 
   try {
-    nvbench::stopping_criterion_base& custom = manager.get_criterion("custom");
+    [[maybe_unused]] nvbench::stopping_criterion_base& _ = manager.get_criterion("custom");
   } catch(...) {
     exception_triggered = true;
   }
@@ -73,4 +73,3 @@ int main()
   test_standard_criteria_exist();
   test_no_duplicates_are_allowed();
 }
-

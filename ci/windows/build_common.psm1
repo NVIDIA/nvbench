@@ -73,7 +73,9 @@ function configure_preset {
     # CMake must be invoked in the same directory as the presets file:
     pushd ".."
 
-    cmake --preset $PRESET $CMAKE_OPTIONS --log-level VERBOSE
+    $cmake_command = "cmake --preset $PRESET $CMAKE_OPTIONS --log-level VERBOSE"
+    echo "$cmake_command"
+    Invoke-Expression $cmake_command
     $test_result = $LastExitCode
 
     If ($test_result -ne 0) {

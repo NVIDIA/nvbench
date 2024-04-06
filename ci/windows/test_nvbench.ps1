@@ -29,6 +29,7 @@ If($ARG_CMAKE_OPTIONS -ne "") {
 }
 
 configure_and_build_preset "NVBench" "$PRESET" "$CMAKE_OPTIONS"
+test_preset "NVBench" "$PRESET"
 
 If($CURRENT_PATH -ne "ci") {
     popd
