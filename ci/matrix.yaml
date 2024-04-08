@@ -47,40 +47,40 @@ msvc2022: &msvc2022 { name: 'cl', version: '14.39', exe: 'cl++' }
 # Configurations that will run for every PR
 pull_request:
   nvcc:
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc7,     extra_build_args: "-cmake-options '-DNVBench_ENABLE_CUPTI=OFF'"}
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc8,     extra_build_args: "-cmake-options '-DNVBench_ENABLE_CUPTI=OFF'"}
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc9,     extra_build_args: "-cmake-options '-DNVBench_ENABLE_CUPTI=OFF'"}
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *llvm9,    extra_build_args: "-cmake-options '-DNVBench_ENABLE_CUPTI=OFF'"}
-    - {cuda: *cuda_prev_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10}
-    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11}
-    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm9}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm10}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm11}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm12}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm13}
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10}
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11}
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12}
+    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc7   }
+    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc8   }
+    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc9   }
+    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *llvm9  }
+    - {cuda: *cuda_prev_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11  }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7   }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8   }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9   }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10  }
+    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11  }
+    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12  }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm9  }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm10 }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm11 }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm12 }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm13 }
+    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7   }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8   }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9   }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10  }
+    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11  }
+    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12  }
     # Fails to compile simple input on CTK12.4. Try to add later.
-    # {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc13}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm9}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm10}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm11}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm12}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm13}
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14}
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm15}
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm16}
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm17}
+    # {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc13  }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm9  }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm10 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm11 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm12 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm13 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm15 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm16 }
+    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm17 }
     - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm18,   extra_build_args: "-cmake-options '-DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler'"}
     - {cuda: *cuda_curr_max, os: 'windows2022', cpu: 'amd64', compiler: *msvc2019, extra_build_args: "-cmake-options '-DNVBench_ENABLE_CUPTI=OFF -DNVBench_ENABLE_NVML=OFF'"}
     - {cuda: *cuda_curr_max, os: 'windows2022', cpu: 'amd64', compiler: *msvc2022, extra_build_args: "-cmake-options '-DNVBench_ENABLE_CUPTI=OFF -DNVBench_ENABLE_NVML=OFF'"}

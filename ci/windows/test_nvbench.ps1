@@ -20,7 +20,7 @@ $CMAKE_OPTIONS = ""
 
 # Append any arguments pass in on the command line
 If($ARG_CMAKE_OPTIONS -ne "") {
-    $CMAKE_OPTIONS += "$ARG_CMAKE_OPTIONS"
+    $CMAKE_OPTIONS += " $ARG_CMAKE_OPTIONS"
 }
 
 configure_and_build_preset "NVBench" "$PRESET" "$CMAKE_OPTIONS"
