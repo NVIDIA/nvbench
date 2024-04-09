@@ -6,6 +6,8 @@ set(test_srcs
   cpu_timer.cu
   criterion_manager.cu
   criterion_params.cu
+  custom_main_custom_args.cu
+  custom_main_custom_exceptions.cu
   enum_type_list.cu
   entropy_criterion.cu
   float64_axis.cu
@@ -24,7 +26,12 @@ set(test_srcs
   type_list.cu
 )
 
-# Metatarget for all examples:
+# Custom arguments:
+# CTest commands+args can't be modified after creation, so we need to rely on substitution.
+set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_args "--quiet" "--my-custom-arg" "--run-once" "-d" "0")
+set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_exceptions "--quiet" "--run-once" "-d" "0")
+
+# Metatarget for all tests:
 add_custom_target(nvbench.test.all)
 add_dependencies(nvbench.all nvbench.test.all)
 
@@ -36,10 +43,14 @@ foreach(test_src IN LISTS test_srcs)
   target_link_libraries(${test_name} PRIVATE nvbench::nvbench fmt)
   set_target_properties(${test_name} PROPERTIES COMPILE_FEATURES cuda_std_17)
   nvbench_config_target(${test_name})
-  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:${test_name}>")
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:${test_name}>" ${NVBench_TEST_ARGS_${test_name}})
 
   add_dependencies(nvbench.test.all ${test_name})
 endforeach()
+
+set_tests_properties(nvbench.test.custom_main_custom_exceptions PROPERTIES
+  PASS_REGULAR_EXPRESSION "Custom error detected: Expected exception thrown."
+)
 
 add_subdirectory(cmake)
 add_subdirectory(device)
