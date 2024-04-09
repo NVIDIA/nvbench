@@ -111,9 +111,11 @@
 
 #ifndef NVBENCH_MAIN_INITIALIZE
 #define NVBENCH_MAIN_INITIALIZE(argc, argv)                                                        \
-  NVBENCH_MAIN_INITIALIZE_CUSTOM_PRE(argc, argv);                                                  \
-  nvbench::detail::main_initialize(argc, argv);                                                    \
-  NVBENCH_MAIN_INITIALIZE_CUSTOM_POST(argc, argv)
+  { /* Open a scope to ensure that the inner initialize/finalize hooks clean up in order. */       \
+    NVBENCH_MAIN_INITIALIZE_CUSTOM_PRE(argc, argv);                                                \
+    nvbench::detail::main_initialize(argc, argv);                                                  \
+    { /* Open a scope to ensure that the inner initialize/finalize hooks clean up in order. */     \
+      NVBENCH_MAIN_INITIALIZE_CUSTOM_POST(argc, argv)
 #endif
 
 #ifndef NVBENCH_MAIN_PARSE
@@ -146,8 +148,11 @@
 #ifndef NVBENCH_MAIN_FINALIZE
 #define NVBENCH_MAIN_FINALIZE()                                                                    \
   NVBENCH_MAIN_FINALIZE_CUSTOM_PRE();                                                              \
+  } /* Close a scope to ensure that the inner initialize/finalize hooks clean up in order. */      \
   nvbench::detail::main_finalize();                                                                \
-  NVBENCH_MAIN_FINALIZE_CUSTOM_POST()
+  NVBENCH_MAIN_FINALIZE_CUSTOM_POST();                                                             \
+  } /* Close a scope to ensure that the inner initialize/finalize hooks clean up in order. */      \
+  []() {}()
 #endif
 
 #ifndef NVBENCH_MAIN_CATCH_EXCEPTIONS
