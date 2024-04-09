@@ -8,6 +8,7 @@ set(test_srcs
   criterion_params.cu
   custom_main_custom_args.cu
   custom_main_custom_exceptions.cu
+  custom_main_global_state_raii.cu
   enum_type_list.cu
   entropy_criterion.cu
   float64_axis.cu
