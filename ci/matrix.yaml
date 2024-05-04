@@ -1,8 +1,7 @@
-
-cuda_prev_min: &cuda_prev_min '11.1' # Does not support the CUPTI APIs we use (added in 11.3)
-cuda_prev_max: &cuda_prev_max '11.8'
-cuda_curr_min: &cuda_curr_min '12.0'
-cuda_curr_max: &cuda_curr_max '12.4'
+ctk_11_1: &ctk_11_1 '11.1'
+ctk_11_8: &ctk_11_8 '11.8'
+ctk_12_0: &ctk_12_0 '12.0'
+ctk_curr: &ctk_curr '12.4'
 
 # The version of the devcontainer images to use from https://hub.docker.com/r/rapidsai/devcontainers
 devcontainer_version: '24.06'
@@ -14,7 +13,7 @@ gcc9: &gcc9 { name: 'gcc', version: '9', exe: 'g++' }
 gcc10: &gcc10 { name: 'gcc', version: '10', exe: 'g++' }
 gcc11: &gcc11 { name: 'gcc', version: '11', exe: 'g++' }
 gcc12: &gcc12 { name: 'gcc', version: '12', exe: 'g++' }
-gcc12: &gcc13 { name: 'gcc', version: '13', exe: 'g++' }
+gcc13: &gcc13 { name: 'gcc', version: '13', exe: 'g++' }
 
 # LLVM Compiler configurations
 llvm9: &llvm9 { name: 'llvm', version: '9', exe: 'clang++' }
@@ -25,62 +24,225 @@ llvm13: &llvm13 { name: 'llvm', version: '13', exe: 'clang++' }
 llvm14: &llvm14 { name: 'llvm', version: '14', exe: 'clang++' }
 llvm15: &llvm15 { name: 'llvm', version: '15', exe: 'clang++' }
 llvm16: &llvm16 { name: 'llvm', version: '16', exe: 'clang++' }
-llvm16: &llvm17 { name: 'llvm', version: '17', exe: 'clang++' }
-llvm16: &llvm18 { name: 'llvm', version: '18', exe: 'clang++' }
+llvm17: &llvm17 { name: 'llvm', version: '17', exe: 'clang++' }
+llvm18: &llvm18 { name: 'llvm', version: '18', exe: 'clang++' }
+llvm19: &llvm19 { name: 'llvm', version: '19', exe: 'clang++' }
 
 # MSVC configs
 msvc2019: &msvc2019 { name: 'cl', version: '14.29', exe: 'cl++' }
 msvc2022: &msvc2022 { name: 'cl', version: '14.39', exe: 'cl++' }
 
-# Each environment below will generate a unique build/test job
-# See the "compute-matrix" job in the workflow for how this is parsed and used
-# cuda: The CUDA Toolkit version
-# os: The operating system used
-# cpu: The CPU architecture
-# compiler: The compiler to use
-#   name: The compiler name
-#   version: The compiler version
-#   exe: The unverionsed compiler binary name
-# std: The C++ standards to build for
-#    This field is unique as it will generate an independent build/test job for each value
+# oneAPI configs
+oneapi: &oneapi { name: 'oneapi', version: '2023.2.0', exe: 'icpc' }
 
-# Configurations that will run for every PR
-pull_request:
-  nvcc:
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc7     }
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc8     }
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *gcc9     }
-    - {cuda: *cuda_prev_min, os: 'ubuntu18.04', cpu: 'amd64', compiler: *llvm9    }
-    - {cuda: *cuda_prev_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7     }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8     }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9     }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm9    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm10   }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm11   }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm12   }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm13   }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7     }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8     }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9     }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12    }
+# GHA Workflow job matrices:
+workflows:
+  pull_request:
+    - {jobs: ['test'], ctk: *ctk_11_1, cxx: [*gcc7, *gcc8, *gcc9, *llvm9]}
+    - {jobs: ['test'], ctk: *ctk_11_8, cxx: [*gcc11]}
+    - {jobs: ['test'], ctk: *ctk_12_0, cxx: [*gcc7, *gcc8, *gcc9, *gcc10, *gcc11, *gcc12]}
+    - {jobs: ['test'], ctk: *ctk_12_0, cxx: [*llvm9, *llvm10, *llvm11, *llvm12, *llvm13, *llvm14]}
+    - {jobs: ['test'], ctk: *ctk_curr, cxx: [*gcc7, *gcc8, *gcc9, *gcc10, *gcc11, *gcc12]}
     # Fails to compile simple input on CTK12.4. Try to add later.
-    # {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc13    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm9    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm10   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm11   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm12   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm13   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm15   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm16   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm17   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm18,  extra_build_args: "-cmake-options '-DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler'"}
-    - {cuda: *cuda_curr_max, os: 'windows2022', cpu: 'amd64', compiler: *msvc2019 }
-    - {cuda: *cuda_curr_max, os: 'windows2022', cpu: 'amd64', compiler: *msvc2022 }
+    # - {jobs: ['test'], ctk: *ctk_curr, cxx: [*gcc13]}
+    - {jobs: ['test'], ctk: *ctk_curr, cxx: [*llvm9, *llvm10, *llvm11, *llvm12, *llvm13, *llvm14, *llvm15, *llvm16, *llvm17]}
+    - {jobs: ['test'], ctk: *ctk_curr, cxx: [*llvm18], cmake_options: '-DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler'}
+    - {jobs: ['test'], ctk: *ctk_curr, cxx: [*msvc2019, *msvc2022]}
+
+
+#
+# Resources for compute_matrix.py. These can be modified to add new jobs, etc.
+#
+# Jobs are executed by running scripts:
+# - Linux:   'ci/<job>_<project>.sh`
+# - Windows: `ci/windows/<job>_<project>.bat`
+
+# A matrix entry must have the following tag.
+required_tags:
+  - 'jobs' # A list of job types to run (e.g. 'build', 'test', 'nvrtc', 'infra', 'verify_codegen', ...) for
+           # the specified configuration(s).
+
+# If a matrix entry omits these tags, a default value (defined later in `default_<tag>`) is used.
+defaulted_tags:
+ - 'ctk'             # CUDA ToolKit version. Will be exploded if a list.
+ - 'cpu'             # CPU architecture. Will be exploded if a list.
+ - 'gpu'             # GPU model. Will be exploded if a list.
+ - 'cxx'             # Host compiler {name, version, exe}. Will be exploded if a list.
+ - 'cudacxx'         # Device compiler as {name, version, exe} or 'nvcc' to use nvcc from the specified `ctk`.
+                     # Will be exploded if a list.
+ - 'project'         # Project name (e.g. libcudacxx, cub, thrust, cccl). Will be exploded if a list.
+ - 'os'              # Operating system. Will be exploded if a list.
+
+# These tags will only exist if needed:
+optional_tags:
+  - 'std'             # C++ standard. Passed to script with `-std <std>`. Will be exploded if a list.
+                      # If set to 'all', all stds supported by the host/device compiler are used.
+  - 'sm'              # `CMAKE_CUDA_ARCHITECTURES` Passed to script with `-arch <sm>`.
+                      # Defaults to use the settings in the CMakePresets.json file.
+                      # Set to 'gpu' to only target the GPU in the `gpu` tag.
+                      # Can pass multiple architectures via "60;70-real;80-virtual"
+                      # Will be exploded if a list (e.g. `sm: ['60;70;80;90', '90a']` creates two jobs)
+  - 'cmake_options'   # Additional CMake options to pass to the build. Passed to script with `-cmake_options "<cmake_options>"`.
+                      # Will be exploded if a list.
+
+# `default_<tag>`: Used when the tag is omitted.
+default_ctk: *ctk_curr
+default_cudacxx: 'nvcc'
+default_cxx: *gcc12
+default_cpu: 'amd64'
+default_gpu: 'v100'
+default_project: 'nvbench'
+# Special handling: lookup os from ctk/cxx info
+# See `matrix.yml` at https://github.com/rapidsai/devcontainers
+default_os_lookup:
+  'ctk11.1-gcc6':           'ubuntu18.04'
+  'ctk11.1-gcc7':           'ubuntu18.04'
+  'ctk11.1-gcc8':           'ubuntu18.04'
+  'ctk11.1-gcc9':           'ubuntu18.04'
+  'ctk11.1-llvm9':          'ubuntu18.04'
+  'ctk11.1-cl14.16':        'windows2022'
+  'ctk11.8-gcc11':          'ubuntu22.04'
+  'ctk12.0-gcc7':           'ubuntu20.04'
+  'ctk12.0-gcc8':           'ubuntu20.04'
+  'ctk12.0-gcc9':           'ubuntu20.04'
+  'ctk12.0-gcc10':          'ubuntu20.04'
+  'ctk12.0-gcc11':          'ubuntu22.04'
+  'ctk12.0-gcc12':          'ubuntu22.04'
+  'ctk12.0-llvm9':          'ubuntu20.04'
+  'ctk12.0-llvm10':         'ubuntu20.04'
+  'ctk12.0-llvm11':         'ubuntu20.04'
+  'ctk12.0-llvm12':         'ubuntu20.04'
+  'ctk12.0-llvm13':         'ubuntu20.04'
+  'ctk12.0-llvm14':         'ubuntu20.04'
+  'ctk12.0-llvm15':         'ubuntu22.04'
+  'ctk12.0-llvm16':         'ubuntu22.04'
+  'ctk12.0-cl14.29':        'windows2022'
+  'ctk12.0-cl14.36':        'windows2022'
+  'ctk12.0-cl14.39':        'windows2022'
+  'ctk12.0-oneapi2023.2.0': 'ubuntu22.04'
+  'ctk12.4-gcc7':           'ubuntu20.04'
+  'ctk12.4-gcc8':           'ubuntu20.04'
+  'ctk12.4-gcc9':           'ubuntu20.04'
+  'ctk12.4-gcc10':          'ubuntu20.04'
+  'ctk12.4-gcc11':          'ubuntu22.04'
+  'ctk12.4-gcc12':          'ubuntu22.04'
+  'ctk12.4-gcc13':          'ubuntu22.04'
+  'ctk12.4-llvm9':          'ubuntu20.04'
+  'ctk12.4-llvm10':         'ubuntu20.04'
+  'ctk12.4-llvm11':         'ubuntu20.04'
+  'ctk12.4-llvm12':         'ubuntu20.04'
+  'ctk12.4-llvm13':         'ubuntu20.04'
+  'ctk12.4-llvm14':         'ubuntu20.04'
+  'ctk12.4-llvm15':         'ubuntu22.04'
+  'ctk12.4-llvm16':         'ubuntu22.04'
+  'ctk12.4-llvm17':         'ubuntu22.04'
+  'ctk12.4-llvm18':         'ubuntu22.04'
+  'ctk12.4-cl14.29':        'windows2022'
+  'ctk12.4-cl14.39':        'windows2022'
+  'ctk12.4-oneapi2023.2.0': 'ubuntu22.04'
+
+# Lookup supported C++ standards for a given compiler when `std: 'all'`.
+all_stds:           [11, 14, 17, 20]
+lookup_cxx_supported_stds:
+  'gcc6':           [11, 14        ]
+  'gcc7':           [11, 14, 17    ]
+  'gcc8':           [11, 14, 17    ]
+  'gcc9':           [11, 14, 17    ]
+  'gcc10':          [11, 14, 17, 20]
+  'gcc11':          [11, 14, 17, 20]
+  'gcc12':          [11, 14, 17, 20]
+  'gcc13':          [11, 14, 17, 20]
+  'llvm9':          [11, 14, 17    ]
+  'llvm10':         [11, 14, 17    ]
+  'llvm11':         [11, 14, 17, 20]
+  'llvm12':         [11, 14, 17, 20]
+  'llvm13':         [11, 14, 17, 20]
+  'llvm14':         [11, 14, 17, 20]
+  'llvm15':         [11, 14, 17, 20]
+  'llvm16':         [11, 14, 17, 20]
+  'llvm17':         [11, 14, 17, 20]
+  'llvm18':         [11, 14, 17, 20]
+  'cl14.16':        [    14        ]
+  'cl14.29':        [    14, 17    ]
+  'cl14.39':        [    14, 17, 20]
+  'oneapi2023.2.0': [11, 14, 17    ]
+lookup_cudacxx_supported_stds:
+  'nvcc11.1':       [11, 14, 17    ]
+  'nvcc11.8':       [11, 14, 17    ]
+  'nvcc12.0':       [11, 14, 17, 20]
+  'nvcc12.4':       [11, 14, 17, 20]
+  'llvm16':         [11, 14, 17, 20]
+lookup_project_supported_stds:
+  'nvbench':        [        17    ]
+
+# Tags that aren't exploded:
+non_exploded_tags:
+  - 'jobs' # Keeping jobs as a list allows for dependency handling of build->test steps.
+
+# Jobs that have an implied prerequisite 'build' job:
+build_required_jobs: []
+# We just build'n'test in one step since our builds are fast.
+#  - 'test'
+
+# Jobs that require a GPU
+gpu_required_jobs:
+  - 'test'
+
+# When --skip-tests is given to compute-matrix.py, these jobs are ignored.
+skip_test_jobs:
+  - 'test'
+
+# When a listed project has a `test` job, it will be replaced with the specified list of finer-grain jobs.
+project_expanded_tests: {}
+
+# Human readable name for jobs. Default behavior is to capitalize the first letter.
+formatted_jobs: {}
+
+# Human readable name for projects. Default behavior uses the project name as-is.
+formatted_project_names:
+  'nvbench': 'NVBench'
+
+# Human readable name for compilers. Default behavior uses the "compiler.name" tag as-is.
+formatted_cxx_names:
+  'llvm': 'clang'
+  'oneapi': 'Intel'
+  'cl': 'MSVC'
+
+# All known GPUs
+gpus:
+  - 'v100'     # 40 runners
+  - 't4'       #  8 runners
+  - 'rtx2080'  #  8 runners
+  - 'rtxa6000' # 12 runners
+  - 'l4'       # 48 runners
+  - 'rtx4090'  # 10 runners
+  - 'h100'     # 16 runners
+
+# SM versions of GPUs
+gpu_sm:
+  'v100':     '70'
+  't4':       '75'
+  'rtx2080':  '75'
+  'rtxa6000': '86'
+  'l4':       '89'
+  'rtx4090':  '89'
+  'h100':     '90'
+
+# Memory size of GPUs
+gpu_mem_gb:
+  'v100':     '32'
+  't4':       '16'
+  'rtx2080':  '8'
+  'rtxa6000': '48'
+  'l4':       '24'
+  'rtx4090':  '24'
+  'h100':     '80'
+
+# GPUs that require `-testing` at the end of the runner pool name.
+testing_pool_gpus:
+  - 't4'
+  - 'rtx2080'
+  - 'rtxa6000'
+  - 'l4'
+  - 'rtx4090'
+  - 'h100'
