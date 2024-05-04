@@ -45,7 +45,7 @@ jobs:
 
       - name: Build workflow
         id: build-workflow
-        uses: NVIDIA/cccl/.github/actions/workflow-build@b3ef1e6a87e0eee7c382f5e6e474e9cfa1c44c36
+        uses: NVIDIA/cccl/.github/actions/workflow-build@fbd26456ac5cb6f48fc8c3c86fb59b93c24d1f45
         with:
           workflows: 'pull_request'
 
@@ -59,7 +59,7 @@ jobs:
       fail-fast: false
       matrix:
         name: ${{ fromJSON(needs.build-workflow.outputs.workflow_keys) }}
-    uses: NVIDIA/cccl/.github/workflows/workflow-dispatch.yml@b3ef1e6a87e0eee7c382f5e6e474e9cfa1c44c36
+    uses: NVIDIA/cccl/.github/workflows/workflow-dispatch.yml@fbd26456ac5cb6f48fc8c3c86fb59b93c24d1f45
     with:
       name: ${{ matrix.name }}
       jobs: ${{ toJSON(fromJSON(needs.build-workflow.outputs.workflow)[matrix.name]) }}
@@ -86,7 +86,7 @@ jobs:
 
       - name: Check workflow success
         id: check-workflow
-        uses: NVIDIA/cccl/.github/actions/workflow-results@b3ef1e6a87e0eee7c382f5e6e474e9cfa1c44c36
+        uses: NVIDIA/cccl/.github/actions/workflow-results@fbd26456ac5cb6f48fc8c3c86fb59b93c24d1f45
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pr_number: ${{ fromJSON(steps.get-pr-info.outputs.pr-info).number }}
