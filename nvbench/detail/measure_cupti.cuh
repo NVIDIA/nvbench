@@ -65,7 +65,7 @@ protected:
 
   __forceinline__ void sync_stream() const
   {
-    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
+    NVBENCH_CUDA_CALL_RESET_ERROR(cudaStreamSynchronize(m_launch.get_stream()));
   }
 
   nvbench::state &m_state;
