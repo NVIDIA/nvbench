@@ -2,6 +2,7 @@
 
 #include "test_asserts.cuh"
 
+
 namespace
 {
     __global__ void multiply5(const int32_t* __restrict__ a, int32_t* __restrict__ b)
@@ -17,8 +18,8 @@ int main()
 
   try
   {
-    NVBENCH_CUDA_CALL_RESET_ERROR(cudaStreamSynchronize(0));
-    return 1;
+    NVBENCH_CUDA_CALL(cudaStreamSynchronize(0));
+    ASSERT(false);
   }
   catch (const std::runtime_error &)
   {

@@ -24,12 +24,14 @@
 #include <string>
 
 /// Throws a std::runtime_error if `call` doesn't return `cudaSuccess`.
+/// Resets the error with cudaGetLastError().
 #define NVBENCH_CUDA_CALL(call)                                                                    \
   do                                                                                               \
   {                                                                                                \
     const cudaError_t nvbench_cuda_call_error = call;                                              \
     if (nvbench_cuda_call_error != cudaSuccess)                                                    \
     {                                                                                              \
+      cudaGetLastError();                                                                          \
       nvbench::cuda_call::throw_error(__FILE__, __LINE__, #call, nvbench_cuda_call_error);         \
     }                                                                                              \
   } while (false)
@@ -56,21 +58,6 @@
       nvbench::cuda_call::exit_error(__FILE__, __LINE__, #call, nvbench_cuda_call_error);          \
     }                                                                                              \
   } while (false)
-
-/// Throws a std::runtime_error if `call` doesn't return `cudaSuccess`.
-/// Resets the error with cudaGetLastError().
-#define NVBENCH_CUDA_CALL_RESET_ERROR(call)                                                        \
-  do                                                                                               \
-  {                                                                                                \
-    const cudaError_t nvbench_cuda_call_error = call;                                              \
-    if (nvbench_cuda_call_error != cudaSuccess)                                                    \
-    {                                                                                              \
-      cudaGetLastError();                                                                          \
-      nvbench::cuda_call::throw_error(__FILE__, __LINE__, #call, nvbench_cuda_call_error);         \
-    }                                                                                              \
-  }                                                                                                \
-  while (false)
-
 
 namespace nvbench::cuda_call
 {
