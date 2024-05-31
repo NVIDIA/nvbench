@@ -16,6 +16,7 @@ set(test_srcs
   named_values.cu
   option_parser.cu
   range.cu
+  reset_error.cu
   ring_buffer.cu
   runner.cu
   state.cu
