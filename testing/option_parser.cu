@@ -1231,23 +1231,56 @@ void test_timeout()
 
 void test_stopping_criterion()
 {
-  nvbench::option_parser parser;
-  parser.parse(
-    {"--benchmark", "DummyBench", 
-     "--stopping-criterion", "entropy",
-     "--max-angle", "0.42",
-     "--min-r2", "0.6"});
-  const auto& states = parser_to_states(parser);
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark",
+                  "DummyBench",
+                  "--stopping-criterion",
+                  "entropy",
+                  "--max-angle",
+                  "0.42",
+                  "--min-r2",
+                  "0.6"});
+    const auto &states = parser_to_states(parser);
 
-  ASSERT(states.size() == 1);
-  ASSERT(states[0].get_stopping_criterion() == "entropy");
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
 
-  const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
-  ASSERT(criterion_params.has_value("max-angle"));
-  ASSERT(criterion_params.has_value("min-r2"));
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
 
-  ASSERT(criterion_params.get_float64("max-angle") == 0.42);
-  ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  {
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-r2",
+        "0.6",
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "TestBench",
+        "--stopping-criterion",
+        "stdrel",
+      });
+      ASSERT(false);
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      // `max-angle` isn't applicable to `stdrel`
+      // fmt::print(stderr, "{}", ex.what());
+    }
+  }
 }
 
 int main()
