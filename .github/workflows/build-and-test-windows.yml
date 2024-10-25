@@ -23,7 +23,7 @@ jobs:
       SCCACHE_S3_NO_CREDENTIALS: false
     steps:
       - name: Get AWS credentials for sccache bucket
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::279114543810:role/gha-oidc-NVIDIA
           aws-region: us-east-2

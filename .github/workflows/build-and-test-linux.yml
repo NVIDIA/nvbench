@@ -7,6 +7,8 @@ defaults:
 on:
   workflow_call:
     inputs:
+      cuda: {type: string, required: true}
+      host: {type: string, required: true}
       cpu: {type: string, required: true}
       test_name: {type: string, required: false}
       build_script: {type: string, required: false}
@@ -25,6 +27,8 @@ jobs:
       contents: read
     uses: ./.github/workflows/run-as-coder.yml
     with:
+      cuda: ${{ inputs.cuda }}
+      host: ${{ inputs.host }}
       name: Build/Test ${{inputs.test_name}}
       runner: linux-${{inputs.cpu}}-gpu-v100-latest-1
       image:  ${{ inputs.container_image }}
