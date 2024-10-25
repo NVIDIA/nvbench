@@ -27,6 +27,8 @@ jobs:
       matrix:
         include: ${{ fromJSON(inputs.per_cuda_compiler_matrix) }}
     with:
+      cuda: ${{ matrix.cuda }}
+      host: ${{matrix.compiler.name}}${{matrix.compiler.version}}
       cpu: ${{ matrix.cpu }}
       test_name: ${{matrix.cpu}}/${{matrix.compiler.name}}${{matrix.compiler.version}} ${{matrix.extra_build_args}}
       build_script: "./ci/build_${{ inputs.project_name }}.sh -cxx ${{matrix.compiler.exe}} ${{matrix.extra_build_args}}"

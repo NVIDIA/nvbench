@@ -7,6 +7,8 @@ defaults:
 on:
   workflow_call:
     inputs:
+      cuda: {type: string, required: true}
+      host: {type: string, required: true}
       name: {type: string, required: true}
       image: {type: string, required: true}
       runner: {type: string, required: true}
@@ -24,31 +26,63 @@ jobs:
       contents: read
     runs-on: ${{inputs.runner}}
     container:
-      options: -u root
-      image: ${{inputs.image}}
+      # This job now uses a docker-outside-of-docker (DOOD) strategy.
+      #
+      # The GitHub Actions runner application mounts the host's docker socket `/var/run/docker.sock` into the
+      # container. By using a container with the `docker` CLI, this container can launch docker containers
+      # using the host's docker daemon.
+      #
+      # This allows us to run actions that require node v20 in the `cruizba/ubuntu-dind:jammy-26.1.3` container, and
+      # then launch our Ubuntu18.04-based GCC 6/7 containers to build and test CCCL.
+      #
+      # The main inconvenience to this approach is that any container mounts have to match the paths of the runner host,
+      # not the paths as seen in the intermediate (`cruizba/ubuntu-dind`) container.
+      #
+      # Note: I am using `cruizba/ubuntu-dind:jammy-26.1.3` instead of `docker:latest`, because GitHub doesn't support
+      # JS actions in alpine aarch64 containers, instead failing actions with this error:
+      # ```
+      # Error: JavaScript Actions in Alpine containers are only supported on x64 Linux runners. Detected Linux Arm64
+      # ```
+      image: cruizba/ubuntu-dind:jammy-26.1.3
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: nvbench
           persist-credentials: false
-      - name: Move files to coder user home directory
-        run: |
-          cp -R nvbench /home/coder/nvbench
-          chown -R coder:coder /home/coder/
       - name: Add NVCC problem matcher
         run: |
           echo "::add-matcher::nvbench/.github/problem-matchers/problem-matcher.json"
       - name: Configure credentials and environment variables for sccache
         uses: ./nvbench/.github/actions/configure_cccl_sccache
       - name: Run command
-        shell: su coder {0}
+        env:
+          CI: true
+          RUNNER: "${{inputs.runner}}"
+          COMMAND: "${{inputs.command}}"
+          AWS_ACCESS_KEY_ID: "${{env.AWS_ACCESS_KEY_ID}}"
+          AWS_SESSION_TOKEN: "${{env.AWS_SESSION_TOKEN}}"
+          AWS_SECRET_ACCESS_KEY: "${{env.AWS_SECRET_ACCESS_KEY}}"
         run: |
+            echo "[host]      github.workspace: ${{github.workspace}}"
+            echo "[container] GITHUB_WORKSPACE: ${GITHUB_WORKSPACE:-}"
+            echo "[container]              PWD: $(pwd)"
+
+            # Necessary because we're doing docker-outside-of-docker:
+            # Make a symlink in the container that matches the host's ${{github.workspace}}, so that way `$(pwd)`
+            # in `.devcontainer/launch.sh` constructs volume paths relative to the hosts's ${{github.workspace}}.
+            mkdir -p "$(dirname "${{github.workspace}}")"
+            ln -s "$(pwd)" "${{github.workspace}}"
+
+            cd "${{github.workspace}}"
+
+            cat <<"EOF" > ci.sh
+
+            #! /usr/bin/env bash
             set -eo pipefail
-            cd ~/nvbench
-            echo -e "\e[1;34mRunning as 'coder' user in $(pwd):\e[0m"
+            echo -e "\e[1;34mRunning as '$(whoami)' user in $(pwd):\e[0m"
             echo -e "\e[1;34m${{inputs.command}}\e[0m"
             eval "${{inputs.command}}" || exit_code=$?
             if [ ! -z "$exit_code" ]; then
@@ -65,3 +99,58 @@ jobs:
               echo "   - Continuous Integration (CI) Overview: https://github.com/NVIDIA/cccl/blob/main/ci-overview.md"
               exit $exit_code
             fi
+            EOF
+
+            chmod +x ci.sh
+
+            mkdir "$RUNNER_TEMP/.aws";
+
+            cat <<EOF > "$RUNNER_TEMP/.aws/config"
+            [default]
+            bucket=rapids-sccache-devs
+            region=us-east-2
+            EOF
+
+            cat <<EOF > "$RUNNER_TEMP/.aws/credentials"
+            [default]
+            aws_access_key_id=$AWS_ACCESS_KEY_ID
+            aws_session_token=$AWS_SESSION_TOKEN
+            aws_secret_access_key=$AWS_SECRET_ACCESS_KEY
+            EOF
+
+            chmod 0600 "$RUNNER_TEMP/.aws/credentials"
+            chmod 0664 "$RUNNER_TEMP/.aws/config"
+
+            declare -a gpu_request=()
+
+            # Explicitly pass which GPU to use if on a GPU runner
+            if [[ "${RUNNER}" = *"-gpu-"* ]]; then
+              gpu_request+=(--gpus "device=${NVIDIA_VISIBLE_DEVICES}")
+            fi
+
+            host_path() {
+              sed "s@/__w@$(dirname "$(dirname "${{github.workspace}}")")@" <<< "$1"
+            }
+
+            # Launch this container using the host's docker daemon
+            ${{github.event.repository.name}}/.devcontainer/launch.sh \
+              --docker \
+              --cuda ${{inputs.cuda}} \
+              --host ${{inputs.host}} \
+              "${gpu_request[@]}" \
+              --env "CI=$CI" \
+              --env "AWS_ROLE_ARN=" \
+              --env "COMMAND=$COMMAND" \
+              --env "GITHUB_ENV=$GITHUB_ENV" \
+              --env "GITHUB_SHA=$GITHUB_SHA" \
+              --env "GITHUB_PATH=$GITHUB_PATH" \
+              --env "GITHUB_OUTPUT=$GITHUB_OUTPUT" \
+              --env "GITHUB_ACTIONS=$GITHUB_ACTIONS" \
+              --env "GITHUB_REF_NAME=$GITHUB_REF_NAME" \
+              --env "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" \
+              --env "GITHUB_REPOSITORY=$GITHUB_REPOSITORY" \
+              --env "GITHUB_STEP_SUMMARY=$GITHUB_STEP_SUMMARY" \
+              --volume "${{github.workspace}}/ci.sh:/ci.sh" \
+              --volume "$(host_path "$RUNNER_TEMP")/.aws:/root/.aws" \
+              --volume "$(dirname "$(dirname "${{github.workspace}}")"):/__w" \
+              -- /ci.sh
