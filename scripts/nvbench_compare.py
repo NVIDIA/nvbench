@@ -218,10 +218,13 @@ def compare_benches(ref_benches, cmp_benches, threshold):
                     status = Fore.YELLOW + "????" + Fore.RESET
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
-                    status = Fore.GREEN + "PASS" + Fore.RESET
+                    status = Fore.BLUE + "SAME" + Fore.RESET
+                elif diff < 0:
+                    failure_count += 1
+                    status = Fore.GREEN + "FAST" + Fore.RESET
                 else:
                     failure_count += 1
-                    status = Fore.RED + "FAIL" + Fore.RESET
+                    status = Fore.RED + "SLOW" + Fore.RESET
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
