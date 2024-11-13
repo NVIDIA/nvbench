@@ -29,7 +29,6 @@ function(nvbench_add_cxx_flag target_name type flag)
     target_compile_options(${target_name} ${type}
       $<$<COMPILE_LANGUAGE:CXX>:${flag}>
       $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcompiler=${flag}>
-      # FIXME nvc++ case
     )
   endif()
 endfunction()
@@ -57,14 +56,15 @@ else()
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wunused-parameter")
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wvla")
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wgnu")
+  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wno-gnu-line-marker") # WAR 3916341
 
   if (NVBench_ENABLE_WERROR)
     nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")
   endif()
 endif()
 
-# GCC-specific flags
-if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+# Experimental filesystem library
+if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
 endif()
 

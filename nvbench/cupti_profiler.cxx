@@ -31,6 +31,7 @@
 #include <fmt/format.h>
 
 #include <stdexcept>
+#include <type_traits>
 
 namespace nvbench::detail
 {
@@ -53,14 +54,13 @@ void nvpw_call(const NVPA_Status status)
 {
   if (status != NVPA_STATUS_SUCCESS)
   {
-    NVBENCH_THROW(std::runtime_error, "NVPW call returned error: {}", status);
+    NVBENCH_THROW(std::runtime_error, "NVPW call returned error: {}", static_cast<std::underlying_type_t<NVPA_Status>>(status));
   }
 }
 
 } // namespace
 
-cupti_profiler::cupti_profiler(nvbench::device_info device,
-                               std::vector<std::string> &&metric_names)
+cupti_profiler::cupti_profiler(nvbench::device_info device, std::vector<std::string> &&metric_names)
     : m_metric_names(metric_names)
     , m_device(device)
 {
@@ -154,12 +154,10 @@ class eval_request
   NVPW_MetricsEvaluator *evaluator_ptr;
 
 public:
-  eval_request(NVPW_MetricsEvaluator *evaluator_ptr,
-               const std::string &metric_name)
+  eval_request(NVPW_MetricsEvaluator *evaluator_ptr, const std::string &metric_name)
       : evaluator_ptr(evaluator_ptr)
   {
-    NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest_Params params =
-      {};
+    NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest_Params params = {};
 
     params.structSize =
       NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest_Params_STRUCT_SIZE;
@@ -168,8 +166,7 @@ public:
     params.pMetricEvalRequest          = &request;
     params.metricEvalRequestStructSize = NVPW_MetricEvalRequest_STRUCT_SIZE;
 
-    nvpw_call(
-      NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest(&params));
+    nvpw_call(NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest(&params));
   }
 
   [[nodiscard]] std::vector<const char *> get_raw_dependencies()
@@ -178,10 +175,9 @@ public:
 
     NVPW_MetricsEvaluator_GetMetricRawDependencies_Params params{};
 
-    params.structSize =
-      NVPW_MetricsEvaluator_GetMetricRawDependencies_Params_STRUCT_SIZE;
-    params.pMetricsEvaluator           = evaluator_ptr;
-    params.pMetricEvalRequests         = &request;
+    params.structSize          = NVPW_MetricsEvaluator_GetMetricRawDependencies_Params_STRUCT_SIZE;
+    params.pMetricsEvaluator   = evaluator_ptr;
+    params.pMetricEvalRequests = &request;
     params.numMetricEvalRequests       = 1;
     params.metricEvalRequestStructSize = NVPW_MetricEvalRequest_STRUCT_SIZE;
     params.metricEvalRequestStrideSize = sizeof(NVPW_MetricEvalRequest);
@@ -211,26 +207,23 @@ public:
                    const std::uint8_t *counter_data_image         = nullptr,
                    const std::size_t counter_data_image_size      = 0)
   {
-    NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize_Params
-      scratch_buffer_param{};
+    NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize_Params scratch_buffer_param{};
 
     scratch_buffer_param.structSize =
       NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize_Params_STRUCT_SIZE;
     scratch_buffer_param.pChipName                 = chip_name.c_str();
     scratch_buffer_param.pCounterAvailabilityImage = counter_availability_image;
 
-    nvpw_call(NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize(
-      &scratch_buffer_param));
+    nvpw_call(NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize(&scratch_buffer_param));
 
     scratch_buffer.resize(scratch_buffer_param.scratchBufferSize);
 
     NVPW_CUDA_MetricsEvaluator_Initialize_Params evaluator_params{};
 
-    evaluator_params.structSize =
-      NVPW_CUDA_MetricsEvaluator_Initialize_Params_STRUCT_SIZE;
-    evaluator_params.scratchBufferSize         = scratch_buffer.size();
-    evaluator_params.pScratchBuffer            = scratch_buffer.data();
-    evaluator_params.pChipName                 = chip_name.c_str();
+    evaluator_params.structSize        = NVPW_CUDA_MetricsEvaluator_Initialize_Params_STRUCT_SIZE;
+    evaluator_params.scratchBufferSize = scratch_buffer.size();
+    evaluator_params.pScratchBuffer    = scratch_buffer.data();
+    evaluator_params.pChipName         = chip_name.c_str();
     evaluator_params.pCounterAvailabilityImage = counter_availability_image;
     evaluator_params.pCounterDataImage         = counter_data_image;
     evaluator_params.counterDataImageSize      = counter_data_image_size;
@@ -247,7 +240,7 @@ public:
     {
       NVPW_MetricsEvaluator_Destroy_Params params{};
 
-      params.structSize = NVPW_MetricsEvaluator_Destroy_Params_STRUCT_SIZE;
+      params.structSize        = NVPW_MetricsEvaluator_Destroy_Params_STRUCT_SIZE;
       params.pMetricsEvaluator = evaluator_ptr;
 
       nvpw_call(NVPW_MetricsEvaluator_Destroy(&params));
@@ -259,10 +252,7 @@ public:
     return {evaluator_ptr, metric_name};
   }
 
-  [[nodiscard]] operator NVPW_MetricsEvaluator *() const
-  {
-    return evaluator_ptr;
-  }
+  [[nodiscard]] operator NVPW_MetricsEvaluator *() const { return evaluator_ptr; }
 };
 
 } // namespace
@@ -270,10 +260,10 @@ public:
 namespace
 {
 
-[[nodiscard]] std::vector<NVPA_RawMetricRequest> get_raw_metric_requests(
-  const std::string &chip_name,
-  const std::vector<std::string> &metric_names,
-  const std::uint8_t *counter_availability_image = nullptr)
+[[nodiscard]] std::vector<NVPA_RawMetricRequest>
+get_raw_metric_requests(const std::string &chip_name,
+                        const std::vector<std::string> &metric_names,
+                        const std::uint8_t *counter_availability_image = nullptr)
 {
   metric_evaluator evaluator(chip_name, counter_availability_image);
 
@@ -282,8 +272,7 @@ namespace
 
   for (auto &metric_name : metric_names)
   {
-    for (auto &raw_dependency :
-         evaluator.create_request(metric_name).get_raw_dependencies())
+    for (auto &raw_dependency : evaluator.create_request(metric_name).get_raw_dependencies())
     {
       raw_metric_names.push_back(raw_dependency);
     }
@@ -295,10 +284,10 @@ namespace
   for (auto &raw_name : raw_metric_names)
   {
     NVPA_RawMetricRequest metricRequest{};
-    metricRequest.structSize            = NVPA_RAW_METRIC_REQUEST_STRUCT_SIZE;
-    metricRequest.pMetricName           = raw_name;
-    metricRequest.isolated              = true;
-    metricRequest.keepInstances         = true;
+    metricRequest.structSize    = NVPA_RAW_METRIC_REQUEST_STRUCT_SIZE;
+    metricRequest.pMetricName   = raw_name;
+    metricRequest.isolated      = true;
+    metricRequest.keepInstances = true;
     raw_requests.push_back(metricRequest);
   }
 
@@ -309,12 +298,11 @@ class metrics_config
 {
   bool initialized{};
 
-  void create(const std::string &chip_name,
-              const std::uint8_t *availability_image)
+  void create(const std::string &chip_name, const std::uint8_t *availability_image)
   {
     NVPW_CUDA_RawMetricsConfig_Create_V2_Params params{};
 
-    params.structSize = NVPW_CUDA_RawMetricsConfig_Create_V2_Params_STRUCT_SIZE;
+    params.structSize                = NVPW_CUDA_RawMetricsConfig_Create_V2_Params_STRUCT_SIZE;
     params.activityKind              = NVPA_ACTIVITY_KIND_PROFILER;
     params.pChipName                 = chip_name.c_str();
     params.pCounterAvailabilityImage = availability_image;
@@ -329,9 +317,8 @@ class metrics_config
   {
     NVPW_RawMetricsConfig_SetCounterAvailability_Params params{};
 
-    params.structSize =
-      NVPW_RawMetricsConfig_SetCounterAvailability_Params_STRUCT_SIZE;
-    params.pRawMetricsConfig         = raw_metrics_config;
+    params.structSize        = NVPW_RawMetricsConfig_SetCounterAvailability_Params_STRUCT_SIZE;
+    params.pRawMetricsConfig = raw_metrics_config;
     params.pCounterAvailabilityImage = availability_image;
 
     nvpw_call(NVPW_RawMetricsConfig_SetCounterAvailability(&params));
@@ -341,7 +328,7 @@ class metrics_config
   {
     NVPW_RawMetricsConfig_BeginPassGroup_Params params{};
 
-    params.structSize = NVPW_RawMetricsConfig_BeginPassGroup_Params_STRUCT_SIZE;
+    params.structSize        = NVPW_RawMetricsConfig_BeginPassGroup_Params_STRUCT_SIZE;
     params.pRawMetricsConfig = raw_metrics_config;
 
     nvpw_call(NVPW_RawMetricsConfig_BeginPassGroup(&params));
@@ -351,7 +338,7 @@ class metrics_config
   {
     NVPW_RawMetricsConfig_AddMetrics_Params params{};
 
-    params.structSize = NVPW_RawMetricsConfig_AddMetrics_Params_STRUCT_SIZE;
+    params.structSize         = NVPW_RawMetricsConfig_AddMetrics_Params_STRUCT_SIZE;
     params.pRawMetricsConfig  = raw_metrics_config;
     params.pRawMetricRequests = raw_metric_requests.data();
     params.numMetricRequests  = raw_metric_requests.size();
@@ -363,7 +350,7 @@ class metrics_config
   {
     NVPW_RawMetricsConfig_EndPassGroup_Params params{};
 
-    params.structSize = NVPW_RawMetricsConfig_EndPassGroup_Params_STRUCT_SIZE;
+    params.structSize        = NVPW_RawMetricsConfig_EndPassGroup_Params_STRUCT_SIZE;
     params.pRawMetricsConfig = raw_metrics_config;
 
     nvpw_call(NVPW_RawMetricsConfig_EndPassGroup(&params));
@@ -373,8 +360,7 @@ class metrics_config
   {
     NVPW_RawMetricsConfig_GenerateConfigImage_Params params{};
 
-    params.structSize =
-      NVPW_RawMetricsConfig_GenerateConfigImage_Params_STRUCT_SIZE;
+    params.structSize        = NVPW_RawMetricsConfig_GenerateConfigImage_Params_STRUCT_SIZE;
     params.pRawMetricsConfig = raw_metrics_config;
 
     nvpw_call(NVPW_RawMetricsConfig_GenerateConfigImage(&params));
@@ -398,7 +384,7 @@ public:
   {
     NVPW_RawMetricsConfig_GetConfigImage_Params params{};
 
-    params.structSize = NVPW_RawMetricsConfig_GetConfigImage_Params_STRUCT_SIZE;
+    params.structSize        = NVPW_RawMetricsConfig_GetConfigImage_Params_STRUCT_SIZE;
     params.pRawMetricsConfig = raw_metrics_config;
     params.bytesAllocated    = 0;
     params.pBuffer           = nullptr;
@@ -419,7 +405,7 @@ public:
     {
       NVPW_RawMetricsConfig_Destroy_Params params{};
 
-      params.structSize = NVPW_RawMetricsConfig_Destroy_Params_STRUCT_SIZE;
+      params.structSize        = NVPW_RawMetricsConfig_Destroy_Params_STRUCT_SIZE;
       params.pRawMetricsConfig = raw_metrics_config;
 
       NVPW_RawMetricsConfig_Destroy(&params);
@@ -433,13 +419,12 @@ public:
 
 void cupti_profiler::initialize_config_image()
 {
-  m_config_image =
-    metrics_config(m_chip_name,
-                   get_raw_metric_requests(m_chip_name,
-                                           m_metric_names,
-                                           m_availability_image.data()),
-                   m_availability_image.data())
-      .get_config_image();
+  m_config_image = metrics_config(m_chip_name,
+                                  get_raw_metric_requests(m_chip_name,
+                                                          m_metric_names,
+                                                          m_availability_image.data()),
+                                  m_availability_image.data())
+                     .get_config_image();
 }
 
 namespace
@@ -450,12 +435,11 @@ class counter_data_builder
   bool initialized{};
 
 public:
-  counter_data_builder(const std::string &chip_name,
-                       const std::uint8_t *pCounterAvailabilityImage)
+  counter_data_builder(const std::string &chip_name, const std::uint8_t *pCounterAvailabilityImage)
   {
     NVPW_CUDA_CounterDataBuilder_Create_Params params{};
 
-    params.structSize = NVPW_CUDA_CounterDataBuilder_Create_Params_STRUCT_SIZE;
+    params.structSize                = NVPW_CUDA_CounterDataBuilder_Create_Params_STRUCT_SIZE;
     params.pChipName                 = chip_name.c_str();
     params.pCounterAvailabilityImage = pCounterAvailabilityImage;
 
@@ -471,7 +455,7 @@ public:
     {
       NVPW_CounterDataBuilder_Destroy_Params params{};
 
-      params.structSize = NVPW_CounterDataBuilder_Destroy_Params_STRUCT_SIZE;
+      params.structSize          = NVPW_CounterDataBuilder_Destroy_Params_STRUCT_SIZE;
       params.pCounterDataBuilder = builder;
 
       NVPW_CounterDataBuilder_Destroy(&params);
@@ -488,16 +472,14 @@ void cupti_profiler::initialize_counter_data_prefix_image()
   const std::uint8_t *counter_availability_image = nullptr;
 
   std::vector<NVPA_RawMetricRequest> raw_metric_requests =
-    get_raw_metric_requests(m_chip_name,
-                            m_metric_names,
-                            counter_availability_image);
+    get_raw_metric_requests(m_chip_name, m_metric_names, counter_availability_image);
 
   counter_data_builder data_builder(m_chip_name, counter_availability_image);
 
   {
     NVPW_CounterDataBuilder_AddMetrics_Params params{};
 
-    params.structSize = NVPW_CounterDataBuilder_AddMetrics_Params_STRUCT_SIZE;
+    params.structSize          = NVPW_CounterDataBuilder_AddMetrics_Params_STRUCT_SIZE;
     params.pCounterDataBuilder = data_builder.builder;
     params.pRawMetricRequests  = raw_metric_requests.data();
     params.numMetricRequests   = raw_metric_requests.size();
@@ -508,8 +490,7 @@ void cupti_profiler::initialize_counter_data_prefix_image()
   {
     NVPW_CounterDataBuilder_GetCounterDataPrefix_Params params{};
 
-    params.structSize =
-      NVPW_CounterDataBuilder_GetCounterDataPrefix_Params_STRUCT_SIZE;
+    params.structSize          = NVPW_CounterDataBuilder_GetCounterDataPrefix_Params_STRUCT_SIZE;
     params.pCounterDataBuilder = data_builder.builder;
     params.bytesAllocated      = 0;
     params.pBuffer             = nullptr;
@@ -532,11 +513,9 @@ get_counter_data_image_size(CUpti_Profiler_CounterDataImageOptions *options)
 {
   CUpti_Profiler_CounterDataImage_CalculateSize_Params params{};
 
-  params.structSize =
-    CUpti_Profiler_CounterDataImage_CalculateSize_Params_STRUCT_SIZE;
-  params.pOptions = options;
-  params.sizeofCounterDataImageOptions =
-    CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
+  params.structSize = CUpti_Profiler_CounterDataImage_CalculateSize_Params_STRUCT_SIZE;
+  params.pOptions   = options;
+  params.sizeofCounterDataImageOptions = CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
 
   cupti_call(cuptiProfilerCounterDataImageCalculateSize(&params));
   return params.counterDataImageSize;
@@ -559,12 +538,10 @@ void cupti_profiler::initialize_counter_data_image()
   {
     CUpti_Profiler_CounterDataImage_Initialize_Params params{};
 
-    params.structSize =
-      CUpti_Profiler_CounterDataImage_Initialize_Params_STRUCT_SIZE;
-    params.sizeofCounterDataImageOptions =
-      CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
-    params.pOptions             = &counter_data_image_options;
-    params.counterDataImageSize = m_data_image.size();
+    params.structSize = CUpti_Profiler_CounterDataImage_Initialize_Params_STRUCT_SIZE;
+    params.sizeofCounterDataImageOptions = CUpti_Profiler_CounterDataImageOptions_STRUCT_SIZE;
+    params.pOptions                      = &counter_data_image_options;
+    params.counterDataImageSize          = m_data_image.size();
 
     params.pCounterDataImage = &m_data_image[0];
     cupti_call(cuptiProfilerCounterDataImageInitialize(&params));
@@ -578,8 +555,7 @@ void cupti_profiler::initialize_counter_data_image()
     params.counterDataImageSize = m_data_image.size();
     params.pCounterDataImage    = &m_data_image[0];
 
-    cupti_call(
-      cuptiProfilerCounterDataImageCalculateScratchBufferSize(&params));
+    cupti_call(cuptiProfilerCounterDataImageCalculateScratchBufferSize(&params));
 
     m_data_scratch_buffer.resize(params.counterDataScratchBufferSize);
   }
@@ -587,8 +563,7 @@ void cupti_profiler::initialize_counter_data_image()
   {
     CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params params{};
 
-    params.structSize =
-      CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params_STRUCT_SIZE;
+    params.structSize = CUpti_Profiler_CounterDataImage_InitializeScratchBuffer_Params_STRUCT_SIZE;
     params.counterDataImageSize         = m_data_image.size();
     params.pCounterDataImage            = &m_data_image[0];
     params.counterDataScratchBufferSize = m_data_scratch_buffer.size();
@@ -608,17 +583,14 @@ cupti_profiler::~cupti_profiler()
   }
 }
 
-bool cupti_profiler::is_initialized() const
-{
-  return m_available;
-}
+bool cupti_profiler::is_initialized() const { return m_available; }
 
 void cupti_profiler::prepare_user_loop()
 {
   {
     CUpti_Profiler_BeginSession_Params params{};
 
-    params.structSize = CUpti_Profiler_BeginSession_Params_STRUCT_SIZE;
+    params.structSize                   = CUpti_Profiler_BeginSession_Params_STRUCT_SIZE;
     params.ctx                          = nullptr;
     params.counterDataImageSize         = m_data_image.size();
     params.pCounterDataImage            = &m_data_image[0];
@@ -735,9 +707,7 @@ std::vector<double> cupti_profiler::get_counter_values()
 
     if (params.numRanges != 1)
     {
-      NVBENCH_THROW(std::runtime_error,
-                    "{}",
-                    "Something's gone wrong, one range is expected");
+      NVBENCH_THROW(std::runtime_error, "{}", "Something's gone wrong, one range is expected");
     }
   }
 
@@ -752,8 +722,7 @@ std::vector<double> cupti_profiler::get_counter_values()
     {
       NVPW_MetricsEvaluator_SetDeviceAttributes_Params params{};
 
-      params.structSize =
-        NVPW_MetricsEvaluator_SetDeviceAttributes_Params_STRUCT_SIZE;
+      params.structSize           = NVPW_MetricsEvaluator_SetDeviceAttributes_Params_STRUCT_SIZE;
       params.pMetricsEvaluator    = evaluator;
       params.pCounterDataImage    = m_data_image.data();
       params.counterDataImageSize = m_data_image.size();
@@ -764,11 +733,10 @@ std::vector<double> cupti_profiler::get_counter_values()
     {
       NVPW_MetricsEvaluator_EvaluateToGpuValues_Params params{};
 
-      params.structSize =
-        NVPW_MetricsEvaluator_EvaluateToGpuValues_Params_STRUCT_SIZE;
-      params.pMetricsEvaluator           = evaluator;
-      params.pMetricEvalRequests         = &request.request;
-      params.numMetricEvalRequests       = 1;
+      params.structSize            = NVPW_MetricsEvaluator_EvaluateToGpuValues_Params_STRUCT_SIZE;
+      params.pMetricsEvaluator     = evaluator;
+      params.pMetricEvalRequests   = &request.request;
+      params.numMetricEvalRequests = 1;
       params.metricEvalRequestStructSize = NVPW_MetricEvalRequest_STRUCT_SIZE;
       params.metricEvalRequestStrideSize = sizeof(NVPW_MetricEvalRequest);
       params.pCounterDataImage           = m_data_image.data();

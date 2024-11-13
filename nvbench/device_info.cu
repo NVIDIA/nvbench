@@ -45,6 +45,9 @@ device_info::device_info(int id)
     , m_nvml_device(nullptr)
 {
   NVBENCH_CUDA_CALL(cudaGetDeviceProperties(&m_prop, m_id));
+  // NVML's lifetime should extend for the entirety of the process, so store in a
+  // global.
+  [[maybe_unused]] static auto nvml_lifetime = nvbench::nvml::NVMLLifetimeManager();
 
 #ifdef NVBENCH_HAS_NVML
   // Retrieve the current device's pci_id as a null-terminated string.
@@ -65,17 +68,15 @@ void device_info::set_persistence_mode(bool state)
 #else  // NVBENCH_HAS_NVML
 try
 {
-  NVBENCH_NVML_CALL(nvmlDeviceSetPersistenceMode(
-    m_nvml_device,
-    state ? NVML_FEATURE_ENABLED : NVML_FEATURE_DISABLED));
+  NVBENCH_NVML_CALL(
+    nvmlDeviceSetPersistenceMode(m_nvml_device,
+                                 state ? NVML_FEATURE_ENABLED : NVML_FEATURE_DISABLED));
 }
 catch (nvml::call_failed &e)
 {
   if (e.get_error_code() == NVML_ERROR_NOT_SUPPORTED)
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Persistence mode is only supported on Linux.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Persistence mode is only supported on Linux.");
   }
   else if (e.get_error_code() == NVML_ERROR_NO_PERMISSION)
   {
@@ -104,30 +105,26 @@ try
       break;
 
     case clock_rate::base:
-      NVBENCH_NVML_CALL(nvmlDeviceSetGpuLockedClocks(
-        m_nvml_device,
-        static_cast<unsigned int>(NVML_CLOCK_LIMIT_ID_TDP),
-        static_cast<unsigned int>(NVML_CLOCK_LIMIT_ID_TDP)));
+      NVBENCH_NVML_CALL(
+        nvmlDeviceSetGpuLockedClocks(m_nvml_device,
+                                     static_cast<unsigned int>(NVML_CLOCK_LIMIT_ID_TDP),
+                                     static_cast<unsigned int>(NVML_CLOCK_LIMIT_ID_TDP)));
       break;
 
     case clock_rate::maximum: {
-      const auto max_mhz = static_cast<unsigned int>(
-        this->get_sm_default_clock_rate() / (1000 * 1000));
-      NVBENCH_NVML_CALL(
-        nvmlDeviceSetGpuLockedClocks(m_nvml_device, max_mhz, max_mhz));
+      const auto max_mhz =
+        static_cast<unsigned int>(this->get_sm_default_clock_rate() / (1000 * 1000));
+      NVBENCH_NVML_CALL(nvmlDeviceSetGpuLockedClocks(m_nvml_device, max_mhz, max_mhz));
       break;
     }
 
     default:
-      NVBENCH_THROW(std::runtime_error,
-                    "Unrecognized clock rate: {}",
-                    static_cast<int>(rate));
+      NVBENCH_THROW(std::runtime_error, "Unrecognized clock rate: {}", static_cast<int>(rate));
   }
 }
 catch (nvml::call_failed &e)
 {
-  if (e.get_error_code() == NVML_ERROR_NOT_SUPPORTED &&
-      this->get_sm_version() < 700)
+  if (e.get_error_code() == NVML_ERROR_NOT_SUPPORTED && this->get_sm_version() < 700)
   {
     NVBENCH_THROW(std::runtime_error,
                   "GPU clock rates can only be modified for Volta and later. "
@@ -156,9 +153,7 @@ catch (nvml::call_failed &e)
 {
   if (!is_active())
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "get_context is called for inactive device");
+    NVBENCH_THROW(std::runtime_error, "{}", "get_context is called for inactive device");
   }
 
   CUcontext cu_context;

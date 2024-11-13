@@ -89,17 +89,17 @@ void test_basic()
   for (sg.init(); sg.iter_valid(); sg.next())
   {
     line.clear();
-    fmt::format_to(line, "| {:^2}", line_num++);
+    fmt::format_to(std::back_inserter(line), "| {:^2}", line_num++);
     for (auto &axis_index : sg.get_current_indices())
     {
       ASSERT(axis_index.type == nvbench::axis_type::string);
-      fmt::format_to(line,
+      fmt::format_to(std::back_inserter(line),
                      " | {}: {}/{}",
                      axis_index.axis,
                      axis_index.index,
                      axis_index.size);
     }
-    fmt::format_to(buffer, "{} |\n", fmt::to_string(line));
+    fmt::format_to(std::back_inserter(buffer), "{} |\n", fmt::to_string(line));
   }
 
   const std::string ref =
@@ -166,8 +166,8 @@ void test_create()
   const std::string table_format =
     "| {:^5} | {:^10} | {:^7} | {:^7} | {:^9} | {:^9} |\n";
 
-  fmt::format_to(buffer, "\n");
-  fmt::format_to(buffer,
+  fmt::format_to(std::back_inserter(buffer), "\n");
+  fmt::format_to(std::back_inserter(buffer),
                  table_format,
                  "State",
                  "TypeConfig",
@@ -179,7 +179,7 @@ void test_create()
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    table_format,
                    config++,
                    state.get_type_config_index(),
@@ -258,8 +258,8 @@ void test_create_with_types()
   std::string table_format = "| {:^5} | {:^10} | {:^6} | {:^4} | {:^4} | {:^7} "
                              "| {:^7} | {:^9} | {:^9} |\n";
 
-  fmt::format_to(buffer, "\n");
-  fmt::format_to(buffer,
+  fmt::format_to(std::back_inserter(buffer), "\n");
+  fmt::format_to(std::back_inserter(buffer),
                  table_format,
                  "State",
                  "TypeConfig",
@@ -274,7 +274,7 @@ void test_create_with_types()
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    table_format,
                    config++,
                    state.get_type_config_index(),
@@ -607,8 +607,8 @@ void test_create_with_masked_types()
   std::string table_format = "| {:^5} | {:^10} | {:^6} | {:^4} | {:^4} | {:^7} "
                              "| {:^7} | {:^9} | {:^9} |\n";
 
-  fmt::format_to(buffer, "\n");
-  fmt::format_to(buffer,
+  fmt::format_to(std::back_inserter(buffer), "\n");
+  fmt::format_to(std::back_inserter(buffer),
                  table_format,
                  "State",
                  "TypeConfig",
@@ -623,7 +623,7 @@ void test_create_with_masked_types()
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    table_format,
                    config++,
                    state.get_type_config_index(),
@@ -737,13 +737,13 @@ void test_devices()
   fmt::memory_buffer buffer;
   const std::string table_format = "| {:^5} | {:^6} | {:^5} | {:^3} |\n";
 
-  fmt::format_to(buffer, "\n");
-  fmt::format_to(buffer, table_format, "State", "Device", "S", "I");
+  fmt::format_to(std::back_inserter(buffer), "\n");
+  fmt::format_to(std::back_inserter(buffer), table_format, "State", "Device", "S", "I");
 
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    table_format,
                    config++,
                    state.get_device()->get_id(),

@@ -24,6 +24,11 @@
 
 #include <type_traits>
 
+// If using gcc version < 7, disable some tests to WAR a compiler bug. See NVIDIA/nvbench#39.
+#if defined(__GNUC__) && __GNUC__ == 7
+#define USING_GCC_7
+#endif
+
 enum class scoped_enum
 {
   val_1,
@@ -109,9 +114,11 @@ void test_int()
 
 void test_scoped_enum()
 {
+#ifndef USING_GCC_7
   ASSERT((
     std::is_same_v<nvbench::enum_type_list<scoped_enum::val_1>,
                    nvbench::type_list<nvbench::enum_type<scoped_enum::val_1>>>));
+#endif
   ASSERT((
     std::is_same_v<nvbench::enum_type_list<scoped_enum::val_1,
                                            scoped_enum::val_2,
@@ -123,6 +130,7 @@ void test_scoped_enum()
 
 void test_unscoped_enum()
 {
+#ifndef USING_GCC_7
   ASSERT(
     (std::is_same_v<nvbench::enum_type_list<unscoped_val_1>,
                     nvbench::type_list<nvbench::enum_type<unscoped_val_1>>>));
@@ -132,6 +140,7 @@ void test_unscoped_enum()
       nvbench::type_list<nvbench::enum_type<unscoped_val_1>,
                          nvbench::enum_type<unscoped_val_2>,
                          nvbench::enum_type<unscoped_val_3>>>));
+#endif
 }
 
 void test_scoped_enum_type_strings()

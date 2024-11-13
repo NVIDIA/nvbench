@@ -33,9 +33,7 @@ namespace nvbench
 
 void named_values::append(const named_values &other)
 {
-  m_storage.insert(m_storage.end(),
-                   other.m_storage.cbegin(),
-                   other.m_storage.cend());
+  m_storage.insert(m_storage.end(), other.m_storage.cbegin(), other.m_storage.cend());
 }
 
 void named_values::clear() { m_storage.clear(); }
@@ -55,20 +53,17 @@ std::vector<std::string> named_values::get_names() const
 
 bool named_values::has_value(const std::string &name) const
 {
-  auto iter =
-    std::find_if(m_storage.cbegin(),
-                 m_storage.cend(),
-                 [&name](const auto &val) { return val.name == name; });
+  auto iter = std::find_if(m_storage.cbegin(), m_storage.cend(), [&name](const auto &val) {
+    return val.name == name;
+  });
   return iter != m_storage.cend();
 }
 
-const named_values::value_type &
-named_values::get_value(const std::string &name) const
+const named_values::value_type &named_values::get_value(const std::string &name) const
 {
-  auto iter =
-    std::find_if(m_storage.cbegin(),
-                 m_storage.cend(),
-                 [&name](const auto &val) { return val.name == name; });
+  auto iter = std::find_if(m_storage.cbegin(), m_storage.cend(), [&name](const auto &val) {
+    return val.name == name;
+  });
   if (iter == m_storage.cend())
   {
     NVBENCH_THROW(std::runtime_error, "No value with name '{}'.", name);
@@ -96,9 +91,7 @@ named_values::type named_values::get_type(const std::string &name) const
       // warning C4702: unreachable code
       // This is a future-proofing check, it'll be reachable if something breaks
       NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
-      NVBENCH_THROW(std::runtime_error,
-                    "Unknown variant type for entry '{}'.",
-                    name);
+      NVBENCH_THROW(std::runtime_error, "Unknown variant type for entry '{}'.", name);
     },
     this->get_value(name));
   NVBENCH_MSVC_POP_WARNING()
@@ -111,10 +104,7 @@ try
 }
 catch (std::exception &err)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error looking up int64 value `{}`:\n{}",
-                name,
-                err.what());
+  NVBENCH_THROW(std::runtime_error, "Error looking up int64 value `{}`:\n{}", name, err.what());
 }
 
 nvbench::float64_t named_values::get_float64(const std::string &name) const
@@ -124,10 +114,7 @@ try
 }
 catch (std::exception &err)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error looking up float64 value `{}`:\n{}",
-                name,
-                err.what());
+  NVBENCH_THROW(std::runtime_error, "Error looking up float64 value `{}`:\n{}", name, err.what());
 }
 
 const std::string &named_values::get_string(const std::string &name) const
@@ -137,10 +124,7 @@ try
 }
 catch (std::exception &err)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error looking up string value `{}`:\n{}",
-                name,
-                err.what());
+  NVBENCH_THROW(std::runtime_error, "Error looking up string value `{}`:\n{}", name, err.what());
 }
 
 void named_values::set_int64(std::string name, nvbench::int64_t value)
@@ -165,10 +149,9 @@ void named_values::set_value(std::string name, named_values::value_type value)
 
 void named_values::remove_value(const std::string &name)
 {
-  auto iter =
-    std::find_if(m_storage.begin(), m_storage.end(), [&name](const auto &val) {
-      return val.name == name;
-    });
+  auto iter = std::find_if(m_storage.begin(), m_storage.end(), [&name](const auto &val) {
+    return val.name == name;
+  });
   if (iter != m_storage.end())
   {
     m_storage.erase(iter);

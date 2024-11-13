@@ -16,23 +16,16 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/measure_cold.cuh>
-
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/criterion_manager.cuh>
+#include <nvbench/detail/measure_cold.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
-#include <nvbench/detail/ring_buffer.cuh>
-#include <nvbench/detail/throw.cuh>
-
 #include <fmt/format.h>
-
-#include <algorithm>
-#include <cstdio>
-#include <stdexcept>
-#include <variant>
 
 namespace nvbench::detail
 {
@@ -40,29 +33,31 @@ namespace nvbench::detail
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{m_state.get_cuda_stream()}
+    , m_criterion_params{exec_state.get_criterion_params()}
+    , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_no_block{exec_state.get_disable_blocking_kernel()}
     , m_min_samples{exec_state.get_min_samples()}
-    , m_max_noise{exec_state.get_max_noise()}
-    , m_min_time{exec_state.get_min_time()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
-{}
+{
+  if (m_min_samples > 0)
+  {
+    m_cuda_times.reserve(static_cast<std::size_t>(m_min_samples));
+    m_cpu_times.reserve(static_cast<std::size_t>(m_min_samples));
+  }
+}
 
 void measure_cold_base::check()
 {
   const auto device = m_state.get_device();
   if (!device)
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Device required for `cold` measurement.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Device required for `cold` measurement.");
   }
   if (!device->is_active())
   { // This means something went wrong higher up. Throw an error.
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Internal error: Current device is not active.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Internal error: Current device is not active.");
   }
 }
 
@@ -72,10 +67,11 @@ void measure_cold_base::initialize()
   m_total_cpu_time  = 0.;
   m_cpu_noise       = 0.;
   m_total_samples   = 0;
-  m_noise_tracker.clear();
   m_cuda_times.clear();
   m_cpu_times.clear();
   m_max_time_exceeded = false;
+
+  m_stopping_criterion.initialize(m_criterion_params);
 }
 
 void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
@@ -91,18 +87,7 @@ void measure_cold_base::record_measurements()
   m_total_cpu_time += cur_cpu_time;
   ++m_total_samples;
 
-  // Compute convergence statistics using CUDA timings:
-  const auto mean_cuda_time = m_total_cuda_time /
-                              static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cuda_stdev =
-    nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
-                                                    m_cuda_times.cend(),
-                                                    mean_cuda_time);
-  auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
-  if (std::isfinite(cuda_rel_stdev))
-  {
-    m_noise_tracker.push_back(cuda_rel_stdev);
-  }
+  m_stopping_criterion.add_measurement(cur_cuda_time);
 }
 
 bool measure_cold_base::is_finished()
@@ -113,38 +98,11 @@ bool measure_cold_base::is_finished()
   }
 
   // Check that we've gathered enough samples:
-  if (m_total_cuda_time > m_min_time && m_total_samples > m_min_samples)
+  if (m_total_samples > m_min_samples)
   {
-    // Noise has dropped below threshold
-    if (m_noise_tracker.back() < m_max_noise)
+    if (m_stopping_criterion.is_finished())
     {
       return true;
-    }
-
-    // Check if the noise (cuda rel stdev) has converged by inspecting a
-    // trailing window of recorded noise measurements.
-    // This helps identify benchmarks that are inherently noisy and would
-    // never converge to the target stdev threshold. This check ensures that the
-    // benchmark will end if the stdev stabilizes above the target threshold.
-    // Gather some iterations before checking noise, and limit how often we
-    // check this.
-    if (m_noise_tracker.size() > 64 && (m_total_samples % 16 == 0))
-    {
-      // Use the current noise as the stdev reference.
-      const auto current_noise = m_noise_tracker.back();
-      const auto noise_stdev = nvbench::detail::statistics::standard_deviation(
-        m_noise_tracker.cbegin(),
-        m_noise_tracker.cend(),
-        current_noise);
-      const auto noise_rel_stdev = noise_stdev / current_noise;
-
-      // If the rel stdev of the last N cuda noise measurements is less than
-      // 5%, consider the result stable.
-      const auto noise_threshold = 0.05;
-      if (noise_rel_stdev < noise_threshold)
-      {
-        return true;
-      }
     }
   }
 
@@ -162,13 +120,11 @@ bool measure_cold_base::is_finished()
 void measure_cold_base::run_trials_epilogue()
 {
   // Only need to compute this at the end, not per iteration.
-  const auto cpu_mean = m_total_cuda_time /
-                        static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cpu_stdev =
-    nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
-                                                    m_cpu_times.cend(),
-                                                    cpu_mean);
-  m_cpu_noise = cpu_stdev / cpu_mean;
+  const auto cpu_mean  = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
+  const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
+                                                                         m_cpu_times.cend(),
+                                                                         cpu_mean);
+  m_cpu_noise          = cpu_stdev / cpu_mean;
 
   m_walltime_timer.stop();
 }
@@ -199,8 +155,7 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("description",
-                    "Relative standard deviation of isolated CPU times");
+    summ.set_string("description", "Relative standard deviation of isolated CPU times");
     summ.set_float64("value", m_cpu_noise);
   }
 
@@ -215,16 +170,21 @@ void measure_cold_base::generate_summaries()
     summ.set_float64("value", avg_cuda_time);
   }
 
+  const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
+  const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
+                                                                          m_cuda_times.cend(),
+                                                                          mean_cuda_time);
+  const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
+  const auto noise = cuda_rel_stdev;
+  const auto max_noise = m_criterion_params.get_float64("max-noise");
+  const auto min_time = m_criterion_params.get_float64("min-time");
+
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("description",
-                    "Relative standard deviation of isolated GPU times");
-    summ.set_float64("value",
-                     m_noise_tracker.empty()
-                       ? std::numeric_limits<nvbench::float64_t>::infinity()
-                       : m_noise_tracker.back());
+    summ.set_string("description", "Relative standard deviation of isolated GPU times");
+    summ.set_float64("value", noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -232,8 +192,7 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/bw/item_rate");
     summ.set_string("name", "Elem/s");
     summ.set_string("hint", "item_rate");
-    summ.set_string("description",
-                    "Number of input elements processed per second");
+    summ.set_string("description", "Number of input elements processed per second");
     summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
   }
 
@@ -251,8 +210,8 @@ void measure_cold_base::generate_summaries()
     }
 
     {
-      const auto peak_gmem_bw = static_cast<double>(
-        m_state.get_device()->get_global_memory_bus_bandwidth());
+      const auto peak_gmem_bw =
+        static_cast<double>(m_state.get_device()->get_global_memory_bus_bandwidth());
 
       auto &summ = m_state.add_summary("nv/cold/bw/global/utilization");
       summ.set_string("name", "BWUtil");
@@ -274,8 +233,7 @@ void measure_cold_base::generate_summaries()
   }
 
   // Log if a printer exists:
-  if (auto printer_opt_ref = m_state.get_benchmark().get_printer();
-      printer_opt_ref.has_value())
+  if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
 
@@ -283,15 +241,15 @@ void measure_cold_base::generate_summaries()
     {
       const auto timeout = m_walltime_timer.get_duration();
 
-      if (!m_noise_tracker.empty() && m_noise_tracker.back() > m_max_noise)
+      if (noise > max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                m_noise_tracker.back() * 100,
-                                m_max_noise * 100));
+                                noise * 100,
+                                max_noise * 100));
       }
       if (m_total_samples < m_min_samples)
       {
@@ -302,7 +260,7 @@ void measure_cold_base::generate_summaries()
                                 m_total_samples,
                                 m_min_samples));
       }
-      if (m_total_cuda_time < m_min_time)
+      if (m_total_cuda_time < min_time)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
@@ -310,7 +268,7 @@ void measure_cold_base::generate_summaries()
                                 "{:0.2f}s)",
                                 timeout,
                                 m_total_cuda_time,
-                                m_min_time));
+                                min_time));
       }
     }
 
@@ -324,10 +282,7 @@ void measure_cold_base::generate_summaries()
                             m_walltime_timer.get_duration(),
                             m_total_samples));
 
-    printer.process_bulk_data(m_state,
-                              "nv/cold/sample_times",
-                              "sample_times",
-                              m_cuda_times);
+    printer.process_bulk_data(m_state, "nv/cold/sample_times", "sample_times", m_cuda_times);
   }
 }
 

@@ -20,12 +20,10 @@ namespace tl::detail
 {
 
 template <typename... Ts>
-auto size(nvbench::type_list<Ts...>)
-  -> std::integral_constant<std::size_t, sizeof...(Ts)>;
+auto size(nvbench::type_list<Ts...>) -> std::integral_constant<std::size_t, sizeof...(Ts)>;
 
-template <std::size_t I, typename... Ts>
-auto get(nvbench::type_list<Ts...>)
-  -> std::tuple_element_t<I, std::tuple<Ts...>>;
+template <std::size_t Idx, typename... Ts>
+auto get(nvbench::type_list<Ts...>) -> std::tuple_element_t<Idx, std::tuple<Ts...>>;
 
 template <typename... Ts, typename... Us>
 auto concat(nvbench::type_list<Ts...>, nvbench::type_list<Us...>)
@@ -44,9 +42,8 @@ struct prepend_each<T, nvbench::type_list<>>
 template <typename T, typename TL, typename... TLTail>
 struct prepend_each<T, nvbench::type_list<TL, TLTail...>>
 {
-  using cur = decltype(detail::concat(nvbench::type_list<T>{}, TL{}));
-  using next =
-    typename detail::prepend_each<T, nvbench::type_list<TLTail...>>::type;
+  using cur  = decltype(detail::concat(nvbench::type_list<T>{}, TL{}));
+  using next = typename detail::prepend_each<T, nvbench::type_list<TLTail...>>::type;
   using type = decltype(detail::concat(nvbench::type_list<cur>{}, next{}));
 };
 
@@ -71,23 +68,20 @@ struct cartesian_product<nvbench::type_list<nvbench::type_list<>, TLTail...>>
 template <typename T, typename... Ts>
 struct cartesian_product<nvbench::type_list<nvbench::type_list<T, Ts...>>>
 {
-  using cur = nvbench::type_list<nvbench::type_list<T>>;
-  using next =
-    std::conditional_t<sizeof...(Ts) != 0,
-                       typename detail::cartesian_product<
-                         nvbench::type_list<nvbench::type_list<Ts...>>>::type,
-                       nvbench::type_list<>>;
+  using cur  = nvbench::type_list<nvbench::type_list<T>>;
+  using next = std::conditional_t<
+    sizeof...(Ts) != 0,
+    typename detail::cartesian_product<nvbench::type_list<nvbench::type_list<Ts...>>>::type,
+    nvbench::type_list<>>;
   using type = decltype(detail::concat(cur{}, next{}));
 };
 
 template <typename T, typename... Tail, typename TL, typename... TLTail>
-struct cartesian_product<
-  nvbench::type_list<nvbench::type_list<T, Tail...>, TL, TLTail...>>
+struct cartesian_product<nvbench::type_list<nvbench::type_list<T, Tail...>, TL, TLTail...>>
 {
-  using tail_prod =
-    typename detail::cartesian_product<nvbench::type_list<TL, TLTail...>>::type;
-  using cur  = typename detail::prepend_each<T, tail_prod>::type;
-  using next = typename detail::cartesian_product<
+  using tail_prod = typename detail::cartesian_product<nvbench::type_list<TL, TLTail...>>::type;
+  using cur       = typename detail::prepend_each<T, tail_prod>::type;
+  using next      = typename detail::cartesian_product<
     nvbench::type_list<nvbench::type_list<Tail...>, TL, TLTail...>>::type;
   using type = decltype(detail::concat(cur{}, next{}));
 };

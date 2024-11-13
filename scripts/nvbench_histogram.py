@@ -38,6 +38,20 @@ def parse_files():
     return filenames
 
 
+def extract_filename(summary):
+    summary_data = summary["data"]
+    value_data = next(filter(lambda v: v["name"] == "filename", summary_data))
+    assert(value_data["type"] == "string")
+    return value_data["value"]
+
+
+def extract_size(summary):
+    summary_data = summary["data"]
+    value_data = next(filter(lambda v: v["name"] == "size", summary_data))
+    assert(value_data["type"] == "int64")
+    return int(value_data["value"])
+
+
 def parse_samples_meta(filename, state):
     summaries = state["summaries"]
     if not summaries:
@@ -49,13 +63,13 @@ def parse_samples_meta(filename, state):
     if not summary:
         return None, None
 
-    sample_filename = summary["filename"]["value"]
+    sample_filename = extract_filename(summary)
 
     # If not absolute, the path is relative to the associated .json file:
     if not os.path.isabs(sample_filename):
         sample_filename = os.path.join(os.path.dirname(filename), sample_filename)
 
-    sample_count = int(summary["size"]["value"])
+    sample_count = extract_size(summary)
     return sample_count, sample_filename
 
 

@@ -44,13 +44,13 @@ std::vector<T> sort(std::vector<T> &&vec)
 void no_op_generator(nvbench::state &state)
 {
   fmt::memory_buffer params;
-  fmt::format_to(params, "Params:");
+  fmt::format_to(std::back_inserter(params), "Params:");
   const auto &axis_values = state.get_axis_values();
   for (const auto &name : sort(axis_values.get_names()))
   {
     std::visit(
       [&params, &name](const auto &value) {
-        fmt::format_to(params, " {}: {}", name, value);
+        fmt::format_to(std::back_inserter(params), " {}: {}", name, value);
       },
       axis_values.get_value(name));
   }
@@ -109,7 +109,7 @@ std::string run_and_get_state_string(nvbench::benchmark_base &bench,
   for (const auto &state : states)
   {
     ASSERT(state.is_skipped());
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
   return fmt::to_string(buffer);
 }

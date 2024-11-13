@@ -21,6 +21,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace nvbench
@@ -47,10 +48,7 @@ struct axis_base
 
   [[nodiscard]] axis_type get_type() const { return m_type; }
 
-  [[nodiscard]] std::string_view get_type_as_string() const
-  {
-    return axis_type_to_string(m_type);
-  }
+  [[nodiscard]] std::string_view get_type_as_string() const { return axis_type_to_string(m_type); }
 
   [[nodiscard]] std::string_view get_flags_as_string() const
   {
@@ -93,16 +91,12 @@ inline std::string_view axis_type_to_string(axis_type type)
   {
     case axis_type::type:
       return "type";
-      break;
     case axis_type::int64:
       return "int64";
-      break;
     case axis_type::float64:
       return "float64";
-      break;
     case axis_type::string:
       return "string";
-      break;
   }
   throw std::runtime_error{"nvbench::axis_type_to_string Invalid axis_type."};
 }

@@ -53,7 +53,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
                 "`ExecTags` argument must be a member (or combination of "
                 "members) from nvbench::exec_tag.");
 
-  constexpr auto measure_tags = tags & measure_mask;
+  constexpr auto measure_tags  = tags & measure_mask;
   constexpr auto modifier_tags = tags & modifier_mask;
 
   // "run once" is handled by the cold measurement:
@@ -81,8 +81,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     }
     else
     {
-      this->exec(cold | hot | tags,
-                 std::forward<KernelLauncher>(kernel_launcher));
+      this->exec(cold | hot | tags, std::forward<KernelLauncher>(kernel_launcher));
     }
     return;
   }
@@ -99,8 +98,8 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     constexpr bool use_blocking_kernel = !(tags & no_block);
     if constexpr (tags & timer)
     {
-      // Estimate bandwidth here
-      #ifdef NVBENCH_HAS_CUPTI
+// Estimate bandwidth here
+#ifdef NVBENCH_HAS_CUPTI
       if constexpr (!(modifier_tags & run_once))
       {
         if (this->is_cupti_required())
@@ -110,7 +109,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
           measure();
         }
       }
-      #endif
+#endif
 
       using measure_t = nvbench::detail::measure_cold<KL, use_blocking_kernel>;
       measure_t measure{*this, kernel_launcher};
@@ -121,8 +120,8 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
       using wrapper_t = nvbench::detail::kernel_launch_timer_wrapper<KL>;
       wrapper_t wrapper{kernel_launcher};
 
-      // Estimate bandwidth here
-      #ifdef NVBENCH_HAS_CUPTI
+// Estimate bandwidth here
+#ifdef NVBENCH_HAS_CUPTI
       if constexpr (!(modifier_tags & run_once))
       {
         if (this->is_cupti_required())
@@ -132,10 +131,9 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
           measure();
         }
       }
-      #endif
+#endif
 
-      using measure_t =
-        nvbench::detail::measure_cold<wrapper_t, use_blocking_kernel>;
+      using measure_t = nvbench::detail::measure_cold<wrapper_t, use_blocking_kernel>;
       measure_t measure(*this, wrapper);
       measure();
     }
@@ -143,12 +141,10 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
 
   if constexpr (tags & hot)
   {
-    static_assert(!(tags & sync),
-                  "Hot measurement doesn't support the `sync` exec_tag.");
-    static_assert(!(tags & timer),
-                  "Hot measurement doesn't support the `timer` exec_tag.");
+    static_assert(!(tags & sync), "Hot measurement doesn't support the `sync` exec_tag.");
+    static_assert(!(tags & timer), "Hot measurement doesn't support the `timer` exec_tag.");
     constexpr bool use_blocking_kernel = !(tags & no_block);
-    using measure_t = nvbench::detail::measure_hot<KL, use_blocking_kernel>;
+    using measure_t                    = nvbench::detail::measure_hot<KL, use_blocking_kernel>;
     measure_t measure{*this, kernel_launcher};
     measure();
   }

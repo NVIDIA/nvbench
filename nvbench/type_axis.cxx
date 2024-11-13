@@ -35,10 +35,10 @@ void type_axis::set_active_inputs(const std::vector<std::string> &inputs)
 {
   m_mask.clear();
   m_mask.resize(m_input_strings.size(), false);
-  for (const auto& input : inputs)
+  for (const auto &input : inputs)
   {
     const auto idx = this->get_type_index(input);
-    m_mask[idx] = true;
+    m_mask[idx]    = true;
   }
 }
 
@@ -47,21 +47,16 @@ bool type_axis::get_is_active(const std::string &input) const
   return this->get_is_active(this->get_type_index(input));
 }
 
-bool type_axis::get_is_active(std::size_t idx) const
-{
-  return m_mask.at(idx);
-}
+bool type_axis::get_is_active(std::size_t idx) const { return m_mask.at(idx); }
 
 std::size_t type_axis::get_active_count() const
 {
-  return static_cast<std::size_t>(
-    std::count(m_mask.cbegin(), m_mask.cend(), true));
+  return static_cast<std::size_t>(std::count(m_mask.cbegin(), m_mask.cend(), true));
 }
 
 std::size_t type_axis::get_type_index(const std::string &input_string) const
 {
-  auto it =
-    std::find(m_input_strings.cbegin(), m_input_strings.cend(), input_string);
+  auto it = std::find(m_input_strings.cbegin(), m_input_strings.cend(), input_string);
   if (it == m_input_strings.end())
   {
     NVBENCH_THROW(std::runtime_error,
@@ -72,7 +67,7 @@ std::size_t type_axis::get_type_index(const std::string &input_string) const
                   m_input_strings);
   }
 
-  return it - m_input_strings.cbegin();
+  return static_cast<std::size_t>(it - m_input_strings.cbegin());
 }
 
 } // namespace nvbench

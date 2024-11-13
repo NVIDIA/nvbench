@@ -57,18 +57,14 @@ struct benchmark final : public benchmark_base
   using type_axes        = TypeAxes;
   using type_configs     = nvbench::tl::cartesian_product<type_axes>;
 
-  static constexpr std::size_t num_type_configs =
-    nvbench::tl::size<type_configs>{};
+  static constexpr std::size_t num_type_configs = nvbench::tl::size<type_configs>{};
 
   benchmark()
       : benchmark_base(type_axes{})
   {}
 
 private:
-  std::unique_ptr<benchmark_base> do_clone() const final
-  {
-    return std::make_unique<benchmark>();
-  }
+  std::unique_ptr<benchmark_base> do_clone() const final { return std::make_unique<benchmark>(); }
 
   void do_set_type_axes_names(std::vector<std::string> names) final
   {

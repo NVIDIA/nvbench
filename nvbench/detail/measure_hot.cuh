@@ -27,7 +27,7 @@
 
 #include <cuda_runtime.h>
 
-#include <utility>
+#include <algorithm>
 
 namespace nvbench
 {
@@ -41,10 +41,10 @@ namespace detail
 struct measure_hot_base
 {
   explicit measure_hot_base(nvbench::state &exec_state);
-  measure_hot_base(const measure_hot_base &) = delete;
-  measure_hot_base(measure_hot_base &&)      = delete;
+  measure_hot_base(const measure_hot_base &)            = delete;
+  measure_hot_base(measure_hot_base &&)                 = delete;
   measure_hot_base &operator=(const measure_hot_base &) = delete;
-  measure_hot_base &operator=(measure_hot_base &&) = delete;
+  measure_hot_base &operator=(measure_hot_base &&)      = delete;
 
 protected:
   void check();
@@ -131,7 +131,7 @@ private:
     // The .95 factor here pads the batch_size a bit to avoid needing a second
     // batch due to noise.
     const auto time_estimate = m_cuda_timer.get_duration() * 0.95;
-    auto batch_size = static_cast<nvbench::int64_t>(m_min_time / time_estimate);
+    auto batch_size          = static_cast<nvbench::int64_t>(m_min_time / time_estimate);
 
     do
     {
@@ -142,7 +142,7 @@ private:
         // Block stream until some work is queued.
         // Limit the number of kernel executions while blocked to prevent
         // deadlocks. See warnings on blocking_kernel.
-        const auto blocked_launches = std::min(batch_size, nvbench::int64_t{2});
+        const auto blocked_launches   = std::min(batch_size, nvbench::int64_t{2});
         const auto unblocked_launches = batch_size - blocked_launches;
 
         this->block_stream();
@@ -188,7 +188,6 @@ private:
       {
         break; // Stop iterating
       }
-
 
       m_walltime_timer.stop();
       if (m_walltime_timer.get_duration() > m_timeout)

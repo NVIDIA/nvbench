@@ -31,16 +31,16 @@ enum class exec_flag
   none = 0x0,
 
   // Modifiers:
-  timer    = 0x01, // KernelLauncher uses manual timing
-  no_block = 0x02, // Disables use of `blocking_kernel`.
-  sync     = 0x04, // KernelLauncher has indicated that it will sync
-  run_once = 0x08, // Only run the benchmark once (for profiling).
+  timer         = 0x01, // KernelLauncher uses manual timing
+  no_block      = 0x02, // Disables use of `blocking_kernel`.
+  sync          = 0x04, // KernelLauncher has indicated that it will sync
+  run_once      = 0x08, // Only run the benchmark once (for profiling).
   modifier_mask = timer | no_block | sync | run_once,
 
   // Measurement types:
-  cold = 0x0100, // measure_hot
-  hot  = 0x0200, // measure_cold
-  measure_mask  = cold | hot
+  cold         = 0x0100, // measure_cold
+  hot          = 0x0200, // measure_hot
+  measure_mask = cold | hot
 };
 
 } // namespace nvbench::detail
@@ -120,7 +120,9 @@ constexpr inline auto timer = nvbench::exec_tag::impl::timer;
 
 /// Modifier used to indicate that the KernelGenerator will perform CUDA
 /// synchronizations. Without this flag such benchmarks will deadlock.
-constexpr inline auto sync = nvbench::exec_tag::impl::no_block |
-                             nvbench::exec_tag::impl::sync;
+constexpr inline auto sync = nvbench::exec_tag::impl::no_block | nvbench::exec_tag::impl::sync;
+
+/// Modifier used to indicate that batched measurements should be disabled
+constexpr inline auto no_batch = nvbench::exec_tag::impl::cold;
 
 } // namespace nvbench::exec_tag

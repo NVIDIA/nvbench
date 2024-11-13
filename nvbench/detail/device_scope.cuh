@@ -39,9 +39,9 @@ struct [[maybe_unused]] device_scope
   ~device_scope() { NVBENCH_CUDA_CALL(cudaSetDevice(m_old_device_id)); }
 
   // move-only
-  device_scope(device_scope &&) = default;
-  device_scope &operator=(device_scope &&) = default;
-  device_scope(const device_scope &)       = delete;
+  device_scope(device_scope &&)                 = default;
+  device_scope &operator=(device_scope &&)      = default;
+  device_scope(const device_scope &)            = delete;
   device_scope &operator=(const device_scope &) = delete;
 
 private:

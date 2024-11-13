@@ -23,6 +23,7 @@
 
 // Thrust simplifies memory management, etc:
 #include <thrust/copy.h>
+#include <thrust/execution_policy.h>
 #include <thrust/device_vector.h>
 #include <thrust/sequence.h>
 
@@ -53,6 +54,8 @@ void mod2_inplace(nvbench::state &state)
   state.exec(nvbench::exec_tag::timer,
              // Lambda now takes a `timer` argument:
              [&input, &data, num_values](nvbench::launch &launch, auto &timer) {
+               (void) num_values; // clang thinks this is unused...
+
                // Reset working data:
                thrust::copy(thrust::device.on(launch.get_stream()),
                             input.cbegin(),

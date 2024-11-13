@@ -43,7 +43,7 @@ struct type_axis final : public axis_base
   template <typename TypeList>
   void set_inputs();
 
-  void set_active_inputs(const std::vector<std::string>& inputs);
+  void set_active_inputs(const std::vector<std::string> &inputs);
 
   [[nodiscard]] bool get_is_active(const std::string &input) const;
   [[nodiscard]] bool get_is_active(std::size_t index) const;
@@ -57,23 +57,13 @@ struct type_axis final : public axis_base
   /**
    * The index in this axis of the type with the specified `input_string`.
    */
-  [[nodiscard]] std::size_t
-  get_type_index(const std::string &input_string) const;
+  [[nodiscard]] std::size_t get_type_index(const std::string &input_string) const;
 
 private:
-  std::unique_ptr<axis_base> do_clone() const
-  {
-    return std::make_unique<type_axis>(*this);
-  }
+  std::unique_ptr<axis_base> do_clone() const final { return std::make_unique<type_axis>(*this); }
   std::size_t do_get_size() const final { return m_input_strings.size(); }
-  std::string do_get_input_string(std::size_t i) const final
-  {
-    return m_input_strings[i];
-  }
-  std::string do_get_description(std::size_t i) const final
-  {
-    return m_descriptions[i];
-  }
+  std::string do_get_input_string(std::size_t i) const final { return m_input_strings[i]; }
+  std::string do_get_description(std::size_t i) const final { return m_descriptions[i]; }
 
   std::vector<std::string> m_input_strings;
   std::vector<std::string> m_descriptions;

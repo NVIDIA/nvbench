@@ -36,9 +36,21 @@ BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeComma
-ColumnLimit: 80
+ColumnLimit: 100
 CompactNamespaces: false
 ContinuationIndentWidth: 2
+IncludeBlocks:   Regroup
+IncludeCategories:
+  - Regex:           '^<cub'
+    Priority:        1
+  - Regex:           '^<thrust'
+    Priority:        2
+  - Regex:           '^<cuda'
+    Priority:        3
+  - Regex:           '^<nvbench'
+    Priority:        4
+  - Regex:           '^<[a-z]*>$'
+    Priority:        5
 IndentCaseLabels: true
 IndentPPDirectives: None
 IndentWidth: 2
@@ -55,7 +67,7 @@ PenaltyExcessCharacter: 100
 PenaltyReturnTypeOnItsOwnLine: 90
 PointerAlignment: Right
 ReflowComments: true
-SortIncludes: true
+SortIncludes: CaseInsensitive
 SpaceAfterCStyleCast: false
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: true

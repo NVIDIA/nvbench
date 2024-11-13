@@ -31,13 +31,21 @@ namespace nvbench
  */
 struct benchmark_manager
 {
-  using benchmark_vector =
-    std::vector<std::unique_ptr<nvbench::benchmark_base>>;
+  using benchmark_vector = std::vector<std::unique_ptr<nvbench::benchmark_base>>;
 
   /**
    * @return The singleton benchmark_manager instance.
    */
   [[nodiscard]] static benchmark_manager &get();
+
+  /**
+   * Setup any default values for the benchmarks. Invoked from `main`.
+   *
+   * Specifically, any CUDA calls (e.g. cudaGetDeviceProperties, etc) needed to initialize the
+   * benchmarks should be done here to avoid creating a CUDA context before we configure the CUDA
+   * environment in `main`.
+   */
+   void initialize();
 
   /**
    * Register a new benchmark.
@@ -53,25 +61,21 @@ struct benchmark_manager
    * Get a non-mutable reference to benchmark with the specified name/index.
    * @{
    */
-  [[nodiscard]] const benchmark_base &
-  get_benchmark(const std::string &name) const;
+  [[nodiscard]] const benchmark_base &get_benchmark(const std::string &name) const;
   [[nodiscard]] const benchmark_base &get_benchmark(std::size_t idx) const
   {
     return *m_benchmarks.at(idx);
   }
   /**@}*/
 
-  [[nodiscard]] const benchmark_vector &get_benchmarks() const
-  {
-    return m_benchmarks;
-  };
+  [[nodiscard]] const benchmark_vector &get_benchmarks() const { return m_benchmarks; };
 
 private:
-  benchmark_manager()                          = default;
-  benchmark_manager(const benchmark_manager &) = delete;
-  benchmark_manager(benchmark_manager &&)      = delete;
+  benchmark_manager()                                     = default;
+  benchmark_manager(const benchmark_manager &)            = delete;
+  benchmark_manager(benchmark_manager &&)                 = delete;
   benchmark_manager &operator=(const benchmark_manager &) = delete;
-  benchmark_manager &operator=(benchmark_manager &&) = delete;
+  benchmark_manager &operator=(benchmark_manager &&)      = delete;
 
   benchmark_vector m_benchmarks;
 };

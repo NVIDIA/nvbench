@@ -30,17 +30,17 @@ namespace nvbench
 std::string demangle(const std::string &str);
 
 template <typename T>
-std::string demangle() { return demangle(typeid(T).name()); }
+std::string demangle()
+{
+  return demangle(typeid(T).name());
+}
 
 template <typename T>
 struct type_strings
 {
   // The string used to identify the type in shorthand (e.g. output tables and
   // CLI options):
-  static std::string input_string()
-  {
-    return nvbench::demangle<T>();
-  }
+  static std::string input_string() { return nvbench::demangle<T>(); }
 
   // A more descriptive identifier for the type, if input_string is not a common
   // identifier. May be blank if `input_string` is obvious.
@@ -56,10 +56,7 @@ struct type_strings<std::integral_constant<T, Value>>
 
   // A more descriptive identifier for the type, if input_string is not a common
   // identifier. May be blank if `input_string` is obvious.
-  static std::string description()
-  {
-    return nvbench::demangle<std::integral_constant<T, Value>>();
-  }
+  static std::string description() { return nvbench::demangle<std::integral_constant<T, Value>>(); }
 };
 
 } // namespace nvbench
@@ -67,15 +64,15 @@ struct type_strings<std::integral_constant<T, Value>>
 /*!
  * Declare an `input_string` and `description` to use with a specific `type`.
  */
-#define NVBENCH_DECLARE_TYPE_STRINGS(Type, InputString, Description)           \
-  namespace nvbench                                                            \
-  {                                                                            \
-  template <>                                                                  \
-  struct type_strings<Type>                                                    \
-  {                                                                            \
-    static std::string input_string() { return {InputString}; }                \
-    static std::string description() { return {Description}; }                 \
-  };                                                                           \
+#define NVBENCH_DECLARE_TYPE_STRINGS(Type, InputString, Description)                               \
+  namespace nvbench                                                                                \
+  {                                                                                                \
+  template <>                                                                                      \
+  struct type_strings<Type>                                                                        \
+  {                                                                                                \
+    static std::string input_string() { return {InputString}; }                                    \
+    static std::string description() { return {Description}; }                                     \
+  };                                                                                               \
   }
 
 NVBENCH_DECLARE_TYPE_STRINGS(nvbench::int8_t, "I8", "int8_t");

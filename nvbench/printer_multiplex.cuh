@@ -40,10 +40,7 @@ struct printer_multiplex : nvbench::printer_base
     return static_cast<Format &>(*m_printers.back());
   }
 
-  [[nodiscard]] std::size_t get_printer_count() const
-  {
-    return m_printers.size();
-  }
+  [[nodiscard]] std::size_t get_printer_count() const { return m_printers.size(); }
 
 protected:
   void do_log_argv(const std::vector<std::string> &argv) override;
@@ -52,11 +49,10 @@ protected:
   void do_print_log_epilogue() override;
   void do_log(nvbench::log_level, const std::string &) override;
   void do_log_run_state(const nvbench::state &) override;
-  void do_process_bulk_data_float64(
-    nvbench::state &,
-    const std::string &,
-    const std::string &,
-    const std::vector<nvbench::float64_t> &) override;
+  void do_process_bulk_data_float64(nvbench::state &,
+                                    const std::string &,
+                                    const std::string &,
+                                    const std::vector<nvbench::float64_t> &) override;
   void do_print_benchmark_list(const benchmark_vector &benches) override;
   void do_print_benchmark_results(const benchmark_vector &benches) override;
   void do_set_completed_state_count(std::size_t states) override;

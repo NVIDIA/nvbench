@@ -18,6 +18,7 @@
 
 #include <nvbench/benchmark_manager.cuh>
 
+#include <nvbench/device_manager.cuh>
 #include <nvbench/detail/throw.cuh>
 
 #include <fmt/format.h>
@@ -34,6 +35,15 @@ benchmark_manager &benchmark_manager::get()
   return the_manager;
 }
 
+void benchmark_manager::initialize()
+{
+  const auto& mgr = device_manager::get();
+  for (auto& bench : m_benchmarks)
+  {
+    bench->set_devices(mgr.get_devices());
+  }
+}
+
 benchmark_base &benchmark_manager::add(std::unique_ptr<benchmark_base> bench)
 {
   m_benchmarks.push_back(std::move(bench));
@@ -43,21 +53,18 @@ benchmark_base &benchmark_manager::add(std::unique_ptr<benchmark_base> bench)
 benchmark_manager::benchmark_vector benchmark_manager::clone_benchmarks() const
 {
   benchmark_vector result(m_benchmarks.size());
-  std::transform(m_benchmarks.cbegin(),
-                 m_benchmarks.cend(),
-                 result.begin(),
-                 [](const auto &bench) { return bench->clone(); });
+  std::transform(m_benchmarks.cbegin(), m_benchmarks.cend(), result.begin(), [](const auto &bench) {
+    return bench->clone();
+  });
   return result;
 }
 
-const benchmark_base &
-benchmark_manager::get_benchmark(const std::string &name) const
+const benchmark_base &benchmark_manager::get_benchmark(const std::string &name) const
 {
-  auto iter = std::find_if(m_benchmarks.cbegin(),
-                           m_benchmarks.cend(),
-                           [&name](const auto &bench_ptr) {
-                             return bench_ptr->get_name() == name;
-                           });
+  auto iter =
+    std::find_if(m_benchmarks.cbegin(), m_benchmarks.cend(), [&name](const auto &bench_ptr) {
+      return bench_ptr->get_name() == name;
+    });
   if (iter == m_benchmarks.cend())
   {
     NVBENCH_THROW(std::out_of_range, "No benchmark named '{}'.", name);

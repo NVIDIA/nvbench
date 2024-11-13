@@ -66,9 +66,8 @@ std::string int64_axis::do_get_input_string(std::size_t i) const
 
 std::string int64_axis::do_get_description(std::size_t i) const
 {
-  return this->is_power_of_two()
-           ? fmt::format("2^{} = {}", m_inputs[i], m_values[i])
-           : std::string{};
+  return this->is_power_of_two() ? fmt::format("2^{} = {}", m_inputs[i], m_values[i])
+                                 : std::string{};
 }
 
 std::string_view int64_axis::do_get_flags_as_string() const

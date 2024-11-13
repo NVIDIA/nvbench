@@ -41,65 +41,54 @@ namespace nvbench
 void markdown_printer::do_print_device_info()
 {
   fmt::memory_buffer buffer;
-  fmt::format_to(buffer, "# Devices\n\n");
+  fmt::format_to(std::back_inserter(buffer), "# Devices\n\n");
 
   const auto &device_mgr = nvbench::device_manager::get();
-  const auto &devices    = device_mgr.get_number_of_used_devices() > 0
-                             ? device_mgr.get_used_devices()
-                             : device_mgr.get_devices();
+  const auto &devices = device_mgr.get_number_of_used_devices() > 0 ? device_mgr.get_used_devices()
+                                                                    : device_mgr.get_devices();
   for (const auto &device : devices)
   {
     const auto [gmem_free, gmem_used] = device.get_global_memory_usage();
 
-    fmt::format_to(buffer, "## [{}] `{}`\n", device.get_id(), device.get_name());
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer), "## [{}] `{}`\n", device.get_id(), device.get_name());
+    fmt::format_to(std::back_inserter(buffer),
                    "* SM Version: {} (PTX Version: {})\n",
                    device.get_sm_version(),
                    device.get_ptx_version());
-    fmt::format_to(buffer, "* Number of SMs: {}\n", device.get_number_of_sms());
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer), "* Number of SMs: {}\n", device.get_number_of_sms());
+    fmt::format_to(std::back_inserter(buffer),
                    "* SM Default Clock Rate: {} MHz\n",
                    device.get_sm_default_clock_rate() / 1000 / 1000);
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    "* Global Memory: {} MiB Free / {} MiB Total\n",
                    gmem_free / 1024 / 1024,
                    gmem_used / 1024 / 1024);
-    fmt::format_to(
-      buffer,
-      "* Global Memory Bus Peak: {} GB/sec ({}-bit DDR @{}MHz)\n",
-      device.get_global_memory_bus_bandwidth() / 1000 / 1000 / 1000,
-      device.get_global_memory_bus_width(),
-      device.get_global_memory_bus_peak_clock_rate() / 1000 / 1000);
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
+                   "* Global Memory Bus Peak: {} GB/sec ({}-bit DDR @{}MHz)\n",
+                   device.get_global_memory_bus_bandwidth() / 1000 / 1000 / 1000,
+                   device.get_global_memory_bus_width(),
+                   device.get_global_memory_bus_peak_clock_rate() / 1000 / 1000);
+    fmt::format_to(std::back_inserter(buffer),
                    "* Max Shared Memory: {} KiB/SM, {} KiB/Block\n",
                    device.get_shared_memory_per_sm() / 1024,
                    device.get_shared_memory_per_block() / 1024);
-    fmt::format_to(buffer,
-                   "* L2 Cache Size: {} KiB\n",
-                   device.get_l2_cache_size() / 1024);
-    fmt::format_to(buffer,
-                   "* Maximum Active Blocks: {}/SM\n",
-                   device.get_max_blocks_per_sm());
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer), "* L2 Cache Size: {} KiB\n", device.get_l2_cache_size() / 1024);
+    fmt::format_to(std::back_inserter(buffer), "* Maximum Active Blocks: {}/SM\n", device.get_max_blocks_per_sm());
+    fmt::format_to(std::back_inserter(buffer),
                    "* Maximum Active Threads: {}/SM, {}/Block\n",
                    device.get_max_threads_per_sm(),
                    device.get_max_threads_per_block());
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    "* Available Registers: {}/SM, {}/Block\n",
                    device.get_registers_per_sm(),
                    device.get_registers_per_block());
-    fmt::format_to(buffer,
-                   "* ECC Enabled: {}\n",
-                   device.get_ecc_state() ? "Yes" : "No");
-    fmt::format_to(buffer, "\n");
+    fmt::format_to(std::back_inserter(buffer), "* ECC Enabled: {}\n", device.get_ecc_state() ? "Yes" : "No");
+    fmt::format_to(std::back_inserter(buffer), "\n");
   }
   m_ostream << fmt::to_string(buffer);
 }
 
-void markdown_printer::do_print_log_preamble()
-{
-  m_ostream << "# Log\n\n```\n";
-}
+void markdown_printer::do_print_log_preamble() { m_ostream << "# Log\n\n```\n"; }
 
 void markdown_printer::do_print_log_epilogue() { m_ostream << "```\n\n"; }
 
@@ -147,8 +136,7 @@ void markdown_printer::do_log_run_state(const nvbench::state &exec_state)
 {
   if (m_total_state_count == 0)
   { // No progress info
-    this->log(nvbench::log_level::run,
-              exec_state.get_short_description(m_color));
+    this->log(nvbench::log_level::run, exec_state.get_short_description(m_color));
   }
   else
   { // Add progress
@@ -160,8 +148,7 @@ void markdown_printer::do_log_run_state(const nvbench::state &exec_state)
   }
 }
 
-void markdown_printer::do_print_benchmark_list(
-  const printer_base::benchmark_vector &benches)
+void markdown_printer::do_print_benchmark_list(const printer_base::benchmark_vector &benches)
 {
   if (benches.empty())
   {
@@ -169,20 +156,20 @@ void markdown_printer::do_print_benchmark_list(
   }
 
   fmt::memory_buffer buffer;
-  fmt::format_to(buffer, "# Benchmarks\n\n");
+  fmt::format_to(std::back_inserter(buffer), "# Benchmarks\n\n");
   std::size_t benchmark_id{0};
   for (const auto &bench_ptr : benches)
   {
     const auto &axes              = bench_ptr->get_axes().get_axes();
     const std::size_t num_configs = bench_ptr->get_config_count();
 
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    "## [{}] `{}` ({} configurations)\n\n",
                    benchmark_id++,
                    bench_ptr->get_name(),
                    num_configs);
 
-    fmt::format_to(buffer, "### Axes\n\n");
+    fmt::format_to(std::back_inserter(buffer), "### Axes\n\n");
     for (const auto &axis_ptr : axes)
     {
       std::string flags_str(axis_ptr->get_flags_as_string());
@@ -190,7 +177,7 @@ void markdown_printer::do_print_benchmark_list(
       {
         flags_str = fmt::format(" [{}]", flags_str);
       }
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      "* `{}` : {}{}\n",
                      axis_ptr->get_name(),
                      axis_ptr->get_type_as_string(),
@@ -204,20 +191,16 @@ void markdown_printer::do_print_benchmark_list(
         {
           desc = fmt::format(" ({})", desc);
         }
-        fmt::format_to(buffer,
-                       "  * `{}`{}\n",
-                       axis_ptr->get_input_string(i),
-                       desc);
+        fmt::format_to(std::back_inserter(buffer), "  * `{}`{}\n", axis_ptr->get_input_string(i), desc);
       } // end foreach value
     }   // end foreach axis
-    fmt::format_to(buffer, "\n");
+    fmt::format_to(std::back_inserter(buffer), "\n");
   } // end foreach bench
 
   m_ostream << fmt::to_string(buffer);
 }
 
-void markdown_printer::do_print_benchmark_results(
-  const printer_base::benchmark_vector &benches)
+void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_vector &benches)
 {
   auto format_visitor = [](const auto &v) {
     using T = std::decay_t<decltype(v)>;
@@ -239,7 +222,7 @@ void markdown_printer::do_print_benchmark_results(
 
   // Start printing benchmarks
   fmt::memory_buffer buffer;
-  fmt::format_to(buffer, "# Benchmark Results\n");
+  fmt::format_to(std::back_inserter(buffer), "# Benchmark Results\n");
 
   for (const auto &bench_ptr : benches)
   {
@@ -247,24 +230,20 @@ void markdown_printer::do_print_benchmark_results(
     const auto &devices = bench.get_devices();
     const auto &axes    = bench.get_axes();
 
-    fmt::format_to(buffer, "\n## {}\n", bench.get_name());
+    fmt::format_to(std::back_inserter(buffer), "\n## {}\n", bench.get_name());
 
     // Do a single pass when no devices are specified. This happens for
     // benchmarks with `cpu` exec_tags.
     const std::size_t num_device_passes = devices.empty() ? 1 : devices.size();
-    for (std::size_t device_pass = 0; device_pass < num_device_passes;
-         ++device_pass)
+    for (std::size_t device_pass = 0; device_pass < num_device_passes; ++device_pass)
     {
-      std::optional<nvbench::device_info> device =
-        devices.empty() ? std::nullopt
-                        : std::make_optional(devices[device_pass]);
+      std::optional<nvbench::device_info> device = devices.empty()
+                                                     ? std::nullopt
+                                                     : std::make_optional(devices[device_pass]);
 
       if (device)
       {
-        fmt::format_to(buffer,
-                       "\n### [{}] {}\n\n",
-                       device->get_id(),
-                       device->get_name());
+        fmt::format_to(std::back_inserter(buffer), "\n### [{}] {}\n\n", device->get_id(), device->get_name());
       }
 
       std::size_t row = 0;
@@ -288,15 +267,11 @@ void markdown_printer::do_print_benchmark_results(
             {
               const nvbench::int64_t value    = axis_values.get_int64(name);
               const nvbench::int64_t exponent = int64_axis::compute_log2(value);
-              table.add_cell(row,
-                             name,
-                             name,
-                             fmt::format("2^{} = {}", exponent, value));
+              table.add_cell(row, name, name, fmt::format("2^{} = {}", exponent, value));
             }
             else
             {
-              std::string value = std::visit(format_visitor,
-                                             axis_values.get_value(name));
+              std::string value = std::visit(format_visitor, axis_values.get_value(name));
               table.add_cell(row, name + "_axis", name, std::move(value));
             }
           }
@@ -308,12 +283,9 @@ void markdown_printer::do_print_benchmark_results(
               continue;
             }
             const std::string &tag    = summ.get_tag();
-            const std::string &header = summ.has_value("name")
-                                          ? summ.get_string("name")
-                                          : tag;
+            const std::string &header = summ.has_value("name") ? summ.get_string("name") : tag;
 
-            std::string hint = summ.has_value("hint") ? summ.get_string("hint")
-                                                      : std::string{};
+            std::string hint = summ.has_value("hint") ? summ.get_string("hint") : std::string{};
             if (hint == "duration")
             {
               table.add_cell(row, tag, header, this->do_format_duration(summ));
@@ -332,10 +304,7 @@ void markdown_printer::do_print_benchmark_results(
             }
             else if (hint == "sample_size")
             {
-              table.add_cell(row,
-                             tag,
-                             header,
-                             this->do_format_sample_size(summ));
+              table.add_cell(row, tag, header, this->do_format_sample_size(summ));
             }
             else if (hint == "percentage")
             {
@@ -351,10 +320,9 @@ void markdown_printer::do_print_benchmark_results(
       }
 
       auto table_str = table.to_string();
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      "{}",
-                     table_str.empty() ? "No data -- check log.\n"
-                                       : std::move(table_str));
+                     table_str.empty() ? "No data -- check log.\n" : std::move(table_str));
     } // end foreach device_pass
   }
 

@@ -66,10 +66,10 @@ struct cuda_stream
   ~cuda_stream() = default;
 
   // move-only
-  cuda_stream(const cuda_stream &) = delete;
+  cuda_stream(const cuda_stream &)            = delete;
   cuda_stream &operator=(const cuda_stream &) = delete;
   cuda_stream(cuda_stream &&)                 = default;
-  cuda_stream &operator=(cuda_stream &&) = default;
+  cuda_stream &operator=(cuda_stream &&)      = default;
 
   /**
    * @return The `cudaStream_t` managed by this `cuda_stream`.

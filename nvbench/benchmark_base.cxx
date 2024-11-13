@@ -34,12 +34,13 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_axes    = m_axes;
   result->m_devices = m_devices;
 
-  result->m_min_samples = m_min_samples;
-  result->m_min_time    = m_min_time;
-  result->m_max_noise   = m_max_noise;
+  result->m_min_samples      = m_min_samples;
+  result->m_criterion_params = m_criterion_params;
 
   result->m_skip_time = m_skip_time;
   result->m_timeout   = m_timeout;
+
+  result->m_stopping_criterion = m_stopping_criterion;
 
   return result;
 }
@@ -68,8 +69,7 @@ std::size_t benchmark_base::get_config_count() const
     std::size_t{1},
     std::multiplies<>{},
     [](const auto &axis_ptr) {
-      if (const auto *type_axis_ptr =
-            dynamic_cast<const nvbench::type_axis *>(axis_ptr.get());
+      if (const auto *type_axis_ptr = dynamic_cast<const nvbench::type_axis *>(axis_ptr.get());
           type_axis_ptr != nullptr)
       {
         return type_axis_ptr->get_active_count();

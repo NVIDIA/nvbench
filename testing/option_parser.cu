@@ -57,8 +57,8 @@ states_to_string(const std::vector<nvbench::state> &states)
   std::string table_format = "| {:^5} | {:^10} | {:^4} | {:^4} | {:^4} "
                              "| {:^4} | {:^6} | {:^8} |\n";
 
-  fmt::format_to(buffer, "\n");
-  fmt::format_to(buffer,
+  fmt::format_to(std::back_inserter(buffer), "\n");
+  fmt::format_to(std::back_inserter(buffer),
                  table_format,
                  "State",
                  "TypeConfig",
@@ -72,7 +72,7 @@ states_to_string(const std::vector<nvbench::state> &states)
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    table_format,
                    config++,
                    state.get_type_config_index(),
@@ -1229,6 +1229,27 @@ void test_timeout()
   ASSERT(std::abs(states[0].get_timeout() - 12345e2) < 1.);
 }
 
+void test_stopping_criterion()
+{
+  nvbench::option_parser parser;
+  parser.parse(
+    {"--benchmark", "DummyBench", 
+     "--stopping-criterion", "entropy",
+     "--max-angle", "0.42",
+     "--min-r2", "0.6"});
+  const auto& states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+  const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+  ASSERT(criterion_params.has_value("max-angle"));
+  ASSERT(criterion_params.has_value("min-r2"));
+
+  ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+  ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+}
+
 int main()
 try
 {
@@ -1264,6 +1285,8 @@ try
   test_max_noise();
   test_skip_time();
   test_timeout();
+
+  test_stopping_criterion();
 
   return 0;
 }

@@ -18,54 +18,38 @@
 
 #include <nvbench/internal/nvml.cuh>
 
-#include <nvbench/config.cuh>
-
-#include <fmt/format.h>
-
-#include <nvml.h>
-
-#include <stdexcept>
-
-namespace
+namespace nvbench::nvml
 {
-
-// RAII struct that initializes and shuts down NVML
-struct NVMLLifetimeManager
+NVMLLifetimeManager::NVMLLifetimeManager()
 {
-  NVMLLifetimeManager()
+#ifdef NVBENCH_HAS_NVML
+  try
+  {
+    NVBENCH_NVML_CALL_NO_API(nvmlInit());
+    m_inited = true;
+  }
+  catch (std::exception &e)
+  {
+    fmt::print("NVML initialization failed:\n {}", e.what());
+  }
+#endif
+}
+
+NVMLLifetimeManager::~NVMLLifetimeManager()
+{
+#ifdef NVBENCH_HAS_NVML
+  if (m_inited)
   {
     try
     {
-      NVBENCH_NVML_CALL_NO_API(nvmlInit());
-      m_inited = true;
+      NVBENCH_NVML_CALL_NO_API(nvmlShutdown());
     }
     catch (std::exception &e)
     {
-      fmt::print("NVML initialization failed:\n {}", e.what());
+      fmt::print("NVML shutdown failed:\n {}", e.what());
     }
   }
+#endif
+}
 
-  ~NVMLLifetimeManager()
-  {
-    if (m_inited)
-    {
-      try
-      {
-        NVBENCH_NVML_CALL_NO_API(nvmlShutdown());
-      }
-      catch (std::exception &e)
-      {
-        fmt::print("NVML shutdown failed:\n {}", e.what());
-      }
-    }
-  }
-
-private:
-  bool m_inited{false};
-};
-
-// NVML's lifetime should extend for the entirety of the process, so store in a
-// global.
-auto nvml_lifetime = NVMLLifetimeManager{};
-
-} // namespace
+} // namespace nvbench::nvml

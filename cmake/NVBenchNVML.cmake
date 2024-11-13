@@ -20,18 +20,24 @@ if (WIN32)
   # This is also nice because find_file searches recursively (find_library
   # does not) and some versions of CTK nest nvml.dll several directories deep
   # under C:\Windows\System32.
-  find_file(NVBench_NVML_DLL nvml.dll REQUIRED
+  find_file(NVBench_NVML_DLL nvml.dll
     DOC "The full path to nvml.dll. Usually somewhere under C:/Windows/System32."
     PATHS "C:/Windows/System32"
   )
   mark_as_advanced(NVBench_NVML_DLL)
+endif()
+
+if (NVBench_NVML_DLL)
   add_library(nvbench::nvml SHARED IMPORTED)
   target_link_libraries(nvbench::nvml INTERFACE CUDA::toolkit)
   set_target_properties(nvbench::nvml PROPERTIES
     IMPORTED_LOCATION "${NVBench_NVML_DLL}"
     IMPORTED_IMPLIB "${CUDA_nvml_LIBRARY}"
   )
-else()
-  # Linux is much easier...
+elseif(TARGET CUDA::nvml)
   add_library(nvbench::nvml ALIAS CUDA::nvml)
+else()
+  message(FATAL_ERROR "Could not find nvml.dll or CUDA::nvml target. "
+          "Set -DNVBench_ENABLE_NVML=OFF to disable NVML support "
+          "or set -DNVBench_NVML_DLL to the full path to nvml.dll on Windows.")
 endif()

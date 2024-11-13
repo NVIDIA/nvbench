@@ -188,7 +188,7 @@ void my_benchmark(nvbench::state& state, nvbench::type_list<T>)
 }
 using my_types = nvbench::type_list<int, float, double>;
 NVBENCH_BENCH_TYPES(my_benchmark, NVBENCH_TYPE_AXES(my_types))
-  .set_type_axis_names({"ValueType"});
+  .set_type_axes_names({"ValueType"});
 ```
 
 The `NVBENCH_TYPE_AXES` macro is unfortunately necessary to prevent commas in

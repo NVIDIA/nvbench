@@ -33,8 +33,7 @@ namespace nvbench
  */
 struct named_values
 {
-  using value_type =
-    std::variant<nvbench::int64_t, nvbench::float64_t, std::string>;
+  using value_type = std::variant<nvbench::int64_t, nvbench::float64_t, std::string>;
 
   enum class type
   {
@@ -43,7 +42,7 @@ struct named_values
     string
   };
 
-  void append(const named_values& other);
+  void append(const named_values &other);
 
   [[nodiscard]] std::size_t get_size() const;
   [[nodiscard]] std::vector<std::string> get_names() const;
@@ -60,11 +59,11 @@ struct named_values
 
   [[nodiscard]] type get_type(const std::string &name) const;
   [[nodiscard]] bool has_value(const std::string &name) const;
-  [[nodiscard]] const value_type& get_value(const std::string &name) const;
+  [[nodiscard]] const value_type &get_value(const std::string &name) const;
 
   void clear();
 
-  void remove_value(const std::string& name);
+  void remove_value(const std::string &name);
 
 private:
   struct named_value

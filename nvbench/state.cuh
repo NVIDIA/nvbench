@@ -24,6 +24,7 @@
 #include <nvbench/named_values.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <functional>
 #include <optional>
@@ -58,106 +59,79 @@ struct state_tester;
 struct state
 {
   // move-only
-  state(const state &) = delete;
-  state(state &&)      = default;
+  state(const state &)            = delete;
+  state(state &&)                 = default;
   state &operator=(const state &) = delete;
-  state &operator=(state &&) = default;
+  state &operator=(state &&)      = default;
 
-  [[nodiscard]] const nvbench::cuda_stream &get_cuda_stream() const
-  {
-    return m_cuda_stream;
-  }
-  void set_cuda_stream(nvbench::cuda_stream &&stream)
-  {
-    m_cuda_stream = std::move(stream);
-  }
+  [[nodiscard]] const nvbench::cuda_stream &get_cuda_stream() const { return m_cuda_stream; }
+  void set_cuda_stream(nvbench::cuda_stream &&stream) { m_cuda_stream = std::move(stream); }
 
   /// The CUDA device associated with with this benchmark state. May be
   /// nullopt for CPU-only benchmarks.
-  [[nodiscard]] const std::optional<nvbench::device_info> &get_device() const
-  {
-    return m_device;
-  }
+  [[nodiscard]] const std::optional<nvbench::device_info> &get_device() const { return m_device; }
 
   /// An index into a benchmark::type_configs type_list. Returns 0 if no type
   /// axes in the associated benchmark.
-  [[nodiscard]] std::size_t get_type_config_index() const
-  {
-    return m_type_config_index;
-  }
+  [[nodiscard]] std::size_t get_type_config_index() const { return m_type_config_index; }
 
   [[nodiscard]] nvbench::int64_t get_int64(const std::string &axis_name) const;
-  [[nodiscard]] nvbench::int64_t
-  get_int64_or_default(const std::string &axis_name,
-                       nvbench::int64_t default_value) const;
+  [[nodiscard]] nvbench::int64_t get_int64_or_default(const std::string &axis_name,
+                                                      nvbench::int64_t default_value) const;
 
-  [[nodiscard]] nvbench::float64_t
-  get_float64(const std::string &axis_name) const;
-  [[nodiscard]] nvbench::float64_t
-  get_float64_or_default(const std::string &axis_name,
-                         nvbench::float64_t default_value) const;
+  [[nodiscard]] nvbench::float64_t get_float64(const std::string &axis_name) const;
+  [[nodiscard]] nvbench::float64_t get_float64_or_default(const std::string &axis_name,
+                                                          nvbench::float64_t default_value) const;
 
-  [[nodiscard]] const std::string &
-  get_string(const std::string &axis_name) const;
-  [[nodiscard]] const std::string &
-  get_string_or_default(const std::string &axis_name,
-                        const std::string &default_value) const;
+  [[nodiscard]] const std::string &get_string(const std::string &axis_name) const;
+  [[nodiscard]] const std::string &get_string_or_default(const std::string &axis_name,
+                                                         const std::string &default_value) const;
 
   void add_element_count(std::size_t elements, std::string column_name = {});
 
   void set_element_count(std::size_t elements) { m_element_count = elements; }
-  [[nodiscard]] std::size_t get_element_count() const
-  {
-    return m_element_count;
-  }
+  [[nodiscard]] std::size_t get_element_count() const { return m_element_count; }
 
   template <typename ElementType>
   void add_global_memory_reads(std::size_t count, std::string column_name = {})
   {
-    this->add_global_memory_reads(count * sizeof(ElementType),
-                                  std::move(column_name));
+    this->add_global_memory_reads(count * sizeof(ElementType), std::move(column_name));
   }
   void add_global_memory_reads(std::size_t bytes, std::string column_name = {});
 
   template <typename ElementType>
   void add_global_memory_writes(std::size_t count, std::string column_name = {})
   {
-    this->add_global_memory_writes(count * sizeof(ElementType),
-                                   std::move(column_name));
+    this->add_global_memory_writes(count * sizeof(ElementType), std::move(column_name));
   }
-  void add_global_memory_writes(std::size_t bytes,
-                                std::string column_name = {});
+  void add_global_memory_writes(std::size_t bytes, std::string column_name = {});
 
   void add_buffer_size(std::size_t num_bytes,
                        std::string summary_tag,
                        std::string column_name = {},
                        std::string description = {});
 
-  void set_global_memory_rw_bytes(std::size_t bytes)
-  {
-    m_global_memory_rw_bytes = bytes;
-  }
-  [[nodiscard]] std::size_t get_global_memory_rw_bytes() const
-  {
-    return m_global_memory_rw_bytes;
-  }
+  void set_global_memory_rw_bytes(std::size_t bytes) { m_global_memory_rw_bytes = bytes; }
+  [[nodiscard]] std::size_t get_global_memory_rw_bytes() const { return m_global_memory_rw_bytes; }
 
   void skip(std::string reason) { m_skip_reason = std::move(reason); }
   [[nodiscard]] bool is_skipped() const { return !m_skip_reason.empty(); }
-  [[nodiscard]] const std::string &get_skip_reason() const
-  {
-    return m_skip_reason;
-  }
+  [[nodiscard]] const std::string &get_skip_reason() const { return m_skip_reason; }
 
   /// Execute at least this many trials per measurement. @{
-  [[nodiscard]] nvbench::int64_t get_min_samples() const
+  [[nodiscard]] nvbench::int64_t get_min_samples() const { return m_min_samples; }
+  void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
+  /// @}
+
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
   {
-    return m_min_samples;
+    return m_criterion_params;
   }
-  void set_min_samples(nvbench::int64_t min_samples)
-  {
-    m_min_samples = min_samples;
-  }
+
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
+  void set_stopping_criterion(std::string criterion) { m_stopping_criterion = std::move(criterion); }
   /// @}
 
   /// If true, the benchmark is only run once, skipping all warmup runs and only
@@ -173,16 +147,30 @@ struct state
   void set_disable_blocking_kernel(bool v) { m_disable_blocking_kernel = v; }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
-  void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
+  /// Accumulate at least this many seconds of timing data per measurement. 
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const
+  {
+    return m_criterion_params.get_float64("min-time");
+  }
+  void set_min_time(nvbench::float64_t min_time)
+  {
+    m_criterion_params.set_float64("min-time", min_time);
+  }
   /// @}
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
-  void set_max_noise(nvbench::float64_t max_noise) { m_max_noise = max_noise; }
+  /// `noise = stdev / mean_time`.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const
+  {
+    return m_criterion_params.get_float64("max-noise");
+  }
+  void set_max_noise(nvbench::float64_t max_noise)
+  {
+    m_criterion_params.set_float64("max-noise", max_noise);
+  }
   /// @}
 
   /// If a warmup run finishes in less than `skip_time`, the measurement will
@@ -222,20 +210,14 @@ struct state
   }
   ///@}
 
-  [[nodiscard]] const named_values &get_axis_values() const
-  {
-    return m_axis_values;
-  }
+  [[nodiscard]] const named_values &get_axis_values() const { return m_axis_values; }
 
   /*!
    * Return a string of "axis_name1=input_string1 axis_name2=input_string2 ..."
    */
   [[nodiscard]] std::string get_axis_values_as_string(bool color = false) const;
 
-  [[nodiscard]] const benchmark_base &get_benchmark() const
-  {
-    return m_benchmark;
-  }
+  [[nodiscard]] const benchmark_base &get_benchmark() const { return m_benchmark; }
 
   void collect_l1_hit_rates() { m_collect_l1_hit_rates = true; }
   void collect_l2_hit_rates() { m_collect_l2_hit_rates = true; }
@@ -252,26 +234,11 @@ struct state
     collect_dram_throughput();
   }
 
-  [[nodiscard]] bool is_l1_hit_rate_collected() const
-  {
-    return m_collect_l1_hit_rates;
-  }
-  [[nodiscard]] bool is_l2_hit_rate_collected() const
-  {
-    return m_collect_l2_hit_rates;
-  }
-  [[nodiscard]] bool is_stores_efficiency_collected() const
-  {
-    return m_collect_stores_efficiency;
-  }
-  [[nodiscard]] bool is_loads_efficiency_collected() const
-  {
-    return m_collect_loads_efficiency;
-  }
-  [[nodiscard]] bool is_dram_throughput_collected() const
-  {
-    return m_collect_dram_throughput;
-  }
+  [[nodiscard]] bool is_l1_hit_rate_collected() const { return m_collect_l1_hit_rates; }
+  [[nodiscard]] bool is_l2_hit_rate_collected() const { return m_collect_l2_hit_rates; }
+  [[nodiscard]] bool is_stores_efficiency_collected() const { return m_collect_stores_efficiency; }
+  [[nodiscard]] bool is_loads_efficiency_collected() const { return m_collect_loads_efficiency; }
+  [[nodiscard]] bool is_dram_throughput_collected() const { return m_collect_dram_throughput; }
 
   [[nodiscard]] bool is_cupti_required() const
   {
@@ -306,8 +273,7 @@ struct state
   template <typename KernelLauncher>
   void exec(KernelLauncher &&kernel_launcher)
   {
-    this->exec(nvbench::exec_tag::none,
-               std::forward<KernelLauncher>(kernel_launcher));
+    this->exec(nvbench::exec_tag::none, std::forward<KernelLauncher>(kernel_launcher));
   }
 
 private:
@@ -330,9 +296,11 @@ private:
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 
+
+  nvbench::criterion_params m_criterion_params;
+  std::string m_stopping_criterion;
+
   nvbench::int64_t m_min_samples;
-  nvbench::float64_t m_min_time;
-  nvbench::float64_t m_max_noise;
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;

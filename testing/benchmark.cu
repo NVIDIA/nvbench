@@ -44,13 +44,13 @@ std::vector<T> sort(std::vector<T> &&vec)
 void no_op_generator(nvbench::state &state)
 {
   fmt::memory_buffer params;
-  fmt::format_to(params, "Params:");
+  fmt::format_to(std::back_inserter(params), "Params:");
   const auto &axis_values = state.get_axis_values();
   for (const auto &name : sort(axis_values.get_names()))
   {
     std::visit(
       [&params, &name](const auto &value) {
-        fmt::format_to(params, " {}: {}", name, value);
+        fmt::format_to(std::back_inserter(params), " {}: {}", name, value);
       },
       axis_values.get_value(name));
   }
@@ -101,13 +101,13 @@ void test_type_axes()
   const auto &axes = bench.get_axes().get_axes();
   for (const auto &axis : axes)
   {
-    fmt::format_to(buffer, "Axis: {}\n", axis->get_name());
+    fmt::format_to(std::back_inserter(buffer), "Axis: {}\n", axis->get_name());
     const auto num_values = axis->get_size();
     for (std::size_t i = 0; i < num_values; ++i)
     {
       auto input_string = axis->get_input_string(i);
       auto description  = axis->get_description(i);
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      " - {}{}\n",
                      input_string,
                      description.empty() ? ""
@@ -148,7 +148,7 @@ void test_type_configs()
       using Integer = nvbench::tl::get<0, Conf>;
       using Float   = nvbench::tl::get<1, Conf>;
       using Other   = nvbench::tl::get<2, Conf>;
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      "type_configs[{:2d}] = <{:>3}, {:>3}, {:>4}>\n",
                      idx++,
                      nvbench::type_strings<Integer>::input_string(),

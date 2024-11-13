@@ -54,10 +54,7 @@ struct device_info
   [[nodiscard]] int get_id() const { return m_id; }
 
   /// @return The name of the device.
-  [[nodiscard]] std::string_view get_name() const
-  {
-    return std::string_view(m_prop.name);
-  }
+  [[nodiscard]] std::string_view get_name() const { return std::string_view(m_prop.name); }
 
   [[nodiscard]] bool is_active() const
   {
@@ -83,7 +80,6 @@ struct device_info
   /// @note Requires root / admin privileges.
   void set_persistence_mode(bool state);
 
-
   /// Symbolic values for special clock rates
   enum class clock_rate
   {
@@ -101,10 +97,7 @@ struct device_info
   void lock_gpu_clocks(clock_rate rate);
 
   /// @return The SM version of the current device as (major*100) + (minor*10).
-  [[nodiscard]] int get_sm_version() const
-  {
-    return m_prop.major * 100 + m_prop.minor * 10;
-  }
+  [[nodiscard]] int get_sm_version() const { return m_prop.major * 100 + m_prop.minor * 10; }
 
   /// @return The PTX version of the current device, e.g. sm_80 returns 800.
   [[nodiscard]] __forceinline__ int get_ptx_version() const
@@ -119,46 +112,25 @@ struct device_info
   }
 
   /// @return The number of physical streaming multiprocessors on this device.
-  [[nodiscard]] int get_number_of_sms() const
-  {
-    return m_prop.multiProcessorCount;
-  }
+  [[nodiscard]] int get_number_of_sms() const { return m_prop.multiProcessorCount; }
 
   /// @return The maximum number of resident blocks per SM.
-  [[nodiscard]] int get_max_blocks_per_sm() const
-  {
-    return m_prop.maxBlocksPerMultiProcessor;
-  }
+  [[nodiscard]] int get_max_blocks_per_sm() const { return m_prop.maxBlocksPerMultiProcessor; }
 
   /// @return The maximum number of resident threads per SM.
-  [[nodiscard]] int get_max_threads_per_sm() const
-  {
-    return m_prop.maxThreadsPerMultiProcessor;
-  }
+  [[nodiscard]] int get_max_threads_per_sm() const { return m_prop.maxThreadsPerMultiProcessor; }
 
   /// @return The maximum number of threads per block.
-  [[nodiscard]] int get_max_threads_per_block() const
-  {
-    return m_prop.maxThreadsPerBlock;
-  }
+  [[nodiscard]] int get_max_threads_per_block() const { return m_prop.maxThreadsPerBlock; }
 
   /// @return The number of registers per SM.
-  [[nodiscard]] int get_registers_per_sm() const
-  {
-    return m_prop.regsPerMultiprocessor;
-  }
+  [[nodiscard]] int get_registers_per_sm() const { return m_prop.regsPerMultiprocessor; }
 
   /// @return The number of registers per block.
-  [[nodiscard]] int get_registers_per_block() const
-  {
-    return m_prop.regsPerBlock;
-  }
+  [[nodiscard]] int get_registers_per_block() const { return m_prop.regsPerBlock; }
 
   /// @return The total number of bytes available in global memory.
-  [[nodiscard]] std::size_t get_global_memory_size() const
-  {
-    return m_prop.totalGlobalMem;
-  }
+  [[nodiscard]] std::size_t get_global_memory_size() const { return m_prop.totalGlobalMem; }
 
   struct memory_info
   {
@@ -176,16 +148,13 @@ struct device_info
   }
 
   /// @return The width of the global memory bus in bits.
-  [[nodiscard]] int get_global_memory_bus_width() const
-  {
-    return m_prop.memoryBusWidth;
-  }
+  [[nodiscard]] int get_global_memory_bus_width() const { return m_prop.memoryBusWidth; }
 
   //// @return The global memory bus bandwidth in bytes/sec.
   [[nodiscard]] std::size_t get_global_memory_bus_bandwidth() const
   { // 2 is for DDR, CHAR_BITS to convert bus_width to bytes.
     return 2 * this->get_global_memory_bus_peak_clock_rate() *
-           (this->get_global_memory_bus_width() / CHAR_BIT);
+           static_cast<std::size_t>(this->get_global_memory_bus_width() / CHAR_BIT);
   }
 
   /// @return The size of the L2 cache in bytes.
@@ -201,10 +170,7 @@ struct device_info
   }
 
   /// @return The available amount of shared memory in bytes per block.
-  [[nodiscard]] std::size_t get_shared_memory_per_block() const
-  {
-    return m_prop.sharedMemPerBlock;
-  }
+  [[nodiscard]] std::size_t get_shared_memory_per_block() const { return m_prop.sharedMemPerBlock; }
 
   /// @return True if ECC is enabled on this device.
   [[nodiscard]] bool get_ecc_state() const { return m_prop.ECCEnabled; }
@@ -224,23 +190,11 @@ struct device_info
 #endif
 
   /// @return A cached copy of the device's cudaDeviceProp.
-  [[nodiscard]] const cudaDeviceProp &get_cuda_device_prop() const
-  {
-    return m_prop;
-  }
+  [[nodiscard]] const cudaDeviceProp &get_cuda_device_prop() const { return m_prop; }
 
-  [[nodiscard]] bool operator<(const device_info &o) const
-  {
-    return m_id < o.m_id;
-  }
-  [[nodiscard]] bool operator==(const device_info &o) const
-  {
-    return m_id == o.m_id;
-  }
-  [[nodiscard]] bool operator!=(const device_info &o) const
-  {
-    return m_id != o.m_id;
-  }
+  [[nodiscard]] bool operator<(const device_info &o) const { return m_id < o.m_id; }
+  [[nodiscard]] bool operator==(const device_info &o) const { return m_id == o.m_id; }
+  [[nodiscard]] bool operator!=(const device_info &o) const { return m_id != o.m_id; }
 
 private:
   int m_id;
@@ -267,11 +221,10 @@ try
 {
   nvbench::detail::device_scope _{dev_id};
   cudaFuncAttributes attr{};
-  NVBENCH_CUDA_CALL(
-    cudaFuncGetAttributes(&attr, ((const void*)nvbench::detail::noop_kernel_ptr) ));
+  NVBENCH_CUDA_CALL(cudaFuncGetAttributes(&attr, ((const void *)nvbench::detail::noop_kernel_ptr)));
   return attr.ptxVersion * 10;
 }
-catch(...)
+catch (...)
 { // Fail gracefully when no appropriate PTX is found for this device.
   return -1;
 }

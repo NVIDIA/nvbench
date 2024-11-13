@@ -43,13 +43,13 @@ std::vector<T> sort(std::vector<T> &&vec)
 void no_op_generator(nvbench::state &state)
 {
   fmt::memory_buffer params;
-  fmt::format_to(params, "Params:");
+  fmt::format_to(std::back_inserter(params), "Params:");
   const auto &axis_values = state.get_axis_values();
   for (const auto &name : sort(axis_values.get_names()))
   {
     std::visit(
       [&params, &name](const auto &value) {
-        fmt::format_to(params, " {}: {}", name, value);
+        fmt::format_to(std::back_inserter(params), " {}: {}", name, value);
       },
       axis_values.get_value(name));
   }
@@ -124,7 +124,7 @@ void test_non_types()
   for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == true);
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
 
   const std::string ref = R"expected(Params: Float: 11 Int: 1 String: One
@@ -184,7 +184,7 @@ void test_types()
   for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == true);
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
 
   const std::string ref = R"expected(Params: FloatT: F32 IntT: I32 MiscT: bool
@@ -228,7 +228,7 @@ void test_both()
   for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == true);
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
 
   const std::string ref =
