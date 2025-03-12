@@ -2,7 +2,7 @@
 macro(nvbench_load_rapids_cmake)
   if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/NVBENCH_RAPIDS.cmake")
     file(DOWNLOAD
-      https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-23.12/RAPIDS.cmake
+      https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-25.04/RAPIDS.cmake
       "${CMAKE_CURRENT_BINARY_DIR}/NVBENCH_RAPIDS.cmake"
     )
   endif()
