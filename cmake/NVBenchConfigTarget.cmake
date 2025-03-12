@@ -63,6 +63,9 @@ else()
   endif()
 endif()
 
+# fmtlib uses llvm's _BitInt internally, which is not available when compiling through nvcc:
+target_compile_definitions(nvbench.build_interface INTERFACE "FMT_USE_BITINT=0")
+
 # Experimental filesystem library
 if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
