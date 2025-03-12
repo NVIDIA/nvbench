@@ -1,17 +1,26 @@
 ################################################################################
 # fmtlib/fmt
-include("${rapids-cmake-dir}/cpm/fmt.cmake")
-
+set(export_set_details)
+set(install_fmt OFF)
 if(NOT BUILD_SHARED_LIBS AND NVBench_ENABLE_INSTALL_RULES)
-set(export_set_details BUILD_EXPORT_SET nvbench-targets
-                       INSTALL_EXPORT_SET nvbench-targets)
+  set(export_set_details BUILD_EXPORT_SET nvbench-targets
+                         INSTALL_EXPORT_SET nvbench-targets)
+  set(install_fmt ON)
 endif()
 
-rapids_cpm_fmt(${export_set_details}
+rapids_cpm_find(fmt 11.1.4 ${export_set_details}
+  GLOBAL_TARGETS fmt::fmt fmt::fmt-header-only
   CPM_ARGS
+    GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
+    GIT_TAG "11.1.4"
     OPTIONS
       # Force static to keep fmt internal.
       "BUILD_SHARED_LIBS OFF"
+      # Suppress warnings from fmt headers by marking them as system.
+      "FMT_SYSTEM_HEADERS ON"
+      # Disable install rules since we're linking statically.
+      "FMT_INSTALL ${install_fmt}"
+      "CMAKE_POSITION_INDEPENDENT_CODE ON"
 )
 
 if(NOT fmt_ADDED)
