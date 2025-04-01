@@ -66,15 +66,17 @@ else()
   endif()
 endif()
 
-# fmtlib uses llvm's _BitInt internally, which is not available when compiling through nvcc:
-target_compile_definitions(nvbench.build_interface INTERFACE "FMT_USE_BITINT=0")
-
 # Experimental filesystem library
 if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
 endif()
 
 # CUDA-specific flags
+if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+  # fmtlib uses llvm's _BitInt internally, which is not available when compiling through nvcc:
+  target_compile_definitions(nvbench.build_interface INTERFACE "FMT_USE_BITINT=0")
+endif()
+
 target_compile_options(nvbench.build_interface INTERFACE
   $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--display_error_number>
   $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Wno-deprecated-gpu-targets>
