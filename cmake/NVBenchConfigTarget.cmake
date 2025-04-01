@@ -45,6 +45,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   # The CUDA `host_runtime.h` header emits this for
   # `__cudaUnregisterBinaryUtil`.
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/wd4505")
+
+  # Required by fmt:
+  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/utf-8")
 else()
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wall")
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wextra")
