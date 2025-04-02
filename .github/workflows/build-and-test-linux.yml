@@ -30,7 +30,7 @@ jobs:
       cuda: ${{ inputs.cuda }}
       host: ${{ inputs.host }}
       name: Build/Test ${{inputs.test_name}}
-      runner: linux-${{inputs.cpu}}-gpu-v100-latest-1
+      runner: linux-${{inputs.cpu}}-gpu-l4-latest-1
       image:  ${{ inputs.container_image }}
       command: |
         ${{ inputs.test_script }}
