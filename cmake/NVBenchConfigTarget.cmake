@@ -45,9 +45,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   # The CUDA `host_runtime.h` header emits this for
   # `__cudaUnregisterBinaryUtil`.
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/wd4505")
-
-  # Required by fmt:
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/utf-8")
 else()
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wall")
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wextra")
@@ -75,6 +72,11 @@ endif()
 if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
   # fmtlib uses llvm's _BitInt internally, which is not available when compiling through nvcc:
   target_compile_definitions(nvbench.build_interface INTERFACE "FMT_USE_BITINT=0")
+
+  # NVCC + MSVC does not support unicode execution encoding, disable usages of utf-8 in fmt:
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_definitions(nvbench.build_interface INTERFACE "FMT_UNICODE=0")
+  endif()
 endif()
 
 target_compile_options(nvbench.build_interface INTERFACE
