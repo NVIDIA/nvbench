@@ -40,6 +40,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/WX")
   endif()
 
+  # Suppress warnings from CPM dependency headers:
+  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/external:I${NVBench_BINARY_DIR}/_deps")
+  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/external:W0")
+
   # Suppress overly-pedantic/unavoidable warnings brought in with /W4:
   # C4505: unreferenced local function has been removed
   # The CUDA `host_runtime.h` header emits this for
