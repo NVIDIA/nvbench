@@ -33,38 +33,20 @@ function(nvbench_add_cxx_flag target_name type flag)
   endif()
 endfunction()
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/W4")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wall")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wextra")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wconversion")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Woverloaded-virtual")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wcast-qual")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wpointer-arith")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wunused-local-typedef")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wunused-parameter")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wvla")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wgnu")
+nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wno-gnu-line-marker") # WAR 3916341
 
-  if (NVBench_ENABLE_WERROR)
-    nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/WX")
-  endif()
-
-  # Suppress warnings from CPM dependency headers:
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/external:I${NVBench_BINARY_DIR}/_deps")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/external:W0")
-
-  # Suppress overly-pedantic/unavoidable warnings brought in with /W4:
-  # C4505: unreferenced local function has been removed
-  # The CUDA `host_runtime.h` header emits this for
-  # `__cudaUnregisterBinaryUtil`.
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/wd4505")
-else()
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wall")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wextra")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wconversion")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Woverloaded-virtual")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wcast-qual")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wpointer-arith")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wunused-local-typedef")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wunused-parameter")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wvla")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wgnu")
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wno-gnu-line-marker") # WAR 3916341
-
-  if (NVBench_ENABLE_WERROR)
-    nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")
-  endif()
+if (NVBench_ENABLE_WERROR)
+  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")
 endif()
 
 # Experimental filesystem library
@@ -76,11 +58,6 @@ endif()
 if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
   # fmtlib uses llvm's _BitInt internally, which is not available when compiling through nvcc:
   target_compile_definitions(nvbench.build_interface INTERFACE "FMT_USE_BITINT=0")
-
-  # NVCC + MSVC does not support unicode execution encoding, disable usages of utf-8 in fmt:
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_definitions(nvbench.build_interface INTERFACE "FMT_UNICODE=0")
-  endif()
 endif()
 
 target_compile_options(nvbench.build_interface INTERFACE
@@ -99,6 +76,5 @@ function(nvbench_config_target target_name)
     ARCHIVE_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
     LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
-    WINDOWS_EXPORT_ALL_SYMBOLS ON # oooo pretty hammer...
   )
 endfunction()

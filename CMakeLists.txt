@@ -51,7 +51,6 @@ include(cmake/NVBenchUtilities.cmake) # Must be first
 include(cmake/NVBenchClangdCompileInfo.cmake) # Must be before any targets are created
 
 include(cmake/NVBenchConfigTarget.cmake)
-include(cmake/NVBenchDependentDlls.cmake)
 include(cmake/NVBenchExports.cmake)
 include(cmake/NVBenchWriteConfigHeader.cmake)
 include(cmake/NVBenchDependencies.cmake)

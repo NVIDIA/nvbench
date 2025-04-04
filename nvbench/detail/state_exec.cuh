@@ -39,11 +39,6 @@
 namespace nvbench
 {
 
-// warning C4702: unreachable code
-// Several spurious instances in this function. MSVC 2019 seems to forget that
-// sometimes the constexpr branch /isn't/ taken.
-NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
-
 template <typename ExecTags, typename KernelLauncher>
 void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
 {
@@ -149,7 +144,5 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     measure();
   }
 }
-
-NVBENCH_MSVC_POP_WARNING()
 
 } // namespace nvbench
