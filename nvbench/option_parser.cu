@@ -980,7 +980,7 @@ void option_parser::update_criterion_prop(
   const std::string &prop_arg,
   const std::string &prop_val,
   const nvbench::named_values::type type)
-try 
+try
 {
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
@@ -993,7 +993,7 @@ try
   benchmark_base &bench = *m_benchmarks.back();
   nvbench::criterion_params& criterion_params = bench.get_criterion_params();
   std::string name(prop_arg.begin() + 2, prop_arg.end());
-  if (type == nvbench::named_values::type::float64) 
+  if (type == nvbench::named_values::type::float64)
   {
     nvbench::float64_t value{};
     ::parse(prop_val, value);
@@ -1004,17 +1004,17 @@ try
     }
     criterion_params.set_float64(name, value);
   }
-  else if (type == nvbench::named_values::type::int64) 
+  else if (type == nvbench::named_values::type::int64)
   {
     nvbench::int64_t value{};
     ::parse(prop_val, value);
     criterion_params.set_int64(name, value);
   }
-  else if (type == nvbench::named_values::type::string) 
+  else if (type == nvbench::named_values::type::string)
   {
     criterion_params.set_string(name, prop_val);
   }
-  else 
+  else
   {
     NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
   }
