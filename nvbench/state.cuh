@@ -147,7 +147,7 @@ struct state
   void set_disable_blocking_kernel(bool v) { m_disable_blocking_kernel = v; }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement. 
+  /// Accumulate at least this many seconds of timing data per measurement.
   /// Only applies to `stdrel` stopping criterion. @{
   [[nodiscard]] nvbench::float64_t get_min_time() const
   {
@@ -295,7 +295,6 @@ private:
 
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
-
 
   nvbench::criterion_params m_criterion_params;
   std::string m_stopping_criterion;

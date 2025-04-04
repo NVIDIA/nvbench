@@ -195,7 +195,7 @@ struct benchmark_base
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. 
+  /// `noise = stdev / mean_time`.
   /// Only applies to `stdrel` stopping criterion. @{
   [[nodiscard]] nvbench::float64_t get_max_noise() const
   {
