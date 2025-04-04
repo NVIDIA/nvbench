@@ -45,12 +45,9 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
       return v;
     }
 
-    // warning C4702: unreachable code
     // This is a future-proofing fallback that's currently unused.
-    NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
     return fmt::format("{}", v);
   };
-  NVBENCH_MSVC_POP_WARNING()
 
   // Prepare table:
   nvbench::internal::table_builder table;

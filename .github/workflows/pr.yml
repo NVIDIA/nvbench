@@ -65,10 +65,10 @@ jobs:
       project_name: "nvbench"
       per_cuda_compiler_matrix: ${{ toJSON(fromJSON(needs.compute-matrix.outputs.PER_CUDA_COMPILER_MATRIX)[ matrix.cuda_host_combination ]) }}
       devcontainer_version: ${{ needs.compute-matrix.outputs.DEVCONTAINER_VERSION }}
-      is_windows: ${{ contains(matrix.cuda_host_combination, 'cl') }}
 
   verify-devcontainers:
     name: Verify Dev Containers
+    if: ${{ !contains(github.event.head_commit.message, '[skip-vdc]') }}
     permissions:
       id-token: write
       contents: read

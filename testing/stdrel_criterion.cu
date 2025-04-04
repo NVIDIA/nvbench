@@ -22,9 +22,10 @@
 
 #include "test_asserts.cuh"
 
-#include <vector>
-#include <random>
+#include <algorithm>
 #include <numeric>
+#include <random>
+#include <vector>
 
 void test_const()
 {

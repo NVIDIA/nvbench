@@ -213,12 +213,9 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
       return v;
     }
 
-    // warning C4702: unreachable code
     // This is a future-proofing fallback that's currently unused.
-    NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
     return fmt::format("{}", v);
   };
-  NVBENCH_MSVC_POP_WARNING()
 
   // Start printing benchmarks
   fmt::memory_buffer buffer;
@@ -342,12 +339,9 @@ std::string markdown_printer::do_format_default(const summary &data)
       return v;
     }
 
-    // warning C4702: unreachable code
     // This is a future-proofing fallback that's currently unused.
-    NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
     return fmt::format("{}", v);
   };
-  NVBENCH_MSVC_POP_WARNING()
 
   return std::visit(format_visitor, data.get_value("value"));
 }

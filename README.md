@@ -28,11 +28,10 @@ features:
 
 # Supported Compilers and Tools
 
-- CMake > 2.23.1
-- CUDA Toolkit + nvcc: 11.1 -> 12.4
-- g++: 7 -> 12
-- clang++: 9 -> 18
-- cl.exe: 2019 -> 2022 (19.29, 29.39)
+- CMake > 3.30.4
+- CUDA Toolkit + nvcc: 11.8 and above
+- g++: 7 -> 14
+- clang++: 14 -> 19
 - Headers are tested with C++17 -> C++20.
 
 # Getting Started
