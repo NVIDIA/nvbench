@@ -24,15 +24,16 @@
 #endif // NVBENCH_STATE_EXEC_GUARD
 
 #include <nvbench/config.cuh>
+#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
+#include <nvbench/detail/measure_cold.cuh>
+#include <nvbench/detail/measure_cpu_only.cuh>
+#include <nvbench/detail/measure_hot.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/state.cuh>
 
-#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #ifdef NVBENCH_HAS_CUPTI
 #include <nvbench/detail/measure_cupti.cuh>
 #endif // NVBENCH_HAS_CUPTI
-#include <nvbench/detail/measure_cold.cuh>
-#include <nvbench/detail/measure_hot.cuh>
 
 #include <type_traits>
 
@@ -51,15 +52,24 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
   constexpr auto measure_tags  = tags & measure_mask;
   constexpr auto modifier_tags = tags & modifier_mask;
 
-  // "run once" is handled by the cold measurement:
+  if (!(measure_tags & cpu_only) && this->get_is_cpu_only())
+  {
+    // Clear out all other measure_tags:
+    constexpr auto cpu_only_tags = modifier_tags | cpu_only;
+    this->exec(cpu_only_tags, std::forward<KernelLauncher>(kernel_launcher));
+    return;
+  }
+
+  // "run once" should disable batch measurements:
   if (!(modifier_tags & run_once) && this->get_run_once())
   {
-    constexpr auto run_once_tags = modifier_tags | cold | run_once;
+    constexpr auto run_once_tags = modifier_tags | run_once | (measure_tags & ~hot);
     this->exec(run_once_tags, std::forward<KernelLauncher>(kernel_launcher));
     return;
   }
 
-  if (!(modifier_tags & no_block) && this->get_disable_blocking_kernel())
+  if (!(measure_tags & cpu_only) && !(modifier_tags & no_block) &&
+      this->get_disable_blocking_kernel())
   {
     constexpr auto no_block_tags = tags | no_block;
     this->exec(no_block_tags, std::forward<KernelLauncher>(kernel_launcher));
@@ -88,6 +98,27 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
 
   // Each measurement is deliberately isolated in constexpr branches to
   // avoid instantiating unused measurements.
+  if constexpr (tags & cpu_only)
+  {
+    static_assert(!(measure_tags & (hot | cold)),
+                  "GPU measurements requested for a CPU-only benchmark.");
+    if constexpr (tags & timer)
+    {
+      using measure_t = nvbench::detail::measure_cpu_only<KL>;
+      measure_t measure{*this, kernel_launcher};
+      measure();
+    }
+    else
+    { // Need to wrap the kernel launcher with a timer wrapper:
+      using wrapper_t = nvbench::detail::kernel_launch_timer_wrapper<KL>;
+      wrapper_t wrapper{kernel_launcher};
+
+      using measure_t = nvbench::detail::measure_cpu_only<wrapper_t>;
+      measure_t measure(*this, wrapper);
+      measure();
+    }
+  }
+
   if constexpr (tags & cold)
   {
     constexpr bool use_blocking_kernel = !(tags & no_block);

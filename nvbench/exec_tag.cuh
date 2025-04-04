@@ -40,7 +40,8 @@ enum class exec_flag
   // Measurement types:
   cold         = 0x0100, // measure_cold
   hot          = 0x0200, // measure_hot
-  measure_mask = cold | hot
+  cpu_only     = 0x0400, // measure_cpu_only
+  measure_mask = cold | hot | cpu_only,
 };
 
 } // namespace nvbench::detail
@@ -97,6 +98,7 @@ using sync_t          = tag<nvbench::detail::exec_flag::sync>;
 using run_once_t      = tag<nvbench::detail::exec_flag::run_once>;
 using hot_t           = tag<nvbench::detail::exec_flag::hot>;
 using cold_t          = tag<nvbench::detail::exec_flag::cold>;
+using cpu_only_t      = tag<nvbench::detail::exec_flag::cpu_only>;
 using modifier_mask_t = tag<nvbench::detail::exec_flag::modifier_mask>;
 using measure_mask_t  = tag<nvbench::detail::exec_flag::measure_mask>;
 
@@ -107,6 +109,7 @@ constexpr inline sync_t sync;
 constexpr inline run_once_t run_once;
 constexpr inline cold_t cold;
 constexpr inline hot_t hot;
+constexpr inline cpu_only_t cpu_only;
 constexpr inline modifier_mask_t modifier_mask;
 constexpr inline measure_mask_t measure_mask;
 

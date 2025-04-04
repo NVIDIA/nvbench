@@ -25,6 +25,7 @@ set(srcs
 
   detail/entropy_criterion.cxx
   detail/measure_cold.cu
+  detail/measure_cpu_only.cxx
   detail/measure_hot.cu
   detail/state_generator.cxx
   detail/stdrel_criterion.cxx
