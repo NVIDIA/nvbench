@@ -40,7 +40,10 @@ void benchmark_manager::initialize()
   const auto& mgr = device_manager::get();
   for (auto& bench : m_benchmarks)
   {
-    bench->set_devices(mgr.get_devices());
+    if (!bench->get_is_cpu_only())
+    {
+      bench->set_devices(mgr.get_devices());
+    }
   }
 }
 

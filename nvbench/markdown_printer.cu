@@ -227,7 +227,7 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
     const auto &devices = bench.get_devices();
     const auto &axes    = bench.get_axes();
 
-    fmt::format_to(std::back_inserter(buffer), "\n## {}\n", bench.get_name());
+    fmt::format_to(std::back_inserter(buffer), "\n## {}\n\n", bench.get_name());
 
     // Do a single pass when no devices are specified. This happens for
     // benchmarks with `cpu` exec_tags.
@@ -240,7 +240,10 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
 
       if (device)
       {
-        fmt::format_to(std::back_inserter(buffer), "\n### [{}] {}\n\n", device->get_id(), device->get_name());
+        fmt::format_to(std::back_inserter(buffer),
+                       "### [{}] {}\n\n",
+                       device->get_id(),
+                       device->get_name());
       }
 
       std::size_t row = 0;
