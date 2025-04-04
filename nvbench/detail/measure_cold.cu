@@ -120,7 +120,7 @@ bool measure_cold_base::is_finished()
 void measure_cold_base::run_trials_epilogue()
 {
   // Only need to compute this at the end, not per iteration.
-  const auto cpu_mean  = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
+  const auto cpu_mean  = m_total_cpu_time / static_cast<nvbench::float64_t>(m_total_samples);
   const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
                                                                          m_cpu_times.cend(),
                                                                          cpu_mean);
