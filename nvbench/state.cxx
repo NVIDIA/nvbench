@@ -34,6 +34,7 @@ namespace nvbench
 
 state::state(const benchmark_base &bench)
     : m_benchmark{bench}
+    , m_is_cpu_only(bench.get_is_cpu_only())
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
     , m_criterion_params{bench.get_criterion_params()}
@@ -51,6 +52,7 @@ state::state(const benchmark_base &bench,
     , m_axis_values{std::move(values)}
     , m_device{std::move(device)}
     , m_type_config_index{type_config_index}
+    , m_is_cpu_only(bench.get_is_cpu_only())
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
     , m_criterion_params{bench.get_criterion_params()}
