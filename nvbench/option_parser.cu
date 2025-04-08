@@ -16,27 +16,23 @@
  *  limitations under the License.
  */
 
-#include <nvbench/option_parser.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
-#include <nvbench/csv_printer.cuh>
 #include <nvbench/criterion_manager.cuh>
+#include <nvbench/csv_printer.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
+#include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
 #include <nvbench/version.cuh>
 
-#include <nvbench/detail/throw.cuh>
-
 // These are generated from the markdown docs by CMake in the build directory:
 #include <nvbench/internal/cli_help.cuh>
 #include <nvbench/internal/cli_help_axis.cuh>
-
-#include <fmt/format.h>
 
 #include <algorithm>
 #include <cassert>
@@ -48,9 +44,11 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <tuple>
 #include <vector>
+
+#include <fmt/format.h>
+#include <string_view>
 
 namespace
 {
@@ -433,6 +431,11 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->lock_gpu_clocks(first[1]);
       first += 2;
     }
+    else if (arg == "--discard-on-throttle")
+    {
+      this->enable_discard_on_throttle();
+      first += 1;
+    }
     else if (arg == "--run-once")
     {
       this->enable_run_once();
@@ -515,7 +518,8 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--skip-time" || arg == "--timeout")
+    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--throttle-threshold" ||
+             arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -623,7 +627,7 @@ void option_parser::print_version() const
              NVBENCH_GIT_VERSION);
 }
 
-void option_parser::print_list(printer_base& printer) const
+void option_parser::print_list(printer_base &printer) const
 {
   const auto &bench_mgr = nvbench::benchmark_manager::get();
   printer.print_device_info();
@@ -725,6 +729,18 @@ void option_parser::enable_run_once()
 
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_run_once(true);
+}
+
+void option_parser::enable_discard_on_throttle()
+{
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--discard-on-throttle");
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_discard_on_throttle(true);
 }
 
 void option_parser::set_stopping_criterion(const std::string &criterion)
@@ -979,10 +995,9 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::update_criterion_prop(
-  const std::string &prop_arg,
-  const std::string &prop_val,
-  const nvbench::named_values::type type)
+void option_parser::update_criterion_prop(const std::string &prop_arg,
+                                          const std::string &prop_val,
+                                          const nvbench::named_values::type type)
 try
 {
   // If no active benchmark, save args as global.
@@ -993,8 +1008,8 @@ try
     return;
   }
 
-  benchmark_base &bench = *m_benchmarks.back();
-  nvbench::criterion_params& criterion_params = bench.get_criterion_params();
+  benchmark_base &bench                       = *m_benchmarks.back();
+  nvbench::criterion_params &criterion_params = bench.get_criterion_params();
   std::string name(prop_arg.begin() + 2, prop_arg.end());
   if (type == nvbench::named_values::type::float64)
   {
@@ -1022,7 +1037,7 @@ try
     NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
   }
 }
-catch (std::exception& e)
+catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
                 "Error handling option `{} {}`:\n{}",
@@ -1053,6 +1068,14 @@ try
   else if (prop_arg == "--timeout")
   {
     bench.set_timeout(value);
+  }
+  else if (prop_arg == "--throttle-threshold")
+  {
+    bench.set_throttle_threshold(static_cast<nvbench::float32_t>(value));
+  }
+  else if (prop_arg == "--throttle-recovery-delay")
+  {
+    bench.set_throttle_recovery_delay(static_cast<nvbench::float32_t>(value));
   }
   else
   {

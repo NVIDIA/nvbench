@@ -18,16 +18,17 @@
 
 #pragma once
 
+#include <cuda_runtime_api.h>
+
 #include <nvbench/config.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
 
-#include <cuda_runtime_api.h>
-
 #include <cstdint> // CHAR_BIT
 #include <stdexcept>
-#include <string_view>
 #include <utility>
+
+#include <string_view>
 
 // forward declare this for internal storage
 struct nvmlDevice_st;

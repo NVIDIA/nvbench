@@ -247,12 +247,39 @@ struct benchmark_base
   }
   /// @}
 
-  [[nodiscard]] nvbench::criterion_params& get_criterion_params() { return m_criterion_params; }
-  [[nodiscard]] const nvbench::criterion_params& get_criterion_params() const { return m_criterion_params; }
+  [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
+
+  void set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  {
+    m_throttle_threshold = throttle_threshold;
+  }
+
+  [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
+  {
+    return m_throttle_recovery_delay;
+  }
+
+  void set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  {
+    m_throttle_recovery_delay = throttle_recovery_delay;
+  }
+
+  [[nodiscard]] bool get_discard_on_throttle() const { return m_discard_on_throttle; }
+
+  void set_discard_on_throttle(bool discard_on_throttle)
+  {
+    m_discard_on_throttle = discard_on_throttle;
+  }
+
+  [[nodiscard]] nvbench::criterion_params &get_criterion_params() { return m_criterion_params; }
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
+  {
+    return m_criterion_params;
+  }
 
   /// Control the stopping criterion for the measurement loop.
   /// @{
-  [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
   benchmark_base &set_stopping_criterion(std::string criterion)
   {
     m_stopping_criterion = std::move(criterion);
@@ -281,6 +308,10 @@ protected:
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
+
+  nvbench::float32_t m_throttle_threshold{0.75f};     // [% of peak SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay{0.0f}; // [seconds]
+  bool m_discard_on_throttle{false};
 
   nvbench::criterion_params m_criterion_params;
   std::string m_stopping_criterion{"stdrel"};

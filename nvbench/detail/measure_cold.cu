@@ -27,6 +27,8 @@
 
 #include <algorithm>
 #include <limits>
+#include <chrono>
+#include <thread>
 
 #include <fmt/format.h>
 
@@ -44,6 +46,9 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_min_samples{exec_state.get_min_samples()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
+    , m_throttle_threshold(exec_state.get_throttle_threshold())
+    , m_throttle_recovery_delay(exec_state.get_throttle_recovery_delay())
+    , m_discard_on_throttle(exec_state.get_discard_on_throttle())
 {
   if (m_min_samples > 0)
   {
@@ -86,6 +91,41 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
+  if (!m_run_once)
+  {
+    auto peak_clock_rate = static_cast<float>(m_state.get_device()->get_sm_default_clock_rate());
+
+    if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
+    {
+      if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+      {
+        auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
+        auto &printer           = printer_opt_ref.value().get();
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("GPU throttled below threshold ({:0.2f} MHz / {:0.2f} MHz) "
+                                "({:0.0f}% < {:0.0f}%) on sample {}. {} previous sample and "
+                                "pausing for {}s.",
+                                current_clock_rate / 1000000.0f,
+                                peak_clock_rate / 1000000.0f,
+                                100.0f * (current_clock_rate / peak_clock_rate),
+                                100.0f * m_throttle_threshold,
+                                m_total_samples,
+                                m_discard_on_throttle ? "Discarding" : "Keeping",
+                                m_throttle_recovery_delay));
+      }
+
+      if (m_throttle_recovery_delay > 0.0f)
+      { // let the GPU cool down
+        std::this_thread::sleep_for(std::chrono::duration<float>(m_throttle_recovery_delay));
+      }
+
+      if (m_discard_on_throttle)
+      { // ignore this measurement
+        return;
+      }
+    }
+  }
+
   // Update and record timers and counters:
   const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();

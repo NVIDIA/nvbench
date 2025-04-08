@@ -29,6 +29,8 @@ set(srcs
   detail/measure_hot.cu
   detail/state_generator.cxx
   detail/stdrel_criterion.cxx
+  detail/gpu_frequency.cxx
+  detail/timestamps_kernel.cu
 
   internal/nvml.cxx
 )

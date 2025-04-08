@@ -80,7 +80,7 @@ private:
   std::ostream &printer_spec_to_ostream(const std::string &spec);
 
   void print_version() const;
-  void print_list(printer_base& printer) const;
+  void print_list(printer_base &printer) const;
   void print_help() const;
   void print_help_axis() const;
 
@@ -89,6 +89,7 @@ private:
 
   void set_stopping_criterion(const std::string &criterion);
   void enable_run_once();
+  void enable_discard_on_throttle();
   void disable_blocking_kernel();
 
   void add_benchmark(const std::string &name);
