@@ -4,6 +4,7 @@ set(srcs
   benchmark_base.cxx
   benchmark_manager.cxx
   blocking_kernel.cu
+  timestamps_kernel.cu
   criterion_manager.cxx
   csv_printer.cu
   cuda_call.cu
