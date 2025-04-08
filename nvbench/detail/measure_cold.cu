@@ -44,6 +44,9 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_min_samples{exec_state.get_min_samples()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
+    , m_throttle_threshold(exec_state.get_throttle_threshold())
+    , m_throttle_recovery_delay(exec_state.get_throttle_recovery_delay())
+    , m_discard_on_throttle(exec_state.get_discard_on_throttle())
 {
   if (m_min_samples > 0)
   {
@@ -83,6 +86,7 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 void measure_cold_base::record_measurements()
 {
   auto peak_clock_rate = m_state.get_device()->get_sm_peak_clock_rate();
+
   if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
   {
     if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())

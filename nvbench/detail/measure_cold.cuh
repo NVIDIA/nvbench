@@ -92,10 +92,6 @@ protected:
   nvbench::stopping_criterion_base &m_stopping_criterion;
   nvbench::gpu_frequency m_gpu_frequency;
 
-  nvbench::float32_t m_throttle_threshold{0.8f};      // [% of peak SM clock rate]
-  nvbench::float32_t m_throttle_recovery_delay{0.0f}; // [seconds]
-  bool m_discard_on_throttle{false};
-
   bool m_run_once{false};
   bool m_no_block{false};
 
@@ -103,6 +99,10 @@ protected:
 
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
+
+  nvbench::float32_t m_throttle_threshold{0.8f};      // [% of peak SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay{0.0f}; // [seconds]
+  bool m_discard_on_throttle{false};
 
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
