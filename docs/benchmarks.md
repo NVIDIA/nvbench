@@ -424,7 +424,7 @@ such applications. Examples are provided in [examples/cpu_only.cu](../examples/c
 Note that NVBench still requires a CUDA compiler and runtime even if a project only contains
 CPU-only benchmarks.
 
-The `is_cpu_only` property of the benchmark toggles between GPU and CPU-only measurements:
+The `set_is_cpu_only` property of the benchmark toggles between GPU and CPU-only measurements:
 
 ```cpp
 void my_cpu_benchmark(nvbench::state &state)
