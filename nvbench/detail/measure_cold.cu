@@ -25,7 +25,8 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
-#include <iostream>
+#include <chrono>
+#include <thread>
 
 #include <fmt/format.h>
 
@@ -85,11 +86,14 @@ void measure_cold_base::record_measurements()
   {
     if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
     {
-      // TODO add an option to ignore measurement if throttled and sleep for a while
       auto &printer = printer_opt_ref.value().get();
       printer.log(nvbench::log_level::warn,
                   fmt::format("GPU likely throttled ({:0.2f}s) ",
                               m_gpu_frequency.get_clock_frequency()));
+
+      // TODO add an option to ignore measurement if throttled and sleep for a while
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      return; // ignore this measurement
     }
   }
 
