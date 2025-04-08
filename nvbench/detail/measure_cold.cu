@@ -96,7 +96,8 @@ void measure_cold_base::record_measurements()
     }
 
     // TODO add an option to ignore measurement if throttled and sleep for a while
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // TODO extract delay into parameter
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     return; // ignore this measurement
   }
 
