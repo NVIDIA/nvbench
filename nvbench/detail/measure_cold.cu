@@ -34,9 +34,10 @@ measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{m_state.get_cuda_stream()}
     , m_criterion_params{exec_state.get_criterion_params()}
-    , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(exec_state.get_stopping_criterion())}
+    , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(
+        exec_state.get_stopping_criterion())}
+    , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel()}
     , m_run_once{exec_state.get_run_once()}
-    , m_no_block{exec_state.get_disable_blocking_kernel()}
     , m_min_samples{exec_state.get_min_samples()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}

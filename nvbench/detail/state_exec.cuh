@@ -45,6 +45,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
 {
   using KL = typename std::remove_reference<KernelLauncher>::type;
   using namespace nvbench::exec_tag::impl;
+
   static_assert(is_exec_tag_v<ExecTags>,
                 "`ExecTags` argument must be a member (or combination of members) from "
                 "`nvbench::exec_tag`.");
@@ -54,41 +55,6 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
 
   constexpr auto modifier_tags = tags & modifier_mask;
   constexpr auto measure_tags  = tags & measure_mask;
-
-  if ((modifier_tags & no_gpu) && !this->get_is_cpu_only())
-  {
-    throw std::runtime_error("The `nvbench::exec_tag::no_gpu` tag requires that "
-                             "`set_is_cpu_only(true)` is called when defining the benchmark.");
-  }
-
-  if ((modifier_tags & gpu) && this->get_is_cpu_only())
-  {
-    throw std::runtime_error("The `nvbench::exec_tag::gpu` tag requires that "
-                             "`set_is_cpu_only(true)` is NOT called when defining the benchmark.");
-  }
-
-  // "run once" should disable batch measurements:
-  // TODO This should just be a runtime branch in measure_cold. Currently this causes two versions
-  // of measure_cold to be compiled. We don't expose the `run_once` tag to users, it should be
-  // removed.
-  // TODO CPU measurements should support run_once as well.
-  if (!(modifier_tags & run_once) && this->get_run_once())
-  {
-    constexpr auto run_once_tags = modifier_tags | run_once | (measure_tags & ~hot);
-    this->exec(run_once_tags, std::forward<KernelLauncher>(kernel_launcher));
-    return;
-  }
-
-  // TODO The `no_block` tag should be removed and replaced with a runtime branch in measure_cold
-  // and measure_hot. Currently this causes unnecesaary codegen. Note that the `sync` exec_tag
-  // implies `no_block` when refactoring.
-  if (!(measure_tags & cpu_only) && !(modifier_tags & no_block) &&
-      this->get_disable_blocking_kernel())
-  {
-    constexpr auto no_block_tags = tags | no_block;
-    this->exec(no_block_tags, std::forward<KernelLauncher>(kernel_launcher));
-    return;
-  }
 
   // If no measurements selected, pick some defaults based on the modifiers:
   if constexpr (!measure_tags)
@@ -121,6 +87,24 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
       }
     }
     return;
+  }
+
+  if ((modifier_tags & no_gpu) && !this->get_is_cpu_only())
+  {
+    throw std::runtime_error("The `nvbench::exec_tag::no_gpu` tag requires that "
+                             "`set_is_cpu_only(true)` is called when defining the benchmark.");
+  }
+
+  if ((modifier_tags & gpu) && this->get_is_cpu_only())
+  {
+    throw std::runtime_error("The `nvbench::exec_tag::gpu` tag requires that "
+                             "`set_is_cpu_only(true)` is NOT called when defining the benchmark.");
+  }
+
+  // Syncing will cause the blocking kernel pattern to deadlock:
+  if constexpr (modifier_tags & sync)
+  {
+    this->set_disable_blocking_kernel(true);
   }
 
   if (this->is_skipped())
@@ -157,23 +141,18 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     {
       static_assert(!(tags & no_gpu), "Cold measurement doesn't support the `no_gpu` exec_tag.");
 
-      constexpr bool use_blocking_kernel = !(tags & no_block);
       if constexpr (tags & timer)
       {
-// Estimate bandwidth here
 #ifdef NVBENCH_HAS_CUPTI
-        if constexpr (!(modifier_tags & run_once))
+        if (this->is_cupti_required() && !this->get_run_once())
         {
-          if (this->is_cupti_required())
-          {
-            using measure_t = nvbench::detail::measure_cupti<KL>;
-            measure_t measure{*this, kernel_launcher};
-            measure();
-          }
+          using measure_t = nvbench::detail::measure_cupti<KL>;
+          measure_t measure{*this, kernel_launcher};
+          measure();
         }
 #endif
 
-        using measure_t = nvbench::detail::measure_cold<KL, use_blocking_kernel>;
+        using measure_t = nvbench::detail::measure_cold<KL>;
         measure_t measure{*this, kernel_launcher};
         measure();
       }
@@ -182,20 +161,16 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
         using wrapper_t = nvbench::detail::kernel_launch_timer_wrapper<KL>;
         wrapper_t wrapper{kernel_launcher};
 
-// Estimate bandwidth here
 #ifdef NVBENCH_HAS_CUPTI
-        if constexpr (!(modifier_tags & run_once))
+        if (this->is_cupti_required() && !this->get_run_once())
         {
-          if (this->is_cupti_required())
-          {
-            using measure_t = nvbench::detail::measure_cupti<wrapper_t>;
-            measure_t measure{*this, wrapper};
-            measure();
-          }
+          using measure_t = nvbench::detail::measure_cupti<wrapper_t>;
+          measure_t measure{*this, wrapper};
+          measure();
         }
 #endif
 
-        using measure_t = nvbench::detail::measure_cold<wrapper_t, use_blocking_kernel>;
+        using measure_t = nvbench::detail::measure_cold<wrapper_t>;
         measure_t measure(*this, wrapper);
         measure();
       }
@@ -207,10 +182,13 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
       static_assert(!(tags & timer), "Hot measurement doesn't support the `timer` exec_tag.");
       static_assert(!(tags & no_batch), "Hot measurement doesn't support the `no_batch` exec_tag.");
       static_assert(!(tags & no_gpu), "Hot measurement doesn't support the `no_gpu` exec_tag.");
-      constexpr bool use_blocking_kernel = !(tags & no_block);
-      using measure_t                    = nvbench::detail::measure_hot<KL, use_blocking_kernel>;
-      measure_t measure{*this, kernel_launcher};
-      measure();
+
+      if (!this->get_run_once())
+      {
+        using measure_t = nvbench::detail::measure_hot<KL>;
+        measure_t measure{*this, kernel_launcher};
+        measure();
+      }
     }
   }
 }
