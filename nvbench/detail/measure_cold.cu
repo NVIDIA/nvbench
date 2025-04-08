@@ -82,19 +82,21 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
-  if (m_gpu_frequency.has_throttled())
+  auto peak_clock_rate = m_state.get_device()->get_sm_peak_clock_rate();
+  if (m_gpu_frequency.has_throttled(peak_clock_rate))
   {
     if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
     {
-      auto &printer = printer_opt_ref.value().get();
-      printer.log(nvbench::log_level::warn,
-                  fmt::format("GPU likely throttled ({:0.2f}s) ",
-                              m_gpu_frequency.get_clock_frequency()));
-
-      // TODO add an option to ignore measurement if throttled and sleep for a while
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      return; // ignore this measurement
+      auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
+      auto &printer           = printer_opt_ref.value().get();
+      printer.log(
+        nvbench::log_level::warn,
+        fmt::format("GPU throttled ({:0.2f}s / {:0.2f}) ", current_clock_rate, peak_clock_rate));
     }
+
+    // TODO add an option to ignore measurement if throttled and sleep for a while
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    return; // ignore this measurement
   }
 
   // Update and record timers and counters:

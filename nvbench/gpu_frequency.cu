@@ -31,17 +31,14 @@ nvbench::float32_t gpu_frequency::get_clock_frequency()
 {
   nvbench::uint64_t elapsed_ns     = m_stop.m_host_timestamps[0] - m_start.m_host_timestamps[0];
   nvbench::uint64_t elapsed_clocks = m_stop.m_host_timestamps[1] - m_start.m_host_timestamps[1];
-  nvbench::float32_t clock_rate    = float(elapsed_clocks) / float(elapsed_ns) * 1000000.f;
+  nvbench::float32_t clock_rate    = float(elapsed_clocks) / float(elapsed_ns) * 1000000000.f;
   return clock_rate;
 }
 
-bool gpu_frequency::has_throttled()
+bool gpu_frequency::has_throttled(size_t peak_sm_clock_rate_hz)
 {
-  int deviceId     = 0;
-  int maxClockRate = 0;
-  NVBENCH_CUDA_CALL_NOEXCEPT(cudaGetDevice(&deviceId));
-  NVBENCH_CUDA_CALL_NOEXCEPT(cudaDeviceGetAttribute(&maxClockRate, cudaDevAttrClockRate, deviceId));
-  float throttleThreshold = static_cast<float>(maxClockRate) * 0.8f; // TODO extract into parameter
+  // TODO extract into parameter
+  float throttleThreshold = static_cast<float>(peak_sm_clock_rate_hz) * 0.8f;
 
   if (get_clock_frequency() < throttleThreshold)
   {
