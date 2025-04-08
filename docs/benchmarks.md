@@ -437,7 +437,7 @@ NVBENCH_BENCH(my_cpu_benchmark)
 
 The optional `nvbench::exec_tag::no_gpu` hint may be used to reduce the compilation time and
 binary size of CPU-only benchmarks. An error is emitted at runtime if this tag is used while
-`is_cpu_only` is false.
+`set_is_cpu_only` is false.
 
 ```cpp
 void my_cpu_benchmark(nvbench::state &state)
