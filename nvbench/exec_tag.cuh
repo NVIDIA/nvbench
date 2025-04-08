@@ -35,12 +35,17 @@ enum class exec_flag
   no_block      = 0x02, // Disables use of `blocking_kernel`.
   sync          = 0x04, // KernelLauncher has indicated that it will sync
   run_once      = 0x08, // Only run the benchmark once (for profiling).
-  modifier_mask = timer | no_block | sync | run_once,
+  gpu           = 0x10, // Don't instantiate `measure_cpu_only`.
+  no_gpu        = 0x20, // No GPU measurements should be instantiated.
+  no_batch      = 0x40, // `measure_hot` will not be used.
+  modifier_mask = 0xFF,
 
-  // Measurement types:
+  // Measurement types to instantiate. Derived from modifiers.
+  // Should not be exposed directly via nvbench::exec_tag::<...>.
   cold         = 0x0100, // measure_cold
   hot          = 0x0200, // measure_hot
-  measure_mask = cold | hot
+  cpu_only     = 0x0400, // measure_cpu_only
+  measure_mask = 0xFF00,
 };
 
 } // namespace nvbench::detail
@@ -95,9 +100,14 @@ using timer_t         = tag<nvbench::detail::exec_flag::timer>;
 using no_block_t      = tag<nvbench::detail::exec_flag::no_block>;
 using sync_t          = tag<nvbench::detail::exec_flag::sync>;
 using run_once_t      = tag<nvbench::detail::exec_flag::run_once>;
+using gpu_t           = tag<nvbench::detail::exec_flag::gpu>;
+using no_gpu_t        = tag<nvbench::detail::exec_flag::no_gpu>;
+using no_batch_t      = tag<nvbench::detail::exec_flag::no_batch>;
+using modifier_mask_t = tag<nvbench::detail::exec_flag::modifier_mask>;
+
 using hot_t           = tag<nvbench::detail::exec_flag::hot>;
 using cold_t          = tag<nvbench::detail::exec_flag::cold>;
-using modifier_mask_t = tag<nvbench::detail::exec_flag::modifier_mask>;
+using cpu_only_t      = tag<nvbench::detail::exec_flag::cpu_only>;
 using measure_mask_t  = tag<nvbench::detail::exec_flag::measure_mask>;
 
 constexpr inline none_t none;
@@ -105,9 +115,14 @@ constexpr inline timer_t timer;
 constexpr inline no_block_t no_block;
 constexpr inline sync_t sync;
 constexpr inline run_once_t run_once;
+constexpr inline gpu_t gpu;
+constexpr inline no_gpu_t no_gpu;
+constexpr inline no_batch_t no_batch;
+constexpr inline modifier_mask_t modifier_mask;
+
 constexpr inline cold_t cold;
 constexpr inline hot_t hot;
-constexpr inline modifier_mask_t modifier_mask;
+constexpr inline cpu_only_t cpu_only;
 constexpr inline measure_mask_t measure_mask;
 
 } // namespace impl
@@ -116,13 +131,26 @@ constexpr inline auto none = nvbench::exec_tag::impl::none;
 
 /// Modifier used when only a portion of the KernelLauncher needs to be timed.
 /// Useful for resetting state in-between timed kernel launches.
-constexpr inline auto timer = nvbench::exec_tag::impl::timer;
+constexpr inline auto timer = nvbench::exec_tag::impl::timer | //
+                              nvbench::exec_tag::impl::no_batch;
 
 /// Modifier used to indicate that the KernelGenerator will perform CUDA
 /// synchronizations. Without this flag such benchmarks will deadlock.
-constexpr inline auto sync = nvbench::exec_tag::impl::no_block | nvbench::exec_tag::impl::sync;
+constexpr inline auto sync = nvbench::exec_tag::impl::no_block | //
+                             nvbench::exec_tag::impl::sync |     //
+                             nvbench::exec_tag::impl::no_batch;
 
 /// Modifier used to indicate that batched measurements should be disabled
-constexpr inline auto no_batch = nvbench::exec_tag::impl::cold;
+constexpr inline auto no_batch = nvbench::exec_tag::impl::no_batch;
+
+/// Optional optimization for CPU-only benchmarks. Requires that `set_is_cpu_only(true)`
+/// is called when defining the benchmark. Passing this exec_tag will ensure that
+/// GPU measurement code is not instantiated.
+constexpr inline auto no_gpu = nvbench::exec_tag::impl::no_gpu;
+
+/// Optional optimization for GPU benchmarks. Requires that `set_is_cpu_only(true)`
+/// is NOT called when defining the benchmark. Passing this exec_tag will prevent unused CPU-only
+/// measurement code from being instantiated.
+constexpr inline auto gpu = nvbench::exec_tag::impl::gpu;
 
 } // namespace nvbench::exec_tag

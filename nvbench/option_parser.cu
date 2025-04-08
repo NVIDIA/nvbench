@@ -799,7 +799,10 @@ try
   else
   {
     benchmark_base &bench = *m_benchmarks.back();
-    bench.set_devices(device_vec);
+    if (!bench.get_is_cpu_only())
+    {
+      bench.set_devices(device_vec);
+    }
   }
 
   m_recent_devices = std::move(device_vec);

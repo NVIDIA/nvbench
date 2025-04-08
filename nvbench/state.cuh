@@ -71,6 +71,12 @@ struct state
   /// nullopt for CPU-only benchmarks.
   [[nodiscard]] const std::optional<nvbench::device_info> &get_device() const { return m_device; }
 
+  /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
+  /// @{
+  // No setter, this should not be modified after construction, as it is a benchmark-wide property.
+  [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
+  /// @}
+
   /// An index into a benchmark::type_configs type_list. Returns 0 if no type
   /// axes in the associated benchmark.
   [[nodiscard]] std::size_t get_type_config_index() const { return m_type_config_index; }
@@ -293,6 +299,7 @@ private:
   std::optional<nvbench::device_info> m_device;
   std::size_t m_type_config_index{};
 
+  bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 

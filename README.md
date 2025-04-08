@@ -25,6 +25,9 @@ features:
   * Batch Measurements:
     * Executes the benchmark multiple times back-to-back and records total time.
     * Reports the average execution time (total time / number of executions).
+  * [CPU-only Measurements](docs/benchmarks.md#cpu-only-benchmarks)
+    * Measures the host-side execution time of a non-GPU benchmark.
+    * Not suitable for microbenchmarking.
 
 # Supported Compilers and Tools
 
@@ -65,6 +68,7 @@ This repository provides a number of [examples](examples/) that demonstrate
 various NVBench features and usecases:
 
 - [Runtime and compile-time parameter sweeps](examples/axes.cu)
+- [CPU-only benchmarking](examples/cpu_only.cu)
 - [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
@@ -171,6 +175,7 @@ testing and parameter tuning of individual kernels. For in-depth analysis of
 end-to-end performance of multiple applications, the NVIDIA Nsight tools are
 more appropriate.
 
-NVBench is focused on evaluating the performance of CUDA kernels and is not
-optimized for CPU microbenchmarks. This may change in the future, but for now,
+NVBench is focused on evaluating the performance of CUDA kernels. It also provides
+CPU-only benchmarking facilities intended for non-trivial CPU workloads, but is
+not optimized for CPU microbenchmarks. This may change in the future, but for now,
 consider using Google Benchmark for high resolution CPU benchmarks.

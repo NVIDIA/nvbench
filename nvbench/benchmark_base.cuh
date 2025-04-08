@@ -159,6 +159,16 @@ struct benchmark_base
   }
   /// @}
 
+  /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
+  /// @{
+  [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
+  benchmark_base &set_is_cpu_only(bool is_cpu_only)
+  {
+    m_is_cpu_only = is_cpu_only;
+    return *this;
+  }
+  /// @}
+
   /// If true, the benchmark is only run once, skipping all warmup runs and only
   /// executing a single non-batched measurement. This is intended for use with
   /// external profiling tools. @{
@@ -263,6 +273,7 @@ protected:
 
   optional_ref<nvbench::printer_base> m_printer;
 
+  bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 
