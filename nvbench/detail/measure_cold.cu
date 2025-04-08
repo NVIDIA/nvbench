@@ -89,9 +89,10 @@ void measure_cold_base::record_measurements()
     {
       auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
       auto &printer           = printer_opt_ref.value().get();
-      printer.log(
-        nvbench::log_level::warn,
-        fmt::format("GPU throttled ({:0.2f}s / {:0.2f}) ", current_clock_rate, peak_clock_rate));
+      printer.log(nvbench::log_level::warn,
+                  fmt::format("GPU throttled ({:0.2f} KHz / {:0.2f} KHz) ",
+                              static_cast<float>(current_clock_rate) / 1000.0f,
+                              static_cast<float>(peak_clock_rate) / 1000.0f));
     }
 
     // TODO add an option to ignore measurement if throttled and sleep for a while
