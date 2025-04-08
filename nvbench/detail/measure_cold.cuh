@@ -92,6 +92,10 @@ protected:
   nvbench::stopping_criterion_base &m_stopping_criterion;
   nvbench::gpu_frequency m_gpu_frequency;
 
+  nvbench::float32_t m_throttle_threshold{0.8f};      // [% of peak SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay{0.0f}; // [seconds]
+  bool m_discard_on_throttle{false};
+
   bool m_run_once{false};
   bool m_no_block{false};
 

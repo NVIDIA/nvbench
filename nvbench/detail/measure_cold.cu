@@ -83,7 +83,7 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 void measure_cold_base::record_measurements()
 {
   auto peak_clock_rate = m_state.get_device()->get_sm_peak_clock_rate();
-  if (m_gpu_frequency.has_throttled(peak_clock_rate))
+  if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
   {
     if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
     {
@@ -95,10 +95,15 @@ void measure_cold_base::record_measurements()
                               static_cast<float>(peak_clock_rate) / 1000000.0f));
     }
 
-    // TODO add an option to ignore measurement if throttled and sleep for a while
-    // TODO extract delay into parameter
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    return; // ignore this measurement
+    if (m_throttle_recovery_delay > 0.0f)
+    { // let the GPU cool down
+      std::this_thread::sleep_for(std::chrono::duration<float>(m_throttle_recovery_delay));
+    }
+
+    if (m_discard_on_throttle)
+    { // ignore this measurement
+      return;
+    }
   }
 
   // Update and record timers and counters:
