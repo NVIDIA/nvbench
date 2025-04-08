@@ -69,8 +69,10 @@ void timestamps_kernel::record(const nvbench::cuda_stream &stream)
   m_host_timestamps[0] = 0;
   m_host_timestamps[1] = 0;
 
-  const int device_id = 0;
-  int num_sms         = 0;
+  int device_id = 0;
+  int num_sms   = 0;
+
+  NVBENCH_CUDA_CALL_NOEXCEPT(cudaGetDevice(&device_id));
   NVBENCH_CUDA_CALL_NOEXCEPT(
     cudaDeviceGetAttribute(&num_sms, cudaDevAttrMultiProcessorCount, device_id));
 

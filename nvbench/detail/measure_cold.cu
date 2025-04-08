@@ -25,6 +25,8 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <iostream>
+
 #include <fmt/format.h>
 
 namespace nvbench::detail
@@ -79,6 +81,18 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
+  if (m_gpu_frequency.has_throttled())
+  {
+    if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+    {
+      // TODO add an option to ignore measurement if throttled and sleep for a while
+      auto &printer = printer_opt_ref.value().get();
+      printer.log(nvbench::log_level::warn,
+                  fmt::format("GPU likely throttled ({:0.2f}s) ",
+                              m_gpu_frequency.get_clock_frequency()));
+    }
+  }
+
   // Update and record timers and counters:
   const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();

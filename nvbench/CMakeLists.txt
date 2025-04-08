@@ -8,6 +8,7 @@ set(srcs
   criterion_manager.cxx
   csv_printer.cu
   cuda_call.cu
+  gpu_frequency.cu
   device_info.cu
   device_manager.cu
   float64_axis.cxx

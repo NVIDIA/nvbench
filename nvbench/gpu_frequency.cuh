@@ -40,13 +40,9 @@ struct gpu_frequency
 
   __forceinline__ void stop(const nvbench::cuda_stream &stream) { m_stop.record(stream); }
 
-  [[nodiscard]] __forceinline__ nvbench::float32_t get_clock_frequency()
-  {
-    nvbench::uint64_t elapsed_ns     = m_stop.m_host_timestamps[0] - m_start.m_host_timestamps[0];
-    nvbench::uint64_t elapsed_clocks = m_stop.m_host_timestamps[1] - m_start.m_host_timestamps[1];
-    nvbench::float32_t clock_rate    = float(elapsed_clocks) / float(elapsed_ns) * 1000000.f;
-    return clock_rate;
-  }
+  [[nodiscard]] bool has_throttled();
+
+  [[nodiscard]] nvbench::float32_t get_clock_frequency();
 
 private:
   nvbench::timestamps_kernel m_start;
