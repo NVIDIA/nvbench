@@ -24,6 +24,9 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <algorithm>
+#include <limits>
+
 #include <fmt/format.h>
 
 namespace nvbench::detail
@@ -52,11 +55,14 @@ void measure_cpu_only_base::check()
 
 void measure_cpu_only_base::initialize()
 {
-  m_total_cpu_time  = 0.;
-  m_cpu_noise       = 0.;
-  m_total_samples   = 0;
-  m_cpu_times.clear();
+
+  m_min_cpu_time      = std::numeric_limits<nvbench::float64_t>::max();
+  m_max_cpu_time      = std::numeric_limits<nvbench::float64_t>::lowest();
+  m_total_cpu_time    = 0.;
+  m_total_samples     = 0;
   m_max_time_exceeded = false;
+
+  m_cpu_times.clear();
 
   m_stopping_criterion.initialize(m_criterion_params);
 }
@@ -67,8 +73,12 @@ void measure_cpu_only_base::record_measurements()
 {
   // Update and record timers and counters:
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
-  m_cpu_times.push_back(cur_cpu_time);
+
+  m_min_cpu_time = std::min(m_min_cpu_time, cur_cpu_time);
+  m_max_cpu_time = std::max(m_max_cpu_time, cur_cpu_time);
   m_total_cpu_time += cur_cpu_time;
+  m_cpu_times.push_back(cur_cpu_time);
+
   ++m_total_samples;
 
   m_stopping_criterion.add_measurement(cur_cpu_time);
@@ -101,17 +111,7 @@ bool measure_cpu_only_base::is_finished()
   return false;
 }
 
-void measure_cpu_only_base::run_trials_epilogue()
-{
-  // Only need to compute this at the end, not per iteration.
-  const auto cpu_mean  = m_total_cpu_time / static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
-                                                                         m_cpu_times.cend(),
-                                                                         cpu_mean);
-  m_cpu_noise          = cpu_stdev / cpu_mean;
-
-  m_walltime_timer.stop();
-}
+void measure_cpu_only_base::run_trials_epilogue() { m_walltime_timer.stop(); }
 
 void measure_cpu_only_base::generate_summaries()
 {
@@ -123,24 +123,53 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_int64("value", m_total_samples);
   }
 
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/min");
+    summ.set_string("name", "Min CPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Fastest CPU time of isolated kernel executions");
+    summ.set_float64("value", m_min_cpu_time);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/max");
+    summ.set_string("name", "Max CPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Slowest CPU time of isolated kernel executions");
+    summ.set_float64("value", m_max_cpu_time);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
   const auto d_samples = static_cast<nvbench::float64_t>(m_total_samples);
-  const auto avg_cpu_time = m_total_cpu_time / d_samples;
+  const auto cpu_mean  = m_total_cpu_time / d_samples;
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/mean");
     summ.set_string("name", "CPU Time");
     summ.set_string("hint", "duration");
-    summ.set_string("description",
-                    "Mean isolated kernel execution time "
-                    "(measured on host CPU)");
-    summ.set_float64("value", avg_cpu_time);
+    summ.set_string("description", "Mean CPU time of isolated kernel executions");
+    summ.set_float64("value", cpu_mean);
   }
 
+  const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
+                                                                         m_cpu_times.cend(),
+                                                                         cpu_mean);
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/stdev/absolute");
+    summ.set_string("name", "Noise");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description", "Relative standard deviation of isolated CPU times");
+    summ.set_float64("value", cpu_stdev);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  const auto cpu_noise = cpu_stdev / cpu_mean;
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated CPU times");
-    summ.set_float64("value", m_cpu_noise);
+    summ.set_float64("value", cpu_noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -149,12 +178,12 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("name", "Elem/s");
     summ.set_string("hint", "item_rate");
     summ.set_string("description", "Number of input elements processed per second");
-    summ.set_float64("value", static_cast<double>(items) / avg_cpu_time);
+    summ.set_float64("value", static_cast<double>(items) / cpu_mean);
   }
 
   if (const auto bytes = m_state.get_global_memory_rw_bytes(); bytes != 0)
   {
-    const auto avg_used_gmem_bw = static_cast<double>(bytes) / avg_cpu_time;
+    const auto avg_used_gmem_bw = static_cast<double>(bytes) / cpu_mean;
     {
       auto &summ = m_state.add_summary("nv/cpu_only/bw/global/bytes_per_second");
       summ.set_string("name", "GlobalMem BW");
@@ -185,14 +214,14 @@ void measure_cpu_only_base::generate_summaries()
       const auto max_noise = m_criterion_params.get_float64("max-noise");
       const auto min_time = m_criterion_params.get_float64("min-time");
 
-      if (m_cpu_noise > max_noise)
+      if (cpu_noise > max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                m_cpu_noise * 100,
+                                cpu_noise * 100,
                                 max_noise * 100));
       }
       if (m_total_samples < m_min_samples)
@@ -220,7 +249,7 @@ void measure_cpu_only_base::generate_summaries()
     printer.log(nvbench::log_level::pass,
                 fmt::format("CpuOnly: {:0.6f}ms mean CPU, {:0.2f}s total CPU, "
                             "{:0.2f}s total wall, {}x ",
-                            avg_cpu_time * 1e3,
+                            cpu_mean * 1e3,
                             m_total_cpu_time,
                             m_walltime_timer.get_duration(),
                             m_total_samples));

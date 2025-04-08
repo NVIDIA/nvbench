@@ -8,6 +8,7 @@ set(example_srcs
   exec_tag_timer.cu
   skip.cu
   stream.cu
+  summaries.cu
   throughput.cu
 )
 

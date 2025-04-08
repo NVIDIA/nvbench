@@ -98,9 +98,14 @@ protected:
   nvbench::float64_t m_timeout{};
 
   nvbench::int64_t m_total_samples{};
+
+  nvbench::float64_t m_min_cuda_time{};
+  nvbench::float64_t m_max_cuda_time{};
   nvbench::float64_t m_total_cuda_time{};
+
+  nvbench::float64_t m_min_cpu_time{};
+  nvbench::float64_t m_max_cpu_time{};
   nvbench::float64_t m_total_cpu_time{};
-  nvbench::float64_t m_cpu_noise{}; // rel stdev
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;
