@@ -25,6 +25,9 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <algorithm>
+#include <limits>
+
 #include <fmt/format.h>
 
 namespace nvbench::detail
@@ -64,13 +67,17 @@ void measure_cold_base::check()
 
 void measure_cold_base::initialize()
 {
-  m_total_cuda_time = 0.;
-  m_total_cpu_time  = 0.;
-  m_cpu_noise       = 0.;
-  m_total_samples   = 0;
+  m_min_cuda_time     = std::numeric_limits<nvbench::float64_t>::max();
+  m_max_cuda_time     = std::numeric_limits<nvbench::float64_t>::lowest();
+  m_total_cuda_time   = 0.;
+  m_min_cpu_time      = std::numeric_limits<nvbench::float64_t>::max();
+  m_max_cpu_time      = std::numeric_limits<nvbench::float64_t>::lowest();
+  m_total_cpu_time    = 0.;
+  m_total_samples     = 0;
+  m_max_time_exceeded = false;
+
   m_cuda_times.clear();
   m_cpu_times.clear();
-  m_max_time_exceeded = false;
 
   m_stopping_criterion.initialize(m_criterion_params);
 }
@@ -82,10 +89,17 @@ void measure_cold_base::record_measurements()
   // Update and record timers and counters:
   const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
-  m_cuda_times.push_back(cur_cuda_time);
-  m_cpu_times.push_back(cur_cpu_time);
+
+  m_min_cuda_time = std::min(m_min_cuda_time, cur_cuda_time);
+  m_max_cuda_time = std::max(m_max_cuda_time, cur_cuda_time);
   m_total_cuda_time += cur_cuda_time;
+  m_cuda_times.push_back(cur_cuda_time);
+
+  m_min_cpu_time = std::min(m_min_cpu_time, cur_cpu_time);
+  m_max_cpu_time = std::max(m_max_cpu_time, cur_cpu_time);
   m_total_cpu_time += cur_cpu_time;
+  m_cpu_times.push_back(cur_cpu_time);
+
   ++m_total_samples;
 
   m_stopping_criterion.add_measurement(cur_cuda_time);
@@ -118,21 +132,10 @@ bool measure_cold_base::is_finished()
   return false;
 }
 
-void measure_cold_base::run_trials_epilogue()
-{
-  // Only need to compute this at the end, not per iteration.
-  const auto cpu_mean  = m_total_cpu_time / static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
-                                                                         m_cpu_times.cend(),
-                                                                         cpu_mean);
-  m_cpu_noise          = cpu_stdev / cpu_mean;
-
-  m_walltime_timer.stop();
-}
+void measure_cold_base::run_trials_epilogue() { m_walltime_timer.stop(); }
 
 void measure_cold_base::generate_summaries()
 {
-  const auto d_samples = static_cast<double>(m_total_samples);
   {
     auto &summ = m_state.add_summary("nv/cold/sample_size");
     summ.set_string("name", "Samples");
@@ -141,7 +144,30 @@ void measure_cold_base::generate_summaries()
     summ.set_int64("value", m_total_samples);
   }
 
-  const auto avg_cpu_time = m_total_cpu_time / d_samples;
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/min");
+    summ.set_string("name", "Min CPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description",
+                    "Fastest isolated kernel execution time "
+                    "(measured on host CPU)");
+    summ.set_float64("value", m_min_cpu_time);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/max");
+    summ.set_string("name", "Max CPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description",
+                    "Slowest isolated kernel execution time "
+                    "(measured on host CPU)");
+    summ.set_float64("value", m_max_cpu_time);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  const auto d_samples = static_cast<double>(m_total_samples);
+  const auto cpu_mean  = m_total_cpu_time / d_samples;
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/mean");
     summ.set_string("name", "CPU Time");
@@ -149,18 +175,53 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description",
                     "Mean isolated kernel execution time "
                     "(measured on host CPU)");
-    summ.set_float64("value", avg_cpu_time);
+    summ.set_float64("value", cpu_mean);
   }
 
+  const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
+                                                                         m_cpu_times.cend(),
+                                                                         cpu_mean);
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/absolute");
+    summ.set_string("name", "Noise");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description", "Relative standard deviation of isolated CPU times");
+    summ.set_float64("value", cpu_stdev);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  const auto cpu_noise = cpu_stdev / cpu_mean;
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated CPU times");
-    summ.set_float64("value", m_cpu_noise);
+    summ.set_float64("value", cpu_noise);
   }
 
-  const auto avg_cuda_time = m_total_cuda_time / d_samples;
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/min");
+    summ.set_string("name", "Min GPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description",
+                    "Fastest isolated kernel execution time "
+                    "(measured with CUDA events)");
+    summ.set_float64("value", m_min_cuda_time);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/max");
+    summ.set_string("name", "Max GPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description",
+                    "Slowest isolated kernel execution time "
+                    "(measured with CUDA events)");
+    summ.set_float64("value", m_max_cuda_time);
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  const auto cuda_mean = m_total_cuda_time / d_samples;
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/mean");
     summ.set_string("name", "GPU Time");
@@ -168,24 +229,28 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description",
                     "Mean isolated kernel execution time "
                     "(measured with CUDA events)");
-    summ.set_float64("value", avg_cuda_time);
+    summ.set_float64("value", cuda_mean);
   }
 
-  const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
+  const auto cuda_stdev = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
                                                                           m_cuda_times.cend(),
-                                                                          mean_cuda_time);
-  const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
-  const auto noise = cuda_rel_stdev;
-  const auto max_noise = m_criterion_params.get_float64("max-noise");
-  const auto min_time = m_criterion_params.get_float64("min-time");
+                                                                          cuda_mean);
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/absolute");
+    summ.set_string("name", "Noise");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description", "Relative standard deviation of isolated GPU times");
+    summ.set_float64("value", cuda_stdev);
+    summ.set_string("hide", "Hidden by default.");
+  }
 
+  const auto cuda_noise = cuda_stdev / cuda_mean;
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated GPU times");
-    summ.set_float64("value", noise);
+    summ.set_float64("value", cuda_noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -194,12 +259,12 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "Elem/s");
     summ.set_string("hint", "item_rate");
     summ.set_string("description", "Number of input elements processed per second");
-    summ.set_float64("value", static_cast<double>(items) / avg_cuda_time);
+    summ.set_float64("value", static_cast<double>(items) / cuda_mean);
   }
 
   if (const auto bytes = m_state.get_global_memory_rw_bytes(); bytes != 0)
   {
-    const auto avg_used_gmem_bw = static_cast<double>(bytes) / avg_cuda_time;
+    const auto avg_used_gmem_bw = static_cast<double>(bytes) / cuda_mean;
     {
       auto &summ = m_state.add_summary("nv/cold/bw/global/bytes_per_second");
       summ.set_string("name", "GlobalMem BW");
@@ -240,16 +305,18 @@ void measure_cold_base::generate_summaries()
 
     if (m_max_time_exceeded)
     {
-      const auto timeout = m_walltime_timer.get_duration();
+      const auto timeout   = m_walltime_timer.get_duration();
+      const auto max_noise = m_criterion_params.get_float64("max-noise");
+      const auto min_time  = m_criterion_params.get_float64("min-time");
 
-      if (noise > max_noise)
+      if (cuda_noise > max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                noise * 100,
+                                cuda_noise * 100,
                                 max_noise * 100));
       }
       if (m_total_samples < m_min_samples)
@@ -277,8 +344,8 @@ void measure_cold_base::generate_summaries()
     printer.log(nvbench::log_level::pass,
                 fmt::format("Cold: {:0.6f}ms GPU, {:0.6f}ms CPU, {:0.2f}s "
                             "total GPU, {:0.2f}s total wall, {}x ",
-                            avg_cuda_time * 1e3,
-                            avg_cpu_time * 1e3,
+                            cuda_mean * 1e3,
+                            cpu_mean * 1e3,
                             m_total_cuda_time,
                             m_walltime_timer.get_duration(),
                             m_total_samples));
