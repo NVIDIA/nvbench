@@ -435,7 +435,7 @@ NVBENCH_BENCH(my_cpu_benchmark)
   .set_is_cpu_only(true); // Mark as CPU-only.
 ```
 
-The optional `nvbench::exec_tag::no_gpu` hint may be used to reduce tbe compilation time and
+The optional `nvbench::exec_tag::no_gpu` hint may be used to reduce the compilation time and
 binary size of CPU-only benchmarks. An error is emitted at runtime if this tag is used while
 `is_cpu_only` is false.
 
