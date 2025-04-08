@@ -79,17 +79,6 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     return;
   }
 
-  // TODO The `no_block` tag should be removed and replaced with a runtime branch in measure_cold
-  // and measure_hot. Currently this causes unnecesaary codegen. Note that the `sync` exec_tag
-  // implies `no_block` when refactoring.
-  if (!(measure_tags & cpu_only) && !(modifier_tags & no_block) &&
-      this->get_disable_blocking_kernel())
-  {
-    constexpr auto no_block_tags = tags | no_block;
-    this->exec(no_block_tags, std::forward<KernelLauncher>(kernel_launcher));
-    return;
-  }
-
   // If no measurements selected, pick some defaults based on the modifiers:
   if constexpr (!measure_tags)
   {
@@ -121,6 +110,12 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
       }
     }
     return;
+  }
+
+  // Syncing will cause the blocking kernel pattern to deadlock:
+  if constexpr (modifier_tags & sync)
+  {
+    this->set_disable_blocking_kernel(true);
   }
 
   if (this->is_skipped())
@@ -157,7 +152,6 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
     {
       static_assert(!(tags & no_gpu), "Cold measurement doesn't support the `no_gpu` exec_tag.");
 
-      constexpr bool use_blocking_kernel = !(tags & no_block);
       if constexpr (tags & timer)
       {
 // Estimate bandwidth here
@@ -173,7 +167,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
         }
 #endif
 
-        using measure_t = nvbench::detail::measure_cold<KL, use_blocking_kernel>;
+        using measure_t = nvbench::detail::measure_cold<KL>;
         measure_t measure{*this, kernel_launcher};
         measure();
       }
@@ -195,7 +189,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
         }
 #endif
 
-        using measure_t = nvbench::detail::measure_cold<wrapper_t, use_blocking_kernel>;
+        using measure_t = nvbench::detail::measure_cold<wrapper_t>;
         measure_t measure(*this, wrapper);
         measure();
       }
@@ -207,8 +201,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
       static_assert(!(tags & timer), "Hot measurement doesn't support the `timer` exec_tag.");
       static_assert(!(tags & no_batch), "Hot measurement doesn't support the `no_batch` exec_tag.");
       static_assert(!(tags & no_gpu), "Hot measurement doesn't support the `no_gpu` exec_tag.");
-      constexpr bool use_blocking_kernel = !(tags & no_block);
-      using measure_t                    = nvbench::detail::measure_hot<KL, use_blocking_kernel>;
+      using measure_t = nvbench::detail::measure_hot<KL>;
       measure_t measure{*this, kernel_launcher};
       measure();
     }

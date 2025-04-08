@@ -80,10 +80,11 @@ protected:
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
 
+  bool m_disable_blocking_kernel{false};
   bool m_max_time_exceeded{false};
 };
 
-template <typename KernelLauncher, bool use_blocking_kernel>
+template <typename KernelLauncher>
 struct measure_hot : public measure_hot_base
 {
   measure_hot(nvbench::state &state, KernelLauncher &kernel_launcher)
@@ -105,7 +106,7 @@ private:
   // measurement.
   void run_warmup()
   {
-    if constexpr (use_blocking_kernel)
+    if (!m_disable_blocking_kernel)
     {
       this->block_stream();
     }
@@ -114,7 +115,7 @@ private:
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
-    if constexpr (use_blocking_kernel)
+    if (!m_disable_blocking_kernel)
     {
       this->unblock_stream();
     }
@@ -137,7 +138,7 @@ private:
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
 
-      if constexpr (use_blocking_kernel)
+      if (!m_disable_blocking_kernel)
       {
         // Block stream until some work is queued.
         // Limit the number of kernel executions while blocked to prevent

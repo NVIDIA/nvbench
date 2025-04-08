@@ -32,12 +32,11 @@ enum class exec_flag
 
   // Modifiers:
   timer         = 0x01, // KernelLauncher uses manual timing
-  no_block      = 0x02, // Disables use of `blocking_kernel`.
-  sync          = 0x04, // KernelLauncher has indicated that it will sync
-  run_once      = 0x08, // Only run the benchmark once (for profiling).
-  gpu           = 0x10, // Don't instantiate `measure_cpu_only`.
-  no_gpu        = 0x20, // No GPU measurements should be instantiated.
-  no_batch      = 0x40, // `measure_hot` will not be used.
+  sync          = 0x02, // KernelLauncher has indicated that it will sync
+  run_once      = 0x04, // Only run the benchmark once (for profiling).
+  gpu           = 0x08, // Don't instantiate `measure_cpu_only`.
+  no_gpu        = 0x10, // No GPU measurements should be instantiated.
+  no_batch      = 0x20, // `measure_hot` will not be used.
   modifier_mask = 0xFF,
 
   // Measurement types to instantiate. Derived from modifiers.
@@ -97,7 +96,6 @@ struct tag
 
 using none_t          = tag<nvbench::detail::exec_flag::none>;
 using timer_t         = tag<nvbench::detail::exec_flag::timer>;
-using no_block_t      = tag<nvbench::detail::exec_flag::no_block>;
 using sync_t          = tag<nvbench::detail::exec_flag::sync>;
 using run_once_t      = tag<nvbench::detail::exec_flag::run_once>;
 using gpu_t           = tag<nvbench::detail::exec_flag::gpu>;
@@ -112,7 +110,6 @@ using measure_mask_t  = tag<nvbench::detail::exec_flag::measure_mask>;
 
 constexpr inline none_t none;
 constexpr inline timer_t timer;
-constexpr inline no_block_t no_block;
 constexpr inline sync_t sync;
 constexpr inline run_once_t run_once;
 constexpr inline gpu_t gpu;
@@ -136,8 +133,7 @@ constexpr inline auto timer = nvbench::exec_tag::impl::timer | //
 
 /// Modifier used to indicate that the KernelGenerator will perform CUDA
 /// synchronizations. Without this flag such benchmarks will deadlock.
-constexpr inline auto sync = nvbench::exec_tag::impl::no_block | //
-                             nvbench::exec_tag::impl::sync |     //
+constexpr inline auto sync = nvbench::exec_tag::impl::sync | //
                              nvbench::exec_tag::impl::no_batch;
 
 /// Modifier used to indicate that batched measurements should be disabled

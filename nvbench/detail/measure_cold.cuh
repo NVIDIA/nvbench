@@ -54,8 +54,8 @@ struct measure_cold_base
   measure_cold_base &operator=(measure_cold_base &&)      = delete;
 
 protected:
-  template <bool use_blocking_kernel>
   struct kernel_launch_timer;
+  friend struct kernel_launch_timer;
 
   void check();
   void initialize();
@@ -89,8 +89,8 @@ protected:
   nvbench::criterion_params m_criterion_params;
   nvbench::stopping_criterion_base& m_stopping_criterion;
 
+  bool m_disable_blocking_kernel{false};
   bool m_run_once{false};
-  bool m_no_block{false};
 
   nvbench::int64_t m_min_samples{};
 
@@ -108,23 +108,23 @@ protected:
   bool m_max_time_exceeded{};
 };
 
-template <bool use_blocking_kernel>
 struct measure_cold_base::kernel_launch_timer
 {
   kernel_launch_timer(measure_cold_base &measure)
       : m_measure{measure}
+      , m_disable_blocking_kernel{measure.m_disable_blocking_kernel}
   {}
 
   __forceinline__ void start()
   {
     m_measure.flush_device_l2();
     m_measure.sync_stream();
-    if constexpr (use_blocking_kernel)
+    if (!m_disable_blocking_kernel)
     {
       m_measure.block_stream();
     }
     m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
-    if constexpr (!use_blocking_kernel)
+    if (m_disable_blocking_kernel)
     {
       m_measure.m_cpu_timer.start();
     }
@@ -133,7 +133,7 @@ struct measure_cold_base::kernel_launch_timer
   __forceinline__ void stop()
   {
     m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
-    if constexpr (use_blocking_kernel)
+    if (!m_disable_blocking_kernel)
     {
       m_measure.m_cpu_timer.start();
       m_measure.unblock_stream();
@@ -144,9 +144,10 @@ struct measure_cold_base::kernel_launch_timer
 
 private:
   measure_cold_base &m_measure;
+  bool m_disable_blocking_kernel;
 };
 
-template <typename KernelLauncher, bool use_blocking_kernel>
+template <typename KernelLauncher>
 struct measure_cold : public measure_cold_base
 {
   measure_cold(nvbench::state &state, KernelLauncher &kernel_launcher)
@@ -177,7 +178,7 @@ private:
       return;
     }
 
-    kernel_launch_timer<use_blocking_kernel> timer(*this);
+    kernel_launch_timer timer(*this);
 
     this->launch_kernel(timer);
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -185,7 +186,7 @@ private:
 
   void run_trials()
   {
-    kernel_launch_timer<use_blocking_kernel> timer(*this);
+    kernel_launch_timer timer(*this);
     do
     {
       this->launch_kernel(timer);
