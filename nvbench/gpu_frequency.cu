@@ -25,8 +25,6 @@
 namespace nvbench
 {
 
-struct cuda_stream;
-
 nvbench::float32_t gpu_frequency::get_clock_frequency()
 {
   nvbench::uint64_t elapsed_ns     = m_stop.m_host_timestamps[0] - m_start.m_host_timestamps[0];
