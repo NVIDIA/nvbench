@@ -85,29 +85,32 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
-  auto peak_clock_rate = m_state.get_device()->get_sm_peak_clock_rate();
-
-  if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
+  if (!m_run_once)
   {
-    if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+    auto peak_clock_rate = m_state.get_device()->get_sm_peak_clock_rate();
+
+    if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
     {
-      auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
-      auto &printer           = printer_opt_ref.value().get();
-      printer.log(nvbench::log_level::warn,
-                  fmt::format("GPU throttled ({:0.2f} MHz / {:0.2f} MHz) on sample {}",
-                              static_cast<float>(current_clock_rate) / 1000000.0f,
-                              static_cast<float>(peak_clock_rate) / 1000000.0f,
-                              m_total_samples));
-    }
+      if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+      {
+        auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
+        auto &printer           = printer_opt_ref.value().get();
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("GPU throttled ({:0.2f} MHz / {:0.2f} MHz) on sample {}",
+                                static_cast<float>(current_clock_rate) / 1000000.0f,
+                                static_cast<float>(peak_clock_rate) / 1000000.0f,
+                                m_total_samples));
+      }
 
-    if (m_throttle_recovery_delay > 0.0f)
-    { // let the GPU cool down
-      std::this_thread::sleep_for(std::chrono::duration<float>(m_throttle_recovery_delay));
-    }
+      if (m_throttle_recovery_delay > 0.0f)
+      { // let the GPU cool down
+        std::this_thread::sleep_for(std::chrono::duration<float>(m_throttle_recovery_delay));
+      }
 
-    if (m_discard_on_throttle)
-    { // ignore this measurement
-      return;
+      if (m_discard_on_throttle)
+      { // ignore this measurement
+        return;
+      }
     }
   }
 

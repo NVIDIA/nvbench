@@ -130,7 +130,10 @@ struct measure_cold_base::kernel_launch_timer
     {
       m_measure.block_stream();
     }
-    m_measure.gpu_frequency_start();
+    if (!m_measure.m_run_once)
+    {
+      m_measure.gpu_frequency_start();
+    }
     m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
     if constexpr (!use_blocking_kernel)
     {
@@ -146,7 +149,10 @@ struct measure_cold_base::kernel_launch_timer
       m_measure.m_cpu_timer.start();
       m_measure.unblock_stream();
     }
-    m_measure.gpu_frequency_stop();
+    if (!m_measure.m_run_once)
+    {
+      m_measure.gpu_frequency_stop();
+    }
     m_measure.sync_stream();
     m_measure.m_cpu_timer.stop();
   }
