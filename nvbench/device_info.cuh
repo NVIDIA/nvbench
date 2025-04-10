@@ -148,12 +148,6 @@ struct device_info
     return static_cast<std::size_t>(m_prop.memoryClockRate) * 1000;
   }
 
-  /// @return The peak clock rate of the SM in Hz.
-  [[nodiscard]] std::size_t get_sm_peak_clock_rate() const
-  { // kHz -> Hz
-    return static_cast<std::size_t>(m_prop.clockRate) * 1000;
-  }
-
   /// @return The width of the global memory bus in bits.
   [[nodiscard]] int get_global_memory_bus_width() const { return m_prop.memoryBusWidth; }
 

@@ -87,7 +87,7 @@ void measure_cold_base::record_measurements()
 {
   if (!m_run_once)
   {
-    auto peak_clock_rate = static_cast<float>(m_state.get_device()->get_sm_peak_clock_rate());
+    auto peak_clock_rate = static_cast<float>(m_state.get_device()->get_sm_default_clock_rate());
 
     if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
     {
