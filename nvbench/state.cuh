@@ -331,7 +331,7 @@ private:
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
 
-  nvbench::float32_t m_throttle_threshold{0.8f};      // [% of peak SM clock rate]
+  nvbench::float32_t m_throttle_threshold{0.75f};     // [% of peak SM clock rate]
   nvbench::float32_t m_throttle_recovery_delay{0.0f}; // [seconds]
   bool m_discard_on_throttle{false};
 

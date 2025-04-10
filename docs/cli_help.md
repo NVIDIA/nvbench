@@ -140,7 +140,7 @@
 
 * `--throttle-threshold <value>`
   * Set the GPU throttle threshold as percentage of the peak clock rate.
-  * Default is 0.5 (50%).
+  * Default is 0.75 (75%).
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
