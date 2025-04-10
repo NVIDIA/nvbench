@@ -16,12 +16,10 @@
  *  limitations under the License.
  */
 
-#include <cuda/std/chrono>
 #include <cuda_runtime.h>
 
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_stream.cuh>
-#include <nvbench/detail/throw.cuh>
 #include <nvbench/timestamps_kernel.cuh>
 #include <nvbench/types.cuh>
 
