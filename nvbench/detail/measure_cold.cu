@@ -87,7 +87,7 @@ void measure_cold_base::record_measurements()
 {
   if (!m_run_once)
   {
-    auto peak_clock_rate = m_state.get_device()->get_sm_peak_clock_rate();
+    auto peak_clock_rate = static_cast<float>(m_state.get_device()->get_sm_peak_clock_rate());
 
     if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
     {
@@ -96,10 +96,16 @@ void measure_cold_base::record_measurements()
         auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
         auto &printer           = printer_opt_ref.value().get();
         printer.log(nvbench::log_level::warn,
-                    fmt::format("GPU throttled ({:0.2f} MHz / {:0.2f} MHz) on sample {}",
-                                static_cast<float>(current_clock_rate) / 1000000.0f,
-                                static_cast<float>(peak_clock_rate) / 1000000.0f,
-                                m_total_samples));
+                    fmt::format("GPU throttled below threshold ({:0.2f} MHz / {:0.2f} MHz) "
+                                "({:0.0f}% < {:0.0f}%) on sample {}. {} previous sample and "
+                                "pausing for {}s.",
+                                current_clock_rate / 1000000.0f,
+                                peak_clock_rate / 1000000.0f,
+                                100.0f * (current_clock_rate / peak_clock_rate),
+                                100.0f * m_throttle_threshold,
+                                m_total_samples,
+                                m_discard_on_throttle ? "Discarding" : "Keeping",
+                                m_throttle_recovery_delay));
       }
 
       if (m_throttle_recovery_delay > 0.0f)

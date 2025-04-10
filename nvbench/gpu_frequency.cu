@@ -35,10 +35,10 @@ nvbench::float32_t gpu_frequency::get_clock_frequency()
   return clock_rate;
 }
 
-bool gpu_frequency::has_throttled(size_t peak_sm_clock_rate_hz,
+bool gpu_frequency::has_throttled(nvbench::float32_t peak_sm_clock_rate_hz,
                                   nvbench::float32_t throttle_threshold)
 {
-  float throttleThreshold = static_cast<float>(peak_sm_clock_rate_hz) * throttle_threshold;
+  float throttleThreshold = peak_sm_clock_rate_hz * throttle_threshold;
 
   if (this->get_clock_frequency() < throttleThreshold)
   {
