@@ -17,7 +17,6 @@
  */
 
 #include <nvbench/benchmark_base.cuh>
-
 #include <nvbench/detail/transform_reduce.cuh>
 
 namespace nvbench
@@ -39,6 +38,10 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
 
   result->m_skip_time = m_skip_time;
   result->m_timeout   = m_timeout;
+
+  result->m_throttle_threshold      = m_throttle_threshold;
+  result->m_throttle_recovery_delay = m_throttle_recovery_delay;
+  result->m_discard_on_throttle     = m_discard_on_throttle;
 
   result->m_stopping_criterion = m_stopping_criterion;
 
