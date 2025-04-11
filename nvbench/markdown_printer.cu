@@ -294,6 +294,10 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
             {
               table.add_cell(row, tag, header, this->do_format_item_rate(summ));
             }
+            else if (hint == "frequency")
+            {
+              table.add_cell(row, tag, header, this->do_format_frequency(summ));
+            }
             else if (hint == "bytes")
             {
               table.add_cell(row, tag, header, this->do_format_bytes(summ));
@@ -396,6 +400,27 @@ std::string markdown_printer::do_format_item_rate(const summary &data)
   else
   {
     return fmt::format("{:0.3f}", items_per_second);
+  }
+}
+
+std::string markdown_printer::do_format_frequency(const nvbench::summary &data)
+{
+  const auto frequency_hz = data.get_float64("value");
+  if (frequency_hz >= 1e9)
+  {
+    return fmt::format("{:0.3f} GHz", frequency_hz * 1e-9);
+  }
+  else if (frequency_hz >= 1e6)
+  {
+    return fmt::format("{:0.3f} MHz", frequency_hz * 1e-6);
+  }
+  else if (frequency_hz >= 1e3)
+  {
+    return fmt::format("{:0.3f} KHz", frequency_hz * 1e-3);
+  }
+  else
+  {
+    return fmt::format("{:0.3f} Hz", frequency_hz);
   }
 }
 

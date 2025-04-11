@@ -54,6 +54,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
   {
     m_cuda_times.reserve(static_cast<std::size_t>(m_min_samples));
     m_cpu_times.reserve(static_cast<std::size_t>(m_min_samples));
+    m_sm_clock_rates.reserve(static_cast<std::size_t>(m_min_samples));
   }
 }
 
@@ -83,6 +84,7 @@ void measure_cold_base::initialize()
 
   m_cuda_times.clear();
   m_cpu_times.clear();
+  m_sm_clock_rates.clear();
 
   m_stopping_criterion.initialize(m_criterion_params);
 }
@@ -94,6 +96,7 @@ void measure_cold_base::record_measurements()
   if (!m_run_once)
   {
     auto peak_clock_rate = static_cast<float>(m_state.get_device()->get_sm_default_clock_rate());
+    m_sm_clock_rates.push_back(peak_clock_rate);
 
     if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
     {
@@ -336,6 +339,17 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description", "Walltime used for isolated measurements");
     summ.set_float64("value", m_walltime_timer.get_duration());
     summ.set_string("hide", "Hidden by default.");
+  }
+
+  if (!m_sm_clock_rates.empty())
+  {
+    auto &summ = m_state.add_summary("nv/cold/sm_clock_rate/mean");
+    summ.set_string("name", "Clock Rate");
+    summ.set_string("hint", "frequency");
+    summ.set_string("description", "Mean SM clock rate");
+    summ.set_string("hide", "Hidden by default.");
+    summ.set_float64("value", nvbench::detail::statistics::compute_mean(m_sm_clock_rates.cbegin(), 
+                                                                        m_sm_clock_rates.cend()));
   }
 
   // Log if a printer exists:
