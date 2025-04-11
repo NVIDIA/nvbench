@@ -109,7 +109,7 @@ struct device_info
   /// @return The default clock rate of the SM in Hz.
   [[nodiscard]] std::size_t get_sm_default_clock_rate() const
   { // kHz -> Hz
-    return static_cast<std::size_t>(m_prop.clockRate * 1000);
+    return static_cast<std::size_t>(m_prop.clockRate) * 1000;
   }
 
   /// @return The number of physical streaming multiprocessors on this device.
