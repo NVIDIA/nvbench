@@ -140,13 +140,13 @@
 
 * `--throttle-threshold <value>`
   * Set the GPU throttle threshold as percentage of the peak clock rate.
-  * Default is 0.75 (75%).
+  * Default is 75%.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
 * `--throttle-recovery-delay <value>`
   * Set the GPU throttle recovery delay in seconds.
-  * Default is 0.5 seconds.
+  * Default is 0.05 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 

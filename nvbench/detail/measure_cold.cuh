@@ -18,24 +18,24 @@
 
 #pragma once
 
+#include <cuda_runtime.h>
+
 #include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/detail/gpu_frequency.cuh>
+#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
+#include <nvbench/detail/l2flush.cuh>
+#include <nvbench/detail/statistics.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
 #include <nvbench/stopping_criterion.cuh>
 
-#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
-#include <nvbench/detail/l2flush.cuh>
-#include <nvbench/detail/statistics.cuh>
-#include <nvbench/detail/gpu_frequency.cuh>
-
-#include <cuda_runtime.h>
-
 #include <utility>
 #include <vector>
+
 #include "nvbench/types.cuh"
 
 namespace nvbench
@@ -91,7 +91,7 @@ protected:
   nvbench::blocking_kernel m_blocker;
 
   nvbench::criterion_params m_criterion_params;
-  nvbench::stopping_criterion_base& m_stopping_criterion;
+  nvbench::stopping_criterion_base &m_stopping_criterion;
   nvbench::detail::gpu_frequency m_gpu_frequency;
 
   bool m_disable_blocking_kernel{false};
@@ -102,8 +102,8 @@ protected:
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
 
-  nvbench::float32_t m_throttle_threshold{0.75f};     // [% of peak SM clock rate]
-  nvbench::float32_t m_throttle_recovery_delay{0.0f}; // [seconds]
+  nvbench::float32_t m_throttle_threshold;      // [% of peak SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay; // [seconds]
   bool m_discard_on_throttle{false};
 
   nvbench::int64_t m_total_samples{};

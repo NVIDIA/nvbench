@@ -1071,7 +1071,7 @@ try
   }
   else if (prop_arg == "--throttle-threshold")
   {
-    bench.set_throttle_threshold(static_cast<nvbench::float32_t>(value));
+    bench.set_throttle_threshold(static_cast<nvbench::float32_t>(value) / 100.0f);
   }
   else if (prop_arg == "--throttle-recovery-delay")
   {
