@@ -220,13 +220,6 @@ struct state
     m_throttle_recovery_delay = throttle_recovery_delay;
   }
 
-  [[nodiscard]] bool get_discard_on_throttle() const { return m_discard_on_throttle; }
-
-  void set_discard_on_throttle(bool discard_on_throttle)
-  {
-    m_discard_on_throttle = discard_on_throttle;
-  }
-
   /// If a `KernelLauncher` syncs and `nvbench::exec_tag::sync` is not passed
   /// to `state.exec(...)`, a deadlock may occur. If a `blocking_kernel` blocks
   /// for more than `blocking_kernel_timeout` seconds, an error will be printed
@@ -340,7 +333,6 @@ private:
 
   nvbench::float32_t m_throttle_threshold;      // [% of peak SM clock rate]
   nvbench::float32_t m_throttle_recovery_delay; // [seconds]
-  bool m_discard_on_throttle{false};
 
   // Deadlock protection. See blocking_kernel's class doc for details.
   nvbench::float64_t m_blocking_kernel_timeout{30.0};

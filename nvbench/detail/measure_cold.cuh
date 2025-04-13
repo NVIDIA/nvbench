@@ -104,7 +104,6 @@ protected:
 
   nvbench::float32_t m_throttle_threshold;      // [% of peak SM clock rate]
   nvbench::float32_t m_throttle_recovery_delay; // [seconds]
-  bool m_discard_on_throttle{false};
 
   nvbench::int64_t m_total_samples{};
 

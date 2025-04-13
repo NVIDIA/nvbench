@@ -264,13 +264,6 @@ struct benchmark_base
     m_throttle_recovery_delay = throttle_recovery_delay;
   }
 
-  [[nodiscard]] bool get_discard_on_throttle() const { return m_discard_on_throttle; }
-
-  void set_discard_on_throttle(bool discard_on_throttle)
-  {
-    m_discard_on_throttle = discard_on_throttle;
-  }
-
   [[nodiscard]] nvbench::criterion_params &get_criterion_params() { return m_criterion_params; }
   [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
   {
@@ -311,7 +304,6 @@ protected:
 
   nvbench::float32_t m_throttle_threshold{0.75f};      // [% of peak SM clock rate]
   nvbench::float32_t m_throttle_recovery_delay{0.05f}; // [seconds]
-  bool m_discard_on_throttle{false};
 
   nvbench::criterion_params m_criterion_params;
   std::string m_stopping_criterion{"stdrel"};

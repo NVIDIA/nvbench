@@ -89,7 +89,6 @@ private:
 
   void set_stopping_criterion(const std::string &criterion);
   void enable_run_once();
-  void enable_discard_on_throttle();
   void disable_blocking_kernel();
 
   void add_benchmark(const std::string &name);

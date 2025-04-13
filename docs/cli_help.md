@@ -133,11 +133,6 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
-* `--discard-on-throttle`
-  * Discard measurements if the GPU is throttled.
-  * Applies to the most recent `--benchmark`, or all benchmarks if specified
-    before any `--benchmark` arguments.
-
 * `--throttle-threshold <value>`
   * Set the GPU throttle threshold as percentage of the peak clock rate.
   * Default is 75%.

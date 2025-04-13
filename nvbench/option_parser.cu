@@ -431,11 +431,6 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->lock_gpu_clocks(first[1]);
       first += 2;
     }
-    else if (arg == "--discard-on-throttle")
-    {
-      this->enable_discard_on_throttle();
-      first += 1;
-    }
     else if (arg == "--run-once")
     {
       this->enable_run_once();
@@ -729,18 +724,6 @@ void option_parser::enable_run_once()
 
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_run_once(true);
-}
-
-void option_parser::enable_discard_on_throttle()
-{
-  if (m_benchmarks.empty())
-  {
-    m_global_benchmark_args.push_back("--discard-on-throttle");
-    return;
-  }
-
-  benchmark_base &bench = *m_benchmarks.back();
-  bench.set_discard_on_throttle(true);
 }
 
 void option_parser::set_stopping_criterion(const std::string &criterion)
