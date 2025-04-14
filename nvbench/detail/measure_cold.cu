@@ -101,7 +101,7 @@ void measure_cold_base::record_measurements()
     {
       if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
       {
-        auto &printer           = printer_opt_ref.value().get();
+        auto &printer = printer_opt_ref.value().get();
         printer.log(nvbench::log_level::warn,
                     fmt::format("GPU throttled below threshold ({:0.2f} MHz / {:0.2f} MHz) "
                                 "({:0.0f}% < {:0.0f}%) on sample {}. Discarding previous sample "
