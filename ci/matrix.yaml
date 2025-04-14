@@ -38,7 +38,6 @@ llvm19: &llvm19 { name: 'llvm', version: '19', exe: 'clang++' }
 # Configurations that will run for every PR
 pull_request:
   nvcc:
-    - {cuda: *cuda_prev_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11    }
     - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7     }
     - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8     }
     - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9     }
