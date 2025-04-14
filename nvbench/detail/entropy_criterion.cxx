@@ -75,7 +75,7 @@ void entropy_criterion::do_add_measurement(nvbench::float64_t measurement)
     if (bin_keys)
     {
       const auto resolution_us = 0.5;
-      const auto resulution_s  = resolution_us / 1 '000' 000;
+      const auto resulution_s  = resolution_us / 1000000;
       const auto epsilon       = resulution_s * 2;
       key                      = std::round(key / epsilon) * epsilon;
     }
