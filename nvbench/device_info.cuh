@@ -106,10 +106,7 @@ struct device_info
   }
 
   /// @return The default clock rate of the SM in Hz.
-  [[nodiscard]] std::size_t get_sm_default_clock_rate() const
-  { // kHz -> Hz
-    return static_cast<std::size_t>(m_prop.clockRate) * 1000;
-  }
+  [[nodiscard]] std::size_t get_sm_default_clock_rate() const { return m_sm_default_clock_rate; }
 
   /// @return The number of physical streaming multiprocessors on this device.
   [[nodiscard]] int get_number_of_sms() const { return m_prop.multiProcessorCount; }
@@ -143,8 +140,8 @@ struct device_info
 
   /// @return The peak clock rate of the global memory bus in Hz.
   [[nodiscard]] std::size_t get_global_memory_bus_peak_clock_rate() const
-  { // kHz -> Hz
-    return static_cast<std::size_t>(m_prop.memoryClockRate) * 1000;
+  {
+    return m_global_memory_bus_peak_clock_rate;
   }
 
   /// @return The width of the global memory bus in bits.
@@ -200,6 +197,9 @@ private:
   int m_id;
   cudaDeviceProp m_prop;
   nvmlDevice_st *m_nvml_device;
+
+  std::size_t m_sm_default_clock_rate;
+  std::size_t m_global_memory_bus_peak_clock_rate;
 };
 
 // get_ptx_version implementation; this needs to stay in the header so it will

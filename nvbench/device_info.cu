@@ -44,6 +44,16 @@ device_info::device_info(int id)
     , m_nvml_device(nullptr)
 {
   NVBENCH_CUDA_CALL(cudaGetDeviceProperties(&m_prop, m_id));
+
+  int val{};
+  NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&val, cudaDevAttrClockRate, m_id));
+  // kHz -> Hz
+  m_sm_default_clock_rate = static_cast<std::size_t>(val) * 1000;
+
+  NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&val, cudaDevAttrMemoryClockRate, m_id));
+  // kHz -> Hz
+  m_global_memory_bus_peak_clock_rate = static_cast<std::size_t>(val) * 1000;
+
   // NVML's lifetime should extend for the entirety of the process, so store in a
   // global.
   [[maybe_unused]] static auto nvml_lifetime = nvbench::nvml::NVMLLifetimeManager();
