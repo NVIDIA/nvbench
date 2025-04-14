@@ -302,7 +302,7 @@ protected:
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
 
-  nvbench::float32_t m_throttle_threshold{0.75f};      // [% of peak SM clock rate]
+  nvbench::float32_t m_throttle_threshold{0.75f};      // [% of default SM clock rate]
   nvbench::float32_t m_throttle_recovery_delay{0.05f}; // [seconds]
 
   nvbench::criterion_params m_criterion_params;

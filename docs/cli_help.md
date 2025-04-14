@@ -90,7 +90,7 @@
     before any `--benchmark` arguments.
 
 * `--stopping-criterion <criterion>`
-  * After `--min-samples` is satisfied, use `<criterion>` to detect if enough 
+  * After `--min-samples` is satisfied, use `<criterion>` to detect if enough
     samples were collected.
   * Only applies to Cold measurements.
   * Default is stdrel (`--stopping-criterion stdrel`)
@@ -134,7 +134,7 @@
     before any `--benchmark` arguments.
 
 * `--throttle-threshold <value>`
-  * Set the GPU throttle threshold as percentage of the peak clock rate.
+  * Set the GPU throttle threshold as percentage of the device's default clock rate.
   * Default is 75%.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
