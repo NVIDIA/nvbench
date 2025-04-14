@@ -17,7 +17,6 @@
  */
 
 #include <nvbench/nvbench.cuh>
-
 #include <nvbench/test_kernels.cuh>
 
 // Enum to use as parameter axis:
@@ -68,12 +67,10 @@ void runtime_enum_sweep_string(nvbench::state &state)
   // Create inputs, etc, configure runtime kernel parameters, etc.
 
   // Just a dummy kernel.
-  state.exec([](nvbench::launch &launch) {
-    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3);
-  });
+  state.exec(
+    [](nvbench::launch &launch) { nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3); });
 }
-NVBENCH_BENCH(runtime_enum_sweep_string)
-  .add_string_axis("MyEnum", {"A", "B", "C"});
+NVBENCH_BENCH(runtime_enum_sweep_string).add_string_axis("MyEnum", {"A", "B", "C"});
 
 //==============================================================================
 // Sweep through enum values at runtime using an int64 axis.
@@ -97,9 +94,8 @@ void runtime_enum_sweep_int64(nvbench::state &state)
   // Create inputs, etc, configure runtime kernel parameters, etc.
 
   // Just a dummy kernel.
-  state.exec([](nvbench::launch &launch) {
-    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3);
-  });
+  state.exec(
+    [](nvbench::launch &launch) { nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3); });
 }
 NVBENCH_BENCH(runtime_enum_sweep_int64)
   .add_int64_axis("MyEnum",
@@ -178,12 +174,10 @@ void compile_time_enum_sweep(nvbench::state &state,
   // Template parameters, static dispatch, etc.
 
   // Just a dummy kernel.
-  state.exec([](nvbench::launch &launch) {
-    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3);
-  });
+  state.exec(
+    [](nvbench::launch &launch) { nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3); });
 }
-using MyEnumList =
-  nvbench::enum_type_list<MyEnum::ValueA, MyEnum::ValueB, MyEnum::ValueC>;
+using MyEnumList = nvbench::enum_type_list<MyEnum::ValueA, MyEnum::ValueB, MyEnum::ValueC>;
 NVBENCH_BENCH_TYPES(compile_time_enum_sweep, NVBENCH_TYPE_AXES(MyEnumList))
   .set_type_axes_names({"MyEnum"});
 
@@ -199,16 +193,14 @@ NVBENCH_BENCH_TYPES(compile_time_enum_sweep, NVBENCH_TYPE_AXES(MyEnumList))
 //  * `-12` (struct std::integral_constant<int,-12>)
 // ```
 template <nvbench::int32_t IntValue>
-void compile_time_int_sweep(nvbench::state &state,
-                            nvbench::type_list<nvbench::enum_type<IntValue>>)
+void compile_time_int_sweep(nvbench::state &state, nvbench::type_list<nvbench::enum_type<IntValue>>)
 {
   // Use IntValue in compile time contexts.
   // Template parameters, static dispatch, etc.
 
   // Just a dummy kernel.
-  state.exec([](nvbench::launch &launch) {
-    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3);
-  });
+  state.exec(
+    [](nvbench::launch &launch) { nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3); });
 }
 using MyInts = nvbench::enum_type_list<0, 16, 4096, -12>;
 NVBENCH_BENCH_TYPES(compile_time_int_sweep, NVBENCH_TYPE_AXES(MyInts))

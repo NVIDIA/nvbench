@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <nvbench/types.cuh>
-#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/detail/ring_buffer.cuh>
+#include <nvbench/stopping_criterion.cuh>
+#include <nvbench/types.cuh>
 
 #include <vector>
 
@@ -38,7 +38,7 @@ class entropy_criterion final : public stopping_criterion_base
   nvbench::detail::ring_buffer<nvbench::float64_t> m_entropy_tracker{299};
 
   // Used to avoid re-allocating temporary memory
-  std::vector<nvbench::float64_t> m_probabilities; 
+  std::vector<nvbench::float64_t> m_probabilities;
 
   nvbench::float64_t compute_entropy();
 
@@ -49,7 +49,6 @@ protected:
   virtual void do_initialize() override;
   virtual void do_add_measurement(nvbench::float64_t measurement) override;
   virtual bool do_is_finished() override;
-  
 };
 
 } // namespace nvbench::detail

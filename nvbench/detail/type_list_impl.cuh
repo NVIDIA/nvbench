@@ -82,7 +82,7 @@ struct cartesian_product<nvbench::type_list<nvbench::type_list<T, Tail...>, TL, 
   using tail_prod = typename detail::cartesian_product<nvbench::type_list<TL, TLTail...>>::type;
   using cur       = typename detail::prepend_each<T, tail_prod>::type;
   using next      = typename detail::cartesian_product<
-    nvbench::type_list<nvbench::type_list<Tail...>, TL, TLTail...>>::type;
+         nvbench::type_list<nvbench::type_list<Tail...>, TL, TLTail...>>::type;
   using type = decltype(detail::concat(cur{}, next{}));
 };
 

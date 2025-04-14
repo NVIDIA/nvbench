@@ -29,7 +29,7 @@ stdrel_criterion::stdrel_criterion()
 
 void stdrel_criterion::do_initialize()
 {
-  m_total_samples = 0;
+  m_total_samples   = 0;
   m_total_cuda_time = 0.0;
   m_cuda_times.clear();
   m_noise_tracker.clear();
@@ -46,7 +46,7 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
   const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
                                                                           m_cuda_times.cend(),
                                                                           mean_cuda_time);
-  const auto cuda_rel_stdev       = cuda_stdev / mean_cuda_time;
+  const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
   if (std::isfinite(cuda_rel_stdev))
   {
     m_noise_tracker.push_back(cuda_rel_stdev);

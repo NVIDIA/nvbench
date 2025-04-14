@@ -16,12 +16,12 @@
  *  limitations under the License.
  */
 
-#include <cuda_runtime.h>
-
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_stream.cuh>
 #include <nvbench/detail/timestamps_kernel.cuh>
 #include <nvbench/types.cuh>
+
+#include <cuda_runtime.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -71,12 +71,11 @@ void timestamps_kernel::record(const nvbench::cuda_stream &stream)
   int num_sms   = 0;
 
   NVBENCH_CUDA_CALL(cudaGetDevice(&device_id));
-  NVBENCH_CUDA_CALL(
-    cudaDeviceGetAttribute(&num_sms, cudaDevAttrMultiProcessorCount, device_id));
+  NVBENCH_CUDA_CALL(cudaDeviceGetAttribute(&num_sms, cudaDevAttrMultiProcessorCount, device_id));
 
   get_timestamps_kernel<<<static_cast<unsigned int>(num_sms), 1, 0, stream.get_stream()>>>(
     m_device_timestamps,
     m_device_timestamps + 1);
 }
 
-} // namespace nvbench
+} // namespace nvbench::detail

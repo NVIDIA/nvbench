@@ -19,12 +19,12 @@
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/detail/throw.cuh>
 
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
-
-#include <fmt/format.h>
-#include <fmt/ranges.h>
 
 namespace nvbench
 {

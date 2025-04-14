@@ -16,9 +16,8 @@
  *  limitations under the License.
  */
 
-#include <nvbench/type_axis.cuh>
-
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/type_axis.cuh>
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>

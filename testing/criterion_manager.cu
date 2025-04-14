@@ -42,27 +42,34 @@ protected:
 
 void test_no_duplicates_are_allowed()
 {
-  nvbench::criterion_manager& manager = nvbench::criterion_manager::get();
-  bool exception_triggered = false;
+  nvbench::criterion_manager &manager = nvbench::criterion_manager::get();
+  bool exception_triggered            = false;
 
-  try {
-    [[maybe_unused]] nvbench::stopping_criterion_base& _ = manager.get_criterion("custom");
-  } catch(...) {
+  try
+  {
+    [[maybe_unused]] nvbench::stopping_criterion_base &_ = manager.get_criterion("custom");
+  }
+  catch (...)
+  {
     exception_triggered = true;
   }
   ASSERT(exception_triggered);
 
   std::unique_ptr<custom_criterion> custom_ptr = std::make_unique<custom_criterion>();
-  custom_criterion* custom_raw = custom_ptr.get();
+  custom_criterion *custom_raw                 = custom_ptr.get();
   ASSERT(&manager.add(std::move(custom_ptr)) == custom_raw);
 
-  nvbench::stopping_criterion_base& custom = nvbench::criterion_manager::get().get_criterion("custom");
+  nvbench::stopping_criterion_base &custom =
+    nvbench::criterion_manager::get().get_criterion("custom");
   ASSERT(custom_raw == &custom);
 
   exception_triggered = false;
-  try {
+  try
+  {
     manager.add(std::make_unique<custom_criterion>());
-  } catch(...) {
+  }
+  catch (...)
+  {
     exception_triggered = true;
   }
   ASSERT(exception_triggered);

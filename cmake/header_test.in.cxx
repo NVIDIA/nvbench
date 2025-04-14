@@ -9,9 +9,9 @@
 // a potential macro collision and halts.
 //
 // Hacky way to build a string, but it works on all tested platforms.
-#define NVBench_MACRO_CHECK(MACRO, HEADER)                                      \
-  NVBench_MACRO_CHECK_IMPL(Identifier MACRO should not be used from NVBench      \
-                           headers due to conflicts with HEADER macros.)
+#define NVBench_MACRO_CHECK(MACRO, HEADER)                                                         \
+  NVBench_MACRO_CHECK_IMPL(                                                                        \
+    Identifier MACRO should not be used from NVBench headers due to conflicts with HEADER macros.)
 
 // Use raw platform checks instead of the NVBench_HOST_COMPILER macros since we
 // don't want to #include any headers other than the one being tested.
@@ -34,8 +34,8 @@
 // library implementations unconditionally `#undef` these macros, which then
 // causes random failures later.
 // Leaving these commented out as a warning: Here be dragons.
-//#define min(...) NVBench_MACRO_CHECK('min', windows.h)
-//#define max(...) NVBench_MACRO_CHECK('max', windows.h)
+// #define min(...) NVBench_MACRO_CHECK('min', windows.h)
+// #define max(...) NVBench_MACRO_CHECK('max', windows.h)
 
 // termios.h conflicts (NVIDIA/thrust#1547)
 #define B0 NVBench_MACRO_CHECK("B0", termios.h)

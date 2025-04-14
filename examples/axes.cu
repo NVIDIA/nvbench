@@ -71,18 +71,16 @@ void copy_sweep_grid_shape(nvbench::state &state)
   thrust::device_vector<nvbench::int32_t> in(num_values, 0);
   thrust::device_vector<nvbench::int32_t> out(num_values, 0);
 
-  state.exec(
-    [block_size,
-     num_blocks,
-     num_values,
-     in_ptr  = thrust::raw_pointer_cast(in.data()),
-     out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
-      (void) num_values; // clang thinks this is unused...
-      nvbench::copy_kernel<<<num_blocks, block_size, 0, launch.get_stream()>>>(
-        in_ptr,
-        out_ptr,
-        num_values);
-    });
+  state.exec([block_size,
+              num_blocks,
+              num_values,
+              in_ptr  = thrust::raw_pointer_cast(in.data()),
+              out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
+    (void)num_values; // clang thinks this is unused...
+    nvbench::copy_kernel<<<num_blocks, block_size, 0, launch.get_stream()>>>(in_ptr,
+                                                                             out_ptr,
+                                                                             num_values);
+  });
 }
 NVBENCH_BENCH(copy_sweep_grid_shape)
   // Every second power of two from  64->1024:
@@ -107,15 +105,12 @@ void copy_type_sweep(nvbench::state &state, nvbench::type_list<ValueType>)
   thrust::device_vector<ValueType> in(num_values, 0);
   thrust::device_vector<ValueType> out(num_values, 0);
 
-  state.exec(
-    [num_values,
-     in_ptr  = thrust::raw_pointer_cast(in.data()),
-     out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
-      (void) num_values; // clang thinks this is unused...
-      nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(in_ptr,
-                                                                 out_ptr,
-                                                                 num_values);
-    });
+  state.exec([num_values,
+              in_ptr  = thrust::raw_pointer_cast(in.data()),
+              out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
+    (void)num_values; // clang thinks this is unused...
+    nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(in_ptr, out_ptr, num_values);
+  });
 }
 // Define a type_list to use for the type axis:
 using cts_types = nvbench::type_list<nvbench::uint8_t,
@@ -131,11 +126,10 @@ NVBENCH_BENCH_TYPES(copy_type_sweep, NVBENCH_TYPE_AXES(cts_types));
 // Convert 64 MiB of InputTypes to OutputTypes, represented with various
 // value_types.
 template <typename InputType, typename OutputType>
-void copy_type_conversion_sweep(nvbench::state &state,
-                                nvbench::type_list<InputType, OutputType>)
+void copy_type_conversion_sweep(nvbench::state &state, nvbench::type_list<InputType, OutputType>)
 {
   // Optional: Skip narrowing conversions.
-  if constexpr(sizeof(InputType) > sizeof(OutputType))
+  if constexpr (sizeof(InputType) > sizeof(OutputType))
   {
     state.skip("Narrowing conversion: sizeof(InputType) > sizeof(OutputType).");
     return;
@@ -154,15 +148,12 @@ void copy_type_conversion_sweep(nvbench::state &state,
   thrust::device_vector<InputType> in(num_values, 0);
   thrust::device_vector<OutputType> out(num_values, 0);
 
-  state.exec(
-    [num_values,
-     in_ptr  = thrust::raw_pointer_cast(in.data()),
-     out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
-      (void) num_values; // clang thinks this is unused...
-      nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(in_ptr,
-                                                                 out_ptr,
-                                                                 num_values);
-    });
+  state.exec([num_values,
+              in_ptr  = thrust::raw_pointer_cast(in.data()),
+              out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
+    (void)num_values; // clang thinks this is unused...
+    nvbench::copy_kernel<<<256, 256, 0, launch.get_stream()>>>(in_ptr, out_ptr, num_values);
+  });
 }
 // Optional: Skip when InputType == OutputType. This approach avoids
 // instantiating the benchmark at all.
@@ -178,6 +169,5 @@ using ctcs_types = nvbench::type_list<nvbench::int8_t,
                                       nvbench::float32_t,
                                       nvbench::int64_t,
                                       nvbench::float64_t>;
-NVBENCH_BENCH_TYPES(copy_type_conversion_sweep,
-                    NVBENCH_TYPE_AXES(ctcs_types, ctcs_types))
+NVBENCH_BENCH_TYPES(copy_type_conversion_sweep, NVBENCH_TYPE_AXES(ctcs_types, ctcs_types))
   .set_type_axes_names({"In", "Out"});

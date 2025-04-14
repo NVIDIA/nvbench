@@ -34,6 +34,8 @@
 #include <nvbench/internal/cli_help.cuh>
 #include <nvbench/internal/cli_help_axis.cuh>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -44,11 +46,9 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <vector>
-
-#include <fmt/format.h>
-#include <string_view>
 
 namespace
 {
