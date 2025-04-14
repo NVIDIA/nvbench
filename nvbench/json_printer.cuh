@@ -19,7 +19,6 @@
 #pragma once
 
 #include <nvbench/printer_base.cuh>
-
 #include <nvbench/types.cuh>
 
 #include <string>

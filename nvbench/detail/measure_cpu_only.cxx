@@ -24,10 +24,10 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <limits>
-
-#include <fmt/format.h>
 
 namespace nvbench::detail
 {
@@ -36,7 +36,8 @@ measure_cpu_only_base::measure_cpu_only_base(state &exec_state)
     : m_state{exec_state}
     , m_launch(m_state.get_cuda_stream())
     , m_criterion_params{exec_state.get_criterion_params()}
-    , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(exec_state.get_stopping_criterion())}
+    , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(
+        exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_min_samples{exec_state.get_min_samples()}
     , m_skip_time{exec_state.get_skip_time()}
@@ -72,7 +73,7 @@ void measure_cpu_only_base::run_trials_prologue() { m_walltime_timer.start(); }
 void measure_cpu_only_base::record_measurements()
 {
   // Update and record timers and counters:
-  const auto cur_cpu_time  = m_cpu_timer.get_duration();
+  const auto cur_cpu_time = m_cpu_timer.get_duration();
 
   m_min_cpu_time = std::min(m_min_cpu_time, cur_cpu_time);
   m_max_cpu_time = std::max(m_max_cpu_time, cur_cpu_time);
@@ -188,8 +189,7 @@ void measure_cpu_only_base::generate_summaries()
       auto &summ = m_state.add_summary("nv/cpu_only/bw/global/bytes_per_second");
       summ.set_string("name", "GlobalMem BW");
       summ.set_string("hint", "byte_rate");
-      summ.set_string("description",
-                      "Number of bytes read/written per second.");
+      summ.set_string("description", "Number of bytes read/written per second.");
       summ.set_float64("value", avg_used_gmem_bw);
     }
   } // bandwidth
@@ -210,9 +210,9 @@ void measure_cpu_only_base::generate_summaries()
 
     if (m_max_time_exceeded)
     {
-      const auto timeout = m_walltime_timer.get_duration();
+      const auto timeout   = m_walltime_timer.get_duration();
       const auto max_noise = m_criterion_params.get_float64("max-noise");
-      const auto min_time = m_criterion_params.get_float64("min-time");
+      const auto min_time  = m_criterion_params.get_float64("min-time");
 
       if (cpu_noise > max_noise)
       {

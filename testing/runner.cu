@@ -16,22 +16,21 @@
  *  limitations under the License.
  */
 
-#include <nvbench/runner.cuh>
-
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
+#include <nvbench/runner.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
 #include <nvbench/types.cuh>
-
-#include "test_asserts.cuh"
 
 #include <fmt/format.h>
 
 #include <algorithm>
 #include <variant>
 #include <vector>
+
+#include "test_asserts.cuh"
 
 template <typename T>
 std::vector<T> sort(std::vector<T> &&vec)
@@ -65,21 +64,16 @@ using misc_types  = nvbench::type_list<bool, void>;
 using type_axes   = nvbench::type_list<float_types, int_types, misc_types>;
 
 template <typename FloatT, typename IntT, typename MiscT>
-void template_no_op_generator(nvbench::state &state,
-                              nvbench::type_list<FloatT, IntT, MiscT>)
+void template_no_op_generator(nvbench::state &state, nvbench::type_list<FloatT, IntT, MiscT>)
 {
-  ASSERT(nvbench::type_strings<FloatT>::input_string() ==
-         state.get_string("FloatT"));
-  ASSERT(nvbench::type_strings<IntT>::input_string() ==
-         state.get_string("IntT"));
-  ASSERT(nvbench::type_strings<IntT>::input_string() ==
-         state.get_string("IntT"));
+  ASSERT(nvbench::type_strings<FloatT>::input_string() == state.get_string("FloatT"));
+  ASSERT(nvbench::type_strings<IntT>::input_string() == state.get_string("IntT"));
+  ASSERT(nvbench::type_strings<IntT>::input_string() == state.get_string("IntT"));
 
   // Enum params using non-templated version:
   no_op_generator(state);
 }
-NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator,
-                                 template_no_op_callable);
+NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator, template_no_op_callable);
 
 void test_empty()
 {

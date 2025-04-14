@@ -16,10 +16,9 @@
  *  limitations under the License.
  */
 
-#include <nvbench/state.cuh>
-
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
+#include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
@@ -43,8 +42,7 @@ struct state_tester : public nvbench::state
   void set_param(std::string name, T &&value)
   {
     this->state::m_axis_values.set_value(std::move(name),
-                                         nvbench::named_values::value_type{
-                                           std::forward<T>(value)});
+                                         nvbench::named_values::value_type{std::forward<T>(value)});
   }
 };
 } // namespace nvbench::detail

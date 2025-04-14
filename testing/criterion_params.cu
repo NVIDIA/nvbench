@@ -60,4 +60,3 @@ int main()
   test_compat_overwrite();
   test_overwrite();
 }
-

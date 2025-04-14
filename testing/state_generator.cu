@@ -16,16 +16,15 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/state_generator.cuh>
-
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/axis_base.cuh>
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
-
-#include "test_asserts.cuh"
+#include <nvbench/detail/state_generator.cuh>
 
 #include <fmt/format.h>
+
+#include "test_asserts.cuh"
 
 // Mock up a benchmark for testing:
 void dummy_generator(nvbench::state &) {}
@@ -37,7 +36,7 @@ using ints      = nvbench::type_list<nvbench::int32_t, nvbench::int64_t>;
 using misc      = nvbench::type_list<void, bool>;
 using type_axes = nvbench::type_list<floats, ints, misc>;
 template <typename F, typename I, typename M>
-void template_generator(nvbench::state &, nvbench::type_list<F, I, M>){};
+void template_generator(nvbench::state &, nvbench::type_list<F, I, M>) {};
 NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_generator, template_callable);
 using template_bench = nvbench::benchmark<template_callable, type_axes>;
 
@@ -151,20 +150,16 @@ void test_create()
   bench.set_devices(std::vector<int>{});
   bench.add_float64_axis("Radians", {3.14, 6.28});
   bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
-  bench.add_int64_axis("NumInputs",
-                       {10, 15, 20},
-                       nvbench::int64_axis_flags::power_of_two);
+  bench.add_int64_axis("NumInputs", {10, 15, 20}, nvbench::int64_axis_flags::power_of_two);
   bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
 
-  const std::vector<nvbench::state> states =
-    nvbench::detail::state_generator::create(bench);
+  const std::vector<nvbench::state> states = nvbench::detail::state_generator::create(bench);
 
   // 2 (Radians) * 3 (VecSize) * 3 (NumInputs) * 2 (Strategy) = 36
   ASSERT(states.size() == 36);
 
   fmt::memory_buffer buffer;
-  const std::string table_format =
-    "| {:^5} | {:^10} | {:^7} | {:^7} | {:^9} | {:^9} |\n";
+  const std::string table_format = "| {:^5} | {:^10} | {:^7} | {:^7} | {:^9} | {:^9} |\n";
 
   fmt::format_to(std::back_inserter(buffer), "\n");
   fmt::format_to(std::back_inserter(buffer),
@@ -241,13 +236,10 @@ void test_create_with_types()
   bench.set_type_axes_names({"Floats", "Ints", "Misc"});
   bench.add_float64_axis("Radians", {3.14, 6.28});
   bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
-  bench.add_int64_axis("NumInputs",
-                       {10, 15, 20},
-                       nvbench::int64_axis_flags::power_of_two);
+  bench.add_int64_axis("NumInputs", {10, 15, 20}, nvbench::int64_axis_flags::power_of_two);
   bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
 
-  const std::vector<nvbench::state> states =
-    nvbench::detail::state_generator::create(bench);
+  const std::vector<nvbench::state> states = nvbench::detail::state_generator::create(bench);
 
   // - 2 (Floats) * 2 (Ints) * 2 (Misc) = 8 total type_configs
   // - 2 (Radians) * 3 (VecSize) * 3 (NumInputs) * 2 (Strategy) = 36 non_type
@@ -591,17 +583,14 @@ void test_create_with_masked_types()
   bench.set_type_axes_names({"Floats", "Ints", "Misc"});
   bench.add_float64_axis("Radians", {3.14, 6.28});
   bench.add_int64_axis("VecSize", {2, 3, 4}, nvbench::int64_axis_flags::none);
-  bench.add_int64_axis("NumInputs",
-                       {10, 15, 20},
-                       nvbench::int64_axis_flags::power_of_two);
+  bench.add_int64_axis("NumInputs", {10, 15, 20}, nvbench::int64_axis_flags::power_of_two);
   bench.add_string_axis("Strategy", {"Recursive", "Iterative"});
 
   // Mask out some types:
   bench.get_axes().get_type_axis("Floats").set_active_inputs({"F32"});
   bench.get_axes().get_type_axis("Ints").set_active_inputs({"I64"});
 
-  const std::vector<nvbench::state> states =
-    nvbench::detail::state_generator::create(bench);
+  const std::vector<nvbench::state> states = nvbench::detail::state_generator::create(bench);
 
   fmt::memory_buffer buffer;
   std::string table_format = "| {:^5} | {:^10} | {:^6} | {:^4} | {:^4} | {:^7} "
@@ -728,8 +717,7 @@ void test_devices()
   bench.add_string_axis("S", {"foo", "bar"});
   bench.add_int64_axis("I", {2, 4});
 
-  const std::vector<nvbench::state> states =
-    nvbench::detail::state_generator::create(bench);
+  const std::vector<nvbench::state> states = nvbench::detail::state_generator::create(bench);
 
   // 3 devices * 4 axis configs = 12 total states
   ASSERT(states.size() == 12);
@@ -791,8 +779,7 @@ void test_termination_criteria()
   bench.set_skip_time(skip_time);
   bench.set_timeout(timeout);
 
-  const std::vector<nvbench::state> states =
-    nvbench::detail::state_generator::create(bench);
+  const std::vector<nvbench::state> states = nvbench::detail::state_generator::create(bench);
 
   ASSERT(states.size() == 1);
   ASSERT(min_samples == states[0].get_min_samples());

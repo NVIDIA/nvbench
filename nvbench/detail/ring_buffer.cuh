@@ -19,12 +19,11 @@
 #pragma once
 
 #include <nvbench/config.cuh>
-
 #include <nvbench/detail/statistics.cuh>
 
+#include <cassert>
 #include <cstddef>
 #include <iterator>
-#include <cassert>
 #include <vector>
 
 namespace nvbench::detail
@@ -76,14 +75,14 @@ public:
     return temp;
   }
 
-  ring_buffer_iterator operator+(difference_type n) const 
-  { 
-    return ring_buffer_iterator(m_index + n, m_capacity, m_ptr); 
+  ring_buffer_iterator operator+(difference_type n) const
+  {
+    return ring_buffer_iterator(m_index + n, m_capacity, m_ptr);
   }
 
-  ring_buffer_iterator operator-(difference_type n) const 
-  { 
-    return ring_buffer_iterator(m_index - n, m_capacity, m_ptr); 
+  ring_buffer_iterator operator-(difference_type n) const
+  {
+    return ring_buffer_iterator(m_index - n, m_capacity, m_ptr);
   }
 
   difference_type operator-(const ring_buffer_iterator &other) const
@@ -121,13 +120,9 @@ private:
   std::size_t m_index{0};
   bool m_full{false};
 
-  std::size_t get_front_index() const 
-  {
-    return m_full ? m_index : 0;
-  }
+  std::size_t get_front_index() const { return m_full ? m_index : 0; }
 
 public:
-
   /**
    * Create a new ring buffer with the requested capacity.
    */

@@ -191,9 +191,9 @@ protected:
   virtual void do_process_bulk_data_float64(nvbench::state &,
                                             const std::string &,
                                             const std::string &,
-                                            const std::vector<nvbench::float64_t> &){};
+                                            const std::vector<nvbench::float64_t> &) {};
 
-  virtual void do_print_benchmark_list(const benchmark_vector &) 
+  virtual void do_print_benchmark_list(const benchmark_vector &)
   {
     throw std::runtime_error{"nvbench::do_print_benchmark_list is not supported by this printer."};
   }

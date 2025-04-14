@@ -18,9 +18,9 @@
 
 #include <nvbench/int64_axis.cuh>
 
-#include "test_asserts.cuh"
-
 #include <fmt/format.h>
+
+#include "test_asserts.cuh"
 
 void test_empty()
 {
@@ -36,8 +36,7 @@ void test_empty()
 
   const auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::int64_axis *>(clone_base.get());
+  const auto *clone = dynamic_cast<const nvbench::int64_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Empty");
@@ -66,8 +65,7 @@ void test_basic()
 
   const auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::int64_axis *>(clone_base.get());
+  const auto *clone = dynamic_cast<const nvbench::int64_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "BasicAxis");
@@ -87,8 +85,7 @@ void test_basic()
 void test_power_of_two()
 {
   nvbench::int64_axis axis{"POTAxis"};
-  axis.set_inputs({0, 1, 2, 3, 7, 6, 5, 4},
-                  nvbench::int64_axis_flags::power_of_two);
+  axis.set_inputs({0, 1, 2, 3, 7, 6, 5, 4}, nvbench::int64_axis_flags::power_of_two);
   const std::vector<nvbench::int64_t> ref_inputs{0, 1, 2, 3, 7, 6, 5, 4};
   const std::vector<nvbench::int64_t> ref_values{1, 2, 4, 8, 128, 64, 32, 16};
 
@@ -102,14 +99,12 @@ void test_power_of_two()
   for (size_t i = 0; i < 8; ++i)
   {
     ASSERT(axis.get_input_string(i) == fmt::to_string(ref_inputs[i]));
-    ASSERT(axis.get_description(i) ==
-           fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
+    ASSERT(axis.get_description(i) == fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
   }
 
   const auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::int64_axis *>(clone_base.get());
+  const auto *clone = dynamic_cast<const nvbench::int64_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "POTAxis");
@@ -122,8 +117,7 @@ void test_power_of_two()
   for (size_t i = 0; i < 8; ++i)
   {
     ASSERT(clone->get_input_string(i) == fmt::to_string(ref_inputs[i]));
-    ASSERT(clone->get_description(i) ==
-           fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
+    ASSERT(clone->get_description(i) == fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
   }
 }
 
@@ -250,8 +244,7 @@ void test_update_none_to_pow2()
 void test_update_pow2_to_none()
 {
   nvbench::int64_axis axis{"TestAxis"};
-  axis.set_inputs({0, 1, 2, 3, 7, 6, 5, 4},
-                  nvbench::int64_axis_flags::power_of_two);
+  axis.set_inputs({0, 1, 2, 3, 7, 6, 5, 4}, nvbench::int64_axis_flags::power_of_two);
   const std::vector<nvbench::int64_t> ref_inputs{0, 1, 2, 3, 7, 6, 5, 4};
   const std::vector<nvbench::int64_t> ref_values{1, 2, 4, 8, 128, 64, 32, 16};
 
@@ -304,8 +297,7 @@ void test_update_pow2_to_none()
   for (size_t i = 0; i < 8; ++i)
   {
     ASSERT(axis.get_input_string(i) == fmt::to_string(ref_inputs[i]));
-    ASSERT(axis.get_description(i) ==
-           fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
+    ASSERT(axis.get_description(i) == fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
   }
 }
 
@@ -313,8 +305,7 @@ void test_update_pow2_to_pow2()
 {
 
   nvbench::int64_axis axis{"TestAxis"};
-  axis.set_inputs({0, 1, 2, 3, 7, 6, 5, 4},
-                  nvbench::int64_axis_flags::power_of_two);
+  axis.set_inputs({0, 1, 2, 3, 7, 6, 5, 4}, nvbench::int64_axis_flags::power_of_two);
   const std::vector<nvbench::int64_t> ref_inputs{0, 1, 2, 3, 7, 6, 5, 4};
   const std::vector<nvbench::int64_t> ref_values{1, 2, 4, 8, 128, 64, 32, 16};
 
@@ -369,8 +360,7 @@ void test_update_pow2_to_pow2()
   for (size_t i = 0; i < 8; ++i)
   {
     ASSERT(axis.get_input_string(i) == fmt::to_string(ref_inputs[i]));
-    ASSERT(axis.get_description(i) ==
-           fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
+    ASSERT(axis.get_description(i) == fmt::format("2^{} = {}", ref_inputs[i], ref_values[i]));
   }
 }
 

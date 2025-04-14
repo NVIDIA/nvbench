@@ -101,10 +101,10 @@ using no_gpu_t        = tag<nvbench::detail::exec_flag::no_gpu>;
 using no_batch_t      = tag<nvbench::detail::exec_flag::no_batch>;
 using modifier_mask_t = tag<nvbench::detail::exec_flag::modifier_mask>;
 
-using hot_t           = tag<nvbench::detail::exec_flag::hot>;
-using cold_t          = tag<nvbench::detail::exec_flag::cold>;
-using cpu_only_t      = tag<nvbench::detail::exec_flag::cpu_only>;
-using measure_mask_t  = tag<nvbench::detail::exec_flag::measure_mask>;
+using hot_t          = tag<nvbench::detail::exec_flag::hot>;
+using cold_t         = tag<nvbench::detail::exec_flag::cold>;
+using cpu_only_t     = tag<nvbench::detail::exec_flag::cpu_only>;
+using measure_mask_t = tag<nvbench::detail::exec_flag::measure_mask>;
 
 constexpr inline none_t none;
 constexpr inline timer_t timer;

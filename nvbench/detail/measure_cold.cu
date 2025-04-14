@@ -25,12 +25,12 @@
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <chrono>
 #include <limits>
 #include <thread>
-
-#include <fmt/format.h>
 
 namespace nvbench::detail
 {

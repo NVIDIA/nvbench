@@ -21,11 +21,11 @@
 #include <nvbench/config.cuh>
 #include <nvbench/detail/throw.cuh>
 
-#include <fmt/format.h>
-
 #ifdef NVBENCH_HAS_NVML
 #include <nvml.h>
 #endif // NVBENCH_HAS_NVML
+
+#include <fmt/format.h>
 
 #include <stdexcept>
 
@@ -38,6 +38,7 @@ struct NVMLLifetimeManager
 {
   NVMLLifetimeManager();
   ~NVMLLifetimeManager();
+
 private:
   bool m_inited{false};
 };

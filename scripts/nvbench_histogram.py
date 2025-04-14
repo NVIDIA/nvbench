@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 
-import numpy as np
-import pandas as pd
-
-import matplotlib.pyplot as plt
-import seaborn as sns
 import argparse
 import os
 import sys
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 from nvbench_json import reader
+
 
 def parse_files():
     help_text = "%(prog)s [nvbench.out.json | dir/] ..."
-    parser = argparse.ArgumentParser(prog='nvbench_histogram', usage=help_text)
+    parser = argparse.ArgumentParser(prog="nvbench_histogram", usage=help_text)
 
     args, files_or_dirs = parser.parse_known_args()
 
@@ -41,14 +41,14 @@ def parse_files():
 def extract_filename(summary):
     summary_data = summary["data"]
     value_data = next(filter(lambda v: v["name"] == "filename", summary_data))
-    assert(value_data["type"] == "string")
+    assert value_data["type"] == "string"
     return value_data["value"]
 
 
 def extract_size(summary):
     summary_data = summary["data"]
     value_data = next(filter(lambda v: v["name"] == "size", summary_data))
-    assert(value_data["type"] == "int64")
+    assert value_data["type"] == "int64"
     return int(value_data["value"])
 
 
@@ -57,9 +57,10 @@ def parse_samples_meta(filename, state):
     if not summaries:
         return None, None
 
-    summary = next(filter(lambda s: s["tag"] == "nv/json/bin:nv/cold/sample_times",
-                          summaries),
-                   None)
+    summary = next(
+        filter(lambda s: s["tag"] == "nv/json/bin:nv/cold/sample_times", summaries),
+        None,
+    )
     if not summary:
         return None, None
 
@@ -81,7 +82,7 @@ def parse_samples(filename, state):
     with open(samples_filename, "rb") as f:
         samples = np.fromfile(f, "<f4")
 
-    assert (sample_count == len(samples))
+    assert sample_count == len(samples)
     return samples
 
 
@@ -118,5 +119,5 @@ def main():
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

@@ -18,14 +18,13 @@
 
 #include <nvbench/detail/ring_buffer.cuh>
 
-#include "test_asserts.cuh"
-
 #include <algorithm>
 #include <vector>
 
+#include "test_asserts.cuh"
+
 template <typename T>
-bool equal(const nvbench::detail::ring_buffer<T> &buffer,
-           const std::vector<T> &reference)
+bool equal(const nvbench::detail::ring_buffer<T> &buffer, const std::vector<T> &reference)
 {
   return std::equal(buffer.begin(), buffer.end(), reference.begin());
 }

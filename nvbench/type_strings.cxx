@@ -27,10 +27,10 @@
 #endif
 
 #ifdef NVBENCH_CXXABI_DEMANGLE
-#include <cxxabi.h>
-
 #include <cstdlib>
 #include <memory>
+
+#include <cxxabi.h>
 
 namespace
 {

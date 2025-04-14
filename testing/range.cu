@@ -22,12 +22,9 @@
 
 void test_basic()
 {
-  ASSERT((nvbench::range(0, 6) ==
-          std::vector<nvbench::int64_t>{0, 1, 2, 3, 4, 5, 6}));
-  ASSERT((nvbench::range(0, 6, 1) ==
-          std::vector<nvbench::int64_t>{0, 1, 2, 3, 4, 5, 6}));
-  ASSERT(
-    (nvbench::range(0, 6, 2) == std::vector<nvbench::int64_t>{0, 2, 4, 6}));
+  ASSERT((nvbench::range(0, 6) == std::vector<nvbench::int64_t>{0, 1, 2, 3, 4, 5, 6}));
+  ASSERT((nvbench::range(0, 6, 1) == std::vector<nvbench::int64_t>{0, 1, 2, 3, 4, 5, 6}));
+  ASSERT((nvbench::range(0, 6, 2) == std::vector<nvbench::int64_t>{0, 2, 4, 6}));
   ASSERT((nvbench::range(0, 6, 3) == std::vector<nvbench::int64_t>{0, 3, 6}));
   ASSERT((nvbench::range(0, 6, 4) == std::vector<nvbench::int64_t>{0, 4}));
   ASSERT((nvbench::range(0, 6, 5) == std::vector<nvbench::int64_t>{0, 5}));
@@ -37,26 +34,19 @@ void test_basic()
 void test_result_type()
 {
   // All ints should turn into int64 by default:
-  ASSERT((std::is_same_v<decltype(nvbench::range(0ll, 1ll)),
-                         std::vector<nvbench::int64_t>>));
-  ASSERT((std::is_same_v<decltype(nvbench::range(0, 1)),
-                         std::vector<nvbench::int64_t>>));
-  ASSERT((std::is_same_v<decltype(nvbench::range(0u, 1u)),
-                         std::vector<nvbench::int64_t>>));
+  ASSERT((std::is_same_v<decltype(nvbench::range(0ll, 1ll)), std::vector<nvbench::int64_t>>));
+  ASSERT((std::is_same_v<decltype(nvbench::range(0, 1)), std::vector<nvbench::int64_t>>));
+  ASSERT((std::is_same_v<decltype(nvbench::range(0u, 1u)), std::vector<nvbench::int64_t>>));
 
   // All floats should turn into float64 by default:
-  ASSERT((std::is_same_v<decltype(nvbench::range(0., 1.)),
-                         std::vector<nvbench::float64_t>>));
-  ASSERT((std::is_same_v<decltype(nvbench::range(0.f, 1.f)),
-                         std::vector<nvbench::float64_t>>));
+  ASSERT((std::is_same_v<decltype(nvbench::range(0., 1.)), std::vector<nvbench::float64_t>>));
+  ASSERT((std::is_same_v<decltype(nvbench::range(0.f, 1.f)), std::vector<nvbench::float64_t>>));
 
   // Other types may be explicitly specified:
-  ASSERT((std::is_same_v<decltype(nvbench::range<nvbench::float32_t,
-                                                 nvbench::float32_t>(0.f, 1.f)),
+  ASSERT((std::is_same_v<decltype(nvbench::range<nvbench::float32_t, nvbench::float32_t>(0.f, 1.f)),
                          std::vector<nvbench::float32_t>>));
-  ASSERT((std::is_same_v<
-          decltype(nvbench::range<nvbench::int32_t, nvbench::int32_t>(0, 1)),
-          std::vector<nvbench::int32_t>>));
+  ASSERT((std::is_same_v<decltype(nvbench::range<nvbench::int32_t, nvbench::int32_t>(0, 1)),
+                         std::vector<nvbench::int32_t>>));
 }
 
 void test_fp_tolerance()
@@ -68,10 +58,8 @@ void test_fp_tolerance()
   const nvbench::float32_t stride = 1e-4f;
   for (std::size_t size = 1; size < 1024; ++size)
   {
-    const nvbench::float32_t end =
-      start + stride * static_cast<nvbench::float32_t>(size - 1);
-    ASSERT_MSG(nvbench::range(start, end, stride).size() == size,
-               "size={}", size);
+    const nvbench::float32_t end = start + stride * static_cast<nvbench::float32_t>(size - 1);
+    ASSERT_MSG(nvbench::range(start, end, stride).size() == size, "size={}", size);
   }
 }
 

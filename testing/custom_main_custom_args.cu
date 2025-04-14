@@ -16,8 +16,8 @@
  *  limitations under the License.
  */
 
+#include <nvbench/cuda_call.cuh>
 #include <nvbench/nvbench.cuh>
-#include "nvbench/cuda_call.cuh"
 
 /******************************************************************************
  * Install custom parser.
@@ -35,7 +35,7 @@
 // User code to handle a specific argument:
 void handle_my_custom_arg();
 
-// NVBench hook for modiifying the command line arguments before parsing:
+// NVBench hook for modifying the command line arguments before parsing:
 void custom_arg_handler(std::vector<std::string> &args)
 {
   // Handle and remove "--my-custom-arg"

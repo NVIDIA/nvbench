@@ -16,14 +16,12 @@
  *  limitations under the License.
  */
 
-#include <nvbench/markdown_printer.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/device_manager.cuh>
+#include <nvbench/internal/markdown_table.cuh>
+#include <nvbench/markdown_printer.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
-
-#include <nvbench/internal/markdown_table.cuh>
 
 #include <fmt/color.h>
 #include <fmt/format.h>
@@ -72,8 +70,12 @@ void markdown_printer::do_print_device_info()
                    "* Max Shared Memory: {} KiB/SM, {} KiB/Block\n",
                    device.get_shared_memory_per_sm() / 1024,
                    device.get_shared_memory_per_block() / 1024);
-    fmt::format_to(std::back_inserter(buffer), "* L2 Cache Size: {} KiB\n", device.get_l2_cache_size() / 1024);
-    fmt::format_to(std::back_inserter(buffer), "* Maximum Active Blocks: {}/SM\n", device.get_max_blocks_per_sm());
+    fmt::format_to(std::back_inserter(buffer),
+                   "* L2 Cache Size: {} KiB\n",
+                   device.get_l2_cache_size() / 1024);
+    fmt::format_to(std::back_inserter(buffer),
+                   "* Maximum Active Blocks: {}/SM\n",
+                   device.get_max_blocks_per_sm());
     fmt::format_to(std::back_inserter(buffer),
                    "* Maximum Active Threads: {}/SM, {}/Block\n",
                    device.get_max_threads_per_sm(),
@@ -82,7 +84,9 @@ void markdown_printer::do_print_device_info()
                    "* Available Registers: {}/SM, {}/Block\n",
                    device.get_registers_per_sm(),
                    device.get_registers_per_block());
-    fmt::format_to(std::back_inserter(buffer), "* ECC Enabled: {}\n", device.get_ecc_state() ? "Yes" : "No");
+    fmt::format_to(std::back_inserter(buffer),
+                   "* ECC Enabled: {}\n",
+                   device.get_ecc_state() ? "Yes" : "No");
     fmt::format_to(std::back_inserter(buffer), "\n");
   }
   m_ostream << fmt::to_string(buffer);
@@ -191,9 +195,12 @@ void markdown_printer::do_print_benchmark_list(const printer_base::benchmark_vec
         {
           desc = fmt::format(" ({})", desc);
         }
-        fmt::format_to(std::back_inserter(buffer), "  * `{}`{}\n", axis_ptr->get_input_string(i), desc);
+        fmt::format_to(std::back_inserter(buffer),
+                       "  * `{}`{}\n",
+                       axis_ptr->get_input_string(i),
+                       desc);
       } // end foreach value
-    }   // end foreach axis
+    } // end foreach axis
     fmt::format_to(std::back_inserter(buffer), "\n");
   } // end foreach bench
 

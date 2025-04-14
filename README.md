@@ -32,7 +32,7 @@ features:
 # Supported Compilers and Tools
 
 - CMake > 3.30.4
-- CUDA Toolkit + nvcc: 11.8 and above
+- CUDA Toolkit + nvcc: 12.0 and above
 - g++: 7 -> 14
 - clang++: 14 -> 19
 - Headers are tested with C++17 -> C++20.

@@ -19,12 +19,11 @@
 #pragma once
 
 #include <nvbench/cpu_timer.cuh>
+#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
+#include <nvbench/detail/statistics.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
 #include <nvbench/stopping_criterion.cuh>
-
-#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
-#include <nvbench/detail/statistics.cuh>
 
 #include <utility>
 #include <vector>
@@ -66,7 +65,7 @@ protected:
   nvbench::cpu_timer m_walltime_timer;
 
   nvbench::criterion_params m_criterion_params;
-  nvbench::stopping_criterion_base& m_stopping_criterion;
+  nvbench::stopping_criterion_base &m_stopping_criterion;
 
   bool m_run_once{false};
 
