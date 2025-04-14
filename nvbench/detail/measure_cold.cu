@@ -350,6 +350,18 @@ void measure_cold_base::generate_summaries()
       summ.set_string("hide", "Hidden by default.");
       summ.set_float64("value", clock_mean);
     }
+
+    {
+      const auto default_clock_rate =
+        static_cast<nvbench::float64_t>(m_state.get_device()->get_sm_default_clock_rate());
+
+      auto &summ = m_state.add_summary("nv/cold/sm_clock_rate/scaling/percent");
+      summ.set_string("name", "Clock Scaling");
+      summ.set_string("hint", "percentage");
+      summ.set_string("description", "Mean SM clock rate as a percentage of default clock rate.");
+      summ.set_string("hide", "Hidden by default.");
+      summ.set_float64("value", clock_mean / default_clock_rate);
+    }
   }
 
   // Log if a printer exists:
