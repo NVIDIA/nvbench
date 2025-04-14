@@ -26,7 +26,9 @@
 #include <nvbench/summary.cuh>
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
+#include <thread>
 
 #include <fmt/format.h>
 
@@ -44,11 +46,14 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_min_samples{exec_state.get_min_samples()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
+    , m_throttle_threshold(exec_state.get_throttle_threshold())
+    , m_throttle_recovery_delay(exec_state.get_throttle_recovery_delay())
 {
   if (m_min_samples > 0)
   {
     m_cuda_times.reserve(static_cast<std::size_t>(m_min_samples));
     m_cpu_times.reserve(static_cast<std::size_t>(m_min_samples));
+    m_sm_clock_rates.reserve(static_cast<std::size_t>(m_min_samples));
   }
 }
 
@@ -78,6 +83,7 @@ void measure_cold_base::initialize()
 
   m_cuda_times.clear();
   m_cpu_times.clear();
+  m_sm_clock_rates.clear();
 
   m_stopping_criterion.initialize(m_criterion_params);
 }
@@ -86,6 +92,40 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
+  if (!m_run_once)
+  {
+    auto peak_clock_rate = static_cast<float>(m_state.get_device()->get_sm_default_clock_rate());
+
+    if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
+    {
+      if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+      {
+        auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
+        auto &printer           = printer_opt_ref.value().get();
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("GPU throttled below threshold ({:0.2f} MHz / {:0.2f} MHz) "
+                                "({:0.0f}% < {:0.0f}%) on sample {}. Discarding previous sample "
+                                "and pausing for {}s.",
+                                current_clock_rate / 1000000.0f,
+                                peak_clock_rate / 1000000.0f,
+                                100.0f * (current_clock_rate / peak_clock_rate),
+                                100.0f * m_throttle_threshold,
+                                m_total_samples,
+                                m_throttle_recovery_delay));
+      }
+
+      if (m_throttle_recovery_delay > 0.0f)
+      { // let the GPU cool down
+        std::this_thread::sleep_for(std::chrono::duration<float>(m_throttle_recovery_delay));
+      }
+
+      // ignore this measurement
+      return;
+    }
+
+    m_sm_clock_rates.push_back(peak_clock_rate);
+  }
+
   // Update and record timers and counters:
   const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
@@ -296,6 +336,18 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description", "Walltime used for isolated measurements");
     summ.set_float64("value", m_walltime_timer.get_duration());
     summ.set_string("hide", "Hidden by default.");
+  }
+
+  if (!m_sm_clock_rates.empty())
+  {
+    auto &summ = m_state.add_summary("nv/cold/sm_clock_rate/mean");
+    summ.set_string("name", "Clock Rate");
+    summ.set_string("hint", "frequency");
+    summ.set_string("description", "Mean SM clock rate");
+    summ.set_string("hide", "Hidden by default.");
+    summ.set_float64("value",
+                     nvbench::detail::statistics::compute_mean(m_sm_clock_rates.cbegin(),
+                                                               m_sm_clock_rates.cend()));
   }
 
   // Log if a printer exists:

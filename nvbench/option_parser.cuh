@@ -80,7 +80,7 @@ private:
   std::ostream &printer_spec_to_ostream(const std::string &spec);
 
   void print_version() const;
-  void print_list(printer_base& printer) const;
+  void print_list(printer_base &printer) const;
   void print_help() const;
   void print_help_axis() const;
 

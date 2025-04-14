@@ -22,9 +22,9 @@
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/named_values.cuh>
+#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
-#include <nvbench/stopping_criterion.cuh>
 
 #include <functional>
 #include <optional>
@@ -136,8 +136,11 @@ struct state
 
   /// Control the stopping criterion for the measurement loop.
   /// @{
-  [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
-  void set_stopping_criterion(std::string criterion) { m_stopping_criterion = std::move(criterion); }
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
+  void set_stopping_criterion(std::string criterion)
+  {
+    m_stopping_criterion = std::move(criterion);
+  }
   /// @}
 
   /// If true, the benchmark is only run once, skipping all warmup runs and only
@@ -199,6 +202,23 @@ struct state
   [[nodiscard]] nvbench::float64_t get_timeout() const { return m_timeout; }
   void set_timeout(nvbench::float64_t timeout) { m_timeout = timeout; }
   /// @}
+
+  [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
+
+  void set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  {
+    m_throttle_threshold = throttle_threshold;
+  }
+
+  [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
+  {
+    return m_throttle_recovery_delay;
+  }
+
+  void set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  {
+    m_throttle_recovery_delay = throttle_recovery_delay;
+  }
 
   /// If a `KernelLauncher` syncs and `nvbench::exec_tag::sync` is not passed
   /// to `state.exec(...)`, a deadlock may occur. If a `blocking_kernel` blocks
@@ -310,6 +330,9 @@ private:
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
+
+  nvbench::float32_t m_throttle_threshold;      // [% of peak SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay; // [seconds]
 
   // Deadlock protection. See blocking_kernel's class doc for details.
   nvbench::float64_t m_blocking_kernel_timeout{30.0};

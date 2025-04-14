@@ -18,16 +18,17 @@
 
 #pragma once
 
+#include <cuda_runtime_api.h>
+
 #include <nvbench/config.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
 
-#include <cuda_runtime_api.h>
-
 #include <cstdint> // CHAR_BIT
 #include <stdexcept>
-#include <string_view>
 #include <utility>
+
+#include <string_view>
 
 // forward declare this for internal storage
 struct nvmlDevice_st;
@@ -108,7 +109,7 @@ struct device_info
   /// @return The default clock rate of the SM in Hz.
   [[nodiscard]] std::size_t get_sm_default_clock_rate() const
   { // kHz -> Hz
-    return static_cast<std::size_t>(m_prop.clockRate * 1000);
+    return static_cast<std::size_t>(m_prop.clockRate) * 1000;
   }
 
   /// @return The number of physical streaming multiprocessors on this device.

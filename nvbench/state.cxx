@@ -15,19 +15,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-#include <nvbench/state.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/state.cuh>
 #include <nvbench/types.cuh>
-
-#include <fmt/color.h>
-#include <fmt/format.h>
 
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+
+#include <fmt/color.h>
+#include <fmt/format.h>
 
 namespace nvbench
 {
@@ -42,6 +40,8 @@ state::state(const benchmark_base &bench)
     , m_min_samples{bench.get_min_samples()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
+    , m_throttle_threshold{bench.get_throttle_threshold()}
+    , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
 {}
 
 state::state(const benchmark_base &bench,
@@ -60,6 +60,8 @@ state::state(const benchmark_base &bench,
     , m_min_samples{bench.get_min_samples()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
+    , m_throttle_threshold{bench.get_throttle_threshold()}
+    , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
 {}
 
 nvbench::int64_t state::get_int64(const std::string &axis_name) const
