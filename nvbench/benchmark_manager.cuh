@@ -45,7 +45,7 @@ struct benchmark_manager
    * benchmarks should be done here to avoid creating a CUDA context before we configure the CUDA
    * environment in `main`.
    */
-   void initialize();
+  void initialize();
 
   /**
    * Register a new benchmark.

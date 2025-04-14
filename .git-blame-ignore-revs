@@ -14,4 +14,3 @@
 #
 # Only add commits that are pure formatting changes (e.g. clang-format version changes, etc).
 8f1152d4a22287a35be2dde596e3cf86ace8054a # Increase column limit to 100
-

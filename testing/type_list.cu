@@ -17,10 +17,7 @@
  */
 
 #include <nvbench/type_list.cuh>
-
 #include <nvbench/type_strings.cuh>
-
-#include "test_asserts.cuh"
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -29,6 +26,8 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+
+#include "test_asserts.cuh"
 
 // Unique, numbered types for testing type_list functionality.
 using T0 = std::integral_constant<std::size_t, 0>;
@@ -80,14 +79,13 @@ struct test_concat
 
   struct empty_tests
   {
-    static_assert(
-      std::is_same_v<nvbench::tl::concat<TLEmpty, TLEmpty>, TLEmpty>);
+    static_assert(std::is_same_v<nvbench::tl::concat<TLEmpty, TLEmpty>, TLEmpty>);
     static_assert(std::is_same_v<nvbench::tl::concat<TLEmpty, TL012>, TL012>);
     static_assert(std::is_same_v<nvbench::tl::concat<TL012, TLEmpty>, TL012>);
   };
 
-  static_assert(std::is_same_v<nvbench::tl::concat<TL012, TL765>,
-                               nvbench::type_list<T0, T1, T2, T7, T6, T5>>);
+  static_assert(
+    std::is_same_v<nvbench::tl::concat<TL012, TL765>, nvbench::type_list<T0, T1, T2, T7, T6, T5>>);
 };
 
 struct test_prepend_each
@@ -97,8 +95,7 @@ struct test_prepend_each
   using T23 = nvbench::type_list<T2, T3>;
   using TLs = nvbench::type_list<T01, T23>;
 
-  using Expected = nvbench::type_list<nvbench::type_list<T, T0, T1>,
-                                      nvbench::type_list<T, T2, T3>>;
+  using Expected = nvbench::type_list<nvbench::type_list<T, T0, T1>, nvbench::type_list<T, T2, T3>>;
   static_assert(std::is_same_v<nvbench::tl::prepend_each<T, TLs>, Expected>);
 };
 
@@ -110,16 +107,12 @@ struct test_empty_cartesian_product
 
 struct test_single_cartesian_product
 {
-  using prod_1 =
-    nvbench::tl::cartesian_product<nvbench::type_list<nvbench::type_list<T0>>>;
-  static_assert(
-    std::is_same_v<prod_1, nvbench::type_list<nvbench::type_list<T0>>>);
+  using prod_1 = nvbench::tl::cartesian_product<nvbench::type_list<nvbench::type_list<T0>>>;
+  static_assert(std::is_same_v<prod_1, nvbench::type_list<nvbench::type_list<T0>>>);
 
-  using prod_2 = nvbench::tl::cartesian_product<
-    nvbench::type_list<nvbench::type_list<T0, T1>>>;
-  static_assert(std::is_same_v<prod_2,
-                               nvbench::type_list<nvbench::type_list<T0>,
-                                                  nvbench::type_list<T1>>>);
+  using prod_2 = nvbench::tl::cartesian_product<nvbench::type_list<nvbench::type_list<T0, T1>>>;
+  static_assert(
+    std::is_same_v<prod_2, nvbench::type_list<nvbench::type_list<T0>, nvbench::type_list<T1>>>);
 };
 
 struct test_cartesian_product

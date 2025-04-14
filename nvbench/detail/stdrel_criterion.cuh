@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <nvbench/types.cuh>
-#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/detail/ring_buffer.cuh>
+#include <nvbench/stopping_criterion.cuh>
+#include <nvbench/types.cuh>
 
 #include <vector>
 

@@ -21,19 +21,21 @@
 #include <nvbench/named_values.cuh>
 #include <nvbench/types.cuh>
 
-#include <string>
-
 #include <initializer_list>
+#include <string>
 #include <unordered_map>
 
 namespace nvbench
 {
 
-namespace detail 
+namespace detail
 {
 
-constexpr nvbench::float64_t compat_min_time() { return 0.5; }    // 0.5 seconds
-constexpr nvbench::float64_t compat_max_noise() { return 0.005; } // 0.5% relative standard deviation
+constexpr nvbench::float64_t compat_min_time() { return 0.5; } // 0.5 seconds
+constexpr nvbench::float64_t compat_max_noise()
+{
+  return 0.005;
+} // 0.5% relative standard deviation
 
 } // namespace detail
 
@@ -43,6 +45,7 @@ constexpr nvbench::float64_t compat_max_noise() { return 0.005; } // 0.5% relati
 class criterion_params
 {
   nvbench::named_values m_named_values;
+
 public:
   criterion_params();
   criterion_params(std::initializer_list<std::pair<std::string, nvbench::named_values::value_type>>);
@@ -96,7 +99,7 @@ public:
    *
    * This method is called once per benchmark run, before any measurements are provided.
    */
-  void initialize(const criterion_params &params) 
+  void initialize(const criterion_params &params)
   {
     m_params.set_from(params);
     this->do_initialize();
@@ -105,18 +108,12 @@ public:
   /**
    * Add the latest measurement to the criterion
    */
-  void add_measurement(nvbench::float64_t measurement)
-  {
-    this->do_add_measurement(measurement);
-  }
+  void add_measurement(nvbench::float64_t measurement) { this->do_add_measurement(measurement); }
 
   /**
    * Check if the criterion has been met for all measurements processed by `add_measurement`
    */
-  bool is_finished()
-  {
-    return this->do_is_finished();
-  }
+  bool is_finished() { return this->do_is_finished(); }
 
 protected:
   /**

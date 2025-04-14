@@ -18,10 +18,10 @@
 
 #include <nvbench/cpu_timer.cuh>
 
-#include "test_asserts.cuh"
-
 #include <chrono>
 #include <thread>
+
+#include "test_asserts.cuh"
 
 void test_basic()
 {

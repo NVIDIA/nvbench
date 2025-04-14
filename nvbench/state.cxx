@@ -20,12 +20,12 @@
 #include <nvbench/state.cuh>
 #include <nvbench/types.cuh>
 
+#include <fmt/color.h>
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <stdexcept>
 #include <string>
-
-#include <fmt/color.h>
-#include <fmt/format.h>
 
 namespace nvbench
 {

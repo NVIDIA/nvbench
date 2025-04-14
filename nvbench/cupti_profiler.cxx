@@ -17,7 +17,6 @@
  */
 
 #include <nvbench/cupti_profiler.cuh>
-
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 
@@ -54,7 +53,9 @@ void nvpw_call(const NVPA_Status status)
 {
   if (status != NVPA_STATUS_SUCCESS)
   {
-    NVBENCH_THROW(std::runtime_error, "NVPW call returned error: {}", static_cast<std::underlying_type_t<NVPA_Status>>(status));
+    NVBENCH_THROW(std::runtime_error,
+                  "NVPW call returned error: {}",
+                  static_cast<std::underlying_type_t<NVPA_Status>>(status));
   }
 }
 

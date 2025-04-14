@@ -90,7 +90,7 @@
     before any `--benchmark` arguments.
 
 * `--stopping-criterion <criterion>`
-  * After `--min-samples` is satisfied, use `<criterion>` to detect if enough 
+  * After `--min-samples` is satisfied, use `<criterion>` to detect if enough
     samples were collected.
   * Only applies to Cold measurements.
   * Default is stdrel (`--stopping-criterion stdrel`)

@@ -16,23 +16,21 @@
  *  limitations under the License.
  */
 
-#include <nvbench/json_printer.cuh>
-
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/config.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
+#include <nvbench/json_printer.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/version.cuh>
 
-#include <nvbench/detail/throw.cuh>
+#include <nlohmann/json.hpp>
 
 #include <fmt/format.h>
-
-#include <nlohmann/json.hpp>
 
 #include <cstdint>
 #include <fstream>
@@ -105,7 +103,7 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
       default:
         NVBENCH_THROW(std::runtime_error, "{}", "Unrecognized value type.");
     } // end switch (value type)
-  }   // end foreach value name
+  } // end foreach value name
 }
 
 } // end namespace
@@ -225,27 +223,26 @@ static void add_devices_section(nlohmann::ordered_json &root)
   auto &devices = root["devices"];
   for (const auto &dev_info : nvbench::device_manager::get().get_devices())
   {
-    auto &device                    = devices.emplace_back();
-    device["id"]                    = dev_info.get_id();
-    device["name"]                  = dev_info.get_name();
-    device["sm_version"]            = dev_info.get_sm_version();
-    device["ptx_version"]           = dev_info.get_ptx_version();
-    device["sm_default_clock_rate"] = dev_info.get_sm_default_clock_rate();
-    device["number_of_sms"]         = dev_info.get_number_of_sms();
-    device["max_blocks_per_sm"]     = dev_info.get_max_blocks_per_sm();
-    device["max_threads_per_sm"]    = dev_info.get_max_threads_per_sm();
-    device["max_threads_per_block"] = dev_info.get_max_threads_per_block();
-    device["registers_per_sm"]      = dev_info.get_registers_per_sm();
-    device["registers_per_block"]   = dev_info.get_registers_per_block();
-    device["global_memory_size"]    = dev_info.get_global_memory_size();
-    device["global_memory_bus_peak_clock_rate"] =
-      dev_info.get_global_memory_bus_peak_clock_rate();
-    device["global_memory_bus_width"]     = dev_info.get_global_memory_bus_width();
-    device["global_memory_bus_bandwidth"] = dev_info.get_global_memory_bus_bandwidth();
-    device["l2_cache_size"]               = dev_info.get_l2_cache_size();
-    device["shared_memory_per_sm"]        = dev_info.get_shared_memory_per_sm();
-    device["shared_memory_per_block"]     = dev_info.get_shared_memory_per_block();
-    device["ecc_state"]                   = dev_info.get_ecc_state();
+    auto &device                                = devices.emplace_back();
+    device["id"]                                = dev_info.get_id();
+    device["name"]                              = dev_info.get_name();
+    device["sm_version"]                        = dev_info.get_sm_version();
+    device["ptx_version"]                       = dev_info.get_ptx_version();
+    device["sm_default_clock_rate"]             = dev_info.get_sm_default_clock_rate();
+    device["number_of_sms"]                     = dev_info.get_number_of_sms();
+    device["max_blocks_per_sm"]                 = dev_info.get_max_blocks_per_sm();
+    device["max_threads_per_sm"]                = dev_info.get_max_threads_per_sm();
+    device["max_threads_per_block"]             = dev_info.get_max_threads_per_block();
+    device["registers_per_sm"]                  = dev_info.get_registers_per_sm();
+    device["registers_per_block"]               = dev_info.get_registers_per_block();
+    device["global_memory_size"]                = dev_info.get_global_memory_size();
+    device["global_memory_bus_peak_clock_rate"] = dev_info.get_global_memory_bus_peak_clock_rate();
+    device["global_memory_bus_width"]           = dev_info.get_global_memory_bus_width();
+    device["global_memory_bus_bandwidth"]       = dev_info.get_global_memory_bus_bandwidth();
+    device["l2_cache_size"]                     = dev_info.get_l2_cache_size();
+    device["shared_memory_per_sm"]              = dev_info.get_shared_memory_per_sm();
+    device["shared_memory_per_block"]           = dev_info.get_shared_memory_per_block();
+    device["ecc_state"]                         = dev_info.get_ecc_state();
   }
 }
 
@@ -298,8 +295,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
           false;
 #endif
       } // "nvbench"
-    }   // "version"
-  }     // "meta"
+    } // "version"
+  } // "meta"
 
   add_devices_section(root);
 
@@ -362,8 +359,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
             default:
               break;
           } // end switch (axis type)
-        }   // end foreach axis value
-      }     // end foreach axis
+        } // end foreach axis value
+      } // end foreach axis
 
       auto &states = bench["states"];
       for (const auto &exec_state : bench_ptr->get_states())
@@ -431,8 +428,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
           continue;
         }
       } // end foreach exec_state
-    }   // end foreach benchmark
-  }     // "benchmarks"
+    } // end foreach benchmark
+  } // "benchmarks"
 
   m_ostream << root.dump(2) << "\n";
 }
@@ -492,7 +489,7 @@ void json_printer::do_print_benchmark_list(const benchmark_vector &benches)
           default:
             break;
         } // end switch (axis type)
-      }   // end foreach axis value
+      } // end foreach axis value
     }
   } // end foreach bench
 

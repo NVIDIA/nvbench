@@ -19,10 +19,10 @@
 #include <nvbench/detail/statistics.cuh>
 #include <nvbench/types.cuh>
 
-#include "test_asserts.cuh"
-
 #include <algorithm>
 #include <vector>
+
+#include "test_asserts.cuh"
 
 namespace statistics = nvbench::detail::statistics;
 
@@ -30,7 +30,7 @@ void test_mean()
 {
   {
     std::vector<nvbench::float64_t> data{1.0, 2.0, 3.0, 4.0, 5.0};
-    const nvbench::float64_t actual = statistics::compute_mean(std::begin(data), std::end(data));
+    const nvbench::float64_t actual   = statistics::compute_mean(std::begin(data), std::end(data));
     const nvbench::float64_t expected = 3.0;
     ASSERT(std::abs(actual - expected) < 0.001);
   }
@@ -46,7 +46,8 @@ void test_std()
 {
   std::vector<nvbench::float64_t> data{1.0, 2.0, 3.0, 4.0, 5.0};
   const nvbench::float64_t mean = 3.0;
-  const nvbench::float64_t actual = statistics::standard_deviation(std::begin(data), std::end(data), mean);
+  const nvbench::float64_t actual =
+    statistics::standard_deviation(std::begin(data), std::end(data), mean);
   const nvbench::float64_t expected = 1.581;
   ASSERT(std::abs(actual - expected) < 0.001);
 }
@@ -78,7 +79,8 @@ void test_r2()
   {
     std::vector<nvbench::float64_t> ys{1.0, 2.0, 3.0, 4.0, 5.0};
     auto [slope, intercept] = statistics::compute_linear_regression(std::begin(ys), std::end(ys));
-    const nvbench::float64_t actual = statistics::compute_r2(std::begin(ys), std::end(ys), slope, intercept);
+    const nvbench::float64_t actual =
+      statistics::compute_r2(std::begin(ys), std::end(ys), slope, intercept);
     const nvbench::float64_t expected = 1.0;
     ASSERT(std::abs(actual - expected) < 0.001);
   }
@@ -95,7 +97,8 @@ void test_r2()
 
     auto [slope, intercept] = statistics::compute_linear_regression(std::begin(ys), std::end(ys));
     const nvbench::float64_t expected = 0.675;
-    const nvbench::float64_t actual = statistics::compute_r2(std::begin(ys), std::end(ys), slope, intercept);
+    const nvbench::float64_t actual =
+      statistics::compute_r2(std::begin(ys), std::end(ys), slope, intercept);
     ASSERT(std::abs(actual - expected) < 0.001);
   }
 }
@@ -103,17 +106,17 @@ void test_r2()
 void test_slope_conversion()
 {
   {
-    const nvbench::float64_t actual = statistics::slope2deg(0.0);
+    const nvbench::float64_t actual   = statistics::slope2deg(0.0);
     const nvbench::float64_t expected = 0.0;
     ASSERT(std::abs(actual - expected) < 0.001);
   }
   {
-    const nvbench::float64_t actual = statistics::slope2deg(1.0);
+    const nvbench::float64_t actual   = statistics::slope2deg(1.0);
     const nvbench::float64_t expected = 45.0;
     ASSERT(std::abs(actual - expected) < 0.001);
   }
   {
-    const nvbench::float64_t actual = statistics::slope2deg(5.0);
+    const nvbench::float64_t actual   = statistics::slope2deg(5.0);
     const nvbench::float64_t expected = 78.69;
     ASSERT(std::abs(actual - expected) < 0.001);
   }

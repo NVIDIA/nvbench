@@ -5,11 +5,10 @@ import math
 import os
 import sys
 
-from colorama import Fore
-
 import tabulate
-
+from colorama import Fore
 from nvbench_json import reader
+
 
 # Parse version string into tuple, "x.y.z" -> (x, y, z)
 def version_tuple(v):
@@ -139,15 +138,14 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
         colalign.append("center")
 
         for device_id in device_ids:
-
             rows = []
-            plot_data = {'cmp': {}, 'ref': {}, 'cmp_noise': {}, 'ref_noise': {}}
+            plot_data = {"cmp": {}, "ref": {}, "cmp_noise": {}, "ref_noise": {}}
 
             for cmp_state in cmp_states:
                 cmp_state_name = cmp_state["name"]
-                ref_state = next(filter(lambda st: st["name"] == cmp_state_name,
-                                        ref_states),
-                                 None)
+                ref_state = next(
+                    filter(lambda st: st["name"] == cmp_state_name, ref_states), None
+                )
                 if not ref_state:
                     continue
 
@@ -158,9 +156,7 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
                 row = []
                 for axis_value in axis_values:
                     axis_value_name = axis_value["name"]
-                    row.append(format_axis_value(axis_value_name,
-                                                 axis_value,
-                                                 axes))
+                    row.append(format_axis_value(axis_value_name, axis_value, axes))
 
                 cmp_summaries = cmp_state["summaries"]
                 ref_summaries = ref_state["summaries"]
@@ -171,23 +167,37 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
                 def lookup_summary(summaries, tag):
                     return next(filter(lambda s: s["tag"] == tag, summaries), None)
 
-                cmp_time_summary = lookup_summary(cmp_summaries, "nv/cold/time/gpu/mean")
-                ref_time_summary = lookup_summary(ref_summaries, "nv/cold/time/gpu/mean")
-                cmp_noise_summary = lookup_summary(cmp_summaries, "nv/cold/time/gpu/stdev/relative")
-                ref_noise_summary = lookup_summary(ref_summaries, "nv/cold/time/gpu/stdev/relative")
+                cmp_time_summary = lookup_summary(
+                    cmp_summaries, "nv/cold/time/gpu/mean"
+                )
+                ref_time_summary = lookup_summary(
+                    ref_summaries, "nv/cold/time/gpu/mean"
+                )
+                cmp_noise_summary = lookup_summary(
+                    cmp_summaries, "nv/cold/time/gpu/stdev/relative"
+                )
+                ref_noise_summary = lookup_summary(
+                    ref_summaries, "nv/cold/time/gpu/stdev/relative"
+                )
 
                 # TODO: Use other timings, too. Maybe multiple rows, with a
                 # "Timing" column + values "CPU/GPU/Batch"?
-                if not all([cmp_time_summary,
-                            ref_time_summary,
-                            cmp_noise_summary,
-                            ref_noise_summary]):
+                if not all(
+                    [
+                        cmp_time_summary,
+                        ref_time_summary,
+                        cmp_noise_summary,
+                        ref_noise_summary,
+                    ]
+                ):
                     continue
 
                 def extract_value(summary):
                     summary_data = summary["data"]
-                    value_data = next(filter(lambda v: v["name"] == "value", summary_data))
-                    assert(value_data["type"] == "float64")
+                    value_data = next(
+                        filter(lambda v: v["name"] == "value", summary_data)
+                    )
+                    assert value_data["type"] == "float64"
                     return value_data["value"]
 
                 cmp_time = extract_value(cmp_time_summary)
@@ -218,23 +228,27 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
                 if plot:
                     axis_name = []
                     axis_value = "--"
-                    for aid in range(len(axis_values)): 
+                    for aid in range(len(axis_values)):
                         if axis_values[aid]["name"] != plot:
-                           axis_name.append("{} = {}".format(axis_values[aid]["name"], axis_values[aid]["value"]))
+                            axis_name.append(
+                                "{} = {}".format(
+                                    axis_values[aid]["name"], axis_values[aid]["value"]
+                                )
+                            )
                         else:
-                           axis_value = float(axis_values[aid]["value"])
-                    axis_name = ', '.join(axis_name)
+                            axis_value = float(axis_values[aid]["value"])
+                    axis_name = ", ".join(axis_name)
 
-                    if axis_name not in plot_data['cmp']:
-                        plot_data['cmp'][axis_name] = {}
-                        plot_data['ref'][axis_name] = {}
-                        plot_data['cmp_noise'][axis_name] = {}
-                        plot_data['ref_noise'][axis_name] = {}
+                    if axis_name not in plot_data["cmp"]:
+                        plot_data["cmp"][axis_name] = {}
+                        plot_data["ref"][axis_name] = {}
+                        plot_data["cmp_noise"][axis_name] = {}
+                        plot_data["ref_noise"][axis_name] = {}
 
-                    plot_data['cmp'][axis_name][axis_value] = cmp_time
-                    plot_data['ref'][axis_name][axis_value] = ref_time
-                    plot_data['cmp_noise'][axis_name][axis_value] = cmp_noise
-                    plot_data['ref_noise'][axis_name][axis_value] = ref_noise
+                    plot_data["cmp"][axis_name][axis_value] = cmp_time
+                    plot_data["ref"][axis_name][axis_value] = ref_time
+                    plot_data["cmp_noise"][axis_name][axis_value] = cmp_noise
+                    plot_data["ref_noise"][axis_name][axis_value] = ref_noise
 
                 global config_count
                 global unknown_count
@@ -273,14 +287,13 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
             print("## [%d] %s\n" % (device["id"], device["name"]))
             # colalign and github format require tabulate 0.8.3
             if tabulate_version >= (0, 8, 3):
-                print(tabulate.tabulate(rows,
-                                        headers=headers,
-                                        colalign=colalign,
-                                        tablefmt="github"))
+                print(
+                    tabulate.tabulate(
+                        rows, headers=headers, colalign=colalign, tablefmt="github"
+                    )
+                )
             else:
-                print(tabulate.tabulate(rows,
-                                        headers=headers,
-                                        tablefmt="markdown"))
+                print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
 
             print("")
 
@@ -295,18 +308,17 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
                     x = [float(x) for x in plot_data[key][axis].keys()]
                     y = list(plot_data[key][axis].values())
 
-                    noise = list(plot_data[key + '_noise'][axis].values())
+                    noise = list(plot_data[key + "_noise"][axis].values())
 
                     top = [y[i] + y[i] * noise[i] for i in range(len(x))]
                     bottom = [y[i] - y[i] * noise[i] for i in range(len(x))]
 
-                    p = plt.plot(x, y, shape, marker='o', label=label)
+                    p = plt.plot(x, y, shape, marker="o", label=label)
                     plt.fill_between(x, bottom, top, color=p[0].get_color(), alpha=0.1)
 
-
-                for axis in plot_data['cmp'].keys():
-                    plot_line('cmp', '-', axis)
-                    plot_line('ref', '--', axis + ' ref')
+                for axis in plot_data["cmp"].keys():
+                    plot_line("cmp", "-", axis)
+                    plot_line("ref", "--", axis + " ref")
 
                 plt.legend()
                 plt.show()
@@ -314,11 +326,17 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
 
 def main():
     help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
-    parser = argparse.ArgumentParser(prog='nvbench_compare', usage=help_text)
-    parser.add_argument('--threshold-diff', type=float, dest='threshold', default=0.0,
-                        help='only show benchmarks where percentage diff is >= THRESHOLD')
-    parser.add_argument('--plot-along', type=str, dest='plot', default=None,
-                        help='plot results')
+    parser = argparse.ArgumentParser(prog="nvbench_compare", usage=help_text)
+    parser.add_argument(
+        "--threshold-diff",
+        type=float,
+        dest="threshold",
+        default=0.0,
+        help="only show benchmarks where percentage diff is >= THRESHOLD",
+    )
+    parser.add_argument(
+        "--plot-along", type=str, dest="plot", default=None, help="plot results"
+    )
 
     args, files_or_dirs = parser.parse_known_args()
     print(files_or_dirs)
@@ -336,14 +354,17 @@ def main():
                 continue
             r = os.path.join(files_or_dirs[0], f)
             c = os.path.join(files_or_dirs[1], f)
-            if os.path.isfile(r) and os.path.isfile(c) and \
-               os.path.getsize(r) > 0 and os.path.getsize(c) > 0:
+            if (
+                os.path.isfile(r)
+                and os.path.isfile(c)
+                and os.path.getsize(r) > 0
+                and os.path.getsize(c) > 0
+            ):
                 to_compare.append((r, c))
     else:
         to_compare = [(files_or_dirs[0], files_or_dirs[1])]
 
     for ref, comp in to_compare:
-
         ref_root = reader.read_file(ref)
         cmp_root = reader.read_file(comp)
 
@@ -355,7 +376,9 @@ def main():
             print("Device sections do not match.")
             sys.exit(1)
 
-        compare_benches(ref_root["benchmarks"], cmp_root["benchmarks"], args.threshold, args.plot)
+        compare_benches(
+            ref_root["benchmarks"], cmp_root["benchmarks"], args.threshold, args.plot
+        )
 
     print("# Summary\n")
     print("- Total Matches: %d" % config_count)
@@ -365,5 +388,5 @@ def main():
     return failure_count
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

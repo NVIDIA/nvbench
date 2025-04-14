@@ -16,14 +16,12 @@
  *  limitations under the License.
  */
 
-#include <nvbench/csv_printer.cuh>
-
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/csv_printer.cuh>
 #include <nvbench/device_info.cuh>
-#include <nvbench/summary.cuh>
-
 #include <nvbench/internal/table_builder.cuh>
+#include <nvbench/summary.cuh>
 
 #include <fmt/format.h>
 
@@ -169,7 +167,10 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
       std::size_t remaining = table.m_columns.size();
       for (const auto &col : table.m_columns)
       {
-        fmt::format_to(std::back_inserter(buffer), "{}{}", col.rows[i], (--remaining == 0) ? "" : ",");
+        fmt::format_to(std::back_inserter(buffer),
+                       "{}{}",
+                       col.rows[i],
+                       (--remaining == 0) ? "" : ",");
       }
       fmt::format_to(std::back_inserter(buffer), "\n");
     }

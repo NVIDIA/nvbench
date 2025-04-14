@@ -5,9 +5,8 @@ import math
 import os
 import sys
 
-from nvbench_json import reader
-
 import tabulate
+from nvbench_json import reader
 
 
 # Parse version string into tuple, "x.y.z" -> (x, y, z)
@@ -39,7 +38,8 @@ def format_walltime(seconds_in):
         "{:0>2d}:".format(h) if h > 1e-9 else "",
         "{:0>2d}:".format(m) if (h > 1e-9 or m > 1e-9) else "",
         "{:0>2d}.".format(s) if (h > 1e-9 or m > 1e-9) else "{:d}.".format(s),
-        "{:0>3d}".format(ms))
+        "{:0>3d}".format(ms),
+    )
 
 
 def format_percentage(percentage):
@@ -58,7 +58,7 @@ measure_column_names = {"cold": "Isolated", "batch": "Batch", "cupti": "CUPTI"}
 def init_measures():
     out = {}
     for name in measure_names:
-        out[name] = 0.
+        out[name] = 0.0
     return out
 
 
@@ -67,17 +67,17 @@ def get_measures(state):
     times = {}
     for name in measure_names:
         measure_walltime_tag = "nv/{}/walltime".format(name)
-        summary = next(filter(lambda s: s["tag"] == measure_walltime_tag,
-                              summaries),
-                       None)
+        summary = next(
+            filter(lambda s: s["tag"] == measure_walltime_tag, summaries), None
+        )
         if not summary:
             continue
 
         walltime_data = next(filter(lambda d: d["name"] == "value", summary["data"]))
-        assert(walltime_data["type"] == "float64")
+        assert walltime_data["type"] == "float64"
         walltime = walltime_data["value"]
         walltime = float(walltime)
-        times[name] = walltime if walltime else 0.
+        times[name] = walltime if walltime else 0.0
     return times
 
 
@@ -87,7 +87,7 @@ def merge_measures(target, src):
 
 
 def sum_measures(measures):
-    total_time = 0.
+    total_time = 0.0
     for time in measures.values():
         total_time += time
     return total_time
@@ -194,20 +194,21 @@ def print_overview_section(data):
 
     # colalign and github format require tabulate 0.8.3
     if tabulate_version >= (0, 8, 3):
-        print(tabulate.tabulate(rows,
-                                headers=headers,
-                                colalign=colalign,
-                                tablefmt="github"))
+        print(
+            tabulate.tabulate(
+                rows, headers=headers, colalign=colalign, tablefmt="github"
+            )
+        )
     else:
-        print(tabulate.tabulate(rows,
-                                headers=headers,
-                                tablefmt="markdown"))
+        print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
 
     print()
 
 
 # append_data_row_lambda args: (row_list, name, items[name])
-def print_measures_table(headers, colalign, items, total_measures, append_item_row_lambda):
+def print_measures_table(
+    headers, colalign, items, total_measures, append_item_row_lambda
+):
     total_time = sum_measures(total_measures)
     active_measures = get_active_measure_names(total_measures)
     num_user_columns = len(headers)
@@ -248,14 +249,13 @@ def print_measures_table(headers, colalign, items, total_measures, append_item_r
 
     # colalign and github format require tabulate 0.8.3
     if tabulate_version >= (0, 8, 3):
-        print(tabulate.tabulate(rows,
-                                headers=headers,
-                                colalign=colalign,
-                                tablefmt="github"))
+        print(
+            tabulate.tabulate(
+                rows, headers=headers, colalign=colalign, tablefmt="github"
+            )
+        )
     else:
-        print(tabulate.tabulate(rows,
-                                headers=headers,
-                                tablefmt="markdown"))
+        print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
 
 
 def print_files_section(data):
@@ -319,7 +319,7 @@ def print_bench_section(bench_name, bench):
 
 def main():
     help_text = "%(prog)s [nvbench.out.json | dir/]..."
-    parser = argparse.ArgumentParser(prog='nvbench_walltime', usage=help_text)
+    parser = argparse.ArgumentParser(prog="nvbench_walltime", usage=help_text)
 
     args, files_or_dirs = parser.parse_known_args()
 
@@ -353,5 +353,5 @@ def main():
     print_files_section(data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

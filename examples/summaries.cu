@@ -26,8 +26,8 @@
 void summary_example(nvbench::state &state)
 {
   // Fetch parameters and compute duration in seconds:
-  const auto ms = static_cast<nvbench::float64_t>(state.get_int64("ms"));
-  const auto us = static_cast<nvbench::float64_t>(state.get_int64("us"));
+  const auto ms       = static_cast<nvbench::float64_t>(state.get_int64("ms"));
+  const auto us       = static_cast<nvbench::float64_t>(state.get_int64("us"));
   const auto duration = ms * 1e-3 + us * 1e-6;
 
   // Add a new column to the summary table with the derived duration used by the benchmark.

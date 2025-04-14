@@ -18,9 +18,9 @@
 
 #include <nvbench/named_values.cuh>
 
-#include "test_asserts.cuh"
-
 #include <algorithm>
+
+#include "test_asserts.cuh"
 
 void test_empty()
 {

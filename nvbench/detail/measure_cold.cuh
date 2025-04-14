@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-
 #include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
@@ -32,11 +30,12 @@
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
 #include <nvbench/stopping_criterion.cuh>
+#include <nvbench/types.cuh>
+
+#include <cuda_runtime.h>
 
 #include <utility>
 #include <vector>
-
-#include "nvbench/types.cuh"
 
 namespace nvbench
 {

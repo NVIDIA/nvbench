@@ -1,8 +1,8 @@
 file_version = (1, 0, 0)
 
-file_version_string = "{}.{}.{}".format(file_version[0],
-                                        file_version[1],
-                                        file_version[2])
+file_version_string = "{}.{}.{}".format(
+    file_version[0], file_version[1], file_version[2]
+)
 
 
 def check_file_version(filename, root_node):
@@ -19,8 +19,14 @@ def check_file_version(filename, root_node):
     # for now just warn on mismatch.
     if version_node["string"] != file_version_string:
         print("WARNING:")
-        print("  {} was written using a different NVBench JSON file version."
-              .format(filename))
+        print(
+            "  {} was written using a different NVBench JSON file version.".format(
+                filename
+            )
+        )
         print("  It may not read correctly.")
-        print("  (file version: {} reader version: {})"
-              .format(version_node["string"], file_version_string))
+        print(
+            "  (file version: {} reader version: {})".format(
+                version_node["string"], file_version_string
+            )
+        )

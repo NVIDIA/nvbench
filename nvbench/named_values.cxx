@@ -16,10 +16,9 @@
  *  limitations under the License.
  */
 
-#include <nvbench/named_values.cuh>
-
 #include <nvbench/config.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/named_values.cuh>
 
 #include <fmt/format.h>
 

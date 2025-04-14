@@ -18,9 +18,8 @@
 
 #pragma once
 
-#include <nvbench/benchmark_base.cuh>
-
 #include <nvbench/axes_metadata.cuh>
+#include <nvbench/benchmark_base.cuh>
 #include <nvbench/runner.cuh>
 #include <nvbench/type_list.cuh>
 

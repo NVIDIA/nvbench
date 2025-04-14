@@ -19,6 +19,7 @@
 #pragma once
 
 #include <fmt/format.h>
+
 #include <stdexcept>
 
 #define NVBENCH_THROW(exception_type, format_str, ...)                                             \

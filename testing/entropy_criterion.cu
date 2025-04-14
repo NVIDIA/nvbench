@@ -20,11 +20,11 @@
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
-#include "test_asserts.cuh"
-
-#include <vector>
-#include <random>
 #include <numeric>
+#include <random>
+#include <vector>
+
+#include "test_asserts.cuh"
 
 void test_const()
 {
@@ -32,7 +32,7 @@ void test_const()
   nvbench::detail::entropy_criterion criterion;
 
   criterion.initialize(params);
-  for (int i = 0; i < 6; i++) 
+  for (int i = 0; i < 6; i++)
   { // nvbench wants at least 5 to compute the standard deviation
     criterion.add_measurement(42.0);
   }
@@ -48,7 +48,7 @@ void produce_entropy_arch(nvbench::detail::entropy_criterion &criterion)
    *   2.5, 2.4, 2.2, 2.1, 2.0, 1.9 <-+
    *   1.8, 1.7, 1.6, 1.6, 1.5, 1.4   |
    *   1.4, 1.3, 1.3, 1.3, 1.2, 1.2   |
-   *   1.1, 1.1, 1.1, 1.0, 1.0, 1.0   +-- entropy only decreases after 5-th sample, 
+   *   1.1, 1.1, 1.1, 1.0, 1.0, 1.0   +-- entropy only decreases after 5-th sample,
    *   1.0, 0.9, 0.9, 0.9, 0.9, 0.9   |   so the slope should be negative
    *   0.8, 0.8, 0.8, 0.8, 0.8, 0.8   |
    *   0.7, 0.7, 0.7, 0.7, 0.7, 0.7 <-+
