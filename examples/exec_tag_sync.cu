@@ -53,7 +53,7 @@ void sequence_bench(nvbench::state &state)
 
   // nvbench::exec_tag::sync indicates that this will implicitly sync:
   state.exec(nvbench::exec_tag::sync, [&data](nvbench::launch &launch) {
-    thrust::sequence(thrust::device.on(launch.get_stream()), data.begin(), data.end());
+    thrust::sequence(thrust::device.on(launch.get_stream().get_stream()), data.begin(), data.end());
   });
 }
 NVBENCH_BENCH(sequence_bench);

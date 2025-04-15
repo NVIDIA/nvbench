@@ -57,7 +57,7 @@ void mod2_inplace(nvbench::state &state)
                (void)num_values; // clang thinks this is unused...
 
                // Reset working data:
-               thrust::copy(thrust::device.on(launch.get_stream()),
+               thrust::copy(thrust::device.on(launch.get_stream().get_stream()),
                             input.cbegin(),
                             input.cend(),
                             data.begin());
