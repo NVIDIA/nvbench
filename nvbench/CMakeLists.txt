@@ -139,6 +139,7 @@ endif()
 rapids_cmake_write_git_revision_file(
   nvbench_git_revision
   "${NVBench_BINARY_DIR}/nvbench/detail/git_revision.cuh"
+  PREFIX "NVBENCH"
 )
 target_link_libraries(nvbench PRIVATE nvbench_git_revision)
 

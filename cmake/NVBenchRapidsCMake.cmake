@@ -20,6 +20,9 @@ endmacro()
 # Called after project(...)
 macro(nvbench_init_rapids_cmake)
   rapids_cmake_build_type(Release)
-  rapids_cmake_write_version_file("${NVBench_BINARY_DIR}/nvbench/detail/version.cuh")
+  rapids_cmake_write_version_file(
+    "${NVBench_BINARY_DIR}/nvbench/detail/version.cuh"
+    PREFIX "NVBENCH"
+  )
   rapids_cpm_init()
 endmacro()

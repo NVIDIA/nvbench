@@ -18,12 +18,5 @@
 
 #pragma once
 
+// Include the auto-generated git revision header:
 #include <nvbench/detail/git_revision.cuh>
-
-// WAR issue rapidsai/rapids-cmake#99:
-#define NVBENCH_GIT_BRANCH NVBench_GIT_BRANCH
-#define NVBENCH_GIT_SHA1 NVBench_GIT_SHA1
-#define NVBENCH_GIT_VERSION NVBench_GIT_VERSION
-#ifdef NVBench_GIT_IS_DIRTY
-#define NVBENCH_GIT_IS_DIRTY
-#endif
