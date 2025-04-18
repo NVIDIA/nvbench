@@ -53,7 +53,6 @@ measure_cold_base::measure_cold_base(state &exec_state)
   {
     m_cuda_times.reserve(static_cast<std::size_t>(m_min_samples));
     m_cpu_times.reserve(static_cast<std::size_t>(m_min_samples));
-    m_sm_clock_rates.reserve(static_cast<std::size_t>(m_min_samples));
   }
 }
 
@@ -72,18 +71,18 @@ void measure_cold_base::check()
 
 void measure_cold_base::initialize()
 {
-  m_min_cuda_time     = std::numeric_limits<nvbench::float64_t>::max();
-  m_max_cuda_time     = std::numeric_limits<nvbench::float64_t>::lowest();
-  m_total_cuda_time   = 0.;
-  m_min_cpu_time      = std::numeric_limits<nvbench::float64_t>::max();
-  m_max_cpu_time      = std::numeric_limits<nvbench::float64_t>::lowest();
-  m_total_cpu_time    = 0.;
-  m_total_samples     = 0;
-  m_max_time_exceeded = false;
+  m_min_cuda_time             = std::numeric_limits<nvbench::float64_t>::max();
+  m_max_cuda_time             = std::numeric_limits<nvbench::float64_t>::lowest();
+  m_total_cuda_time           = 0.;
+  m_min_cpu_time              = std::numeric_limits<nvbench::float64_t>::max();
+  m_max_cpu_time              = std::numeric_limits<nvbench::float64_t>::lowest();
+  m_total_cpu_time            = 0.;
+  m_sm_clock_rate_accumulator = 0.;
+  m_total_samples             = 0;
+  m_max_time_exceeded         = false;
 
   m_cuda_times.clear();
   m_cpu_times.clear();
-  m_sm_clock_rates.clear();
 
   m_stopping_criterion.initialize(m_criterion_params);
 }
@@ -94,21 +93,22 @@ void measure_cold_base::record_measurements()
 {
   if (!m_run_once)
   {
-    auto peak_clock_rate = static_cast<float>(m_state.get_device()->get_sm_default_clock_rate());
+    const auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
+    const auto default_clock_rate =
+      static_cast<float>(m_state.get_device()->get_sm_default_clock_rate());
 
-    if (m_gpu_frequency.has_throttled(peak_clock_rate, m_throttle_threshold))
+    if (m_gpu_frequency.has_throttled(default_clock_rate, m_throttle_threshold))
     {
       if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
       {
-        auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
-        auto &printer           = printer_opt_ref.value().get();
+        auto &printer = printer_opt_ref.value().get();
         printer.log(nvbench::log_level::warn,
                     fmt::format("GPU throttled below threshold ({:0.2f} MHz / {:0.2f} MHz) "
                                 "({:0.0f}% < {:0.0f}%) on sample {}. Discarding previous sample "
                                 "and pausing for {}s.",
                                 current_clock_rate / 1000000.0f,
-                                peak_clock_rate / 1000000.0f,
-                                100.0f * (current_clock_rate / peak_clock_rate),
+                                default_clock_rate / 1000000.0f,
+                                100.0f * (current_clock_rate / default_clock_rate),
                                 100.0f * m_throttle_threshold,
                                 m_total_samples,
                                 m_throttle_recovery_delay));
@@ -123,7 +123,7 @@ void measure_cold_base::record_measurements()
       return;
     }
 
-    m_sm_clock_rates.push_back(peak_clock_rate);
+    m_sm_clock_rate_accumulator += current_clock_rate;
   }
 
   // Update and record timers and counters:
@@ -338,16 +338,30 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  if (!m_sm_clock_rates.empty())
+  if (m_sm_clock_rate_accumulator != 0.)
   {
-    auto &summ = m_state.add_summary("nv/cold/sm_clock_rate/mean");
-    summ.set_string("name", "Clock Rate");
-    summ.set_string("hint", "frequency");
-    summ.set_string("description", "Mean SM clock rate");
-    summ.set_string("hide", "Hidden by default.");
-    summ.set_float64("value",
-                     nvbench::detail::statistics::compute_mean(m_sm_clock_rates.cbegin(),
-                                                               m_sm_clock_rates.cend()));
+    const auto clock_mean = m_sm_clock_rate_accumulator / d_samples;
+
+    {
+      auto &summ = m_state.add_summary("nv/cold/sm_clock_rate/mean");
+      summ.set_string("name", "Clock Rate");
+      summ.set_string("hint", "frequency");
+      summ.set_string("description", "Mean SM clock rate");
+      summ.set_string("hide", "Hidden by default.");
+      summ.set_float64("value", clock_mean);
+    }
+
+    {
+      const auto default_clock_rate =
+        static_cast<nvbench::float64_t>(m_state.get_device()->get_sm_default_clock_rate());
+
+      auto &summ = m_state.add_summary("nv/cold/sm_clock_rate/scaling/percent");
+      summ.set_string("name", "Clock Scaling");
+      summ.set_string("hint", "percentage");
+      summ.set_string("description", "Mean SM clock rate as a percentage of default clock rate.");
+      summ.set_string("hide", "Hidden by default.");
+      summ.set_float64("value", clock_mean / default_clock_rate);
+    }
   }
 
   // Log if a printer exists:

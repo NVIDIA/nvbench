@@ -41,7 +41,7 @@ void summary_example(nvbench::state &state)
   }
 
   // Run the measurements:
-  state.exec([duration](nvbench::launch &launch) {
+  state.exec(nvbench::exec_tag::no_batch, [duration](nvbench::launch &launch) {
     nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(duration);
   });
 
@@ -56,14 +56,17 @@ void summary_example(nvbench::state &state)
 #endif
 
   // Default summary columns can be shown/hidden in the markdown output tables by adding/removing
-  // the "hide" key. Modify this benchmark to show the minimum and maximum times, but hide the
-  // means.
+  // the "hide" key. Modify this benchmark to show the minimum and maximum GPUs times, but hide the
+  // mean GPU time and all CPU times. SM Clock frequency and throttling info are also shown.
   state.get_summary("nv/cold/time/gpu/min").remove_value("hide");
   state.get_summary("nv/cold/time/gpu/max").remove_value("hide");
   state.get_summary("nv/cold/time/gpu/mean").set_string("hide", "");
-  state.get_summary("nv/cold/time/cpu/min").remove_value("hide");
-  state.get_summary("nv/cold/time/cpu/max").remove_value("hide");
   state.get_summary("nv/cold/time/cpu/mean").set_string("hide", "");
+  state.get_summary("nv/cold/time/cpu/min").set_string("hide", "");
+  state.get_summary("nv/cold/time/cpu/max").set_string("hide", "");
+  state.get_summary("nv/cold/time/cpu/stdev/relative").set_string("hide", "");
+  state.get_summary("nv/cold/sm_clock_rate/mean").remove_value("hide");
+  state.get_summary("nv/cold/sm_clock_rate/scaling/percent").remove_value("hide");
 }
 NVBENCH_BENCH(summary_example)
   .add_int64_axis("ms", nvbench::range(10, 50, 20))

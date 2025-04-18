@@ -40,7 +40,7 @@ struct gpu_frequency
 
   void stop(const nvbench::cuda_stream &stream) { m_stop.record(stream); }
 
-  [[nodiscard]] bool has_throttled(nvbench::float32_t peak_sm_clock_rate_hz,
+  [[nodiscard]] bool has_throttled(nvbench::float32_t default_sm_clock_rate_hz,
                                    nvbench::float32_t throttle_threshold);
 
   [[nodiscard]] nvbench::float32_t get_clock_frequency();
