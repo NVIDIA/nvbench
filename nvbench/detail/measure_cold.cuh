@@ -122,6 +122,7 @@ protected:
   nvbench::float64_t m_max_cpu_time{};
   nvbench::float64_t m_total_cpu_time{};
 
+  std::vector<nvbench::float64_t> m_sm_clock_rates{};
   nvbench::float64_t m_sm_clock_rate_accumulator{};
 
   std::vector<nvbench::float64_t> m_cuda_times;

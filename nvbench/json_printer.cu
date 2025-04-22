@@ -241,6 +241,83 @@ void json_printer::do_process_bulk_data_float64(state &state,
         fmt::format("Wrote '{}' in {:>6.3f}ms", result_path.string(), timer.get_duration() * 1000));
     }
   } // end hint == sample_times
+
+  if (hint == "sample_freqs")
+  {
+    nvbench::cpu_timer timer;
+    timer.start();
+
+    fs::path result_path{m_stream_name + "-freqs-bin/"};
+    try
+    {
+      if (!fs::exists(result_path))
+      {
+        if (!fs::create_directory(result_path))
+        {
+          NVBENCH_THROW(std::runtime_error, "{}", "Failed to create result directory '{}'.");
+        }
+      }
+      else if (!fs::is_directory(result_path))
+      {
+        NVBENCH_THROW(std::runtime_error, "{}", "'{}' exists and is not a directory.");
+      }
+
+      const auto file_id = m_num_jsonbin_freq_files++;
+      result_path /= fmt::format("{:d}.bin", file_id);
+
+      std::ofstream out;
+      out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
+      out.open(result_path, std::ios::binary | std::ios::out);
+
+      // FIXME: SLOW -- Writing the binary file, 4 bytes at a time...
+      // There are a lot of optimizations that could be done here if this ends
+      // up being a noticeable bottleneck.
+      for (auto value64 : data)
+      {
+        const auto value32 = static_cast<nvbench::float32_t>(value64);
+        char buffer[4];
+        std::memcpy(buffer, &value32, 4);
+        // the c++17 implementation of is_little_endian isn't constexpr, but
+        // all supported compilers optimize this branch as if it were.
+        if (!is_little_endian())
+        {
+          using std::swap;
+          swap(buffer[0], buffer[3]);
+          swap(buffer[1], buffer[2]);
+        }
+        out.write(buffer, 4);
+      }
+    }
+    catch (std::exception &e)
+    {
+      if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+      {
+        auto &printer = printer_opt_ref.value().get();
+        printer.log(
+          nvbench::log_level::warn,
+          fmt::format("Error writing {} ({}) to {}: {}", tag, hint, result_path.string(), e.what()));
+      }
+    } // end catch
+
+    auto &summ = state.add_summary(fmt::format("nv/json/freqs-bin:{}", tag));
+    summ.set_string("name", "Samples Frequencies File");
+    summ.set_string("hint", "file/sample_freqs");
+    summ.set_string("description",
+                    "Binary file containing sample frequencies as little-endian "
+                    "float32.");
+    summ.set_string("filename", result_path.string());
+    summ.set_int64("size", static_cast<nvbench::int64_t>(data.size()));
+    summ.set_string("hide", "Not needed in table.");
+
+    timer.stop();
+    if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+    {
+      auto &printer = printer_opt_ref.value().get();
+      printer.log(
+        nvbench::log_level::info,
+        fmt::format("Wrote '{}' in {:>6.3f}ms", result_path.string(), timer.get_duration() * 1000));
+    }
+  } // end hint == sample_freqs
 }
 
 static void add_devices_section(nlohmann::ordered_json &root)
