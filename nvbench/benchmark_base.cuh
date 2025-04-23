@@ -249,9 +249,10 @@ struct benchmark_base
 
   [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
 
-  void set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  benchmark_base &set_throttle_threshold(nvbench::float32_t throttle_threshold)
   {
     m_throttle_threshold = throttle_threshold;
+    return *this;
   }
 
   [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
@@ -259,9 +260,10 @@ struct benchmark_base
     return m_throttle_recovery_delay;
   }
 
-  void set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  benchmark_base &set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
   {
     m_throttle_recovery_delay = throttle_recovery_delay;
+    return *this;
   }
 
   [[nodiscard]] nvbench::criterion_params &get_criterion_params() { return m_criterion_params; }
