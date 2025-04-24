@@ -135,13 +135,16 @@
 
 * `--throttle-threshold <value>`
   * Set the GPU throttle threshold as percentage of the device's default clock rate.
-  * Default is 75%.
+  * Default is 75.
+  * Set to 0 to disable throttle detection entirely.
+  * Note that throttling is disabled when `nvbench::exec_tag::sync` is used.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
 * `--throttle-recovery-delay <value>`
   * Set the GPU throttle recovery delay in seconds.
   * Default is 0.05 seconds.
+  * Note that throttling is disabled when `nvbench::exec_tag::sync` is used.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 

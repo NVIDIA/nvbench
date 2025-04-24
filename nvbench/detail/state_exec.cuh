@@ -101,10 +101,12 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
                              "`set_is_cpu_only(true)` is NOT called when defining the benchmark.");
   }
 
-  // Syncing will cause the blocking kernel pattern to deadlock:
   if constexpr (modifier_tags & sync)
   {
+    // Syncing will cause the blocking kernel pattern to deadlock:
     this->set_disable_blocking_kernel(true);
+    // Syncing will cause the throttle frequency measurements to be skewed heavily:
+    this->set_throttle_threshold(0.f);
   }
 
   if (this->is_skipped())
