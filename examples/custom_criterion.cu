@@ -74,4 +74,4 @@ void throughput_bench(nvbench::state &state)
       num_values);
   });
 }
-NVBENCH_BENCH(throughput_bench).set_stopping_criterion("fixed").set_throttle_threshold(0.8f);
+NVBENCH_BENCH(throughput_bench).set_stopping_criterion("fixed");
