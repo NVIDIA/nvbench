@@ -95,6 +95,7 @@ protected:
 
   bool m_disable_blocking_kernel{false};
   bool m_run_once{false};
+  bool m_check_throttling;
 
   nvbench::int64_t m_min_samples{};
 
@@ -142,7 +143,7 @@ struct measure_cold_base::kernel_launch_timer
     {
       m_measure.block_stream();
     }
-    if (!m_measure.m_run_once)
+    if (m_measure.m_check_throttling)
     {
       m_measure.gpu_frequency_start();
     }
@@ -161,7 +162,7 @@ struct measure_cold_base::kernel_launch_timer
       m_measure.m_cpu_timer.start();
       m_measure.unblock_stream();
     }
-    if (!m_measure.m_run_once)
+    if (m_measure.m_check_throttling)
     {
       m_measure.gpu_frequency_stop();
     }
