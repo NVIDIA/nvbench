@@ -104,6 +104,11 @@ protected:
   nvbench::float32_t m_throttle_threshold;      // [% of default SM clock rate]
   nvbench::float32_t m_throttle_recovery_delay; // [seconds]
 
+  // Dynamically increased when repeated throttling occurs
+  // without successfully recording a sample.
+  nvbench::float32_t m_dynamic_throttle_recovery_delay{}; // [seconds]
+  nvbench::int64_t m_throttle_discard_count{};
+
   nvbench::int64_t m_total_samples{};
 
   nvbench::float64_t m_min_cuda_time{};

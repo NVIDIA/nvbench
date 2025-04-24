@@ -81,6 +81,9 @@ void measure_cold_base::initialize()
   m_total_samples             = 0;
   m_max_time_exceeded         = false;
 
+  m_dynamic_throttle_recovery_delay = m_throttle_recovery_delay;
+  m_throttle_discard_count          = 0;
+
   m_cuda_times.clear();
   m_cpu_times.clear();
 
@@ -99,29 +102,41 @@ void measure_cold_base::record_measurements()
 
     if (m_gpu_frequency.has_throttled(default_clock_rate, m_throttle_threshold))
     {
+      if (m_throttle_discard_count > 2)
+      {
+        // Throttling detected in multiple consecutive trials. The delay is not sufficient to
+        // recover. Increase the delay by no more than half of a second:
+        m_dynamic_throttle_recovery_delay += std::min(m_dynamic_throttle_recovery_delay * 1.5f,
+                                                      0.5f);
+      }
+
       if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
       {
         auto &printer = printer_opt_ref.value().get();
         printer.log(nvbench::log_level::warn,
                     fmt::format("GPU throttled below threshold ({:0.2f} MHz / {:0.2f} MHz) "
-                                "({:0.0f}% < {:0.0f}%) on sample {}. Discarding previous sample "
-                                "and pausing for {}s.",
+                                "({:0.0f}% < {:0.0f}%) on sample {}. Discarding previous trial "
+                                "and pausing for {:0.3f}s.",
                                 current_clock_rate / 1000000.0f,
                                 default_clock_rate / 1000000.0f,
                                 100.0f * (current_clock_rate / default_clock_rate),
                                 100.0f * m_throttle_threshold,
                                 m_total_samples,
-                                m_throttle_recovery_delay));
+                                m_dynamic_throttle_recovery_delay));
       }
 
-      if (m_throttle_recovery_delay > 0.0f)
+      if (m_dynamic_throttle_recovery_delay > 0.0f)
       { // let the GPU cool down
-        std::this_thread::sleep_for(std::chrono::duration<float>(m_throttle_recovery_delay));
+        std::this_thread::sleep_for(
+          std::chrono::duration<float>(m_dynamic_throttle_recovery_delay));
       }
+
+      m_throttle_discard_count += 1;
 
       // ignore this measurement
       return;
     }
+    m_throttle_discard_count = 0;
 
     m_sm_clock_rate_accumulator += current_clock_rate;
   }
