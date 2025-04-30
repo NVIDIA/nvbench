@@ -17,8 +17,8 @@
  */
 
 #include <nvbench/benchmark_manager.cuh>
-
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/device_manager.cuh>
 
 #include <fmt/format.h>
 
@@ -32,6 +32,18 @@ benchmark_manager &benchmark_manager::get()
 { // Karen's function:
   static benchmark_manager the_manager;
   return the_manager;
+}
+
+void benchmark_manager::initialize()
+{
+  const auto &mgr = device_manager::get();
+  for (auto &bench : m_benchmarks)
+  {
+    if (!bench->get_is_cpu_only())
+    {
+      bench->set_devices(mgr.get_devices());
+    }
+  }
 }
 
 benchmark_base &benchmark_manager::add(std::unique_ptr<benchmark_base> bench)

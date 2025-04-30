@@ -17,22 +17,19 @@
  */
 
 #include <nvbench/axes_metadata.cuh>
-
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
 #include <nvbench/types.cuh>
-
-#include "test_asserts.cuh"
 
 #include <fmt/format.h>
 
 #include <algorithm>
 #include <string_view>
 
-using int_list = nvbench::type_list<nvbench::int8_t,
-                                    nvbench::int16_t,
-                                    nvbench::int32_t,
-                                    nvbench::int64_t>;
+#include "test_asserts.cuh"
+
+using int_list =
+  nvbench::type_list<nvbench::int8_t, nvbench::int16_t, nvbench::int32_t, nvbench::int64_t>;
 
 using float_list = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
 
@@ -110,7 +107,6 @@ void test_default_type_axes_names()
     ASSERT(axes.get_type_axis(4).get_name() == "T4");
     ASSERT(axes.get_type_axis(4).get_axis_index() == 4);
   }
-
 }
 
 void test_type_axes()
@@ -138,8 +134,7 @@ void test_type_axes()
       fmt::format_to(std::back_inserter(buffer),
                      " - {}{}\n",
                      input_string,
-                     description.empty() ? ""
-                                         : fmt::format(" ({})", description));
+                     description.empty() ? "" : fmt::format(" ({})", description));
     }
   }
 
@@ -157,9 +152,8 @@ Axis: Other
 )expected";
 
   const std::string test = fmt::to_string(buffer);
-  const auto diff =
-    std::mismatch(ref.cbegin(), ref.cend(), test.cbegin(), test.cend());
-  const auto idx = diff.second - test.cbegin();
+  const auto diff        = std::mismatch(ref.cbegin(), ref.cend(), test.cbegin(), test.cend());
+  const auto idx         = static_cast<std::size_t>(diff.second - test.cbegin());
   ASSERT_MSG(test == ref,
              "Differs at character {}.\n"
              "Expected:\n\"{}\"\n\n"
@@ -189,9 +183,7 @@ void test_float64_axes()
 void test_int64_axes()
 {
   nvbench::axes_metadata axes;
-  axes.add_int64_axis("I64 Axis",
-                      {10, 11, 12, 13, 14},
-                      nvbench::int64_axis_flags::none);
+  axes.add_int64_axis("I64 Axis", {10, 11, 12, 13, 14}, nvbench::int64_axis_flags::none);
   ASSERT(axes.get_axes().size() == 1);
   const auto &axis = axes.get_int64_axis("I64 Axis");
   ASSERT(axis.get_size() == 5);
@@ -205,9 +197,7 @@ void test_int64_axes()
 void test_int64_power_of_two_axes()
 {
   nvbench::axes_metadata axes;
-  axes.add_int64_axis("I64 POT Axis",
-                      {1, 2, 3, 4, 5},
-                      nvbench::int64_axis_flags::power_of_two);
+  axes.add_int64_axis("I64 POT Axis", {1, 2, 3, 4, 5}, nvbench::int64_axis_flags::power_of_two);
   ASSERT(axes.get_axes().size() == 1);
   const auto &axis = axes.get_int64_axis("I64 POT Axis");
   ASSERT(axis.get_size() == 5);

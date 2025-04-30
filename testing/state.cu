@@ -16,10 +16,9 @@
  *  limitations under the License.
  */
 
-#include <nvbench/state.cuh>
-
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
+#include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 

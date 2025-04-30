@@ -15,11 +15,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-#include <nvbench/state.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/state.cuh>
 #include <nvbench/types.cuh>
 
 #include <fmt/color.h>
@@ -34,13 +32,16 @@ namespace nvbench
 
 state::state(const benchmark_base &bench)
     : m_benchmark{bench}
+    , m_is_cpu_only(bench.get_is_cpu_only())
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
+    , m_criterion_params{bench.get_criterion_params()}
+    , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
-    , m_min_time{bench.get_min_time()}
-    , m_max_noise{bench.get_max_noise()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
+    , m_throttle_threshold{bench.get_throttle_threshold()}
+    , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
     , m_cuda_stream{std::nullopt}
 {}
 
@@ -52,13 +53,16 @@ state::state(const benchmark_base &bench,
     , m_axis_values{std::move(values)}
     , m_device{std::move(device)}
     , m_type_config_index{type_config_index}
+    , m_is_cpu_only(bench.get_is_cpu_only())
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
+    , m_criterion_params{bench.get_criterion_params()}
+    , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
-    , m_min_time{bench.get_min_time()}
-    , m_max_noise{bench.get_max_noise()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
+    , m_throttle_threshold{bench.get_throttle_threshold()}
+    , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
     , m_cuda_stream{std::nullopt}
 {}
 

@@ -1,9 +1,3 @@
-if ("MSVC" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
-  # There's a bug that prevents build-and-test from working on MSVC.
-  # See NVIDIA/nvbench#43.
-  return()
-endif()
-
 # Need to escape the semicolons in CUDA_ARCHITECTURES or the tests break:
 nvbench_escaped_cuda_arches(arches)
 
@@ -12,6 +6,7 @@ set(cmake_opts
   -D "CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
   -D "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
   -D "CMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}"
+  -D "CMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}"
   -D "CMAKE_CUDA_ARCHITECTURES=${arches}"
 )
 

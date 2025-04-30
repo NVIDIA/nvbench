@@ -16,14 +16,12 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/state_generator.cuh>
-
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/detail/state_generator.cuh>
+#include <nvbench/detail/transform_reduce.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/named_values.cuh>
 #include <nvbench/type_axis.cuh>
-
-#include <nvbench/detail/transform_reduce.cuh>
 
 #include <algorithm>
 #include <cassert>
@@ -165,7 +163,7 @@ void state_generator::build_axis_configs()
         config.set_string(axis_info.axis, axis.get_input_string(axis_info.index));
       }
     } // type_si
-  }   // type_axis_config generation
+  } // type_axis_config generation
 
   // non_type_axis_config generation
   {
@@ -201,9 +199,9 @@ void state_generator::build_axis_configs()
                               axes.get_string_axis(axis_info.axis).get_value(axis_info.index));
             break;
         } // switch (type)
-      }   // for (axis_info : current_indices)
-    }     // for non_type_sg configs
-  }       // non_type_axis_config generation
+      } // for (axis_info : current_indices)
+    } // for non_type_sg configs
+  } // non_type_axis_config generation
 }
 
 void state_generator::build_states()

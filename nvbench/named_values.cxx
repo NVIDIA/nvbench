@@ -16,10 +16,9 @@
  *  limitations under the License.
  */
 
-#include <nvbench/named_values.cuh>
-
 #include <nvbench/config.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/named_values.cuh>
 
 #include <fmt/format.h>
 
@@ -88,13 +87,10 @@ named_values::type named_values::get_type(const std::string &name) const
       {
         return nvbench::named_values::type::string;
       }
-      // warning C4702: unreachable code
       // This is a future-proofing check, it'll be reachable if something breaks
-      NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
       NVBENCH_THROW(std::runtime_error, "Unknown variant type for entry '{}'.", name);
     },
     this->get_value(name));
-  NVBENCH_MSVC_POP_WARNING()
 }
 
 nvbench::int64_t named_values::get_int64(const std::string &name) const

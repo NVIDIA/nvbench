@@ -16,10 +16,9 @@
  *  limitations under the License.
  */
 
-#include <nvbench/runner.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/printer_base.cuh>
+#include <nvbench/runner.cuh>
 #include <nvbench/state.cuh>
 
 #include <fmt/format.h>

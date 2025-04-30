@@ -4,7 +4,7 @@ A basic kernel benchmark can be created with just a few lines of CUDA C++:
 
 ```cpp
 void my_benchmark(nvbench::state& state) {
-  state.exec([](nvbench::launch& launch) { 
+  state.exec([](nvbench::launch& launch) {
     my_kernel<<<num_blocks, 256, 0, launch.get_stream()>>>();
   });
 }
@@ -97,7 +97,7 @@ void benchmark(nvbench::state& state)
   const auto num_inputs = state.get_int64("NumInputs");
   thrust::device_vector<int> data = generate_input(num_inputs);
 
-  state.exec([&data](nvbench::launch& launch) { 
+  state.exec([&data](nvbench::launch& launch) {
     my_kernel<<<blocks, threads, 0, launch.get_stream()>>>(data.begin(), data.end());
   });
 }
@@ -134,7 +134,7 @@ void benchmark(nvbench::state& state)
   const auto quality = state.get_float64("Quality");
 
   state.exec([&quality](nvbench::launch& launch)
-  { 
+  {
     my_kernel<<<blocks, threads, 0, launch.get_stream()>>>(quality);
   });
 }
@@ -153,7 +153,7 @@ void benchmark(nvbench::state& state)
   thrust::device_vector<int> data = generate_input(rng_dist);
 
   state.exec([&data](nvbench::launch& launch)
-  { 
+  {
     my_kernel<<<blocks, threads, 0, launch.get_stream()>>>(data.begin(), data.end());
   });
 }
@@ -182,13 +182,13 @@ void my_benchmark(nvbench::state& state, nvbench::type_list<T>)
   thrust::device_vector<T> data = generate_input<T>();
 
   state.exec([&data](nvbench::launch& launch)
-  { 
+  {
     my_kernel<<<blocks, threads, 0, launch.get_stream()>>>(data.begin(), data.end());
   });
 }
 using my_types = nvbench::type_list<int, float, double>;
 NVBENCH_BENCH_TYPES(my_benchmark, NVBENCH_TYPE_AXES(my_types))
-  .set_type_axis_names({"ValueType"});
+  .set_type_axes_names({"ValueType"});
 ```
 
 The `NVBENCH_TYPE_AXES` macro is unfortunately necessary to prevent commas in
@@ -266,7 +266,6 @@ In general::
 
 More examples can found in [examples/throughput.cu](../examples/throughput.cu).
 
-
 # Skip Uninteresting / Invalid Benchmarks
 
 Sometimes particular combinations of parameters aren't useful or interesting —
@@ -294,7 +293,7 @@ void my_benchmark(nvbench::state& state, nvbench::type_list<T, U>)
 // Skip benchmarks at compile time -- for example, always skip when T == U
 // (Note that the `type_list` argument defines the same type twice).
 template <typename SameType>
-void my_benchmark(nvbench::state& state, 
+void my_benchmark(nvbench::state& state,
                   nvbench::type_list<SameType, SameType>)
 {
   state.skip("T must not be the same type as U.");
@@ -320,6 +319,15 @@ true:
   synchronize internally.
 - `nvbench::exec_tag::timer` requests a timer object that can be used to
   restrict the timed region.
+- `nvbench::exec_tag::no_batch` disables batch measurements. This both disables
+  them during execution to reduce runtime, and prevents their compilation to
+  reduce compile-time and binary size.
+- `nvbench::exec_tag::gpu` is an optional hint that prevents non-GPU benchmarking
+  code from being compiled for a particular benchmark. A runtime error is emitted
+  if the benchmark is defined with `set_is_cpu_only(true)`.
+- `nvbench::exec_tag::no_gpu` is an optional hint that prevents GPU benchmarking
+  code from being compiled for a particular benchmark. A runtime error is emitted
+  if the benchmark does not also define `set_is_cpu_only(true)`.
 
 Multiple execution tags may be combined using `operator|`, e.g.
 
@@ -370,7 +378,7 @@ Note that using manual timer mode disables batch measurements.
 void timer_example(nvbench::state& state)
 {
   // Pass the `timer` exec tag to request a timer:
-  state.exec(nvbench::exec_tag::timer, 
+  state.exec(nvbench::exec_tag::timer,
     // Lambda now accepts a timer:
     [](nvbench::launch& launch, auto& timer)
     {
@@ -391,6 +399,79 @@ NVBENCH_BENCH(timer_example);
 See [examples/exec_tag_timer.cu](../examples/exec_tag_timer.cu) for a complete
 example.
 
+## Compilation hints: `nvbench::exec_tag::no_batch`, `gpu`, and `no_gpu`
+
+These execution tags are optional hints that disable the compilation of various
+code paths when they are not needed. They apply only to a single benchmark.
+
+- `nvbench::exec_tag::no_batch` prevents the execution and instantiation of the batch measurement backend.
+- `nvbench::exec_tag::gpu` prevents the instantiation of CPU-only benchmarking backends.
+  - Requires that the benchmark does not define `set_is_cpu_only(true)`.
+  - Optional; this has no effect on runtime measurements, but reduces compile-time and binary size.
+  - Host-side CPU measurements of GPU kernel execution time are still provided.
+- `nvbench::exec_tag::no_gpu` prevents the instantiation of GPU benchmarking backends.
+  - Requires that the benchmark defines `set_is_cpu_only(true)`.
+  - Optional; this has no effect on runtime measurements, but reduces compile-time and binary size.
+  - See also [CPU-only Benchmarks](#cpu-only-benchmarks).
+
+# CPU-only Benchmarks
+
+NVBench provides CPU-only benchmarking facilities that are intended for measuring
+significant CPU workloads. We do not recommend using these features for high-resolution
+CPU benchmarking -- other libraries (such as Google Benchmark) are more appropriate for
+such applications. Examples are provided in [examples/cpu_only.cu](../examples/cpu_only.cu).
+
+Note that NVBench still requires a CUDA compiler and runtime even if a project only contains
+CPU-only benchmarks.
+
+The `is_cpu_only` property of the benchmark toggles between GPU and CPU-only measurements:
+
+```cpp
+void my_cpu_benchmark(nvbench::state &state)
+{
+  state.exec([](nvbench::launch &) { /* workload */ });
+}
+NVBENCH_BENCH(my_cpu_benchmark)
+  .set_is_cpu_only(true); // Mark as CPU-only.
+```
+
+The optional `nvbench::exec_tag::no_gpu` hint may be used to reduce tbe compilation time and
+binary size of CPU-only benchmarks. An error is emitted at runtime if this tag is used while
+`is_cpu_only` is false.
+
+```cpp
+void my_cpu_benchmark(nvbench::state &state)
+{
+  state.exec(nvbench::exec_tag::no_gpu, // Prevent compilation of GPU backends
+             [](nvbench::launch &) { /* workload */ });
+}
+NVBENCH_BENCH(my_cpu_benchmark)
+  .set_is_cpu_only(true); // Mark as CPU-only.
+```
+
+The `nvbench::exec_tag::timer` execution tag is also supported by CPU-only benchmarks. This
+is useful for benchmarks that require additional per-sample setup/teardown. See the
+[`nvbench::exec_tag::timer`](#explicit-timer-mode-nvbenchexec_tagtimer) section for more
+details.
+
+```cpp
+void my_cpu_benchmark(nvbench::state &state)
+{
+  state.exec(nvbench::exec_tag::no_gpu | // Prevent compilation of GPU backends
+             nvbench::exec_tag::timer,   // Request a timer object
+             [](nvbench::launch &, auto &timer)
+    {
+      // Setup here
+      timer.start();
+      // timed workload
+      timer.stop();
+      // teardown here
+    });
+}
+NVBENCH_BENCH(my_cpu_benchmark)
+  .set_is_cpu_only(true); // Mark as CPU-only.
+```
+
 # Beware: Combinatorial Explosion Is Lurking
 
 Be very careful of how quickly the configuration space can grow. The following
@@ -403,7 +484,7 @@ using value_types = nvbench::type_list<nvbench::uint8_t,
                                        nvbench::int32_t,
                                        nvbench::float32_t,
                                        nvbench::float64_t>;
-using op_types = nvbench::type_list<thrust::plus<>, 
+using op_types = nvbench::type_list<thrust::plus<>,
                                     thrust::multiplies<>,
                                     thrust::maximum<>>;
 
@@ -418,7 +499,7 @@ NVBENCH_BENCH_TYPES(my_benchmark,
 
 ```
 960 total configs
-= 4 [T=(U8, I32, F32, F64)] 
+= 4 [T=(U8, I32, F32, F64)]
 * 4 [U=(U8, I32, F32, F64)]
 * 4 [V=(U8, I32, F32, F64)]
 * 3 [Op=(plus, multiplies, max)]
@@ -427,8 +508,8 @@ NVBENCH_BENCH_TYPES(my_benchmark,
 
 For large configuration spaces like this, pruning some of the less useful
 combinations (e.g. `sizeof(init_type) < sizeof(output)`) using the techniques
-described in the "Skip Uninteresting / Invalid Benchmarks" section can help
-immensely with keeping compile / run times manageable.
+described in the [Skip Uninteresting / Invalid Benchmarks](#skip-uninteresting--invalid-benchmarks)
+section can help immensely with keeping compile / run times manageable.
 
 Splitting a single large configuration space into multiple, more focused
 benchmarks with reduced dimensionality will likely be worth the effort as well.

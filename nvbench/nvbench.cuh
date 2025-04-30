@@ -25,6 +25,7 @@
 #include <nvbench/config.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/create.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_stream.cuh>
 #include <nvbench/cuda_timer.cuh>

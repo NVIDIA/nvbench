@@ -1,0 +1,13 @@
+name: Set up AWS credentials and environment variables for sccache
+description: "Set up AWS credentials and environment variables for sccache"
+runs:
+  using: "composite"
+  steps:
+    - name: Set environment variables
+      run: |
+        echo "SCCACHE_BUCKET=rapids-sccache-devs" >> $GITHUB_ENV
+        echo "SCCACHE_REGION=us-east-2" >> $GITHUB_ENV
+        echo "SCCACHE_IDLE_TIMEOUT=32768" >> $GITHUB_ENV
+        echo "SCCACHE_S3_USE_SSL=true" >> $GITHUB_ENV
+        echo "SCCACHE_S3_NO_CREDENTIALS=false" >> $GITHUB_ENV
+      shell: bash

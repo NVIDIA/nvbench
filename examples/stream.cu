@@ -52,6 +52,7 @@ void stream_bench(nvbench::state &state)
   state.set_cuda_stream(nvbench::make_cuda_stream_view(default_stream));
 
   state.exec([&input, &output, num_values](nvbench::launch &) {
+    (void)num_values; // clang thinks this is unused...
     copy(thrust::raw_pointer_cast(input.data()),
          thrust::raw_pointer_cast(output.data()),
          num_values);

@@ -16,9 +16,8 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/measure_hot.cuh>
-
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/detail/measure_hot.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>

@@ -22,6 +22,7 @@
 
 #include <iosfwd>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -79,7 +80,7 @@ struct printer_base
   printer_base(const printer_base &)            = delete;
   printer_base(printer_base &&)                 = default;
   printer_base &operator=(const printer_base &) = delete;
-  printer_base &operator=(printer_base &&)      = default;
+  printer_base &operator=(printer_base &&)      = delete;
 
   /*!
    * Called once with the command line arguments used to invoke the current
@@ -190,8 +191,13 @@ protected:
   virtual void do_process_bulk_data_float64(nvbench::state &,
                                             const std::string &,
                                             const std::string &,
-                                            const std::vector<nvbench::float64_t> &){};
-  virtual void do_print_benchmark_list(const benchmark_vector &) {}
+                                            const std::vector<nvbench::float64_t> &) {};
+
+  virtual void do_print_benchmark_list(const benchmark_vector &)
+  {
+    throw std::runtime_error{"nvbench::do_print_benchmark_list is not supported by this printer."};
+  }
+
   virtual void do_print_benchmark_results(const benchmark_vector &) {}
 
   virtual void do_set_completed_state_count(std::size_t states);

@@ -22,6 +22,7 @@
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/named_values.cuh>
+#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
@@ -72,6 +73,12 @@ struct state
   /// The CUDA device associated with with this benchmark state. May be
   /// nullopt for CPU-only benchmarks.
   [[nodiscard]] const std::optional<nvbench::device_info> &get_device() const { return m_device; }
+
+  /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
+  /// @{
+  // No setter, this should not be modified after construction, as it is a benchmark-wide property.
+  [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
+  /// @}
 
   /// An index into a benchmark::type_configs type_list. Returns 0 if no type
   /// axes in the associated benchmark.
@@ -125,6 +132,20 @@ struct state
   void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
   /// @}
 
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
+  {
+    return m_criterion_params;
+  }
+
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
+  void set_stopping_criterion(std::string criterion)
+  {
+    m_stopping_criterion = std::move(criterion);
+  }
+  /// @}
+
   /// If true, the benchmark is only run once, skipping all warmup runs and only
   /// executing a single non-batched measurement. This is intended for use with
   /// external profiling tools. @{
@@ -138,16 +159,30 @@ struct state
   void set_disable_blocking_kernel(bool v) { m_disable_blocking_kernel = v; }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
-  void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
+  /// Accumulate at least this many seconds of timing data per measurement.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const
+  {
+    return m_criterion_params.get_float64("min-time");
+  }
+  void set_min_time(nvbench::float64_t min_time)
+  {
+    m_criterion_params.set_float64("min-time", min_time);
+  }
   /// @}
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
-  void set_max_noise(nvbench::float64_t max_noise) { m_max_noise = max_noise; }
+  /// `noise = stdev / mean_time`.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const
+  {
+    return m_criterion_params.get_float64("max-noise");
+  }
+  void set_max_noise(nvbench::float64_t max_noise)
+  {
+    m_criterion_params.set_float64("max-noise", max_noise);
+  }
   /// @}
 
   /// If a warmup run finishes in less than `skip_time`, the measurement will
@@ -170,6 +205,23 @@ struct state
   [[nodiscard]] nvbench::float64_t get_timeout() const { return m_timeout; }
   void set_timeout(nvbench::float64_t timeout) { m_timeout = timeout; }
   /// @}
+
+  [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
+
+  void set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  {
+    m_throttle_threshold = throttle_threshold;
+  }
+
+  [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
+  {
+    return m_throttle_recovery_delay;
+  }
+
+  void set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  {
+    m_throttle_recovery_delay = throttle_recovery_delay;
+  }
 
   /// If a `KernelLauncher` syncs and `nvbench::exec_tag::sync` is not passed
   /// to `state.exec(...)`, a deadlock may occur. If a `blocking_kernel` blocks
@@ -269,15 +321,20 @@ private:
   std::optional<nvbench::device_info> m_device;
   std::size_t m_type_config_index{};
 
+  bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 
+  nvbench::criterion_params m_criterion_params;
+  std::string m_stopping_criterion;
+
   nvbench::int64_t m_min_samples;
-  nvbench::float64_t m_min_time;
-  nvbench::float64_t m_max_noise;
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
+
+  nvbench::float32_t m_throttle_threshold;      // [% of default SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay; // [seconds]
 
   std::optional<nvbench::cuda_stream> m_cuda_stream;
 

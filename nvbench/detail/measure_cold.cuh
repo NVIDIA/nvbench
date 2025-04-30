@@ -22,18 +22,18 @@
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/detail/gpu_frequency.cuh>
+#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
+#include <nvbench/detail/l2flush.cuh>
+#include <nvbench/detail/statistics.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
-
-#include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
-#include <nvbench/detail/l2flush.cuh>
-#include <nvbench/detail/ring_buffer.cuh>
-#include <nvbench/detail/statistics.cuh>
+#include <nvbench/stopping_criterion.cuh>
+#include <nvbench/types.cuh>
 
 #include <cuda_runtime.h>
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -55,8 +55,8 @@ struct measure_cold_base
   measure_cold_base &operator=(measure_cold_base &&)      = delete;
 
 protected:
-  template <bool use_blocking_kernel>
   struct kernel_launch_timer;
+  friend struct kernel_launch_timer;
 
   void check();
   void initialize();
@@ -65,6 +65,8 @@ protected:
   bool is_finished();
   void run_trials_epilogue();
   void generate_summaries();
+  void gpu_frequency_start() { m_gpu_frequency.start(m_launch.get_stream()); }
+  void gpu_frequency_stop() { m_gpu_frequency.stop(m_launch.get_stream()); }
 
   void check_skip_time(nvbench::float64_t warmup_time);
 
@@ -87,23 +89,38 @@ protected:
   nvbench::detail::l2flush m_l2flush;
   nvbench::blocking_kernel m_blocker;
 
+  nvbench::criterion_params m_criterion_params;
+  nvbench::stopping_criterion_base &m_stopping_criterion;
+  nvbench::detail::gpu_frequency m_gpu_frequency;
+
+  bool m_disable_blocking_kernel{false};
   bool m_run_once{false};
-  bool m_no_block{false};
+  bool m_check_throttling;
 
   nvbench::int64_t m_min_samples{};
-  nvbench::float64_t m_max_noise{}; // rel stdev
-  nvbench::float64_t m_min_time{};
 
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
 
-  nvbench::int64_t m_total_samples{};
-  nvbench::float64_t m_total_cuda_time{};
-  nvbench::float64_t m_total_cpu_time{};
-  nvbench::float64_t m_cpu_noise{}; // rel stdev
+  nvbench::float32_t m_throttle_threshold;      // [% of default SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay; // [seconds]
 
-  // Trailing history of noise measurements for convergence tests
-  nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
+  // Dynamically increased when repeated throttling occurs
+  // without successfully recording a sample.
+  nvbench::float32_t m_dynamic_throttle_recovery_delay{}; // [seconds]
+  nvbench::int64_t m_throttle_discard_count{};
+
+  nvbench::int64_t m_total_samples{};
+
+  nvbench::float64_t m_min_cuda_time{};
+  nvbench::float64_t m_max_cuda_time{};
+  nvbench::float64_t m_total_cuda_time{};
+
+  nvbench::float64_t m_min_cpu_time{};
+  nvbench::float64_t m_max_cpu_time{};
+  nvbench::float64_t m_total_cpu_time{};
+
+  nvbench::float64_t m_sm_clock_rate_accumulator{};
 
   std::vector<nvbench::float64_t> m_cuda_times;
   std::vector<nvbench::float64_t> m_cpu_times;
@@ -111,23 +128,27 @@ protected:
   bool m_max_time_exceeded{};
 };
 
-template <bool use_blocking_kernel>
 struct measure_cold_base::kernel_launch_timer
 {
   kernel_launch_timer(measure_cold_base &measure)
       : m_measure{measure}
+      , m_disable_blocking_kernel{measure.m_disable_blocking_kernel}
   {}
 
   __forceinline__ void start()
   {
     m_measure.flush_device_l2();
     m_measure.sync_stream();
-    if constexpr (use_blocking_kernel)
+    if (!m_disable_blocking_kernel)
     {
       m_measure.block_stream();
     }
+    if (m_measure.m_check_throttling)
+    {
+      m_measure.gpu_frequency_start();
+    }
     m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
-    if constexpr (!use_blocking_kernel)
+    if (m_disable_blocking_kernel)
     {
       m_measure.m_cpu_timer.start();
     }
@@ -136,10 +157,14 @@ struct measure_cold_base::kernel_launch_timer
   __forceinline__ void stop()
   {
     m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
-    if constexpr (use_blocking_kernel)
+    if (!m_disable_blocking_kernel)
     {
       m_measure.m_cpu_timer.start();
       m_measure.unblock_stream();
+    }
+    if (m_measure.m_check_throttling)
+    {
+      m_measure.gpu_frequency_stop();
     }
     m_measure.sync_stream();
     m_measure.m_cpu_timer.stop();
@@ -147,9 +172,10 @@ struct measure_cold_base::kernel_launch_timer
 
 private:
   measure_cold_base &m_measure;
+  bool m_disable_blocking_kernel;
 };
 
-template <typename KernelLauncher, bool use_blocking_kernel>
+template <typename KernelLauncher>
 struct measure_cold : public measure_cold_base
 {
   measure_cold(nvbench::state &state, KernelLauncher &kernel_launcher)
@@ -180,7 +206,7 @@ private:
       return;
     }
 
-    kernel_launch_timer<use_blocking_kernel> timer(*this);
+    kernel_launch_timer timer(*this);
 
     this->launch_kernel(timer);
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -188,7 +214,7 @@ private:
 
   void run_trials()
   {
-    kernel_launch_timer<use_blocking_kernel> timer(*this);
+    kernel_launch_timer timer(*this);
     do
     {
       this->launch_kernel(timer);

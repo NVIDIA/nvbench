@@ -16,23 +16,21 @@
  *  limitations under the License.
  */
 
-#include <nvbench/json_printer.cuh>
-
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/config.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
+#include <nvbench/json_printer.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/version.cuh>
 
-#include <nvbench/detail/throw.cuh>
+#include <nlohmann/json.hpp>
 
 #include <fmt/format.h>
-
-#include <nlohmann/json.hpp>
 
 #include <cstdint>
 #include <fstream>
@@ -43,10 +41,14 @@
 #include <utility>
 #include <vector>
 
-#ifdef __GNUC__
-#include <experimental/filesystem>
-#else
+#if __has_include(<filesystem>)
 #include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+static_assert(false, "No <filesystem> or <experimental/filesystem> found.");
 #endif
 
 #if NVBENCH_CPP_DIALECT >= 2020
@@ -101,7 +103,7 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
       default:
         NVBENCH_THROW(std::runtime_error, "{}", "Unrecognized value type.");
     } // end switch (value type)
-  }   // end foreach value name
+  } // end foreach value name
 }
 
 } // end namespace
@@ -140,12 +142,6 @@ void json_printer::do_process_bulk_data_float64(state &state,
 
   if (hint == "sample_times")
   {
-#ifdef __GNUC__
-    namespace fs = std::experimental::filesystem;
-#else
-    namespace fs = std::filesystem;
-#endif
-
     nvbench::cpu_timer timer;
     timer.start();
 
@@ -222,6 +218,34 @@ void json_printer::do_process_bulk_data_float64(state &state,
   } // end hint == sample_times
 }
 
+static void add_devices_section(nlohmann::ordered_json &root)
+{
+  auto &devices = root["devices"];
+  for (const auto &dev_info : nvbench::device_manager::get().get_devices())
+  {
+    auto &device                                = devices.emplace_back();
+    device["id"]                                = dev_info.get_id();
+    device["name"]                              = dev_info.get_name();
+    device["sm_version"]                        = dev_info.get_sm_version();
+    device["ptx_version"]                       = dev_info.get_ptx_version();
+    device["sm_default_clock_rate"]             = dev_info.get_sm_default_clock_rate();
+    device["number_of_sms"]                     = dev_info.get_number_of_sms();
+    device["max_blocks_per_sm"]                 = dev_info.get_max_blocks_per_sm();
+    device["max_threads_per_sm"]                = dev_info.get_max_threads_per_sm();
+    device["max_threads_per_block"]             = dev_info.get_max_threads_per_block();
+    device["registers_per_sm"]                  = dev_info.get_registers_per_sm();
+    device["registers_per_block"]               = dev_info.get_registers_per_block();
+    device["global_memory_size"]                = dev_info.get_global_memory_size();
+    device["global_memory_bus_peak_clock_rate"] = dev_info.get_global_memory_bus_peak_clock_rate();
+    device["global_memory_bus_width"]           = dev_info.get_global_memory_bus_width();
+    device["global_memory_bus_bandwidth"]       = dev_info.get_global_memory_bus_bandwidth();
+    device["l2_cache_size"]                     = dev_info.get_l2_cache_size();
+    device["shared_memory_per_sm"]              = dev_info.get_shared_memory_per_sm();
+    device["shared_memory_per_block"]           = dev_info.get_shared_memory_per_block();
+    device["ecc_state"]                         = dev_info.get_ecc_state();
+  }
+}
+
 void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
 {
   nlohmann::ordered_json root;
@@ -271,36 +295,10 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
           false;
 #endif
       } // "nvbench"
-    }   // "version"
-  }     // "meta"
+    } // "version"
+  } // "meta"
 
-  {
-    auto &devices = root["devices"];
-    for (const auto &dev_info : nvbench::device_manager::get().get_devices())
-    {
-      auto &device                    = devices.emplace_back();
-      device["id"]                    = dev_info.get_id();
-      device["name"]                  = dev_info.get_name();
-      device["sm_version"]            = dev_info.get_sm_version();
-      device["ptx_version"]           = dev_info.get_ptx_version();
-      device["sm_default_clock_rate"] = dev_info.get_sm_default_clock_rate();
-      device["number_of_sms"]         = dev_info.get_number_of_sms();
-      device["max_blocks_per_sm"]     = dev_info.get_max_blocks_per_sm();
-      device["max_threads_per_sm"]    = dev_info.get_max_threads_per_sm();
-      device["max_threads_per_block"] = dev_info.get_max_threads_per_block();
-      device["registers_per_sm"]      = dev_info.get_registers_per_sm();
-      device["registers_per_block"]   = dev_info.get_registers_per_block();
-      device["global_memory_size"]    = dev_info.get_global_memory_size();
-      device["global_memory_bus_peak_clock_rate"] =
-        dev_info.get_global_memory_bus_peak_clock_rate();
-      device["global_memory_bus_width"]     = dev_info.get_global_memory_bus_width();
-      device["global_memory_bus_bandwidth"] = dev_info.get_global_memory_bus_bandwidth();
-      device["l2_cache_size"]               = dev_info.get_l2_cache_size();
-      device["shared_memory_per_sm"]        = dev_info.get_shared_memory_per_sm();
-      device["shared_memory_per_block"]     = dev_info.get_shared_memory_per_block();
-      device["ecc_state"]                   = dev_info.get_ecc_state();
-    }
-  } // "devices"
+  add_devices_section(root);
 
   {
     auto &benchmarks = root["benchmarks"];
@@ -361,8 +359,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
             default:
               break;
           } // end switch (axis type)
-        }   // end foreach axis value
-      }     // end foreach axis
+        } // end foreach axis value
+      } // end foreach axis
 
       auto &states = bench["states"];
       for (const auto &exec_state : bench_ptr->get_states())
@@ -430,9 +428,78 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
           continue;
         }
       } // end foreach exec_state
-    }   // end foreach benchmark
-  }     // "benchmarks"
+    } // end foreach benchmark
+  } // "benchmarks"
 
+  m_ostream << root.dump(2) << "\n";
+}
+
+void json_printer::do_print_benchmark_list(const benchmark_vector &benches)
+{
+  if (benches.empty())
+  {
+    return;
+  }
+
+  nlohmann::ordered_json root;
+  auto &benchmarks = root["benchmarks"];
+
+  for (const auto &bench_ptr : benches)
+  {
+    const auto bench_index = benchmarks.size();
+    auto &bench            = benchmarks.emplace_back();
+
+    bench["name"]  = bench_ptr->get_name();
+    bench["index"] = bench_index;
+
+    // We have to ensure that the axes are represented as an array, not an
+    // nil object when there are no axes.
+    auto &axes = bench["axes"] = nlohmann::json::array();
+
+    for (const auto &axis_ptr : bench_ptr->get_axes().get_axes())
+    {
+      auto &axis = axes.emplace_back();
+
+      axis["name"]  = axis_ptr->get_name();
+      axis["type"]  = axis_ptr->get_type_as_string();
+      axis["flags"] = axis_ptr->get_flags_as_string();
+
+      auto &values         = axis["values"];
+      const auto axis_size = axis_ptr->get_size();
+      for (std::size_t i = 0; i < axis_size; ++i)
+      {
+        auto &value           = values.emplace_back();
+        value["input_string"] = axis_ptr->get_input_string(i);
+        value["description"]  = axis_ptr->get_description(i);
+
+        switch (axis_ptr->get_type())
+        {
+          case nvbench::axis_type::int64:
+            value["value"] = static_cast<int64_axis &>(*axis_ptr).get_value(i);
+            break;
+
+          case nvbench::axis_type::float64:
+            value["value"] = static_cast<float64_axis &>(*axis_ptr).get_value(i);
+            break;
+
+          case nvbench::axis_type::string:
+            value["value"] = static_cast<string_axis &>(*axis_ptr).get_value(i);
+            break;
+
+          default:
+            break;
+        } // end switch (axis type)
+      } // end foreach axis value
+    }
+  } // end foreach bench
+
+  m_ostream << root.dump(2) << "\n";
+}
+
+void json_printer::print_devices_json()
+{
+  nlohmann::ordered_json root;
+  add_devices_section(root);
   m_ostream << root.dump(2) << "\n";
 }
 

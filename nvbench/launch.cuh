@@ -45,7 +45,7 @@ struct launch
   launch(const launch &)            = delete;
   launch(launch &&)                 = default;
   launch &operator=(const launch &) = delete;
-  launch &operator=(launch &&)      = default;
+  launch &operator=(launch &&)      = delete;
 
   /**
    * @return a CUDA stream that all kernels and other stream-ordered CUDA work

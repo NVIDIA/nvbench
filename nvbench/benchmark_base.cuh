@@ -20,8 +20,8 @@
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/device_info.cuh>
-#include <nvbench/device_manager.cuh>
 #include <nvbench/state.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <functional> // reference_wrapper, ref
 #include <memory>
@@ -52,7 +52,6 @@ struct benchmark_base
   template <typename TypeAxes>
   explicit benchmark_base(TypeAxes type_axes)
       : m_axes(type_axes)
-      , m_devices(nvbench::device_manager::get().get_devices())
   {}
 
   virtual ~benchmark_base();
@@ -160,6 +159,16 @@ struct benchmark_base
   }
   /// @}
 
+  /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
+  /// @{
+  [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
+  benchmark_base &set_is_cpu_only(bool is_cpu_only)
+  {
+    m_is_cpu_only = is_cpu_only;
+    return *this;
+  }
+  /// @}
+
   /// If true, the benchmark is only run once, skipping all warmup runs and only
   /// executing a single non-batched measurement. This is intended for use with
   /// external profiling tools. @{
@@ -181,22 +190,30 @@ struct benchmark_base
   }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  /// Accumulate at least this many seconds of timing data per measurement.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const
+  {
+    return m_criterion_params.get_float64("min-time");
+  }
   benchmark_base &set_min_time(nvbench::float64_t min_time)
   {
-    m_min_time = min_time;
+    m_criterion_params.set_float64("min-time", min_time);
     return *this;
   }
   /// @}
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
+  /// `noise = stdev / mean_time`.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const
+  {
+    return m_criterion_params.get_float64("max-noise");
+  }
   benchmark_base &set_max_noise(nvbench::float64_t max_noise)
   {
-    m_max_noise = max_noise;
+    m_criterion_params.set_float64("max-noise", max_noise);
     return *this;
   }
   /// @}
@@ -230,6 +247,41 @@ struct benchmark_base
   }
   /// @}
 
+  [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
+
+  benchmark_base &set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  {
+    m_throttle_threshold = throttle_threshold;
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
+  {
+    return m_throttle_recovery_delay;
+  }
+
+  benchmark_base &set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  {
+    m_throttle_recovery_delay = throttle_recovery_delay;
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::criterion_params &get_criterion_params() { return m_criterion_params; }
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
+  {
+    return m_criterion_params;
+  }
+
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
+  benchmark_base &set_stopping_criterion(std::string criterion)
+  {
+    m_stopping_criterion = std::move(criterion);
+    return *this;
+  }
+  /// @}
+
 protected:
   friend struct nvbench::runner_base;
 
@@ -243,15 +295,20 @@ protected:
 
   optional_ref<nvbench::printer_base> m_printer;
 
+  bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 
   nvbench::int64_t m_min_samples{10};
-  nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_noise{0.005}; // 0.5% relative standard deviation
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
+
+  nvbench::float32_t m_throttle_threshold{0.75f};      // [% of default SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay{0.05f}; // [seconds]
+
+  nvbench::criterion_params m_criterion_params;
+  std::string m_stopping_criterion{"stdrel"};
 
 private:
   // route these through virtuals so the templated subclass can inject type info

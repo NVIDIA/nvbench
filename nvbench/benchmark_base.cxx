@@ -17,7 +17,6 @@
  */
 
 #include <nvbench/benchmark_base.cuh>
-
 #include <nvbench/detail/transform_reduce.cuh>
 
 namespace nvbench
@@ -34,12 +33,22 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_axes    = m_axes;
   result->m_devices = m_devices;
 
+  result->m_printer = m_printer;
+
+  result->m_is_cpu_only             = m_is_cpu_only;
+  result->m_run_once                = m_run_once;
+  result->m_disable_blocking_kernel = m_disable_blocking_kernel;
+
   result->m_min_samples = m_min_samples;
-  result->m_min_time    = m_min_time;
-  result->m_max_noise   = m_max_noise;
 
   result->m_skip_time = m_skip_time;
   result->m_timeout   = m_timeout;
+
+  result->m_criterion_params        = m_criterion_params;
+  result->m_throttle_threshold      = m_throttle_threshold;
+  result->m_throttle_recovery_delay = m_throttle_recovery_delay;
+
+  result->m_stopping_criterion = m_stopping_criterion;
 
   return result;
 }

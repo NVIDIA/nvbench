@@ -1,2 +1,3 @@
-from . import reader
-from . import version
+from . import reader, version
+
+__all__ = ["reader", "version"]

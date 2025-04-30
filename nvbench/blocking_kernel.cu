@@ -17,12 +17,10 @@
  */
 
 #include <nvbench/blocking_kernel.cuh>
-
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_stream.cuh>
-#include <nvbench/types.cuh>
-
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/types.cuh>
 
 #include <cuda/std/chrono>
 
