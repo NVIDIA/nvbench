@@ -178,11 +178,13 @@ void measure_cold_base::generate_summaries()
                                                                           mean_cuda_time);
   const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
   const auto noise = cuda_rel_stdev;
-  
+
   auto get_param = [this](std::optional<nvbench::float64_t> &param, const std::string &name)
   {
     if (m_criterion_params.has_value(name))
+    {
       param = m_criterion_params.get_float64(name);
+    }
   };
 
   std::optional<nvbench::float64_t> max_noise;
