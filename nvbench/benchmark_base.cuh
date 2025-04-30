@@ -274,7 +274,7 @@ struct benchmark_base
 
   /// Control the stopping criterion for the measurement loop.
   /// @{
-  [[nodiscard]] const std::string& get_stopping_criterion() const { return m_stopping_criterion; }
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
   benchmark_base &set_stopping_criterion(std::string criterion);
   /// @}
 

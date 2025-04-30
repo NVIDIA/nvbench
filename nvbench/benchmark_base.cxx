@@ -96,5 +96,4 @@ benchmark_base &benchmark_base::set_stopping_criterion(std::string criterion)
   return *this;
 }
 
-
 } // namespace nvbench

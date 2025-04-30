@@ -388,10 +388,9 @@ void measure_cold_base::generate_summaries()
 
     if (m_max_time_exceeded)
     {
-      const auto timeout   = m_walltime_timer.get_duration();
+      const auto timeout = m_walltime_timer.get_duration();
 
-      auto get_param = [this](std::optional<nvbench::float64_t> &param, const std::string &name)
-      {
+      auto get_param = [this](std::optional<nvbench::float64_t> &param, const std::string &name) {
         if (m_criterion_params.has_value(name))
         {
           param = m_criterion_params.get_float64(name);
@@ -403,7 +402,6 @@ void measure_cold_base::generate_summaries()
 
       std::optional<nvbench::float64_t> min_time;
       get_param(max_noise, "min-time");
-
 
       if (max_noise && cuda_noise > *max_noise)
       {
