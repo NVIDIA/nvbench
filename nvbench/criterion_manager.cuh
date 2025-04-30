@@ -50,6 +50,9 @@ public:
 
   using params_description = std::vector<std::pair<std::string, nvbench::named_values::type>>;
   params_description get_params_description() const;
+
+  using params_map = std::unordered_map<std::string, params_description>;
+  params_map get_params_description_map() const;
 };
 
 /**

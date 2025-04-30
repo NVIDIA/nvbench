@@ -16,7 +16,6 @@ set(example_srcs
 add_custom_target(nvbench.example.all)
 add_dependencies(nvbench.all nvbench.example.all)
 
-
 function (nvbench_add_examples_target target_prefix cuda_std)
   add_custom_target(${target_prefix}.all)
   add_dependencies(nvbench.example.all ${target_prefix}.all)
@@ -29,9 +28,15 @@ function (nvbench_add_examples_target target_prefix cuda_std)
     target_include_directories(${example_name} PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
     target_link_libraries(${example_name} PRIVATE nvbench::main)
     set_target_properties(${example_name} PROPERTIES COMPILE_FEATURES cuda_std_${cuda_std})
+
+    set(example_args --timeout 0.1)
+    # The custom_criterion example doesn't support the --min-time argument:
+    if (NOT "${example_src}" STREQUAL "custom_criterion.cu")
+      list(APPEND example_args --min-time 1e-5)
+    endif()
+
     add_test(NAME ${example_name}
-      COMMAND "$<TARGET_FILE:${example_name}>" --timeout 0.1 --min-time 1e-5
-    )
+      COMMAND "$<TARGET_FILE:${example_name}>" ${example_args})
 
     # These should not deadlock. If they do, it may be that the CUDA context was created before
     # setting CUDA_MODULE_LOAD=EAGER in main, see NVIDIA/nvbench#136.

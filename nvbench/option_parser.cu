@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -82,11 +83,35 @@ std::string_view submatch_to_sv(const sv_submatch &in)
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
-void parse(std::string_view input, nvbench::int32_t &val) { val = std::stoi(std::string(input)); }
+void parse(std::string_view input, nvbench::int32_t &val)
+try
+{
+  val = std::stoi(std::string(input));
+}
+catch (const std::exception &)
+{ // The default exception messages are not very useful on gcc...it's just "stoi".
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse int32 value from string '{}'", input);
+}
 
-void parse(std::string_view input, nvbench::int64_t &val) { val = std::stoll(std::string(input)); }
+void parse(std::string_view input, nvbench::int64_t &val)
+try
+{
+  val = std::stoll(std::string(input));
+}
+catch (const std::exception &)
+{
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse int64 value from string '{}'", input);
+}
 
-void parse(std::string_view input, nvbench::float64_t &val) { val = std::stod(std::string(input)); }
+void parse(std::string_view input, nvbench::float64_t &val)
+try
+{
+  val = std::stod(std::string(input));
+}
+catch (const std::exception &)
+{
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse float64 value from string '{}'", input);
+}
 
 void parse(std::string_view input, std::string &val) { val = input; }
 
@@ -727,6 +752,7 @@ void option_parser::enable_run_once()
 }
 
 void option_parser::set_stopping_criterion(const std::string &criterion)
+try
 {
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
@@ -738,6 +764,13 @@ void option_parser::set_stopping_criterion(const std::string &criterion)
 
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_stopping_criterion(criterion);
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `--stopping-criterion {}`:\n{}",
+                criterion,
+                e.what());
 }
 
 void option_parser::disable_blocking_kernel()
@@ -983,17 +1016,39 @@ void option_parser::update_criterion_prop(const std::string &prop_arg,
                                           const nvbench::named_values::type type)
 try
 {
+  const std::string name(prop_arg.begin() + 2, prop_arg.end());
+
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
+    // Any global params must either belong to the default criterion or follow a
+    // `--stopping-criterion` arg:
+    nvbench::criterion_params params;
+    if (!params.has_value(name) &&
+        std::find(m_global_benchmark_args.cbegin(),
+                  m_global_benchmark_args.cend(),
+                  "--stopping-criterion") == m_global_benchmark_args.cend())
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "Unrecognized stopping criterion parameter: `{}` for default criterion.",
+                    name);
+    }
+
     m_global_benchmark_args.push_back(prop_arg);
     m_global_benchmark_args.push_back(prop_val);
     return;
   }
 
-  benchmark_base &bench                       = *m_benchmarks.back();
-  nvbench::criterion_params &criterion_params = bench.get_criterion_params();
-  std::string name(prop_arg.begin() + 2, prop_arg.end());
+  benchmark_base &bench = *m_benchmarks.back();
+
+  if (!bench.has_criterion_param(name))
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Unrecognized stopping criterion parameter: `{}` for `{}`.",
+                  name,
+                  bench.get_stopping_criterion());
+  }
+
   if (type == nvbench::named_values::type::float64)
   {
     nvbench::float64_t value{};
@@ -1003,21 +1058,21 @@ try
     { // Specified as percentage, stored as ratio:
       value /= 100.0;
     }
-    criterion_params.set_float64(name, value);
+    bench.set_criterion_param_float64(name, value);
   }
   else if (type == nvbench::named_values::type::int64)
   {
     nvbench::int64_t value{};
     ::parse(prop_val, value);
-    criterion_params.set_int64(name, value);
+    bench.set_criterion_param_int64(name, value);
   }
   else if (type == nvbench::named_values::type::string)
   {
-    criterion_params.set_string(name, prop_val);
+    bench.set_criterion_param_string(name, prop_val);
   }
   else
   {
-    NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
+    NVBENCH_THROW(std::runtime_error, "Unrecognized type for property: `{}`", name);
   }
 }
 catch (std::exception &e)

@@ -266,21 +266,52 @@ struct benchmark_base
     return *this;
   }
 
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
+  benchmark_base &set_stopping_criterion(std::string criterion);
+  /// @}
+
+  [[nodiscard]] bool has_criterion_param(const std::string &name) const
+  {
+    return m_criterion_params.has_value(name);
+  }
+
+  [[nodiscard]] nvbench::int64_t get_criterion_param_int64(const std::string &name) const
+  {
+    return m_criterion_params.get_int64(name);
+  }
+  benchmark_base &set_criterion_param_int64(const std::string &name, nvbench::int64_t value)
+  {
+    m_criterion_params.set_int64(name, value);
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::float64_t get_criterion_param_float64(const std::string &name) const
+  {
+    return m_criterion_params.get_float64(name);
+  }
+  benchmark_base &set_criterion_param_float64(const std::string &name, nvbench::float64_t value)
+  {
+    m_criterion_params.set_float64(name, value);
+    return *this;
+  }
+
+  [[nodiscard]] std::string get_criterion_param_string(const std::string &name) const
+  {
+    return m_criterion_params.get_string(name);
+  }
+  benchmark_base &set_criterion_param_string(const std::string &name, std::string value)
+  {
+    m_criterion_params.set_string(name, std::move(value));
+    return *this;
+  }
+
   [[nodiscard]] nvbench::criterion_params &get_criterion_params() { return m_criterion_params; }
   [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
   {
     return m_criterion_params;
   }
-
-  /// Control the stopping criterion for the measurement loop.
-  /// @{
-  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
-  benchmark_base &set_stopping_criterion(std::string criterion)
-  {
-    m_stopping_criterion = std::move(criterion);
-    return *this;
-  }
-  /// @}
 
 protected:
   friend struct nvbench::runner_base;

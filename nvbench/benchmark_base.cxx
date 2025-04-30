@@ -17,6 +17,7 @@
  */
 
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/transform_reduce.cuh>
 
 namespace nvbench
@@ -86,6 +87,13 @@ std::size_t benchmark_base::get_config_count() const
     });
 
   return per_device_count * m_devices.size();
+}
+
+benchmark_base &benchmark_base::set_stopping_criterion(std::string criterion)
+{
+  m_stopping_criterion = std::move(criterion);
+  m_criterion_params   = criterion_manager::get().get_criterion(m_stopping_criterion).get_params();
+  return *this;
 }
 
 } // namespace nvbench

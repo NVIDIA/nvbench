@@ -1197,26 +1197,262 @@ void test_timeout()
 
 void test_stopping_criterion()
 {
-  nvbench::option_parser parser;
-  parser.parse({"--benchmark",
-                "DummyBench",
-                "--stopping-criterion",
-                "entropy",
-                "--max-angle",
-                "0.42",
-                "--min-r2",
-                "0.6"});
-  const auto &states = parser_to_states(parser);
+  { // Per benchmark criterion
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "entropy",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+    });
+    const auto &states = parser_to_states(parser);
 
-  ASSERT(states.size() == 1);
-  ASSERT(states[0].get_stopping_criterion() == "entropy");
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
 
-  const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
-  ASSERT(criterion_params.has_value("max-angle"));
-  ASSERT(criterion_params.has_value("min-r2"));
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
 
-  ASSERT(criterion_params.get_float64("max-angle") == 0.42);
-  ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Global criterion
+    nvbench::option_parser parser;
+    parser.parse({
+      "--stopping-criterion",
+      "entropy",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+      "--benchmark",
+      "DummyBench",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
+
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Global criterion, per-benchmark params
+    nvbench::option_parser parser;
+    parser.parse({
+      "--stopping-criterion",
+      "entropy",
+      "--benchmark",
+      "DummyBench",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
+
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Global params to default criterion should work:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--max-noise",
+      "0.5",
+      "--min-time",
+      "0.1",
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "entropy",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
+
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Unknown stopping criterion should throw
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "I_do_not_exist",
+      });
+    }
+    catch (const std::runtime_error &)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Global criterion to non-default params without global --stopping-criterion should throw
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--max-angle",
+        "0.42",
+        "--min-r2",
+        "0.6",
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+      });
+    }
+    catch (const std::runtime_error &)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Invalid global param throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-r2",
+        "0.6",
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "TestBench",
+        "--stopping-criterion",
+        "stdrel",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Invalid per-bench param throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-r2",
+        "0.6",
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "TestBench",
+        "--stopping-criterion",
+        "stdrel",
+        "--max-angle",
+        "0.42",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // global param-before-criterion throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--min-r2", //
+        "0.6",
+        "--stopping-criterion",
+        "entropy",
+        "--benchmark",
+        "DummyBench",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // per-benchmark param-before-criterion throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark", //
+        "DummyBench",
+        "--min-r2",
+        "0.6",
+        "--stopping-criterion",
+        "entropy",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Invalid param type throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark", //
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-r2",
+        "\"foo\"",
+      });
+    }
+    catch (const std::runtime_error &)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
 }
 
 int main()
@@ -1261,6 +1497,6 @@ try
 }
 catch (std::exception &err)
 {
-  fmt::print(stderr, "{}", err.what());
+  fmt::print(stderr, "Unexpected exception:\n{}\n", err.what());
   return 1;
 }

@@ -104,4 +104,23 @@ nvbench::criterion_manager::params_description criterion_manager::get_params_des
   return desc;
 }
 
+criterion_manager::params_map criterion_manager::get_params_description_map() const
+{
+  params_map result;
+
+  for (auto &[criterion_name, criterion] : m_map)
+  {
+    params_description &desc         = result[criterion_name];
+    nvbench::criterion_params params = criterion->get_params();
+
+    for (auto param : params.get_names())
+    {
+      nvbench::named_values::type type = params.get_type(param);
+      desc.emplace_back(param, type);
+    }
+  }
+
+  return result;
+}
+
 } // namespace nvbench

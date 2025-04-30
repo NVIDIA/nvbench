@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
+#include <optional>
 #include <thread>
 
 namespace nvbench::detail
@@ -387,11 +388,22 @@ void measure_cold_base::generate_summaries()
 
     if (m_max_time_exceeded)
     {
-      const auto timeout   = m_walltime_timer.get_duration();
-      const auto max_noise = m_criterion_params.get_float64("max-noise");
-      const auto min_time  = m_criterion_params.get_float64("min-time");
+      const auto timeout = m_walltime_timer.get_duration();
 
-      if (cuda_noise > max_noise)
+      auto get_param = [this](std::optional<nvbench::float64_t> &param, const std::string &name) {
+        if (m_criterion_params.has_value(name))
+        {
+          param = m_criterion_params.get_float64(name);
+        }
+      };
+
+      std::optional<nvbench::float64_t> max_noise;
+      get_param(max_noise, "max-noise");
+
+      std::optional<nvbench::float64_t> min_time;
+      get_param(max_noise, "min-time");
+
+      if (max_noise && cuda_noise > *max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
@@ -399,7 +411,7 @@ void measure_cold_base::generate_summaries()
                                 "{:0.2f}%)",
                                 timeout,
                                 cuda_noise * 100,
-                                max_noise * 100));
+                                *max_noise * 100));
       }
       if (m_total_samples < m_min_samples)
       {
@@ -410,7 +422,7 @@ void measure_cold_base::generate_summaries()
                                 m_total_samples,
                                 m_min_samples));
       }
-      if (m_total_cuda_time < min_time)
+      if (min_time && m_total_cuda_time < *min_time)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
@@ -418,7 +430,7 @@ void measure_cold_base::generate_summaries()
                                 "{:0.2f}s)",
                                 timeout,
                                 m_total_cuda_time,
-                                min_time));
+                                *min_time));
       }
     }
 
