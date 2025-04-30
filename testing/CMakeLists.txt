@@ -3,6 +3,7 @@ set(test_srcs
   benchmark.cu
   create.cu
   cuda_timer.cu
+  cuda_stream.cu
   cpu_timer.cu
   criterion_manager.cu
   criterion_params.cu

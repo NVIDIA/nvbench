@@ -42,6 +42,7 @@ state::state(const benchmark_base &bench)
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}
     , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
+    , m_cuda_stream{std::nullopt}
 {}
 
 state::state(const benchmark_base &bench,
@@ -62,6 +63,7 @@ state::state(const benchmark_base &bench,
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}
     , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
+    , m_cuda_stream{std::nullopt}
 {}
 
 nvbench::int64_t state::get_int64(const std::string &axis_name) const

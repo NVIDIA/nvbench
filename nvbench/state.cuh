@@ -64,7 +64,21 @@ struct state
   state &operator=(const state &) = delete;
   state &operator=(state &&)      = default;
 
-  [[nodiscard]] const nvbench::cuda_stream &get_cuda_stream() const { return m_cuda_stream; }
+  /// If a stream exists, return that. Otherwise, create a new stream using the current
+  /// device (or the current device if none is set), save it, and return it.
+  /// @sa get_cuda_stream_optional
+  [[nodiscard]] nvbench::cuda_stream &get_cuda_stream()
+  {
+    if (!m_cuda_stream.has_value())
+    {
+      m_cuda_stream = nvbench::cuda_stream{m_device};
+    }
+    return m_cuda_stream.value();
+  }
+  [[nodiscard]] const std::optional<nvbench::cuda_stream> &get_cuda_stream_optional() const
+  {
+    return m_cuda_stream;
+  }
   void set_cuda_stream(nvbench::cuda_stream &&stream) { m_cuda_stream = std::move(stream); }
 
   /// The CUDA device associated with with this benchmark state. May be
@@ -313,7 +327,6 @@ private:
         std::optional<nvbench::device_info> device,
         std::size_t type_config_index);
 
-  nvbench::cuda_stream m_cuda_stream;
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;
@@ -333,6 +346,8 @@ private:
 
   nvbench::float32_t m_throttle_threshold;      // [% of default SM clock rate]
   nvbench::float32_t m_throttle_recovery_delay; // [seconds]
+
+  std::optional<nvbench::cuda_stream> m_cuda_stream;
 
   // Deadlock protection. See blocking_kernel's class doc for details.
   nvbench::float64_t m_blocking_kernel_timeout{30.0};
