@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -82,11 +83,35 @@ std::string_view submatch_to_sv(const sv_submatch &in)
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
-void parse(std::string_view input, nvbench::int32_t &val) { val = std::stoi(std::string(input)); }
+void parse(std::string_view input, nvbench::int32_t &val)
+try
+{
+  val = std::stoi(std::string(input));
+}
+catch (const std::exception &)
+{ // The default exception messages are not very useful on gcc...it's just "stoi".
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse int32 value from string '{}'", input);
+}
 
-void parse(std::string_view input, nvbench::int64_t &val) { val = std::stoll(std::string(input)); }
+void parse(std::string_view input, nvbench::int64_t &val)
+try
+{
+  val = std::stoll(std::string(input));
+}
+catch (const std::exception &)
+{
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse int64 value from string '{}'", input);
+}
 
-void parse(std::string_view input, nvbench::float64_t &val) { val = std::stod(std::string(input)); }
+void parse(std::string_view input, nvbench::float64_t &val)
+try
+{
+  val = std::stod(std::string(input));
+}
+catch (const std::exception &)
+{
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse float64 value from string '{}'", input);
+}
 
 void parse(std::string_view input, std::string &val) { val = input; }
 
@@ -344,9 +369,6 @@ void option_parser::parse_impl()
     }
   }
 
-  this->apply_criterion_props();
-  this->check_criterion_props();
-
   // Make sure there's a default printer if needed:
   if (!m_have_stdout_printer)
   {
@@ -538,8 +560,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       if (it != criterion_params.end())
       {
         check_params(1);
-        m_stopping_criterion_properties.push_back(
-          {int(m_benchmarks.size()) - 1, first[0], first[1], it->second});
+        this->update_criterion_prop(first[0], first[1], it->second);
         first += 2;
       }
       else
@@ -731,6 +752,7 @@ void option_parser::enable_run_once()
 }
 
 void option_parser::set_stopping_criterion(const std::string &criterion)
+try
 {
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
@@ -742,6 +764,13 @@ void option_parser::set_stopping_criterion(const std::string &criterion)
 
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_stopping_criterion(criterion);
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `--stopping-criterion {}`:\n{}",
+                criterion,
+                e.what());
 }
 
 void option_parser::disable_blocking_kernel()
@@ -982,15 +1011,44 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::update_criterion_prop(int benchmark_idx,
-                                          const std::string &prop_arg,
+void option_parser::update_criterion_prop(const std::string &prop_arg,
                                           const std::string &prop_val,
                                           const nvbench::named_values::type type)
 try
 {
-  benchmark_base &bench                       = *m_benchmarks.at(benchmark_idx);
-  nvbench::criterion_params &criterion_params = bench.get_criterion_params();
-  std::string name(prop_arg.begin() + 2, prop_arg.end());
+  const std::string name(prop_arg.begin() + 2, prop_arg.end());
+
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    // Any global params must either belong to the default criterion or follow a
+    // `--stopping-criterion` arg:
+    nvbench::criterion_params params;
+    if (!params.has_value(name) &&
+        std::find(m_global_benchmark_args.cbegin(),
+                  m_global_benchmark_args.cend(),
+                  "--stopping-criterion") == m_global_benchmark_args.cend())
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "Unrecognized stopping criterion parameter: `{}` for default criterion.",
+                    name);
+    }
+
+    m_global_benchmark_args.push_back(prop_arg);
+    m_global_benchmark_args.push_back(prop_val);
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+
+  if (!bench.has_criterion_param(name))
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Unrecognized stopping criterion parameter: `{}` for `{}`.",
+                  name,
+                  bench.get_stopping_criterion());
+  }
+
   if (type == nvbench::named_values::type::float64)
   {
     nvbench::float64_t value{};
@@ -1000,21 +1058,21 @@ try
     { // Specified as percentage, stored as ratio:
       value /= 100.0;
     }
-    criterion_params.set_float64(name, value);
+    bench.set_criterion_param_float64(name, value);
   }
   else if (type == nvbench::named_values::type::int64)
   {
     nvbench::int64_t value{};
     ::parse(prop_val, value);
-    criterion_params.set_int64(name, value);
+    bench.set_criterion_param_int64(name, value);
   }
   else if (type == nvbench::named_values::type::string)
   {
-    criterion_params.set_string(name, prop_val);
+    bench.set_criterion_param_string(name, prop_val);
   }
   else
   {
-    NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
+    NVBENCH_THROW(std::runtime_error, "Unrecognized type for property: `{}`", name);
   }
 }
 catch (std::exception &e)
@@ -1024,76 +1082,6 @@ catch (std::exception &e)
                 prop_arg,
                 prop_val,
                 e.what());
-}
-
-void option_parser::check_criterion_props()
-{
-  const nvbench::criterion_manager::params_map params_map =
-    nvbench::criterion_manager::get().get_params_description_map();
-
-  for (const auto &bench_ptr : m_benchmarks)
-  {
-    const std::string &stopping_criterion = bench_ptr->get_stopping_criterion();
-    auto it_criterion                     = params_map.find(stopping_criterion);
-
-    if (it_criterion == params_map.end())
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "Unknown benchmark stopping criterion `{}`",
-                    stopping_criterion);
-    }
-
-    const nvbench::criterion_manager::params_description &params_desc = it_criterion->second;
-    const nvbench::criterion_params &params = bench_ptr->get_criterion_params();
-
-    std::vector<std::string> param_names = params.get_names();
-
-    for (const std::string &name : param_names)
-    {
-      auto it_params = std::find_if(params_desc.begin(),
-                                    params_desc.end(),
-                                    [&name](const auto &param) { return param.first == name; });
-
-      if (it_params == params_desc.end())
-      {
-        NVBENCH_THROW(std::runtime_error,
-                      "Unknown stopping criterion parameter:\nBenchmark: `{}`\nCriterion: "
-                      "`{}`\nParameter: `{}`",
-                      bench_ptr->get_name(),
-                      it_criterion->first,
-                      name);
-      }
-    }
-
-    for (const auto &pair : params_desc)
-    {
-      auto it_params = std::find(param_names.begin(), param_names.end(), pair.first);
-
-      if (it_params == param_names.end())
-      {
-        NVBENCH_THROW(std::runtime_error,
-                      "A stopping criterion parameter isn't set:\nBenchmark: `{}`\nCriterion: "
-                      "`{}`\nParameter: `{}`",
-                      bench_ptr->get_name(),
-                      it_criterion->first,
-                      pair.first);
-      }
-    }
-  }
-}
-
-void option_parser::apply_criterion_props()
-{
-  for (const stopping_criterion_property &prop : m_stopping_criterion_properties)
-  {
-    int beg = (prop.benchmark_idx == -1 ? 0 : prop.benchmark_idx);
-    int end = (prop.benchmark_idx == -1 ? int(m_benchmarks.size()) : prop.benchmark_idx + 1);
-
-    for (int i = beg; i < end; i++)
-    {
-      update_criterion_prop(i, prop.arg, prop.val, prop.type);
-    }
-  }
 }
 
 void option_parser::update_float64_prop(const std::string &prop_arg, const std::string &prop_val)

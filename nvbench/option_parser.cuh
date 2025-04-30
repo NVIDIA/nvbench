@@ -113,14 +113,11 @@ private:
   void update_int64_prop(const std::string &prop_arg, const std::string &prop_val);
   void update_float64_prop(const std::string &prop_arg, const std::string &prop_val);
 
-  void update_criterion_prop(int benchmark_idx,
-                             const std::string &prop_arg,
+  void update_criterion_prop(const std::string &prop_arg,
                              const std::string &prop_val,
                              const nvbench::named_values::type type);
 
   void update_used_device_state() const;
-  void check_criterion_props();
-  void apply_criterion_props();
 
   // Command line args
   std::vector<std::string> m_args;
@@ -149,16 +146,6 @@ private:
 
   // Used for device modification commands like --log-gpu-clocks
   bool m_exit_after_parsing{false};
-
-  struct stopping_criterion_property
-  {
-    int benchmark_idx;
-    std::string arg;
-    std::string val;
-    nvbench::named_values::type type;
-  };
-
-  std::vector<stopping_criterion_property> m_stopping_criterion_properties;
 };
 
 } // namespace nvbench
