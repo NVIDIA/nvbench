@@ -65,8 +65,8 @@ struct cuda_stream
   {}
 
   /**
-   * @brief Constructs a new cuda_stream tha is asociated with the device that is active at the call
-   * time.
+   * @brief Constructs a new cuda_stream tha is associated with the device that is active at the
+   * call time.
    */
   cuda_stream()
       : cuda_stream(std::nullopt)

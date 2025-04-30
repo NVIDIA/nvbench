@@ -21,9 +21,9 @@
 #include <nvbench/device_manager.cuh>
 #include <nvbench/types.cuh>
 
-#include "test_asserts.cuh"
-
 #include <fmt/format.h>
+
+#include "test_asserts.cuh"
 
 namespace
 {
