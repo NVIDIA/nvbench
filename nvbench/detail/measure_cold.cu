@@ -37,13 +37,7 @@ namespace nvbench::detail
 
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
-    , m_launch{nvbench::launch([this]() -> decltype(auto) {
-      if (!m_state.get_cuda_stream().has_value())
-      {
-        m_state.set_cuda_stream(nvbench::cuda_stream{m_state.get_device()});
-      }
-      return m_state.get_cuda_stream().value();
-    }())}
+    , m_launch{exec_state.get_cuda_stream()}
     , m_criterion_params{exec_state.get_criterion_params()}
     , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(
         exec_state.get_stopping_criterion())}

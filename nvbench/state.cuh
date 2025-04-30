@@ -64,7 +64,18 @@ struct state
   state &operator=(const state &) = delete;
   state &operator=(state &&)      = default;
 
-  [[nodiscard]] const std::optional<nvbench::cuda_stream> &get_cuda_stream() const
+  /// If a stream exists, return that. Otherwise, create a new stream using the current
+  /// device (or the current device if none is set), save it, and return it.
+  /// @sa get_cuda_stream_optional
+  [[nodiscard]] nvbench::cuda_stream &get_cuda_stream()
+  {
+    if (!m_cuda_stream.has_value())
+    {
+      m_cuda_stream = nvbench::cuda_stream{m_device};
+    }
+    return m_cuda_stream.value();
+  }
+  [[nodiscard]] const std::optional<nvbench::cuda_stream> &get_cuda_stream_optional() const
   {
     return m_cuda_stream;
   }

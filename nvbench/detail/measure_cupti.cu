@@ -165,13 +165,7 @@ measure_cupti_base::measure_cupti_base(state &exec_state)
 // (formatter doesn't handle `try :` very well...)
 try
   : m_state{exec_state}
-  , m_launch{[this]() -> decltype(auto) {
-                   if (!m_state.get_cuda_stream().has_value())
-                   {
-                    m_state.set_cuda_stream(nvbench::cuda_stream{m_state.get_device()});
-                   }
-                   return m_state.get_cuda_stream().value();
-                 }()}
+  , m_launch{exec_state.get_cuda_stream()}
   , m_cupti{*m_state.get_device(), add_metrics(m_state)}
 {}
 // clang-format on

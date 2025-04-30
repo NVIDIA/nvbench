@@ -36,13 +36,7 @@ namespace nvbench::detail
 
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
-    , m_launch{nvbench::launch([this]() -> decltype(auto) {
-      if (!m_state.get_cuda_stream().has_value())
-      {
-        m_state.set_cuda_stream(nvbench::cuda_stream{m_state.get_device()});
-      }
-      return m_state.get_cuda_stream().value();
-    }())}
+    , m_launch{exec_state.get_cuda_stream()}
     , m_min_samples{exec_state.get_min_samples()}
     , m_min_time{exec_state.get_min_time()}
     , m_skip_time{exec_state.get_skip_time()}
