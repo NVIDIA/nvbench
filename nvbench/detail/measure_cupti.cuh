@@ -24,13 +24,12 @@
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
 #include <nvbench/cupti_profiler.cuh>
-#include <nvbench/device_info.cuh>
-#include <nvbench/exec_tag.cuh>
-#include <nvbench/launch.cuh>
-
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/statistics.cuh>
+#include <nvbench/device_info.cuh>
+#include <nvbench/exec_tag.cuh>
+#include <nvbench/launch.cuh>
 
 #include <cuda_runtime.h>
 

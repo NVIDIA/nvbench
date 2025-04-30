@@ -16,14 +16,12 @@
  *  limitations under the License.
  */
 
-#include <nvbench/markdown_printer.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/device_manager.cuh>
+#include <nvbench/internal/markdown_table.cuh>
+#include <nvbench/markdown_printer.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/summary.cuh>
-
-#include <nvbench/internal/markdown_table.cuh>
 
 #include <fmt/color.h>
 #include <fmt/format.h>
@@ -72,8 +70,12 @@ void markdown_printer::do_print_device_info()
                    "* Max Shared Memory: {} KiB/SM, {} KiB/Block\n",
                    device.get_shared_memory_per_sm() / 1024,
                    device.get_shared_memory_per_block() / 1024);
-    fmt::format_to(std::back_inserter(buffer), "* L2 Cache Size: {} KiB\n", device.get_l2_cache_size() / 1024);
-    fmt::format_to(std::back_inserter(buffer), "* Maximum Active Blocks: {}/SM\n", device.get_max_blocks_per_sm());
+    fmt::format_to(std::back_inserter(buffer),
+                   "* L2 Cache Size: {} KiB\n",
+                   device.get_l2_cache_size() / 1024);
+    fmt::format_to(std::back_inserter(buffer),
+                   "* Maximum Active Blocks: {}/SM\n",
+                   device.get_max_blocks_per_sm());
     fmt::format_to(std::back_inserter(buffer),
                    "* Maximum Active Threads: {}/SM, {}/Block\n",
                    device.get_max_threads_per_sm(),
@@ -82,7 +84,9 @@ void markdown_printer::do_print_device_info()
                    "* Available Registers: {}/SM, {}/Block\n",
                    device.get_registers_per_sm(),
                    device.get_registers_per_block());
-    fmt::format_to(std::back_inserter(buffer), "* ECC Enabled: {}\n", device.get_ecc_state() ? "Yes" : "No");
+    fmt::format_to(std::back_inserter(buffer),
+                   "* ECC Enabled: {}\n",
+                   device.get_ecc_state() ? "Yes" : "No");
     fmt::format_to(std::back_inserter(buffer), "\n");
   }
   m_ostream << fmt::to_string(buffer);
@@ -191,9 +195,12 @@ void markdown_printer::do_print_benchmark_list(const printer_base::benchmark_vec
         {
           desc = fmt::format(" ({})", desc);
         }
-        fmt::format_to(std::back_inserter(buffer), "  * `{}`{}\n", axis_ptr->get_input_string(i), desc);
+        fmt::format_to(std::back_inserter(buffer),
+                       "  * `{}`{}\n",
+                       axis_ptr->get_input_string(i),
+                       desc);
       } // end foreach value
-    }   // end foreach axis
+    } // end foreach axis
     fmt::format_to(std::back_inserter(buffer), "\n");
   } // end foreach bench
 
@@ -213,12 +220,9 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
       return v;
     }
 
-    // warning C4702: unreachable code
     // This is a future-proofing fallback that's currently unused.
-    NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
     return fmt::format("{}", v);
   };
-  NVBENCH_MSVC_POP_WARNING()
 
   // Start printing benchmarks
   fmt::memory_buffer buffer;
@@ -230,7 +234,7 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
     const auto &devices = bench.get_devices();
     const auto &axes    = bench.get_axes();
 
-    fmt::format_to(std::back_inserter(buffer), "\n## {}\n", bench.get_name());
+    fmt::format_to(std::back_inserter(buffer), "\n## {}\n\n", bench.get_name());
 
     // Do a single pass when no devices are specified. This happens for
     // benchmarks with `cpu` exec_tags.
@@ -243,7 +247,10 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
 
       if (device)
       {
-        fmt::format_to(std::back_inserter(buffer), "\n### [{}] {}\n\n", device->get_id(), device->get_name());
+        fmt::format_to(std::back_inserter(buffer),
+                       "### [{}] {}\n\n",
+                       device->get_id(),
+                       device->get_name());
       }
 
       std::size_t row = 0;
@@ -294,6 +301,10 @@ void markdown_printer::do_print_benchmark_results(const printer_base::benchmark_
             {
               table.add_cell(row, tag, header, this->do_format_item_rate(summ));
             }
+            else if (hint == "frequency")
+            {
+              table.add_cell(row, tag, header, this->do_format_frequency(summ));
+            }
             else if (hint == "bytes")
             {
               table.add_cell(row, tag, header, this->do_format_bytes(summ));
@@ -342,12 +353,9 @@ std::string markdown_printer::do_format_default(const summary &data)
       return v;
     }
 
-    // warning C4702: unreachable code
     // This is a future-proofing fallback that's currently unused.
-    NVBENCH_MSVC_PUSH_DISABLE_WARNING(4702)
     return fmt::format("{}", v);
   };
-  NVBENCH_MSVC_POP_WARNING()
 
   return std::visit(format_visitor, data.get_value("value"));
 }
@@ -399,6 +407,27 @@ std::string markdown_printer::do_format_item_rate(const summary &data)
   else
   {
     return fmt::format("{:0.3f}", items_per_second);
+  }
+}
+
+std::string markdown_printer::do_format_frequency(const nvbench::summary &data)
+{
+  const auto frequency_hz = data.get_float64("value");
+  if (frequency_hz >= 1e9)
+  {
+    return fmt::format("{:0.3f} GHz", frequency_hz * 1e-9);
+  }
+  else if (frequency_hz >= 1e6)
+  {
+    return fmt::format("{:0.3f} MHz", frequency_hz * 1e-6);
+  }
+  else if (frequency_hz >= 1e3)
+  {
+    return fmt::format("{:0.3f} KHz", frequency_hz * 1e-3);
+  }
+  else
+  {
+    return fmt::format("{:0.3f} Hz", frequency_hz);
   }
 }
 

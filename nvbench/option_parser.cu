@@ -16,21 +16,19 @@
  *  limitations under the License.
  */
 
-#include <nvbench/option_parser.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
-#include <nvbench/csv_printer.cuh>
 #include <nvbench/criterion_manager.cuh>
+#include <nvbench/csv_printer.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
+#include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
 #include <nvbench/version.cuh>
-
-#include <nvbench/detail/throw.cuh>
 
 // These are generated from the markdown docs by CMake in the build directory:
 #include <nvbench/internal/cli_help.cuh>
@@ -518,7 +516,8 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--skip-time" || arg == "--timeout")
+    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--throttle-threshold" ||
+             arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -627,7 +626,7 @@ void option_parser::print_version() const
              NVBENCH_GIT_VERSION);
 }
 
-void option_parser::print_list(printer_base& printer) const
+void option_parser::print_list(printer_base &printer) const
 {
   const auto &bench_mgr = nvbench::benchmark_manager::get();
   printer.print_device_info();
@@ -803,7 +802,10 @@ try
   else
   {
     benchmark_base &bench = *m_benchmarks.back();
-    bench.set_devices(device_vec);
+    if (!bench.get_is_cpu_only())
+    {
+      bench.set_devices(device_vec);
+    }
   }
 
   m_recent_devices = std::move(device_vec);
@@ -985,12 +987,12 @@ void option_parser::update_criterion_prop(
   const std::string &prop_arg,
   const std::string &prop_val,
   const nvbench::named_values::type type)
-try 
+try
 {
   benchmark_base &bench = *m_benchmarks.at(benchmark_idx);
   nvbench::criterion_params& criterion_params = bench.get_criterion_params();
   std::string name(prop_arg.begin() + 2, prop_arg.end());
-  if (type == nvbench::named_values::type::float64) 
+  if (type == nvbench::named_values::type::float64)
   {
     nvbench::float64_t value{};
     ::parse(prop_val, value);
@@ -1001,22 +1003,22 @@ try
     }
     criterion_params.set_float64(name, value);
   }
-  else if (type == nvbench::named_values::type::int64) 
+  else if (type == nvbench::named_values::type::int64)
   {
     nvbench::int64_t value{};
     ::parse(prop_val, value);
     criterion_params.set_int64(name, value);
   }
-  else if (type == nvbench::named_values::type::string) 
+  else if (type == nvbench::named_values::type::string)
   {
     criterion_params.set_string(name, prop_val);
   }
-  else 
+  else
   {
     NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
   }
 }
-catch (std::exception& e)
+catch (std::exception &e)
 {
   NVBENCH_THROW(std::runtime_error,
                 "Error handling option `{} {}`:\n{}",
@@ -1052,7 +1054,7 @@ void option_parser::check_criterion_props()
       auto it_params = std::find_if(params_desc.begin(),
                              params_desc.end(),
                              [&name](const auto &param) { return param.first == name; });
-      
+
       if (it_params == params_desc.end())
       {
         NVBENCH_THROW(std::runtime_error,
@@ -1116,6 +1118,14 @@ try
   else if (prop_arg == "--timeout")
   {
     bench.set_timeout(value);
+  }
+  else if (prop_arg == "--throttle-threshold")
+  {
+    bench.set_throttle_threshold(static_cast<nvbench::float32_t>(value) / 100.0f);
+  }
+  else if (prop_arg == "--throttle-recovery-delay")
+  {
+    bench.set_throttle_recovery_delay(static_cast<nvbench::float32_t>(value));
   }
   else
   {

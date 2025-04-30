@@ -41,7 +41,7 @@ criterion_manager &criterion_manager::get()
   return registry;
 }
 
-stopping_criterion_base& criterion_manager::get_criterion(const std::string& name)
+stopping_criterion_base &criterion_manager::get_criterion(const std::string &name)
 {
   auto iter = m_map.find(name);
   if (iter == m_map.end())
@@ -51,7 +51,8 @@ stopping_criterion_base& criterion_manager::get_criterion(const std::string& nam
   return *iter->second.get();
 }
 
-const nvbench::stopping_criterion_base& criterion_manager::get_criterion(const std::string& name) const
+const nvbench::stopping_criterion_base &
+criterion_manager::get_criterion(const std::string &name) const
 {
   auto iter = m_map.find(name);
   if (iter == m_map.end())
@@ -69,8 +70,7 @@ stopping_criterion_base &criterion_manager::add(std::unique_ptr<stopping_criteri
 
   if (!success)
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Stopping criterion \"{}\" is already registered.", name);
+    NVBENCH_THROW(std::runtime_error, "Stopping criterion \"{}\" is already registered.", name);
   }
 
   return *it->second.get();

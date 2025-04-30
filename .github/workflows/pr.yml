@@ -42,9 +42,19 @@ jobs:
       DEVCONTAINER_VERSION: ${{steps.set-outputs.outputs.DEVCONTAINER_VERSION}}
       PER_CUDA_COMPILER_MATRIX: ${{steps.set-outputs.outputs.PER_CUDA_COMPILER_MATRIX}}
       PER_CUDA_COMPILER_KEYS: ${{steps.set-outputs.outputs.PER_CUDA_COMPILER_KEYS}}
+      base_sha: ${{ steps.export-pr-info.outputs.base_sha }}
+      pr_number: ${{ steps.export-pr-info.outputs.pr_number }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      - name: Lookup PR info
+        id: get-pr-info
+        uses: nv-gha-runners/get-pr-info@main
+      - name: Export PR info
+        id: export-pr-info
+        run: |
+          echo "base_sha=${{ fromJSON(steps.get-pr-info.outputs.pr-info).base.sha }}" | tee -a "${GITHUB_OUTPUT}"
+          echo "pr_number=${{ fromJSON(steps.get-pr-info.outputs.pr-info).number }}" | tee -a "${GITHUB_OUTPUT}"
       - name: Compute matrix outputs
         id: set-outputs
         run: |
@@ -65,14 +75,17 @@ jobs:
       project_name: "nvbench"
       per_cuda_compiler_matrix: ${{ toJSON(fromJSON(needs.compute-matrix.outputs.PER_CUDA_COMPILER_MATRIX)[ matrix.cuda_host_combination ]) }}
       devcontainer_version: ${{ needs.compute-matrix.outputs.DEVCONTAINER_VERSION }}
-      is_windows: ${{ contains(matrix.cuda_host_combination, 'cl') }}
 
   verify-devcontainers:
     name: Verify Dev Containers
+    if: ${{ !contains(github.event.head_commit.message, '[skip-vdc]') }}
+    needs: compute-matrix
     permissions:
       id-token: write
       contents: read
     uses: ./.github/workflows/verify-devcontainers.yml
+    with:
+      base_sha: ${{ needs.compute-matrix.outputs.base_sha }}
 
   # This job is the final job that runs after all other jobs and is used for branch protection status checks.
   # See: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks
@@ -90,6 +103,5 @@ jobs:
           ${{
                contains(needs.*.result, 'failure')
             || contains(needs.*.result, 'cancelled')
-            || contains(needs.*.result, 'skipped')
           }}
         run: exit 1

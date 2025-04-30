@@ -19,8 +19,8 @@
 #include <nvbench/nvbench.cuh>
 
 #include <algorithm>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 
 /******************************************************************************
  * Test having global state that is initialized and finalized via RAII.

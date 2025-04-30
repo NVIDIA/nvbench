@@ -24,7 +24,6 @@
 #include <nvbench/types.cuh>
 
 #include <memory>
-
 #include <unordered_map>
 
 namespace nvbench
@@ -40,14 +39,14 @@ public:
   /**
    * @return The singleton criterion_manager instance.
    */
-  static criterion_manager& get();
+  static criterion_manager &get();
 
   /**
    * Register a new stopping criterion.
    */
-  nvbench::stopping_criterion_base& add(std::unique_ptr<nvbench::stopping_criterion_base> criterion);
-  nvbench::stopping_criterion_base& get_criterion(const std::string& name);
-  const nvbench::stopping_criterion_base& get_criterion(const std::string& name) const;
+  nvbench::stopping_criterion_base &add(std::unique_ptr<nvbench::stopping_criterion_base> criterion);
+  nvbench::stopping_criterion_base &get_criterion(const std::string &name);
+  const nvbench::stopping_criterion_base &get_criterion(const std::string &name) const;
 
   using params_description = std::vector<std::pair<std::string, nvbench::named_values::type>>;
   params_description get_params_description() const;

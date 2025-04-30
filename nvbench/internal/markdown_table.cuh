@@ -19,7 +19,6 @@
 #pragma once
 
 #include <nvbench/detail/transform_reduce.cuh>
-
 #include <nvbench/internal/table_builder.cuh>
 
 #include <fmt/color.h>

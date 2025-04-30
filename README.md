@@ -25,14 +25,16 @@ features:
   * Batch Measurements:
     * Executes the benchmark multiple times back-to-back and records total time.
     * Reports the average execution time (total time / number of executions).
+  * [CPU-only Measurements](docs/benchmarks.md#cpu-only-benchmarks)
+    * Measures the host-side execution time of a non-GPU benchmark.
+    * Not suitable for microbenchmarking.
 
 # Supported Compilers and Tools
 
-- CMake > 2.23.1
-- CUDA Toolkit + nvcc: 11.1 -> 12.4
-- g++: 7 -> 12
-- clang++: 9 -> 18
-- cl.exe: 2019 -> 2022 (19.29, 29.39)
+- CMake > 3.30.4
+- CUDA Toolkit + nvcc: 12.0 and above
+- g++: 7 -> 14
+- clang++: 14 -> 19
 - Headers are tested with C++17 -> C++20.
 
 # Getting Started
@@ -66,10 +68,12 @@ This repository provides a number of [examples](examples/) that demonstrate
 various NVBench features and usecases:
 
 - [Runtime and compile-time parameter sweeps](examples/axes.cu)
+- [CPU-only benchmarking](examples/cpu_only.cu)
 - [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
 - [Benchmarking on a specific stream](examples/stream.cu)
+- [Adding / hiding columns (summaries) in markdown output](examples/summaries.cu)
 - [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)
 - [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_timer.cu)
 
@@ -172,6 +176,7 @@ testing and parameter tuning of individual kernels. For in-depth analysis of
 end-to-end performance of multiple applications, the NVIDIA Nsight tools are
 more appropriate.
 
-NVBench is focused on evaluating the performance of CUDA kernels and is not
-optimized for CPU microbenchmarks. This may change in the future, but for now,
+NVBench is focused on evaluating the performance of CUDA kernels. It also provides
+CPU-only benchmarking facilities intended for non-trivial CPU workloads, but is
+not optimized for CPU microbenchmarks. This may change in the future, but for now,
 consider using Google Benchmark for high resolution CPU benchmarks.

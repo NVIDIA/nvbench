@@ -19,7 +19,6 @@
 #pragma once
 
 #include <nvbench/axis_base.cuh>
-
 #include <nvbench/types.cuh>
 
 #include <vector>

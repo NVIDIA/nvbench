@@ -17,13 +17,13 @@
  */
 
 #include <nvbench/axes_metadata.cuh>
-
 #include <nvbench/detail/throw.cuh>
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include <algorithm>
+#include <cassert>
 #include <stdexcept>
 
 namespace nvbench
@@ -52,21 +52,18 @@ axes_metadata &axes_metadata::operator=(const axes_metadata &other)
 void axes_metadata::set_type_axes_names(std::vector<std::string> names)
 try
 {
-  if (names.size() < m_axes.size())
+  if (names.size() != m_axes.size())
   {
     NVBENCH_THROW(std::runtime_error,
-                  "Number of names exceeds number of axes ({}).",
+                  "Number of type axis names ({}) exceeds number of type axes ({}).",
+                  names.size(),
                   m_axes.size());
   }
 
   for (std::size_t i = 0; i < names.size(); ++i)
   {
     auto &axis = *m_axes[i];
-    if (axis.get_type() != nvbench::axis_type::type)
-    {
-      NVBENCH_THROW(std::runtime_error, "Number of names exceeds number of type axes ({})", i);
-    }
-
+    assert(axis.get_type() != nvbench::axis_type::type);
     axis.set_name(std::move(names[i]));
   }
 }

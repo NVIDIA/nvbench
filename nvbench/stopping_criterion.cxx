@@ -16,10 +16,8 @@
  *  limitations under the License.
  */
 
-#include <nvbench/stopping_criterion.cuh>
-
 #include <nvbench/detail/throw.cuh>
-
+#include <nvbench/stopping_criterion.cuh>
 
 namespace nvbench
 {
@@ -62,7 +60,7 @@ void criterion_params::set_from(const criterion_params &other)
 
 void criterion_params::set_int64(std::string name, nvbench::int64_t value)
 {
-  if (m_named_values.has_value(name)) 
+  if (m_named_values.has_value(name))
   {
     m_named_values.remove_value(name);
   }
@@ -72,7 +70,7 @@ void criterion_params::set_int64(std::string name, nvbench::int64_t value)
 
 void criterion_params::set_float64(std::string name, nvbench::float64_t value)
 {
-  if (m_named_values.has_value(name)) 
+  if (m_named_values.has_value(name))
   {
     m_named_values.remove_value(name);
   }
@@ -82,7 +80,7 @@ void criterion_params::set_float64(std::string name, nvbench::float64_t value)
 
 void criterion_params::set_string(std::string name, std::string value)
 {
-  if (m_named_values.has_value(name)) 
+  if (m_named_values.has_value(name))
   {
     m_named_values.remove_value(name);
   }
@@ -110,15 +108,11 @@ std::string criterion_params::get_string(const std::string &name) const
   return m_named_values.get_string(name);
 }
 
-std::vector<std::string> criterion_params::get_names() const
-{
-  return m_named_values.get_names();
-}
+std::vector<std::string> criterion_params::get_names() const { return m_named_values.get_names(); }
 
 nvbench::named_values::type criterion_params::get_type(const std::string &name) const
 {
   return m_named_values.get_type(name);
 }
 
-
-} // namespace nvbench::detail
+} // namespace nvbench

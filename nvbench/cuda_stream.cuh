@@ -54,7 +54,7 @@ struct cuda_stream
   /**
    * Constructs a `cuda_stream` from an explicit cudaStream_t.
    *
-   * @param owning If true, `cudaStreamCreate(stream)` will be called from this
+   * @param owning If true, `cudaStreamDestroy(stream)` will be called from this
    * `cuda_stream`'s destructor.
    *
    * @sa nvbench::make_cuda_stream_view

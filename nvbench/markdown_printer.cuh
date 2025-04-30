@@ -64,6 +64,7 @@ protected:
   virtual std::string do_format_default(const nvbench::summary &data);
   virtual std::string do_format_duration(const nvbench::summary &seconds);
   virtual std::string do_format_item_rate(const nvbench::summary &items_per_sec);
+  virtual std::string do_format_frequency(const nvbench::summary &frequency_hz);
   virtual std::string do_format_bytes(const nvbench::summary &bytes);
   virtual std::string do_format_byte_rate(const nvbench::summary &bytes_per_sec);
   virtual std::string do_format_sample_size(const nvbench::summary &count);

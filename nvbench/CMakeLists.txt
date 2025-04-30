@@ -25,9 +25,12 @@ set(srcs
 
   detail/entropy_criterion.cxx
   detail/measure_cold.cu
+  detail/measure_cpu_only.cxx
   detail/measure_hot.cu
   detail/state_generator.cxx
   detail/stdrel_criterion.cxx
+  detail/gpu_frequency.cxx
+  detail/timestamps_kernel.cu
 
   internal/nvml.cxx
 )
@@ -117,7 +120,6 @@ add_dependencies(nvbench.all nvbench.main)
 add_library(nvbench::nvbench ALIAS nvbench)
 add_library(nvbench::main ALIAS nvbench.main)
 
-nvbench_setup_dep_dlls(nvbench)
 nvbench_install_libraries(nvbench nvbench.main nvbench.build_interface)
 
 # nvcc emits several unavoidable warnings while compiling nlohmann_json:
@@ -137,6 +139,7 @@ endif()
 rapids_cmake_write_git_revision_file(
   nvbench_git_revision
   "${NVBench_BINARY_DIR}/nvbench/detail/git_revision.cuh"
+  PREFIX "NVBENCH"
 )
 target_link_libraries(nvbench PRIVATE nvbench_git_revision)
 

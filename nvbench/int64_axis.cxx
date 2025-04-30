@@ -16,9 +16,8 @@
  *  limitations under the License.
  */
 
-#include <nvbench/int64_axis.cuh>
-
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/int64_axis.cuh>
 
 #include <fmt/format.h>
 

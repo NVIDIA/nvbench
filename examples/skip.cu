@@ -72,14 +72,12 @@ NVBENCH_BENCH(runtime_skip)
 // Two type axes are swept, but configurations where InputType == OutputType are
 // skipped.
 template <typename InputType, typename OutputType>
-void skip_overload(nvbench::state &state,
-                   nvbench::type_list<InputType, OutputType>)
+void skip_overload(nvbench::state &state, nvbench::type_list<InputType, OutputType>)
 {
   // This is a contrived example that focuses on the skip overloads, so this is
   // just a sleep kernel:
-  state.exec([](nvbench::launch &launch) {
-    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3);
-  });
+  state.exec(
+    [](nvbench::launch &launch) { nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3); });
 }
 // Overload of skip_overload that is called when InputType == OutputType.
 template <typename T>
@@ -107,9 +105,8 @@ skip_sfinae(nvbench::state &state, nvbench::type_list<InputType, OutputType>)
 {
   // This is a contrived example that focuses on the skip overloads, so this is
   // just a sleep kernel:
-  state.exec([](nvbench::launch &launch) {
-    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3);
-  });
+  state.exec(
+    [](nvbench::launch &launch) { nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(1e-3); });
 }
 // Enable this overload if InputType is larger than OutputType
 template <typename InputType, typename OutputType>
@@ -119,10 +116,8 @@ skip_sfinae(nvbench::state &state, nvbench::type_list<InputType, OutputType>)
   state.skip("sizeof(InputType) > sizeof(OutputType).");
 }
 // The same type_list is used for both inputs/outputs.
-using sn_types = nvbench::type_list<nvbench::int8_t,
-                                    nvbench::int16_t,
-                                    nvbench::int32_t,
-                                    nvbench::int64_t>;
+using sn_types =
+  nvbench::type_list<nvbench::int8_t, nvbench::int16_t, nvbench::int32_t, nvbench::int64_t>;
 // Setup benchmark:
 NVBENCH_BENCH_TYPES(skip_sfinae, NVBENCH_TYPE_AXES(sn_types, sn_types))
   .set_type_axes_names({"In", "Out"});

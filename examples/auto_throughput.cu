@@ -24,25 +24,22 @@
 template <int ItemsPerThread>
 __global__ void kernel(std::size_t stride,
                        std::size_t elements,
-                       const nvbench::int32_t * __restrict__ in,
+                       const nvbench::int32_t *__restrict__ in,
                        nvbench::int32_t *__restrict__ out)
 {
-  const std::size_t tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const std::size_t tid  = threadIdx.x + blockIdx.x * blockDim.x;
   const std::size_t step = gridDim.x * blockDim.x;
 
-  for (std::size_t i = stride * tid;
-       i < stride * elements;
-       i += stride * step)
+  for (std::size_t i = stride * tid; i < stride * elements; i += stride * step)
   {
     for (int j = 0; j < ItemsPerThread; j++)
     {
-      const auto read_id = (ItemsPerThread * i + j) % elements;
+      const auto read_id  = (ItemsPerThread * i + j) % elements;
       const auto write_id = tid + j * elements;
-      out[write_id] = in[read_id];
+      out[write_id]       = in[read_id];
     }
   }
 }
-
 
 // `throughput_bench` copies a 128 MiB buffer of int32_t, and reports throughput
 // and cache hit rates.
@@ -50,11 +47,10 @@ __global__ void kernel(std::size_t stride,
 // Calling state.collect_*() enables particular metric collection if nvbench
 // was build with CUPTI support (CMake option: -DNVBench_ENABLE_CUPTI=ON).
 template <int ItemsPerThread>
-void throughput_bench(nvbench::state &state,
-                      nvbench::type_list<nvbench::enum_type<ItemsPerThread>>)
+void throughput_bench(nvbench::state &state, nvbench::type_list<nvbench::enum_type<ItemsPerThread>>)
 {
   // Allocate input data:
-  const std::size_t stride = static_cast<std::size_t>(state.get_int64("Stride"));
+  const std::size_t stride   = static_cast<std::size_t>(state.get_int64("Stride"));
   const std::size_t elements = 128 * 1024 * 1024 / sizeof(nvbench::int32_t);
   thrust::device_vector<nvbench::int32_t> input(elements);
   thrust::device_vector<nvbench::int32_t> output(elements * ItemsPerThread);
@@ -72,12 +68,11 @@ void throughput_bench(nvbench::state &state,
     static_cast<int>((elements + threads_in_block - 1) / threads_in_block);
 
   state.exec([&](nvbench::launch &launch) {
-    kernel<ItemsPerThread>
-      <<<blocks_in_grid, threads_in_block, 0, launch.get_stream()>>>(
-        stride,
-        elements,
-        thrust::raw_pointer_cast(input.data()),
-        thrust::raw_pointer_cast(output.data()));
+    kernel<ItemsPerThread><<<blocks_in_grid, threads_in_block, 0, launch.get_stream()>>>(
+      stride,
+      elements,
+      thrust::raw_pointer_cast(input.data()),
+      thrust::raw_pointer_cast(output.data()));
   });
 }
 

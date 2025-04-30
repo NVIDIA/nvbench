@@ -16,19 +16,16 @@
  *  limitations under the License.
  */
 
-#include <nvbench/cuda_timer.cuh>
-
 #include <nvbench/cuda_stream.cuh>
+#include <nvbench/cuda_timer.cuh>
 #include <nvbench/test_kernels.cuh>
 #include <nvbench/types.cuh>
 
-#include "test_asserts.cuh"
-
 #include <fmt/format.h>
 
-void test_basic(cudaStream_t time_stream,
-                cudaStream_t exec_stream,
-                bool expected)
+#include "test_asserts.cuh"
+
+void test_basic(cudaStream_t time_stream, cudaStream_t exec_stream, bool expected)
 {
   nvbench::cuda_timer timer;
 

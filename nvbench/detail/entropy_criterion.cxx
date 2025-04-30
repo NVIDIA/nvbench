@@ -21,7 +21,6 @@
 
 #include <cmath>
 
-
 namespace nvbench::detail
 {
 
@@ -40,7 +39,7 @@ void entropy_criterion::do_initialize()
   m_freq_tracker.clear();
 }
 
-nvbench::float64_t entropy_criterion::compute_entropy() 
+nvbench::float64_t entropy_criterion::compute_entropy()
 {
   const std::size_t n = m_freq_tracker.size();
   if (n == 0)
@@ -70,15 +69,15 @@ void entropy_criterion::do_add_measurement(nvbench::float64_t measurement)
   m_total_cuda_time += measurement;
 
   {
-    auto key = measurement;
+    auto key                = measurement;
     constexpr bool bin_keys = false;
 
-    if (bin_keys) 
+    if (bin_keys)
     {
       const auto resolution_us = 0.5;
-      const auto resulution_s = resolution_us / 1'000'000;
-      const auto epsilon = resulution_s * 2;
-      key = std::round(key / epsilon) * epsilon;
+      const auto resulution_s  = resolution_us / 1000000;
+      const auto epsilon       = resulution_s * 2;
+      key                      = std::round(key / epsilon) * epsilon;
     }
 
     // This approach is about 3x faster than `std::{unordered_,}map`
@@ -120,7 +119,7 @@ bool entropy_criterion::do_is_finished()
 
   const auto [slope, intercept] = statistics::compute_linear_regression(begin, end, mean);
 
-  if (statistics::slope2deg(slope) > m_params.get_float64("max-angle")) 
+  if (statistics::slope2deg(slope) > m_params.get_float64("max-angle"))
   {
     return false;
   }

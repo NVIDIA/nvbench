@@ -26,12 +26,10 @@
 #include <iterator>
 #include <limits>
 #include <numeric>
-#include <cmath>
-
 #include <type_traits>
 
 #ifndef M_PI
-  #define M_PI 3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #endif
 
 namespace nvbench::detail::statistics
@@ -154,7 +152,7 @@ nvbench::float64_t compute_r2(It first,
 
   for (std::size_t i = 0; i < n; ++i, ++first)
   {
-    const nvbench::float64_t y = *first;
+    const nvbench::float64_t y      = *first;
     const nvbench::float64_t y_pred = slope * static_cast<nvbench::float64_t>(i) + intercept;
 
     ss_tot += (y - mean_y) * (y - mean_y);
@@ -179,19 +177,10 @@ compute_r2(It first, It last, nvbench::float64_t slope, nvbench::float64_t inter
   return compute_r2(first, last, compute_mean(first, last), slope, intercept);
 }
 
-inline nvbench::float64_t rad2deg(nvbench::float64_t rad)
-{
-  return rad * 180.0 / M_PI;
-}
+inline nvbench::float64_t rad2deg(nvbench::float64_t rad) { return rad * 180.0 / M_PI; }
 
-inline nvbench::float64_t slope2rad(nvbench::float64_t slope)
-{
-  return std::atan2(slope, 1.0);
-}
+inline nvbench::float64_t slope2rad(nvbench::float64_t slope) { return std::atan2(slope, 1.0); }
 
-inline nvbench::float64_t slope2deg(nvbench::float64_t slope)
-{
-  return rad2deg(slope2rad(slope));
-}
+inline nvbench::float64_t slope2deg(nvbench::float64_t slope) { return rad2deg(slope2rad(slope)); }
 
 } // namespace nvbench::detail::statistics

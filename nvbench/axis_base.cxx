@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-#include "axis_base.cuh"
+#include <nvbench/axis_base.cuh>
 
 namespace nvbench
 {

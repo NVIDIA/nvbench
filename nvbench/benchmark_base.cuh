@@ -159,6 +159,16 @@ struct benchmark_base
   }
   /// @}
 
+  /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
+  /// @{
+  [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
+  benchmark_base &set_is_cpu_only(bool is_cpu_only)
+  {
+    m_is_cpu_only = is_cpu_only;
+    return *this;
+  }
+  /// @}
+
   /// If true, the benchmark is only run once, skipping all warmup runs and only
   /// executing a single non-batched measurement. This is intended for use with
   /// external profiling tools. @{
@@ -195,7 +205,7 @@ struct benchmark_base
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. 
+  /// `noise = stdev / mean_time`.
   /// Only applies to `stdrel` stopping criterion. @{
   [[nodiscard]] nvbench::float64_t get_max_noise() const
   {
@@ -237,8 +247,30 @@ struct benchmark_base
   }
   /// @}
 
-  [[nodiscard]] nvbench::criterion_params& get_criterion_params() { return m_criterion_params; }
-  [[nodiscard]] const nvbench::criterion_params& get_criterion_params() const { return m_criterion_params; }
+  [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
+
+  benchmark_base &set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  {
+    m_throttle_threshold = throttle_threshold;
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
+  {
+    return m_throttle_recovery_delay;
+  }
+
+  benchmark_base &set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  {
+    m_throttle_recovery_delay = throttle_recovery_delay;
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::criterion_params &get_criterion_params() { return m_criterion_params; }
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
+  {
+    return m_criterion_params;
+  }
 
   /// Control the stopping criterion for the measurement loop.
   /// @{
@@ -259,6 +291,7 @@ protected:
 
   optional_ref<nvbench::printer_base> m_printer;
 
+  bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
 
@@ -266,6 +299,9 @@ protected:
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
+
+  nvbench::float32_t m_throttle_threshold{0.75f};      // [% of default SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay{0.05f}; // [seconds]
 
   nvbench::criterion_params m_criterion_params;
   std::string m_stopping_criterion{"stdrel"};
