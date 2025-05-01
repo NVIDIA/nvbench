@@ -285,11 +285,11 @@ void test_get_config_count()
   bench.set_type_axes_names({"Integer", "Float", "Other"});
   bench.get_axes().get_type_axis(0).set_active_inputs({"I16", "I32"}); // 2,  2
   bench.get_axes().get_type_axis(1).set_active_inputs({"F32", "F64"}); // 2,  4
-  bench.get_axes().get_type_axis(2).set_active_inputs({"bool"});           // 1,  4
-  bench.add_float64_axis("foo", {0.4, 2.3, 4.3});                     // 3, 12
-  bench.add_int64_axis("bar", {4, 6, 15});                            // 3, 36
-  bench.add_string_axis("baz", {"str", "ing"});                           // 2, 72
-  bench.add_string_axis("fez", {"single"});                                   // 1, 72
+  bench.get_axes().get_type_axis(2).set_active_inputs({"bool"});       // 1,  4
+  bench.add_float64_axis("foo", {0.4, 2.3, 4.3});                      // 3, 12
+  bench.add_int64_axis("bar", {4, 6, 15});                             // 3, 36
+  bench.add_string_axis("baz", {"str", "ing"});                        // 2, 72
+  bench.add_string_axis("fez", {"single"});                            // 1, 72
 
   auto const num_devices = std::max(std::size_t(1), bench.get_devices().size());
 

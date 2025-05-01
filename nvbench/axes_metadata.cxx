@@ -24,11 +24,10 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <numeric>
 #include <stdexcept>
 #include <unordered_set>
-
-#include <iostream>
 
 namespace nvbench
 {
@@ -129,8 +128,7 @@ void axes_metadata::add_string_axis(std::string name, std::vector<std::string> d
 
 void axes_metadata::add_axis(const axis_base &axis)
 {
-  m_value_space.push_back(
-    std::make_unique<linear_axis_space>(m_axes.size()));
+  m_value_space.push_back(std::make_unique<linear_axis_space>(m_axes.size()));
   m_axes.push_back(axis.clone());
 }
 
@@ -138,7 +136,7 @@ void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
 {
   NVBENCH_THROW_IF((count < 2),
                    std::runtime_error,
-                   "At least two axi ( {} provided ) need to be provided "
+                   "At least two axes ( {} provided ) need to be provided "
                    "when using zip_axes.",
                    count);
 
@@ -151,13 +149,13 @@ void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
   {
     NVBENCH_THROW_IF((m_axes[i]->get_type() == nvbench::axis_type::type),
                      std::runtime_error,
-                     "Currently no support for tieing type axis ( {} ).",
+                     "Currently no support for zipping type axis ( {} ).",
                      m_axes[i]->get_name());
 
     NVBENCH_THROW_IF((m_axes[i]->get_size() < expected_size),
                      std::runtime_error,
-                     "All axes that are tied together must be atleast as long "
-                     "the first axi provided ( {} ).",
+                     "All axes that are zipped together must be at least as long "
+                     "as the first axis provided ( {} ).",
                      expected_size);
   }
 
@@ -166,10 +164,9 @@ void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
   m_value_space.push_back(std::move(tied));
 }
 
-void axes_metadata::add_user_iteration_space(
-  std::function<nvbench::make_user_space_signature> make,
-  std::size_t first_index,
-  std::size_t count)
+void axes_metadata::add_user_iteration_space(std::function<nvbench::make_user_space_signature> make,
+                                             std::size_t first_index,
+                                             std::size_t count)
 {
   // compute the numeric indice for each name we have
   std::vector<std::size_t> input_indices(count);

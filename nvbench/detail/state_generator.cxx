@@ -32,8 +32,7 @@ namespace nvbench::detail
 {
 // state_iterator ==============================================================
 
-void state_iterator::add_iteration_space(
-  const nvbench::detail::axis_space_iterator &iter)
+void state_iterator::add_iteration_space(const nvbench::detail::axis_space_iterator &iter)
 {
   m_axes_count += iter.m_info.size();
   m_max_iteration *= iter.m_iteration_size;
@@ -106,16 +105,12 @@ void state_generator::build_axis_configs()
   // instantiations.
   {
     const auto &axes_vec = axes.get_axes();
-    std::for_each(type_space.crbegin(),
-                  type_space.crend(),
-                  [&ti, &axes_vec](const auto &space) {
-                    ti.add_iteration_space(space->get_iterator(axes_vec));
-                  });
-    std::for_each(value_space.begin(),
-                  value_space.end(),
-                  [&vi, &axes_vec](const auto &space) {
-                    vi.add_iteration_space(space->get_iterator(axes_vec));
-                  });
+    std::for_each(type_space.crbegin(), type_space.crend(), [&ti, &axes_vec](const auto &space) {
+      ti.add_iteration_space(space->get_iterator(axes_vec));
+    });
+    std::for_each(value_space.begin(), value_space.end(), [&vi, &axes_vec](const auto &space) {
+      vi.add_iteration_space(space->get_iterator(axes_vec));
+    });
   }
 
   m_type_axis_configs.clear();
@@ -126,8 +121,8 @@ void state_generator::build_axis_configs()
 
   for (ti.init(); ti.iter_valid(); ti.next())
   {
-    auto &[config, active_mask] = m_type_axis_configs.emplace_back(
-      std::make_pair(nvbench::named_values{}, true));
+    auto &[config, active_mask] =
+      m_type_axis_configs.emplace_back(std::make_pair(nvbench::named_values{}, true));
 
     for (const auto &axis_info : ti.get_current_indices())
     {
@@ -135,8 +130,7 @@ void state_generator::build_axis_configs()
 
       active_mask &= axis.get_is_active(axis_info.index);
 
-      config.set_string(axis.get_name(),
-                        axis.get_input_string(axis_info.index));
+      config.set_string(axis.get_name(), axis.get_input_string(axis_info.index));
     }
   }
 
@@ -154,30 +148,26 @@ void state_generator::build_axis_configs()
           assert("unreachable." && false);
           break;
         case axis_type::int64:
-          config.set_int64(
-            axis_info.name,
-            axes.get_int64_axis(axis_info.name).get_value(axis_info.index));
+          config.set_int64(axis_info.name,
+                           axes.get_int64_axis(axis_info.name).get_value(axis_info.index));
           break;
 
         case axis_type::float64:
-          config.set_float64(
-            axis_info.name,
-            axes.get_float64_axis(axis_info.name).get_value(axis_info.index));
+          config.set_float64(axis_info.name,
+                             axes.get_float64_axis(axis_info.name).get_value(axis_info.index));
           break;
 
         case axis_type::string:
-          config.set_string(
-            axis_info.name,
-            axes.get_string_axis(axis_info.name).get_value(axis_info.index));
+          config.set_string(axis_info.name,
+                            axes.get_string_axis(axis_info.name).get_value(axis_info.index));
           break;
       } // switch (type)
-    }   // for (axis_info : current_indices)
+    } // for (axis_info : current_indices)
   }
 
   if (m_type_axis_configs.empty())
   {
-    m_type_axis_configs.emplace_back(
-      std::make_pair(nvbench::named_values{}, true));
+    m_type_axis_configs.emplace_back(std::make_pair(nvbench::named_values{}, true));
   }
 }
 
@@ -204,8 +194,7 @@ void state_generator::add_states_for_device(const std::optional<device_info> &de
   const auto num_type_configs = m_type_axis_configs.size();
   for (std::size_t type_config_index = 0; type_config_index < num_type_configs; ++type_config_index)
   {
-    const auto &[type_config,
-                 axis_mask] = m_type_axis_configs[type_config_index];
+    const auto &[type_config, axis_mask] = m_type_axis_configs[type_config_index];
     if (!axis_mask)
     { // Don't generate inner vector if the type config is masked out.
       continue;

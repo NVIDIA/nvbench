@@ -75,13 +75,13 @@ benchmark_base &benchmark_base::add_device(int device_id)
 
 std::size_t benchmark_base::get_config_count() const
 {
-  const auto& axes = m_axes.get_axes();
-  const std::size_t value_count = nvbench::detail::transform_reduce(
-    m_axes.get_value_iteration_space().cbegin(),
-    m_axes.get_value_iteration_space().cend(),
-    std::size_t{1},
-    std::multiplies<>{},
-    [&axes](const auto &space) { return space->get_size(axes); });
+  const auto &axes = m_axes.get_axes();
+  const std::size_t value_count =
+    nvbench::detail::transform_reduce(m_axes.get_value_iteration_space().cbegin(),
+                                      m_axes.get_value_iteration_space().cend(),
+                                      std::size_t{1},
+                                      std::multiplies<>{},
+                                      [&axes](const auto &space) { return space->get_size(axes); });
 
   const std::size_t type_count = nvbench::detail::transform_reduce(
     m_axes.get_type_iteration_space().cbegin(),

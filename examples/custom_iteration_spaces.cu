@@ -48,17 +48,15 @@ void copy_sweep_grid_shape(nvbench::state &state)
   thrust::device_vector<nvbench::int32_t> in(num_values, 0);
   thrust::device_vector<nvbench::int32_t> out(num_values, 0);
 
-  state.exec(
-    [block_size,
-     num_blocks,
-     num_values,
-     in_ptr  = thrust::raw_pointer_cast(in.data()),
-     out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
-      nvbench::copy_kernel<<<num_blocks, block_size, 0, launch.get_stream()>>>(
-        in_ptr,
-        out_ptr,
-        num_values);
-    });
+  state.exec([block_size,
+              num_blocks,
+              num_values,
+              in_ptr  = thrust::raw_pointer_cast(in.data()),
+              out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
+    nvbench::copy_kernel<<<num_blocks, block_size, 0, launch.get_stream()>>>(in_ptr,
+                                                                             out_ptr,
+                                                                             num_values);
+  });
 }
 
 //==============================================================================
@@ -100,8 +98,7 @@ struct under_diag final : nvbench::user_axis_space
   nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
   {
     // generate our increment function
-    auto adv_func = [&, info](std::size_t &inc_index,
-                              std::size_t /*len*/) -> bool {
+    auto adv_func = [&, info](std::size_t &inc_index, std::size_t /*len*/) -> bool {
       inc_index++;
       x_pos++;
       if (x_pos == info[0].size)
@@ -114,19 +111,15 @@ struct under_diag final : nvbench::user_axis_space
     };
 
     // our update function
-    auto diag_under =
-      [&, info](std::size_t,
-                std::vector<nvbench::detail::axis_index>::iterator start,
-                std::vector<nvbench::detail::axis_index>::iterator end) {
-        start->index = x_pos;
-        end->index   = y_pos;
-      };
+    auto diag_under = [&, info](std::size_t,
+                                std::vector<nvbench::detail::axis_index>::iterator start,
+                                std::vector<nvbench::detail::axis_index>::iterator end) {
+      start->index = x_pos;
+      end->index   = y_pos;
+    };
 
     const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
-    return nvbench::detail::axis_space_iterator(info,
-                                                iteration_length,
-                                                adv_func,
-                                                diag_under);
+    return nvbench::detail::axis_space_iterator(info, iteration_length, adv_func, diag_under);
   }
 
   std::size_t do_get_size(const axes_info &info) const
@@ -184,29 +177,20 @@ struct gauss final : nvbench::user_axis_space
     }
 
     // our update function
-    auto gauss_func =
-      [=](std::size_t index,
-          std::vector<nvbench::detail::axis_index>::iterator start,
-          std::vector<nvbench::detail::axis_index>::iterator) {
-        start->index = gauss_indices[index];
-      };
+    auto gauss_func = [=](std::size_t index,
+                          std::vector<nvbench::detail::axis_index>::iterator start,
+                          std::vector<nvbench::detail::axis_index>::iterator) {
+      start->index = gauss_indices[index];
+    };
 
-    return nvbench::detail::axis_space_iterator(info,
-                                                iteration_length,
-                                                gauss_func);
+    return nvbench::detail::axis_space_iterator(info, iteration_length, gauss_func);
   }
 
   std::size_t do_get_size(const axes_info &info) const { return info[0].size; }
 
-  std::size_t do_get_active_count(const axes_info &info) const
-  {
-    return info[0].size;
-  }
+  std::size_t do_get_active_count(const axes_info &info) const { return info[0].size; }
 
-  std::unique_ptr<iteration_space_base> do_clone() const
-  {
-    return std::make_unique<gauss>(*this);
-  }
+  std::unique_ptr<iteration_space_base> do_clone() const { return std::make_unique<gauss>(*this); }
 };
 //==============================================================================
 // Dual parameter sweep:
@@ -216,8 +200,7 @@ void dual_float64_axis(nvbench::state &state)
   const auto duration_B = state.get_float64("Duration_B");
 
   state.exec([duration_A, duration_B](nvbench::launch &launch) {
-    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(duration_A +
-                                                            duration_B);
+    nvbench::sleep_kernel<<<1, 1, 0, launch.get_stream()>>>(duration_A + duration_B);
   });
 }
 NVBENCH_BENCH(dual_float64_axis)

@@ -68,8 +68,7 @@ struct rezippable_benchmark final : public nvbench::benchmark_base
   using type_axes        = TypeAxes;
   using type_configs     = nvbench::tl::cartesian_product<type_axes>;
 
-  static constexpr std::size_t num_type_configs =
-    nvbench::tl::size<type_configs>{};
+  static constexpr std::size_t num_type_configs = nvbench::tl::size<type_configs>{};
 
   rezippable_benchmark()
       : benchmark_base(type_axes{})
@@ -95,21 +94,16 @@ private:
 };
 
 template <typename Integer, typename Float, typename Other>
-void template_no_op_generator(nvbench::state &state,
-                              nvbench::type_list<Integer, Float, Other>)
+void template_no_op_generator(nvbench::state &state, nvbench::type_list<Integer, Float, Other>)
 {
-  ASSERT(nvbench::type_strings<Integer>::input_string() ==
-         state.get_string("Integer"));
-  ASSERT(nvbench::type_strings<Float>::input_string() ==
-         state.get_string("Float"));
-  ASSERT(nvbench::type_strings<Other>::input_string() ==
-         state.get_string("Other"));
+  ASSERT(nvbench::type_strings<Integer>::input_string() == state.get_string("Integer"));
+  ASSERT(nvbench::type_strings<Float>::input_string() == state.get_string("Float"));
+  ASSERT(nvbench::type_strings<Other>::input_string() == state.get_string("Other"));
 
   // Enum params using non-templated version:
   no_op_generator(state);
 }
-NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator,
-                                 template_no_op_callable);
+NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator, template_no_op_callable);
 
 void test_zip_axes()
 {
@@ -134,9 +128,8 @@ void test_zip_unequal_length()
   using benchmark_type = nvbench::benchmark<no_op_callable>;
   benchmark_type bench;
 
-  ASSERT_THROWS_ANY(
-    bench.add_zip_axes(nvbench::float64_axis("F64 Axis", {0., .1, .25, .5, 1.}),
-                       nvbench::int64_axis("I64 Axis", {1, 3, 2})));
+  ASSERT_THROWS_ANY(bench.add_zip_axes(nvbench::float64_axis("F64 Axis", {0., .1, .25, .5, 1.}),
+                                       nvbench::int64_axis("I64 Axis", {1, 3, 2})));
 }
 
 void test_zip_clone()
@@ -146,8 +139,7 @@ void test_zip_clone()
   bench.set_devices(std::vector<int>{});
   bench.add_int64_power_of_two_axis("I64 POT Axis", {10, 20});
   bench.add_int64_axis("I64 Axis", {10, 20});
-  bench.add_zip_axes(nvbench::string_axis("Strings",
-                                          {"string a", "string b", "string c"}),
+  bench.add_zip_axes(nvbench::string_axis("Strings", {"string a", "string b", "string c"}),
                      nvbench::float64_axis("F64 Axis", {0., .1, .25}));
 
   const auto expected_count = bench.get_config_count();
@@ -199,8 +191,7 @@ struct under_diag final : nvbench::user_axis_space
   nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
   {
     // generate our increment function
-    auto adv_func = [&, info](std::size_t &inc_index,
-                              std::size_t /*len*/) -> bool {
+    auto adv_func = [&, info](std::size_t &inc_index, std::size_t /*len*/) -> bool {
       inc_index++;
       x_pos++;
       if (x_pos == info[0].size)
@@ -213,19 +204,15 @@ struct under_diag final : nvbench::user_axis_space
     };
 
     // our update function
-    auto diag_under =
-      [&, info](std::size_t,
-                std::vector<nvbench::detail::axis_index>::iterator start,
-                std::vector<nvbench::detail::axis_index>::iterator end) {
-        start->index = x_pos;
-        end->index   = y_pos;
-      };
+    auto diag_under = [&, info](std::size_t,
+                                std::vector<nvbench::detail::axis_index>::iterator start,
+                                std::vector<nvbench::detail::axis_index>::iterator end) {
+      start->index = x_pos;
+      end->index   = y_pos;
+    };
 
     const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
-    return nvbench::detail::axis_space_iterator(info,
-                                                iteration_length,
-                                                adv_func,
-                                                diag_under);
+    return nvbench::detail::axis_space_iterator(info, iteration_length, adv_func, diag_under);
   }
 
   std::size_t do_get_size(const axes_info &info) const

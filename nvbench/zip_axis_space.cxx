@@ -31,22 +31,18 @@ zip_axis_space::~zip_axis_space() = default;
 
 detail::axis_space_iterator zip_axis_space::do_get_iterator(axes_info info) const
 {
-  auto update_func = [=](std::size_t inc_index,
-                         axes_info::iterator start,
-                         axes_info::iterator end) {
-    for (; start != end; ++start)
-    {
-      start->index = inc_index;
-    }
-  };
+  auto update_func =
+    [=](std::size_t inc_index, axes_info::iterator start, axes_info::iterator end) {
+      for (; start != end; ++start)
+      {
+        start->index = inc_index;
+      }
+    };
 
   return detail::axis_space_iterator(info, info[0].size, update_func);
 }
 
-std::size_t zip_axis_space::do_get_size(const axes_info &info) const
-{
-  return info[0].size;
-}
+std::size_t zip_axis_space::do_get_size(const axes_info &info) const { return info[0].size; }
 
 std::size_t zip_axis_space::do_get_active_count(const axes_info &info) const
 {

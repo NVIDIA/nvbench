@@ -116,8 +116,8 @@ struct benchmark_base
   /// @param[axes] a set of axis_base to be added to the benchmark
   /// and zipped together
   ///
-  template<typename... Axes>
-  benchmark_base &add_zip_axes(Axes&&... axes)
+  template <typename... Axes>
+  benchmark_base &add_zip_axes(Axes &&...axes)
   {
     m_axes.add_zip_axes(std::forward<Axes>(axes)...);
     return *this;
@@ -135,8 +135,8 @@ struct benchmark_base
   /// which constructs the user iteration space, and the reseet are axis_base to be
   /// added to the benchmark and iterated using the user iteration space
   ///
-  template<typename... ConstructorAndAxes>
-  benchmark_base &add_user_iteration_axes(ConstructorAndAxes&&... args)
+  template <typename... ConstructorAndAxes>
+  benchmark_base &add_user_iteration_axes(ConstructorAndAxes &&...args)
   {
     m_axes.add_user_iteration_axes(std::forward<ConstructorAndAxes>(args)...);
     return *this;

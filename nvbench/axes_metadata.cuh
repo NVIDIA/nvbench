@@ -41,9 +41,8 @@ namespace nvbench
 // Holds dynamic axes information.
 struct axes_metadata
 {
-  using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
-  using iteration_space_type =
-    std::vector<std::unique_ptr<nvbench::iteration_space_base>>;
+  using axes_type            = std::vector<std::unique_ptr<nvbench::axis_base>>;
+  using iteration_space_type = std::vector<std::unique_ptr<nvbench::iteration_space_base>>;
 
   template <typename... TypeAxes>
   explicit axes_metadata(nvbench::type_list<TypeAxes...>);
@@ -78,9 +77,8 @@ struct axes_metadata
   }
 
   template <typename... Args>
-  void add_user_iteration_axes(
-    std::function<nvbench::make_user_space_signature> make,
-    Args &&...args)
+  void add_user_iteration_axes(std::function<nvbench::make_user_space_signature> make,
+                               Args &&...args)
   {
     const std::size_t start = this->m_axes.size();
     const std::size_t count = sizeof...(Args);
@@ -132,10 +130,9 @@ private:
   iteration_space_type m_value_space;
 
   void add_zip_space(std::size_t first_index, std::size_t count);
-  void add_user_iteration_space(
-    std::function<nvbench::make_user_space_signature> make,
-    std::size_t first_index,
-    std::size_t count);
+  void add_user_iteration_space(std::function<nvbench::make_user_space_signature> make,
+                                std::size_t first_index,
+                                std::size_t count);
 };
 
 template <typename... TypeAxes>
@@ -148,14 +145,12 @@ axes_metadata::axes_metadata(nvbench::type_list<TypeAxes...>)
 
   auto names_iter = names.begin(); // contents will be moved from
   nvbench::tl::foreach<type_axes_list>(
-    [&axes = m_axes, &spaces = m_type_space, &names_iter](
-      [[maybe_unused]] auto wrapped_type) {
+    [&axes = m_axes, &spaces = m_type_space, &names_iter]([[maybe_unused]] auto wrapped_type) {
       // This is always called before other axes are added, so the length of the
       // axes vector will be the type axis index:
       const std::size_t type_axis_index = axes.size();
 
-      spaces.push_back(
-        std::make_unique<linear_axis_space>(type_axis_index));
+      spaces.push_back(std::make_unique<linear_axis_space>(type_axis_index));
 
       // Note:
       // The word "type" appears 6 times in the next line.

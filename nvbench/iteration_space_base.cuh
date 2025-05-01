@@ -24,17 +24,17 @@ namespace nvbench
 {
 
 /*!
- * Base class for all axi and axes iteration spaces.
+ * Base class for all axis iteration spaces.
  *
- * If we consider an axi to be a container of values, iteration_spaces
+ * If we consider an axis to be a container of values, iteration_spaces
  * would be how we can create iterators over that container.
  *
  * With that in mind we get the following mapping:
- * * linear_axis_space is equivalant to a forward iterator.
+ * * linear_axis_space is equivalent to a forward iterator.
  *
- * * zip_axis_space is equivalant to a zip iterator.
+ * * zip_axis_space is equivalent to a zip iterator.
  *
- * * user_axis_space is equivalant to a transform iterator.
+ * * user_axis_space is equivalent to a transform iterator.
  *
  * The `nvbench::axes_metadata` stores all axes in a std::vector. To represent
  * which axes each space is 'over' we store those indices. We don't store
@@ -54,18 +54,18 @@ struct iteration_space_base
   using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
   using axes_info = std::vector<detail::axis_index>;
 
-  using AdvanceSignature =
-    nvbench::detail::axis_space_iterator::AdvanceSignature;
-  using UpdateSignature = nvbench::detail::axis_space_iterator::UpdateSignature;
+  using AdvanceSignature = nvbench::detail::axis_space_iterator::AdvanceSignature;
+  using UpdateSignature  = nvbench::detail::axis_space_iterator::UpdateSignature;
 
   /*!
    * Construct a new derived iteration_space
    *
    * The input_indices and output_indices combine together to allow the iteration space to know
-   * what axi they should query from axes_metadata and where each of those map to in the output
+   * what axes they should query from axes_metadata and where each of those map to in the output
    * iteration space.
-   * @param[input_indices] recorded indices of each axi from the axes metadata value space
-   * @param[output_indices] requested indices of each axi for output when iterating the type+value space
+   * @param[input_indices] recorded indices of each axis from the axes metadata value space
+   * @param[output_indices] requested indices of each axis for output when iterating the type+value
+   * space
    */
   iteration_space_base(std::vector<std::size_t> input_indices);
   virtual ~iteration_space_base();
@@ -78,8 +78,7 @@ struct iteration_space_base
    * @param[axes]
    *
    */
-  [[nodiscard]] detail::axis_space_iterator
-  get_iterator(const axes_type &axes) const;
+  [[nodiscard]] detail::axis_space_iterator get_iterator(const axes_type &axes) const;
 
   /*!
    * Returns the number of active and inactive elements the iterator will have

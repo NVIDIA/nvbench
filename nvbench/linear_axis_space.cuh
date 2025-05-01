@@ -24,9 +24,9 @@ namespace nvbench
 {
 
 /*!
- * Provides linear forward iteration over a single axi
+ * Provides linear forward iteration over a single axis.
  *
- * The default for all axi added to a benchmark
+ * The default for all axes added to a benchmark
  *
  */
 struct linear_axis_space final : iteration_space_base

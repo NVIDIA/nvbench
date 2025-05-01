@@ -26,7 +26,7 @@ namespace nvbench
 /*!
  * Provides user defined iteration over multiple axes
  *
- * Consider two axi with the following values:
+ * Consider two axes with the following values:
  * { 0, 1, 2, 3, 4, 5 }
  * { 0, 1, 2, 3, 4, 5 }
  *

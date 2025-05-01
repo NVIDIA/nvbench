@@ -23,6 +23,7 @@
 #include <fmt/format.h>
 
 #include <iostream>
+
 #include "test_asserts.cuh"
 
 //==============================================================================

@@ -28,14 +28,12 @@
 namespace
 {
 
-std::vector<nvbench::int64_t>
-construct_values(nvbench::int64_axis_flags flags,
-                 const std::vector<nvbench::int64_t> &inputs)
+std::vector<nvbench::int64_t> construct_values(nvbench::int64_axis_flags flags,
+                                               const std::vector<nvbench::int64_t> &inputs)
 {
 
   std::vector<int64_t> values;
-  const bool is_power_of_two =
-    static_cast<bool>(flags & nvbench::int64_axis_flags::power_of_two);
+  const bool is_power_of_two = static_cast<bool>(flags & nvbench::int64_axis_flags::power_of_two);
   if (!is_power_of_two)
   {
     values = inputs;
@@ -65,9 +63,7 @@ construct_values(nvbench::int64_axis_flags flags,
 namespace nvbench
 {
 
-int64_axis::int64_axis(std::string name,
-                       std::vector<int64_t> inputs,
-                       int64_axis_flags flags)
+int64_axis::int64_axis(std::string name, std::vector<int64_t> inputs, int64_axis_flags flags)
     : axis_base{std::move(name), axis_type::int64}
     , m_inputs{std::move(inputs)}
     , m_values{construct_values(flags, m_inputs)}

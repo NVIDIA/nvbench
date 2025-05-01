@@ -34,17 +34,16 @@ struct axis_index
 {
   axis_index() = default;
 
-  explicit axis_index(const axis_base *axi)
+  explicit axis_index(const axis_base *axis)
       : index(0)
-      , name(axi->get_name())
-      , type(axi->get_type())
-      , size(axi->get_size())
-      , active_size(axi->get_size())
+      , name(axis->get_name())
+      , type(axis->get_type())
+      , size(axis->get_size())
+      , active_size(axis->get_size())
   {
     if (type == nvbench::axis_type::type)
     {
-      active_size =
-        static_cast<const nvbench::type_axis *>(axi)->get_active_count();
+      active_size = static_cast<const nvbench::type_axis *>(axis)->get_active_count();
     }
   }
   std::size_t index;
@@ -62,30 +61,25 @@ struct axis_space_iterator
                                axes_info::iterator start,
                                axes_info::iterator end);
 
-  axis_space_iterator(
-    std::vector<detail::axis_index> info,
-    std::size_t iter_count,
-    std::function<axis_space_iterator::AdvanceSignature> &&advance,
-    std::function<axis_space_iterator::UpdateSignature> &&update)
+  axis_space_iterator(std::vector<detail::axis_index> info,
+                      std::size_t iter_count,
+                      std::function<axis_space_iterator::AdvanceSignature> &&advance,
+                      std::function<axis_space_iterator::UpdateSignature> &&update)
       : m_info(info)
       , m_iteration_size(iter_count)
       , m_advance(std::move(advance))
       , m_update(std::move(update))
   {}
 
-  axis_space_iterator(
-    std::vector<detail::axis_index> info,
-    std::size_t iter_count,
-    std::function<axis_space_iterator::UpdateSignature> &&update)
+  axis_space_iterator(std::vector<detail::axis_index> info,
+                      std::size_t iter_count,
+                      std::function<axis_space_iterator::UpdateSignature> &&update)
       : m_info(info)
       , m_iteration_size(iter_count)
       , m_update(std::move(update))
   {}
 
-  [[nodiscard]] bool next()
-  {
-    return this->m_advance(m_current_index, m_iteration_size);
-  }
+  [[nodiscard]] bool next() { return this->m_advance(m_current_index, m_iteration_size); }
 
   void update_indices(std::vector<axis_index> &indices) const
   {
@@ -97,8 +91,7 @@ struct axis_space_iterator
 
   axes_info m_info;
   std::size_t m_iteration_size              = 1;
-  std::function<AdvanceSignature> m_advance = [](std::size_t &current_index,
-                                                 std::size_t length) {
+  std::function<AdvanceSignature> m_advance = [](std::size_t &current_index, std::size_t length) {
     (current_index + 1 == length) ? current_index = 0 : current_index++;
     return (current_index == 0); // we rolled over
   };
