@@ -20,6 +20,9 @@
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/transform_reduce.cuh>
 
+#include <algorithm>
+#include <cstdint>
+
 namespace nvbench
 {
 
@@ -86,7 +89,8 @@ std::size_t benchmark_base::get_config_count() const
       return axis_ptr->get_size();
     });
 
-  return per_device_count * m_devices.size();
+  // Devices will be empty for cpu-only benchmarks.
+  return per_device_count * std::max(std::size_t(1), m_devices.size());
 }
 
 benchmark_base &benchmark_base::set_stopping_criterion(std::string criterion)
