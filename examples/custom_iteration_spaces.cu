@@ -225,9 +225,9 @@ NVBENCH_BENCH(dual_float64_axis)
     [](auto... args) -> std::unique_ptr<nvbench::iteration_space_base> {
       return std::make_unique<gauss>(args...);
     },
-    nvbench::float64_axis("Duration_A", nvbench::range(0., 1e-4, 1e-5)))
+    nvbench::float64_axis("Duration_A", nvbench::range(0., 1e-4, 5e-5)))
   .add_user_iteration_axes(
     [](auto... args) -> std::unique_ptr<nvbench::iteration_space_base> {
       return std::make_unique<gauss>(args...);
     },
-    nvbench::float64_axis("Duration_B", nvbench::range(0., 1e-4, 1e-5)));
+    nvbench::float64_axis("Duration_B", nvbench::range(0., 1e-4, 5e-5)));
