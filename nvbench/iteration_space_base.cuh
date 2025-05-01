@@ -64,8 +64,6 @@ struct iteration_space_base
    * what axes they should query from axes_metadata and where each of those map to in the output
    * iteration space.
    * @param[input_indices] recorded indices of each axis from the axes metadata value space
-   * @param[output_indices] requested indices of each axis for output when iterating the type+value
-   * space
    */
   iteration_space_base(std::vector<std::size_t> input_indices);
   virtual ~iteration_space_base();
@@ -90,7 +88,7 @@ struct iteration_space_base
   [[nodiscard]] std::size_t get_size(const axes_type &axes) const;
 
   /*!
-   * Returns the number of active elements the iterator will over when
+   * Returns the number of active elements the iterator will have when
    * executed over @a axes
    *
    * Note:

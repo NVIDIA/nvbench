@@ -53,7 +53,6 @@ get_axes_info(const nvbench::iteration_space_base::axes_type &axes,
 
 detail::axis_space_iterator iteration_space_base::get_iterator(const axes_type &axes) const
 {
-
   return this->do_get_iterator(get_axes_info(axes, m_input_indices));
 }
 
