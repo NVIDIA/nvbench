@@ -83,9 +83,10 @@ struct axis_space_iterator
 
   void update_indices(std::vector<axis_index> &indices) const
   {
+    using diff_t = typename axes_info::difference_type;
     indices.insert(indices.end(), m_info.begin(), m_info.end());
     axes_info::iterator end   = indices.end();
-    axes_info::iterator start = end - m_info.size();
+    axes_info::iterator start = end - static_cast<diff_t>(m_info.size());
     this->m_update(m_current_index, start, end);
   }
 

@@ -33,8 +33,8 @@
 void copy_sweep_grid_shape(nvbench::state &state)
 {
   // Get current parameters:
-  const int block_size = static_cast<int>(state.get_int64("BlockSize"));
-  const int num_blocks = static_cast<int>(state.get_int64("NumBlocks"));
+  const auto block_size = static_cast<unsigned int>(state.get_int64("BlockSize"));
+  const auto num_blocks = static_cast<unsigned int>(state.get_int64("NumBlocks"));
 
   // Number of int32s in 256 MiB:
   const std::size_t num_values = 256 * 1024 * 1024 / sizeof(nvbench::int32_t);
@@ -53,6 +53,7 @@ void copy_sweep_grid_shape(nvbench::state &state)
               num_values,
               in_ptr  = thrust::raw_pointer_cast(in.data()),
               out_ptr = thrust::raw_pointer_cast(out.data())](nvbench::launch &launch) {
+    (void)num_values; // clang thinks this is unused.
     nvbench::copy_kernel<<<num_blocks, block_size, 0, launch.get_stream()>>>(in_ptr,
                                                                              out_ptr,
                                                                              num_values);
