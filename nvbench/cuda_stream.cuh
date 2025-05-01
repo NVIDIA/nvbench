@@ -19,10 +19,13 @@
 #pragma once
 
 #include <nvbench/cuda_call.cuh>
+#include <nvbench/detail/device_scope.cuh>
+#include <nvbench/device_info.cuh>
 
 #include <cuda_runtime_api.h>
 
 #include <memory>
+#include <optional>
 
 namespace nvbench
 {
@@ -39,22 +42,40 @@ namespace nvbench
 struct cuda_stream
 {
   /**
-   * Constructs a cuda_stream that owns a new stream, created with
-   * `cudaStreamCreate`.
+   * Constructs a cuda_stream that owns a new stream, created with `cudaStreamCreate`.
+   *
+   * @param device The device that this stream should be associated with. If no device is provided,
+   * the stream will be associated with the device that is active at the call time.
    */
-  cuda_stream()
-      : m_stream{[]() {
+  explicit cuda_stream(std::optional<nvbench::device_info> device)
+      : m_stream{[device]() {
                    cudaStream_t s;
-                   NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   if (device.has_value())
+                   {
+                     nvbench::detail::device_scope scope_guard{device.value().get_id()};
+                     NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   }
+                   else
+                   {
+                     NVBENCH_CUDA_CALL(cudaStreamCreate(&s));
+                   }
                    return s;
                  }(),
                  stream_deleter{true}}
   {}
 
   /**
+   * @brief Constructs a new cuda_stream tha is associated with the device that is active at the
+   * call time.
+   */
+  cuda_stream()
+      : cuda_stream(std::nullopt)
+  {}
+
+  /**
    * Constructs a `cuda_stream` from an explicit cudaStream_t.
    *
-   * @param owning If true, `cudaStreamCreate(stream)` will be called from this
+   * @param owning If true, `cudaStreamDestroy(stream)` will be called from this
    * `cuda_stream`'s destructor.
    *
    * @sa nvbench::make_cuda_stream_view
@@ -66,10 +87,10 @@ struct cuda_stream
   ~cuda_stream() = default;
 
   // move-only
-  cuda_stream(const cuda_stream &) = delete;
+  cuda_stream(const cuda_stream &)            = delete;
   cuda_stream &operator=(const cuda_stream &) = delete;
   cuda_stream(cuda_stream &&)                 = default;
-  cuda_stream &operator=(cuda_stream &&) = default;
+  cuda_stream &operator=(cuda_stream &&)      = default;
 
   /**
    * @return The `cudaStream_t` managed by this `cuda_stream`.

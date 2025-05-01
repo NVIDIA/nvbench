@@ -16,22 +16,21 @@
  *  limitations under the License.
  */
 
-#include <nvbench/runner.cuh>
-
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
+#include <nvbench/runner.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
 #include <nvbench/types.cuh>
-
-#include "test_asserts.cuh"
 
 #include <fmt/format.h>
 
 #include <algorithm>
 #include <variant>
 #include <vector>
+
+#include "test_asserts.cuh"
 
 template <typename T>
 std::vector<T> sort(std::vector<T> &&vec)
@@ -43,13 +42,13 @@ std::vector<T> sort(std::vector<T> &&vec)
 void no_op_generator(nvbench::state &state)
 {
   fmt::memory_buffer params;
-  fmt::format_to(params, "Params:");
+  fmt::format_to(std::back_inserter(params), "Params:");
   const auto &axis_values = state.get_axis_values();
   for (const auto &name : sort(axis_values.get_names()))
   {
     std::visit(
       [&params, &name](const auto &value) {
-        fmt::format_to(params, " {}: {}", name, value);
+        fmt::format_to(std::back_inserter(params), " {}: {}", name, value);
       },
       axis_values.get_value(name));
   }
@@ -65,21 +64,16 @@ using misc_types  = nvbench::type_list<bool, void>;
 using type_axes   = nvbench::type_list<float_types, int_types, misc_types>;
 
 template <typename FloatT, typename IntT, typename MiscT>
-void template_no_op_generator(nvbench::state &state,
-                              nvbench::type_list<FloatT, IntT, MiscT>)
+void template_no_op_generator(nvbench::state &state, nvbench::type_list<FloatT, IntT, MiscT>)
 {
-  ASSERT(nvbench::type_strings<FloatT>::input_string() ==
-         state.get_string("FloatT"));
-  ASSERT(nvbench::type_strings<IntT>::input_string() ==
-         state.get_string("IntT"));
-  ASSERT(nvbench::type_strings<IntT>::input_string() ==
-         state.get_string("IntT"));
+  ASSERT(nvbench::type_strings<FloatT>::input_string() == state.get_string("FloatT"));
+  ASSERT(nvbench::type_strings<IntT>::input_string() == state.get_string("IntT"));
+  ASSERT(nvbench::type_strings<IntT>::input_string() == state.get_string("IntT"));
 
   // Enum params using non-templated version:
   no_op_generator(state);
 }
-NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator,
-                                 template_no_op_callable);
+NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator, template_no_op_callable);
 
 void test_empty()
 {
@@ -124,7 +118,7 @@ void test_non_types()
   for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == true);
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
 
   const std::string ref = R"expected(Params: Float: 11 Int: 1 String: One
@@ -184,7 +178,7 @@ void test_types()
   for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == true);
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
 
   const std::string ref = R"expected(Params: FloatT: F32 IntT: I32 MiscT: bool
@@ -228,7 +222,7 @@ void test_both()
   for (const auto &state : bench.get_states())
   {
     ASSERT(state.is_skipped() == true);
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
 
   const std::string ref =

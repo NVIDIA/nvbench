@@ -16,16 +16,13 @@
  *  limitations under the License.
  */
 
-#include <nvbench/create.cuh>
-
 #include <nvbench/benchmark.cuh>
 #include <nvbench/callable.cuh>
+#include <nvbench/create.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
 #include <nvbench/types.cuh>
-
-#include "test_asserts.cuh"
 
 #include <fmt/format.h>
 
@@ -33,6 +30,8 @@
 #include <type_traits>
 #include <variant>
 #include <vector>
+
+#include "test_asserts.cuh"
 
 template <typename T>
 std::vector<T> sort(std::vector<T> &&vec)
@@ -44,13 +43,13 @@ std::vector<T> sort(std::vector<T> &&vec)
 void no_op_generator(nvbench::state &state)
 {
   fmt::memory_buffer params;
-  fmt::format_to(params, "Params:");
+  fmt::format_to(std::back_inserter(params), "Params:");
   const auto &axis_values = state.get_axis_values();
   for (const auto &name : sort(axis_values.get_names()))
   {
     std::visit(
       [&params, &name](const auto &value) {
-        fmt::format_to(params, " {}: {}", name, value);
+        fmt::format_to(std::back_inserter(params), " {}: {}", name, value);
       },
       axis_values.get_value(name));
   }
@@ -72,15 +71,11 @@ using misc_types  = nvbench::type_list<bool, void>;
 using type_axes   = nvbench::type_list<float_types, int_types, misc_types>;
 
 template <typename FloatT, typename IntT, typename MiscT>
-void template_no_op_generator(nvbench::state &state,
-                              nvbench::type_list<FloatT, IntT, MiscT>)
+void template_no_op_generator(nvbench::state &state, nvbench::type_list<FloatT, IntT, MiscT>)
 {
-  ASSERT(nvbench::type_strings<FloatT>::input_string() ==
-         state.get_string("FloatT"));
-  ASSERT(nvbench::type_strings<IntT>::input_string() ==
-         state.get_string("IntT"));
-  ASSERT(nvbench::type_strings<IntT>::input_string() ==
-         state.get_string("IntT"));
+  ASSERT(nvbench::type_strings<FloatT>::input_string() == state.get_string("FloatT"));
+  ASSERT(nvbench::type_strings<IntT>::input_string() == state.get_string("IntT"));
+  ASSERT(nvbench::type_strings<IntT>::input_string() == state.get_string("IntT"));
 
   // Enum params using non-templated version:
   no_op_generator(state);
@@ -109,15 +104,14 @@ std::string run_and_get_state_string(nvbench::benchmark_base &bench,
   for (const auto &state : states)
   {
     ASSERT(state.is_skipped());
-    fmt::format_to(buffer, "{}\n", state.get_skip_reason());
+    fmt::format_to(std::back_inserter(buffer), "{}\n", state.get_skip_reason());
   }
   return fmt::to_string(buffer);
 }
 
 void validate_default_name()
 {
-  auto bench =
-    nvbench::benchmark_manager::get().get_benchmark("no_op_generator").clone();
+  auto bench = nvbench::benchmark_manager::get().get_benchmark("no_op_generator").clone();
 
   const std::string ref = "Params:\n";
 
@@ -127,8 +121,7 @@ void validate_default_name()
 
 void validate_custom_name()
 {
-  auto bench =
-    nvbench::benchmark_manager::get().get_benchmark("Custom Name").clone();
+  auto bench = nvbench::benchmark_manager::get().get_benchmark("Custom Name").clone();
 
   const std::string ref = "Params:\n";
 
@@ -138,8 +131,7 @@ void validate_custom_name()
 
 void validate_no_types()
 {
-  auto bench =
-    nvbench::benchmark_manager::get().get_benchmark("No Types").clone();
+  auto bench = nvbench::benchmark_manager::get().get_benchmark("No Types").clone();
 
   const std::string ref = R"expected(Params: Float: 11 Int: 1 String: One
 Params: Float: 11 Int: 2 String: One
@@ -176,8 +168,7 @@ Params: Float: 13 Int: 3 String: Three
 
 void validate_only_types()
 {
-  auto bench =
-    nvbench::benchmark_manager::get().get_benchmark("Oops, All Types!").clone();
+  auto bench = nvbench::benchmark_manager::get().get_benchmark("Oops, All Types!").clone();
 
   const std::string ref = R"expected(Params: FloatT: F32 IntT: I32 MiscT: bool
 Params: FloatT: F32 IntT: I32 MiscT: void
@@ -195,8 +186,7 @@ Params: FloatT: F64 IntT: I64 MiscT: void
 
 void validate_all_axes()
 {
-  auto bench =
-    nvbench::benchmark_manager::get().get_benchmark("All The Axes").clone();
+  auto bench = nvbench::benchmark_manager::get().get_benchmark("All The Axes").clone();
 
   const std::string ref =
     R"expected(Params: Float: 11 FloatT: F32 Int: 1 IntT: I32 MiscT: bool String: One

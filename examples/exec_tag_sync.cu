@@ -27,6 +27,9 @@
 // Used to initialize input data:
 #include <thrust/sequence.h>
 
+// Used to run the benchmark on a CUDA stream
+#include <thrust/execution_policy.h>
+
 // `sequence_bench` measures the execution time of `thrust::sequence`. Since
 // algorithms in `thrust::` implicitly sync the CUDA device, the
 // `nvbench::exec_tag::sync` must be passed to `state.exec(...)`.
@@ -50,9 +53,7 @@ void sequence_bench(nvbench::state &state)
 
   // nvbench::exec_tag::sync indicates that this will implicitly sync:
   state.exec(nvbench::exec_tag::sync, [&data](nvbench::launch &launch) {
-    thrust::sequence(thrust::device.on(launch.get_stream()),
-                     data.begin(),
-                     data.end());
+    thrust::sequence(thrust::device.on(launch.get_stream()), data.begin(), data.end());
   });
 }
 NVBENCH_BENCH(sequence_bench);

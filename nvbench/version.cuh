@@ -18,12 +18,8 @@
 
 #pragma once
 
+// Include the auto-generated version header:
 #include <nvbench/detail/version.cuh>
-
-// WAR issue rapidsai/rapids-cmake#99
-#define NVBENCH_VERSION_MAJOR NVBench_VERSION_MAJOR
-#define NVBENCH_VERSION_MINOR NVBench_VERSION_MINOR
-#define NVBENCH_VERSION_PATCH NVBench_VERSION_PATCH
 
 // clang-format off
 

@@ -22,6 +22,7 @@
 
 #include <iosfwd>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -76,19 +77,16 @@ struct printer_base
   virtual ~printer_base();
 
   // move-only
-  printer_base(const printer_base &) = delete;
-  printer_base(printer_base &&)      = default;
+  printer_base(const printer_base &)            = delete;
+  printer_base(printer_base &&)                 = default;
   printer_base &operator=(const printer_base &) = delete;
-  printer_base &operator=(printer_base &&) = default;
+  printer_base &operator=(printer_base &&)      = delete;
 
   /*!
    * Called once with the command line arguments used to invoke the current
    * executable.
    */
-  void log_argv(const std::vector<std::string> &argv)
-  {
-    this->do_log_argv(argv);
-  }
+  void log_argv(const std::vector<std::string> &argv) { this->do_log_argv(argv); }
 
   /*!
    * Print a summary of all detected devices, if supported.
@@ -108,19 +106,13 @@ struct printer_base
   /*!
    * Print a log message at the specified log level.
    */
-  void log(nvbench::log_level level, const std::string &msg)
-  {
-    this->do_log(level, msg);
-  }
+  void log(nvbench::log_level level, const std::string &msg) { this->do_log(level, msg); }
 
   /*!
    * Called before running the measurements associated with state.
    * Implementations are expected to call `log(log_level::run, ...)`.
    */
-  void log_run_state(const nvbench::state &exec_state)
-  {
-    this->do_log_run_state(exec_state);
-  }
+  void log_run_state(const nvbench::state &exec_state) { this->do_log_run_state(exec_state); }
 
   /*!
    * Measurements may call this to allow a printer to perform extra processing
@@ -181,10 +173,7 @@ struct printer_base
     return this->do_get_completed_state_count();
   }
 
-  virtual void set_total_state_count(std::size_t states)
-  {
-    this->do_set_total_state_count(states);
-  }
+  virtual void set_total_state_count(std::size_t states) { this->do_set_total_state_count(states); }
   [[nodiscard]] virtual std::size_t get_total_state_count() const
   {
     return this->do_get_total_state_count();
@@ -193,18 +182,22 @@ struct printer_base
 
 protected:
   // Implementation hooks for subclasses:
-  virtual void do_log_argv(const std::vector<std::string>&) {}
+  virtual void do_log_argv(const std::vector<std::string> &) {}
   virtual void do_print_device_info() {}
   virtual void do_print_log_preamble() {}
   virtual void do_print_log_epilogue() {}
   virtual void do_log(nvbench::log_level, const std::string &) {}
   virtual void do_log_run_state(const nvbench::state &) {}
-  virtual void
-  do_process_bulk_data_float64(nvbench::state &,
-                               const std::string &,
-                               const std::string &,
-                               const std::vector<nvbench::float64_t> &){};
-  virtual void do_print_benchmark_list(const benchmark_vector &) {}
+  virtual void do_process_bulk_data_float64(nvbench::state &,
+                                            const std::string &,
+                                            const std::string &,
+                                            const std::vector<nvbench::float64_t> &) {};
+
+  virtual void do_print_benchmark_list(const benchmark_vector &)
+  {
+    throw std::runtime_error{"nvbench::do_print_benchmark_list is not supported by this printer."};
+  }
+
   virtual void do_print_benchmark_results(const benchmark_vector &) {}
 
   virtual void do_set_completed_state_count(std::size_t states);

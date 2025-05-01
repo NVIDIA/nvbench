@@ -17,12 +17,11 @@
  */
 
 #include <nvbench/type_axis.cuh>
-
 #include <nvbench/types.cuh>
 
-#include "test_asserts.cuh"
-
 #include <fmt/format.h>
+
+#include "test_asserts.cuh"
 
 void test_empty()
 {
@@ -39,8 +38,7 @@ void test_empty()
 
   const auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::type_axis *>(clone_base.get());
+  const auto *clone = dynamic_cast<const nvbench::type_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Basic");
@@ -63,8 +61,7 @@ void test_single()
 
   auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  auto *clone =
-    dynamic_cast<nvbench::type_axis *>(clone_base.get());
+  auto *clone = dynamic_cast<nvbench::type_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Single");
@@ -102,8 +99,7 @@ void test_single()
 void test_several()
 {
   nvbench::type_axis axis("Several", 0);
-  axis.set_inputs<
-    nvbench::type_list<nvbench::int32_t, nvbench::float64_t, bool>>();
+  axis.set_inputs<nvbench::type_list<nvbench::int32_t, nvbench::float64_t, bool>>();
 
   ASSERT(axis.get_name() == "Several");
   ASSERT(axis.get_size() == 3);
@@ -122,8 +118,7 @@ void test_several()
 
   auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  auto *clone =
-    dynamic_cast<nvbench::type_axis *>(clone_base.get());
+  auto *clone = dynamic_cast<nvbench::type_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Several");
@@ -177,9 +172,8 @@ void test_several()
 void test_get_type_index()
 {
   nvbench::type_axis axis("GetIndexTest", 0);
-  axis.set_inputs<
-    nvbench::
-      type_list<nvbench::int8_t, nvbench::uint16_t, nvbench::float32_t, bool>>();
+  axis
+    .set_inputs<nvbench::type_list<nvbench::int8_t, nvbench::uint16_t, nvbench::float32_t, bool>>();
 
   ASSERT(axis.get_type_index("I8") == 0);
   ASSERT(axis.get_type_index("U16") == 1);
@@ -188,8 +182,7 @@ void test_get_type_index()
 
   const auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::type_axis *>(clone_base.get());
+  const auto *clone = dynamic_cast<const nvbench::type_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_type_index("I8") == 0);

@@ -17,13 +17,13 @@
  */
 
 #include <nvbench/axes_metadata.cuh>
-
 #include <nvbench/detail/throw.cuh>
 
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include <algorithm>
+#include <cassert>
 #include <numeric>
 #include <stdexcept>
 #include <unordered_set>
@@ -86,23 +86,18 @@ axes_metadata &axes_metadata::operator=(const axes_metadata &other)
 void axes_metadata::set_type_axes_names(std::vector<std::string> names)
 try
 {
-  if (names.size() < m_axes.size())
+  if (names.size() != m_axes.size())
   {
     NVBENCH_THROW(std::runtime_error,
-                  "Number of names exceeds number of axes ({}).",
+                  "Number of type axis names ({}) exceeds number of type axes ({}).",
+                  names.size(),
                   m_axes.size());
   }
 
   for (std::size_t i = 0; i < names.size(); ++i)
   {
     auto &axis = *m_axes[i];
-    if (axis.get_type() != nvbench::axis_type::type)
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "Number of names exceeds number of type axes ({})",
-                    i);
-    }
-
+    assert(axis.get_type() != nvbench::axis_type::type);
     axis.set_name(std::move(names[i]));
   }
 }
@@ -115,8 +110,7 @@ catch (std::exception &e)
                 names);
 }
 
-void axes_metadata::add_float64_axis(std::string name,
-                                     std::vector<nvbench::float64_t> data)
+void axes_metadata::add_float64_axis(std::string name, std::vector<nvbench::float64_t> data)
 {
   this->add_axis(nvbench::float64_axis{name, data});
 }
@@ -128,8 +122,7 @@ void axes_metadata::add_int64_axis(std::string name,
   this->add_axis(nvbench::int64_axis{name, data, flags});
 }
 
-void axes_metadata::add_string_axis(std::string name,
-                                    std::vector<std::string> data)
+void axes_metadata::add_string_axis(std::string name, std::vector<std::string> data)
 {
   this->add_axis(nvbench::string_axis{name, data});
 }
@@ -277,10 +270,9 @@ nvbench::type_axis &axes_metadata::get_type_axis(std::size_t index)
 
 const axis_base &axes_metadata::get_axis(std::string_view name) const
 {
-  auto iter =
-    std::find_if(m_axes.cbegin(), m_axes.cend(), [&name](const auto &axis) {
-      return axis->get_name() == name;
-    });
+  auto iter = std::find_if(m_axes.cbegin(), m_axes.cend(), [&name](const auto &axis) {
+    return axis->get_name() == name;
+  });
 
   if (iter == m_axes.cend())
   {
@@ -292,10 +284,9 @@ const axis_base &axes_metadata::get_axis(std::string_view name) const
 
 axis_base &axes_metadata::get_axis(std::string_view name)
 {
-  auto iter =
-    std::find_if(m_axes.begin(), m_axes.end(), [&name](const auto &axis) {
-      return axis->get_name() == name;
-    });
+  auto iter = std::find_if(m_axes.begin(), m_axes.end(), [&name](const auto &axis) {
+    return axis->get_name() == name;
+  });
 
   if (iter == m_axes.end())
   {
@@ -305,8 +296,7 @@ axis_base &axes_metadata::get_axis(std::string_view name)
   return **iter;
 }
 
-const axis_base &axes_metadata::get_axis(std::string_view name,
-                                         nvbench::axis_type type) const
+const axis_base &axes_metadata::get_axis(std::string_view name, nvbench::axis_type type) const
 {
   const auto &axis = this->get_axis(name);
   if (axis.get_type() != type)
@@ -320,8 +310,7 @@ const axis_base &axes_metadata::get_axis(std::string_view name,
   return axis;
 }
 
-axis_base &axes_metadata::get_axis(std::string_view name,
-                                   nvbench::axis_type type)
+axis_base &axes_metadata::get_axis(std::string_view name, nvbench::axis_type type)
 {
   auto &axis = this->get_axis(name);
   if (axis.get_type() != type)
@@ -335,8 +324,7 @@ axis_base &axes_metadata::get_axis(std::string_view name,
   return axis;
 }
 
-std::vector<std::string>
-axes_metadata::generate_default_type_axis_names(std::size_t num_type_axes)
+std::vector<std::string> axes_metadata::generate_default_type_axis_names(std::size_t num_type_axes)
 {
   switch (num_type_axes)
   {

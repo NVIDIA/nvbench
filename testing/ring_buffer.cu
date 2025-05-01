@@ -18,16 +18,15 @@
 
 #include <nvbench/detail/ring_buffer.cuh>
 
-#include "test_asserts.cuh"
-
 #include <algorithm>
 #include <vector>
 
+#include "test_asserts.cuh"
+
 template <typename T>
-bool equal(const nvbench::detail::ring_buffer<T> &buffer,
-           const std::vector<T> &reference)
+bool equal(const nvbench::detail::ring_buffer<T> &buffer, const std::vector<T> &reference)
 {
-  return std::equal(buffer.cbegin(), buffer.cend(), reference.cbegin());
+  return std::equal(buffer.begin(), buffer.end(), reference.begin());
 }
 
 int main()
@@ -62,12 +61,12 @@ try
   ASSERT(avg.size() == 3);
   ASSERT(avg.capacity() == 3);
   ASSERT_MSG(avg.back() == 5, " (got {})", avg.back());
-  ASSERT(equal(avg, {5, 2, -15}));
+  ASSERT(equal(avg, {2, -15, 5}));
 
   avg.push_back(0);
   ASSERT(avg.size() == 3);
   ASSERT(avg.capacity() == 3);
-  ASSERT(equal(avg, {5, 0, -15}));
+  ASSERT(equal(avg, {-15, 5, 0}));
   ASSERT_MSG(avg.back() == 0, " (got {})", avg.back());
 
   avg.push_back(128);

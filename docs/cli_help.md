@@ -83,28 +83,6 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
-* `--min-samples <count>`
-  * Gather at least `<count>` samples per measurement.
-  * Default is 10 samples.
-  * Applies to the most recent `--benchmark`, or all benchmarks if specified
-    before any `--benchmark` arguments.
-
-* `--min-time <seconds>`
-  * Accumulate at least `<seconds>` of execution time per measurement.
-  * Default is 0.5 seconds.
-  * If both GPU and CPU times are gathered, this applies to GPU time only.
-  * Applies to the most recent `--benchmark`, or all benchmarks if specified
-    before any `--benchmark` arguments.
-
-* `--max-noise <value>`
-  * Gather samples until the error in the measurement drops below `<value>`.
-  * Noise is specified as the percent relative standard deviation.
-  * Default is 0.5% (`--max-noise 0.5`)
-  * Only applies to Cold measurements.
-  * If both GPU and CPU times are gathered, this applies to GPU noise only.
-  * Applies to the most recent `--benchmark`, or all benchmarks if specified
-    before any `--benchmark` arguments.
-
 * `--skip-time <seconds>`
   * Skip a measurement when a warmup run executes in less than `<seconds>`.
   * Default is -1 seconds (disabled).
@@ -114,6 +92,42 @@
     during testing.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
+
+* `--throttle-threshold <value>`
+  * Set the GPU throttle threshold as percentage of the device's default clock rate.
+  * Default is 75.
+  * Set to 0 to disable throttle detection entirely.
+  * Note that throttling is disabled when `nvbench::exec_tag::sync` is used.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--throttle-recovery-delay <value>`
+  * Set the GPU throttle recovery delay in seconds.
+  * Default is 0.05 seconds.
+  * Note that throttling is disabled when `nvbench::exec_tag::sync` is used.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--run-once`
+  * Only run the benchmark once, skipping any warmup runs and batched
+    measurements.
+  * Intended for use with external profiling tools.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--disable-blocking-kernel`
+  * Don't use the `blocking_kernel`.
+  * Intended for use with external profiling tools.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--profile`
+  * Implies `--run-once` and `--disable-blocking-kernel`.
+  * Intended for use with external profiling tools.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+## Stopping Criteria
 
 * `--timeout <seconds>`
   * Measurements will timeout after `<seconds>` have elapsed.
@@ -125,9 +139,55 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
-* `--run-once`
-  * Only run the benchmark once, skipping any warmup runs and batched
-    measurements.
-  * Intended for use with external profiling tools.
+* `--min-samples <count>`
+  * Gather at least `<count>` samples per measurement before checking any
+    other stopping criterion besides the timeout.
+  * Default is 10 samples.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--stopping-criterion <criterion>`
+  * After `--min-samples` is satisfied, use `<criterion>` to detect if enough
+    samples were collected.
+  * Only applies to Cold and CPU-only measurements.
+  * If both GPU and CPU times are gathered, GPU time is used for stopping
+    analysis.
+  * Stopping criteria provided by NVBench are:
+    * "stdrel": (default) Converges to a minimal relative standard deviation,
+       stdev / mean
+    * "entropy": Converges based on the cumulative entropy of all samples.
+  * Each stopping criterion may provide additional parameters to customize
+    behavior, as detailed below:
+
+### "stdrel" Stopping Criterion Parameters
+
+* `--min-time <seconds>`
+  * Accumulate at least `<seconds>` of execution time per measurement.
+  * Only applies to `stdrel` stopping criterion.
+  * Default is 0.5 seconds.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--max-noise <value>`
+  * Gather samples until the error in the measurement drops below `<value>`.
+  * Noise is specified as the percent relative standard deviation (stdev/mean).
+  * Default is 0.5% (`--max-noise 0.5`)
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+### "entropy" Stopping Criterion Parameters
+
+* `--max-angle <value>`
+  * Maximum linear regression angle of cumulative entropy.
+  * Smaller values give more accurate results.
+  * Default is 0.048.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--min-r2 <value>`
+  * Minimum coefficient of determination for linear regression of cumulative
+    entropy.
+  * Larger values give more accurate results.
+  * Default is 0.36.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.

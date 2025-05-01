@@ -29,12 +29,10 @@
 void noisy_bench(nvbench::state &state)
 {
   // time, convert ms -> s
-  const auto mean = static_cast<nvbench::float32_t>(state.get_float64("Mean")) /
-                    1000.f;
+  const auto mean = static_cast<nvbench::float32_t>(state.get_float64("Mean")) / 1000.f;
   // rel stdev
-  const auto noise_pct =
-    static_cast<nvbench::float32_t>(state.get_float64("Noise"));
-  const auto noise = noise_pct / 100.f;
+  const auto noise_pct = static_cast<nvbench::float32_t>(state.get_float64("Noise"));
+  const auto noise     = noise_pct / 100.f;
   // abs stdev
   const auto stdev = noise * mean;
 
@@ -53,8 +51,7 @@ void noisy_bench(nvbench::state &state)
     try
     {
       return static_cast<nvbench::float32_t>(
-        state.get_summary("nv/cold/time/gpu/stdev/relative")
-          .get_float64("value"));
+        state.get_summary("nv/cold/time/gpu/stdev/relative").get_float64("value"));
     }
     catch (std::invalid_argument &)
     {

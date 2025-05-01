@@ -50,8 +50,7 @@ struct metric_traits;
 template <>
 struct metric_traits<metric_id::dram_peak_sustained_throughput>
 {
-  static constexpr const char *metric_name =
-    "dram__throughput.avg.pct_of_peak_sustained_elapsed";
+  static constexpr const char *metric_name = "dram__throughput.avg.pct_of_peak_sustained_elapsed";
 
   static constexpr const char *name = "HBWPeak";
   static constexpr const char *hint = "percentage";
@@ -119,10 +118,7 @@ struct metric_traits<metric_id::l1_hit_rate>
   static constexpr const char *description = "Hit rate at L1 cache.";
   static constexpr double divider          = 100.0;
 
-  static bool is_collected(nvbench::state &m_state)
-  {
-    return m_state.is_l1_hit_rate_collected();
-  };
+  static bool is_collected(nvbench::state &m_state) { return m_state.is_l1_hit_rate_collected(); };
 };
 
 template <>
@@ -134,10 +130,7 @@ struct metric_traits<metric_id::l2_hit_rate>
   static constexpr const char *description = "Hit rate at L2 cache.";
   static constexpr double divider          = 100.0;
 
-  static bool is_collected(nvbench::state &m_state)
-  {
-    return m_state.is_l2_hit_rate_collected();
-  };
+  static bool is_collected(nvbench::state &m_state) { return m_state.is_l2_hit_rate_collected(); };
 };
 
 template <metric_id id = metric_id::dram_peak_sustained_throughput>
@@ -153,8 +146,7 @@ void add_metrics_impl(nvbench::state &state, std::vector<std::string> &metrics)
 }
 
 template <>
-void add_metrics_impl<metric_id::count>(nvbench::state &,
-                                        std::vector<std::string> &)
+void add_metrics_impl<metric_id::count>(nvbench::state &, std::vector<std::string> &)
 {}
 
 std::vector<std::string> add_metrics(nvbench::state &state)
@@ -173,19 +165,17 @@ measure_cupti_base::measure_cupti_base(state &exec_state)
 // (formatter doesn't handle `try :` very well...)
 try
   : m_state{exec_state}
-  , m_launch{m_state.get_cuda_stream()}
+  , m_launch{exec_state.get_cuda_stream()}
   , m_cupti{*m_state.get_device(), add_metrics(m_state)}
 {}
 // clang-format on
 catch (const std::exception &ex)
 {
-  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer();
-      printer_opt_ref)
+  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer(); printer_opt_ref)
   {
     auto &printer = printer_opt_ref.value().get();
     printer.log(nvbench::log_level::warn,
-                fmt::format("CUPTI failed to construct profiler: {}",
-                            ex.what()));
+                fmt::format("CUPTI failed to construct profiler: {}", ex.what()));
   }
 }
 
@@ -194,15 +184,11 @@ void measure_cupti_base::check()
   const auto device = m_state.get_device();
   if (!device)
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Device required for `cupti` measurement.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Device required for `cupti` measurement.");
   }
   if (!device->is_active())
   { // This means something went wrong higher up. Throw an error.
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Internal error: Current device is not active.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Internal error: Current device is not active.");
   }
 }
 
@@ -210,16 +196,13 @@ namespace
 {
 
 template <metric_id id = metric_id::dram_peak_sustained_throughput>
-void gen_summary(std::size_t result_id,
-                 nvbench::state &m_state,
-                 const std::vector<double> &result)
+void gen_summary(std::size_t result_id, nvbench::state &m_state, const std::vector<double> &result)
 {
   using metric = metric_traits<id>;
 
   if (metric::is_collected(m_state))
   {
-    auto &summ =
-      m_state.add_summary(fmt::format("nv/cupti/{}", metric::metric_name));
+    auto &summ = m_state.add_summary(fmt::format("nv/cupti/{}", metric::metric_name));
     summ.set_string("name", metric::name);
     summ.set_string("hint", metric::hint);
     summ.set_string("description", metric::description);
@@ -231,9 +214,7 @@ void gen_summary(std::size_t result_id,
 }
 
 template <>
-void gen_summary<metric_id::count>(std::size_t,
-                                   nvbench::state &,
-                                   const std::vector<double> &)
+void gen_summary<metric_id::count>(std::size_t, nvbench::state &, const std::vector<double> &)
 {}
 
 void gen_summaries(nvbench::state &state, const std::vector<double> &result)
@@ -266,8 +247,7 @@ try
   }
 
   // Log if a printer exists:
-  if (auto printer_opt_ref = m_state.get_benchmark().get_printer();
-      printer_opt_ref.has_value())
+  if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
     printer.log(nvbench::log_level::pass,
@@ -278,13 +258,11 @@ try
 }
 catch (const std::exception &ex)
 {
-  if (auto printer_opt_ref = m_state.get_benchmark().get_printer();
-      printer_opt_ref)
+  if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref)
   {
     auto &printer = printer_opt_ref.value().get();
     printer.log(nvbench::log_level::warn,
-                fmt::format("CUPTI failed to generate the summary: {}",
-                            ex.what()));
+                fmt::format("CUPTI failed to generate the summary: {}", ex.what()));
   }
 }
 

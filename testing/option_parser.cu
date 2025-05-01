@@ -16,16 +16,14 @@
  *  limitations under the License.
  */
 
-#include <nvbench/option_parser.cuh>
-
 #include <nvbench/create.cuh>
+#include <nvbench/option_parser.cuh>
 #include <nvbench/type_list.cuh>
-
-#include "test_asserts.cuh"
 
 #include <fmt/format.h>
 
 #include <iostream>
+#include "test_asserts.cuh"
 
 //==============================================================================
 // Declare a couple benchmarks for testing:
@@ -52,15 +50,14 @@ NVBENCH_BENCH_TYPES(TestBench, NVBENCH_TYPE_AXES(Ts, Us))
 namespace
 {
 
-[[nodiscard]] std::string
-states_to_string(const std::vector<nvbench::state> &states)
+[[nodiscard]] std::string states_to_string(const std::vector<nvbench::state> &states)
 {
   fmt::memory_buffer buffer;
   std::string table_format = "| {:^5} | {:^10} | {:^4} | {:^4} | {:^4} "
                              "| {:^4} | {:^6} | {:^8} |\n";
 
-  fmt::format_to(buffer, "\n");
-  fmt::format_to(buffer,
+  fmt::format_to(std::back_inserter(buffer), "\n");
+  fmt::format_to(std::back_inserter(buffer),
                  table_format,
                  "State",
                  "TypeConfig",
@@ -74,7 +71,7 @@ states_to_string(const std::vector<nvbench::state> &states)
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(buffer,
+    fmt::format_to(std::back_inserter(buffer),
                    table_format,
                    config++,
                    state.get_type_config_index(),
@@ -90,7 +87,7 @@ states_to_string(const std::vector<nvbench::state> &states)
 
 // Expects the parser to have a single TestBench benchmark. Runs the benchmark
 // and returns the resulting states.
-[[nodiscard]] const auto& parser_to_states(nvbench::option_parser &parser)
+[[nodiscard]] const auto &parser_to_states(nvbench::option_parser &parser)
 {
   const auto &benches = parser.get_benchmarks();
   ASSERT(benches.size() == 1);
@@ -270,8 +267,7 @@ void test_int64_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ ] = [ 2 : 2 : 1 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ ] = [ 2 : 2 : 1 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -311,8 +307,7 @@ void test_int64_axis_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ ] = [ 2 , 7 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ ] = [ 2 , 7 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -326,8 +321,7 @@ void test_int64_axis_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ ] = [ 2 : 7 : 5 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ ] = [ 2 : 7 : 5 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -372,8 +366,7 @@ void test_int64_axis_pow2_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 7 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 7 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -387,8 +380,7 @@ void test_int64_axis_pow2_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 7 : 7 : 1 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 7 : 7 : 1 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -428,8 +420,7 @@ void test_int64_axis_pow2_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 2 , 7 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 2 , 7 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -443,8 +434,7 @@ void test_int64_axis_pow2_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 2 : 7 : 5 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ pow2 ] = [ 2 : 7 : 5 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -489,8 +479,7 @@ void test_int64_axis_none_to_pow2_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 7 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 7 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -504,8 +493,7 @@ void test_int64_axis_none_to_pow2_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 7 : 7 : 1 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 7 : 7 : 1 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -545,8 +533,7 @@ void test_int64_axis_none_to_pow2_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 2 , 7 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 2 , 7 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -560,8 +547,7 @@ void test_int64_axis_none_to_pow2_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 2 : 7 : 5 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Ints [ pow2 ] = [ 2 : 7 : 5 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -620,8 +606,7 @@ void test_int64_axis_pow2_to_none_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 : 2 : 1 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 : 2 : 1 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -661,8 +646,7 @@ void test_int64_axis_pow2_to_none_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 , 7 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 , 7 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -676,8 +660,7 @@ void test_int64_axis_pow2_to_none_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 : 7 : 5 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " PO2s [ ] = [ 2 : 7 : 5 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -722,8 +705,7 @@ void test_float64_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Floats [ ] = [ 3.5 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Floats [ ] = [ 3.5 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -737,10 +719,7 @@ void test_float64_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse({"--benchmark",
-                  "TestBench",
-                  "--axis",
-                  " Floats [ ] = [ 3.5 : 3.6 : 1 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Floats [ ] = [ 3.5 : 3.6 : 1 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -780,8 +759,7 @@ void test_float64_axis_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Floats [ ] = [ 3.5 , 4.1 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Floats [ ] = [ 3.5 , 4.1 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -795,18 +773,14 @@ void test_float64_axis_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse({"--benchmark",
-                  "TestBench",
-                  "--axis",
-                  " Floats [ ] = [ 3.5 : 4.2 : 0.6 ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Floats [ ] = [ 3.5 : 4.2 : 0.6 ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", "Floats=[3.5:4.2:0.6]"});
+    parser.parse({"--benchmark", "TestBench", "--axis", "Floats=[3.5:4.2:0.6]"});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -830,8 +804,7 @@ void test_string_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Strings [ ] = fo br "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Strings [ ] = fo br "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -845,8 +818,7 @@ void test_string_axis_single()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Strings [ ] = [ fo br ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Strings [ ] = [ fo br ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -886,8 +858,7 @@ void test_string_axis_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " Strings [ ] = [ fo br , baz ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " Strings [ ] = [ fo br , baz ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -954,8 +925,7 @@ void test_type_axis_multi()
 
   {
     nvbench::option_parser parser;
-    parser.parse(
-      {"--benchmark", "TestBench", "--axis", " T [ ] = [ U8, void ] "});
+    parser.parse({"--benchmark", "TestBench", "--axis", " T [ ] = [ U8, void ] "});
     const auto test = parser_to_state_string(parser);
     ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
   }
@@ -1180,9 +1150,8 @@ void test_axis_before_benchmark()
 void test_min_samples()
 {
   nvbench::option_parser parser;
-  parser.parse(
-    {"--benchmark", "DummyBench", "--min-samples", "12345"});
-  const auto& states = parser_to_states(parser);
+  parser.parse({"--benchmark", "DummyBench", "--min-samples", "12345"});
+  const auto &states = parser_to_states(parser);
 
   ASSERT(states.size() == 1);
   ASSERT(states[0].get_min_samples() == 12345);
@@ -1191,9 +1160,8 @@ void test_min_samples()
 void test_min_time()
 {
   nvbench::option_parser parser;
-  parser.parse(
-    {"--benchmark", "DummyBench", "--min-time", "12345e2"});
-  const auto& states = parser_to_states(parser);
+  parser.parse({"--benchmark", "DummyBench", "--min-time", "12345e2"});
+  const auto &states = parser_to_states(parser);
 
   ASSERT(states.size() == 1);
   ASSERT(std::abs(states[0].get_min_time() - 12345e2) < 1.);
@@ -1202,9 +1170,8 @@ void test_min_time()
 void test_max_noise()
 {
   nvbench::option_parser parser;
-  parser.parse(
-    {"--benchmark", "DummyBench", "--max-noise", "50.3"});
-  const auto& states = parser_to_states(parser);
+  parser.parse({"--benchmark", "DummyBench", "--max-noise", "50.3"});
+  const auto &states = parser_to_states(parser);
 
   ASSERT(states.size() == 1);
   ASSERT(std::abs(states[0].get_max_noise() - 0.503) < 1.e-4);
@@ -1213,9 +1180,8 @@ void test_max_noise()
 void test_skip_time()
 {
   nvbench::option_parser parser;
-  parser.parse(
-    {"--benchmark", "DummyBench", "--skip-time", "12345e2"});
-  const auto& states = parser_to_states(parser);
+  parser.parse({"--benchmark", "DummyBench", "--skip-time", "12345e2"});
+  const auto &states = parser_to_states(parser);
 
   ASSERT(states.size() == 1);
   ASSERT(std::abs(states[0].get_skip_time() - 12345e2) < 1.);
@@ -1224,12 +1190,271 @@ void test_skip_time()
 void test_timeout()
 {
   nvbench::option_parser parser;
-  parser.parse(
-    {"--benchmark", "DummyBench", "--timeout", "12345e2"});
-  const auto& states = parser_to_states(parser);
+  parser.parse({"--benchmark", "DummyBench", "--timeout", "12345e2"});
+  const auto &states = parser_to_states(parser);
 
   ASSERT(states.size() == 1);
   ASSERT(std::abs(states[0].get_timeout() - 12345e2) < 1.);
+}
+
+void test_stopping_criterion()
+{
+  { // Per benchmark criterion
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "entropy",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
+
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Global criterion
+    nvbench::option_parser parser;
+    parser.parse({
+      "--stopping-criterion",
+      "entropy",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+      "--benchmark",
+      "DummyBench",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
+
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Global criterion, per-benchmark params
+    nvbench::option_parser parser;
+    parser.parse({
+      "--stopping-criterion",
+      "entropy",
+      "--benchmark",
+      "DummyBench",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
+
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Global params to default criterion should work:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--max-noise",
+      "0.5",
+      "--min-time",
+      "0.1",
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "entropy",
+      "--max-angle",
+      "0.42",
+      "--min-r2",
+      "0.6",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("max-angle"));
+    ASSERT(criterion_params.has_value("min-r2"));
+
+    ASSERT(criterion_params.get_float64("max-angle") == 0.42);
+    ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Unknown stopping criterion should throw
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "I_do_not_exist",
+      });
+    }
+    catch (const std::runtime_error &)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Global criterion to non-default params without global --stopping-criterion should throw
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--max-angle",
+        "0.42",
+        "--min-r2",
+        "0.6",
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+      });
+    }
+    catch (const std::runtime_error &)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Invalid global param throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-r2",
+        "0.6",
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "TestBench",
+        "--stopping-criterion",
+        "stdrel",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Invalid per-bench param throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-r2",
+        "0.6",
+        "--max-angle",
+        "0.42",
+        "--benchmark",
+        "TestBench",
+        "--stopping-criterion",
+        "stdrel",
+        "--max-angle",
+        "0.42",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // global param-before-criterion throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--min-r2", //
+        "0.6",
+        "--stopping-criterion",
+        "entropy",
+        "--benchmark",
+        "DummyBench",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // per-benchmark param-before-criterion throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark", //
+        "DummyBench",
+        "--min-r2",
+        "0.6",
+        "--stopping-criterion",
+        "entropy",
+      });
+    }
+    catch (const std::runtime_error & /*ex*/)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
+  { // Invalid param type throws exception:
+    bool exception_thrown = false;
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({
+        "--benchmark", //
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-r2",
+        "\"foo\"",
+      });
+    }
+    catch (const std::runtime_error &)
+    {
+      exception_thrown = true;
+    }
+    ASSERT(exception_thrown);
+  }
 }
 
 int main()
@@ -1268,10 +1493,12 @@ try
   test_skip_time();
   test_timeout();
 
+  test_stopping_criterion();
+
   return 0;
 }
 catch (std::exception &err)
 {
-  fmt::print(stderr, "{}", err.what());
+  fmt::print(stderr, "Unexpected exception:\n{}\n", err.what());
   return 1;
 }

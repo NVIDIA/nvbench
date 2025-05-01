@@ -16,9 +16,8 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/measure_hot.cuh>
-
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/detail/measure_hot.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
@@ -37,7 +36,7 @@ namespace nvbench::detail
 
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
-    , m_launch{m_state.get_cuda_stream()}
+    , m_launch{exec_state.get_cuda_stream()}
     , m_min_samples{exec_state.get_min_samples()}
     , m_min_time{exec_state.get_min_time()}
     , m_skip_time{exec_state.get_skip_time()}
@@ -47,9 +46,8 @@ measure_hot_base::measure_hot_base(state &exec_state)
   // to match the cold result if available.
   try
   {
-    nvbench::int64_t cold_samples =
-      m_state.get_summary("nv/cold/sample_size").get_int64("value");
-    m_min_samples = std::max(m_min_samples, cold_samples);
+    nvbench::int64_t cold_samples = m_state.get_summary("nv/cold/sample_size").get_int64("value");
+    m_min_samples                 = std::max(m_min_samples, cold_samples);
 
     // If the cold measurement ran successfully, disable skip_time. It'd just
     // be annoying to skip now.
@@ -72,15 +70,11 @@ void measure_hot_base::check()
   const auto device = m_state.get_device();
   if (!device)
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Device required for `hot` measurement.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Device required for `hot` measurement.");
   }
   if (!device->is_active())
   { // This means something went wrong higher up. Throw an error.
-    NVBENCH_THROW(std::runtime_error,
-                  "{}",
-                  "Internal error: Current device is not active.");
+    NVBENCH_THROW(std::runtime_error, "{}", "Internal error: Current device is not active.");
   }
 }
 
@@ -116,8 +110,7 @@ void measure_hot_base::generate_summaries()
   }
 
   // Log if a printer exists:
-  if (auto printer_opt_ref = m_state.get_benchmark().get_printer();
-      printer_opt_ref.has_value())
+  if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
   {
     auto &printer = printer_opt_ref.value().get();
 

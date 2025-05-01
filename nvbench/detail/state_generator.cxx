@@ -16,14 +16,12 @@
  *  limitations under the License.
  */
 
-#include <nvbench/detail/state_generator.cuh>
-
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/detail/state_generator.cuh>
+#include <nvbench/detail/transform_reduce.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/named_values.cuh>
 #include <nvbench/type_axis.cuh>
-
-#include <nvbench/detail/transform_reduce.cuh>
 
 #include <algorithm>
 #include <cassert>
@@ -201,12 +199,10 @@ void state_generator::build_states()
   }
 }
 
-void state_generator::add_states_for_device(
-  const std::optional<device_info> &device)
+void state_generator::add_states_for_device(const std::optional<device_info> &device)
 {
   const auto num_type_configs = m_type_axis_configs.size();
-  for (std::size_t type_config_index = 0; type_config_index < num_type_configs;
-       ++type_config_index)
+  for (std::size_t type_config_index = 0; type_config_index < num_type_configs; ++type_config_index)
   {
     const auto &[type_config,
                  axis_mask] = m_type_axis_configs[type_config_index];
@@ -222,10 +218,7 @@ void state_generator::add_states_for_device(
       config.append(non_type_config);
 
       // Create benchmark:
-      m_states.push_back(nvbench::state{m_benchmark,
-                                        std::move(config),
-                                        device,
-                                        type_config_index});
+      m_states.push_back(nvbench::state{m_benchmark, std::move(config), device, type_config_index});
     }
   }
 }

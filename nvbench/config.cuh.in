@@ -24,21 +24,7 @@
 // Defined if NVBench has been built with CUPTI support.
 #cmakedefine NVBENCH_HAS_CUPTI
 
-#ifdef _MSC_VER
-#define NVBENCH_MSVC_PUSH_DISABLE_WARNING(code)                                \
-  __pragma(warning(push)) __pragma(warning(disable : code))
-#define NVBENCH_MSVC_POP_WARNING() __pragma(warning(pop))
-#else
-#define NVBENCH_MSVC_PUSH_DISABLE_WARNING(code)
-#define NVBENCH_MSVC_POP_WARNING()
-#endif
-
-// MSVC does not define __cplusplus correctly. _MSVC_LANG is used instead.
-#ifdef _MSVC_LANG
-#define NVBENCH_CPLUSPLUS _MSVC_LANG
-#else
 #define NVBENCH_CPLUSPLUS __cplusplus
-#endif
 
 // Detect current dialect:
 #if NVBENCH_CPLUSPLUS < 201703L

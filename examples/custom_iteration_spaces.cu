@@ -89,7 +89,7 @@ NVBENCH_BENCH(copy_sweep_grid_shape)
 //
 struct under_diag final : nvbench::user_axis_space
 {
-  under_diag(std::vector<std::size_t> input_indices)
+  explicit under_diag(std::vector<std::size_t> input_indices)
       : nvbench::user_axis_space(std::move(input_indices))
   {}
 
@@ -162,7 +162,7 @@ NVBENCH_BENCH(copy_sweep_grid_shape)
 struct gauss final : nvbench::user_axis_space
 {
 
-  gauss(std::vector<std::size_t> input_indices)
+  explicit gauss(std::vector<std::size_t> input_indices)
       : nvbench::user_axis_space(std::move(input_indices))
   {}
 

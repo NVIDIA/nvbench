@@ -1,6 +1,5 @@
-# 3.20.1 required for rapids-cmake
-# 3.21.0 required for NVBench_ADD_DEPENDENT_DLLS_TO_* (MSVC only)
-cmake_minimum_required(VERSION 3.20.1)
+# 3.30.4 required for rapids-cmake
+cmake_minimum_required(VERSION 3.30.4)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
@@ -22,6 +21,11 @@ project(NVBench
 
 nvbench_init_rapids_cmake()
 
+# Define NVBench_DETECTED_${LANG}_STANDARDS
+include(cmake/DetectSupportedStandards.cmake)
+detect_supported_standards(NVBench CXX 17 20)
+detect_supported_standards(NVBench CUDA 17 20)
+
 # See NVIDIA/NVBench#52
 find_package(CUDAToolkit REQUIRED)
 set(cupti_default ON)
@@ -29,29 +33,37 @@ if (${CUDAToolkit_VERSION} VERSION_LESS 11.3)
   set(cupti_default OFF)
 endif()
 
+option(BUILD_SHARED_LIBS "Build NVBench as a shared library" ON)
+
 option(NVBench_ENABLE_NVML "Build with NVML support from the Cuda Toolkit." ON)
 option(NVBench_ENABLE_CUPTI "Build NVBench with CUPTI." ${cupti_default})
 
 option(NVBench_ENABLE_TESTING "Build NVBench testing suite." OFF)
+option(NVBench_ENABLE_HEADER_TESTING "Build NVBench testing suite." OFF)
 option(NVBench_ENABLE_DEVICE_TESTING
   "Include tests that require a GPU (with locked clocks)."
   OFF
 )
 option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
+option(NVBench_ENABLE_INSTALL_RULES "Install NVBench." ${NVBench_TOPLEVEL_PROJECT})
+
+include(cmake/NVBenchUtilities.cmake) # Must be first
+include(cmake/NVBenchClangdCompileInfo.cmake) # Must be before any targets are created
 
 include(cmake/NVBenchConfigTarget.cmake)
-include(cmake/NVBenchDependentDlls.cmake)
 include(cmake/NVBenchExports.cmake)
 include(cmake/NVBenchWriteConfigHeader.cmake)
 include(cmake/NVBenchDependencies.cmake)
 include(cmake/NVBenchInstallRules.cmake)
-include(cmake/NVBenchUtilities.cmake)
 
 message(STATUS "NVBench CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
 
 add_subdirectory(nvbench)
 
-if (NVBench_ENABLE_EXAMPLES OR NVBench_ENABLE_TESTING)
+if (NVBench_ENABLE_EXAMPLES OR
+    NVBench_ENABLE_TESTING OR
+    NVBench_ENABLE_HEADER_TESTING)
+  include(CTest)
   enable_testing()
 endif()
 
@@ -63,6 +75,10 @@ endif()
 
 if (NVBench_ENABLE_TESTING)
   add_subdirectory(testing)
+endif()
+
+if (NVBench_ENABLE_HEADER_TESTING)
+  include(cmake/NVBenchHeaderTesting.cmake)
 endif()
 
 nvbench_generate_exports()

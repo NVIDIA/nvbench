@@ -17,7 +17,6 @@
  */
 
 #include <nvbench/benchmark.cuh>
-
 #include <nvbench/callable.cuh>
 #include <nvbench/named_values.cuh>
 #include <nvbench/state.cuh>
@@ -25,14 +24,14 @@
 #include <nvbench/type_strings.cuh>
 #include <nvbench/types.cuh>
 
-#include "test_asserts.cuh"
-
 #include <fmt/format.h>
 
 #include <algorithm>
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include "test_asserts.cuh"
 
 template <typename T>
 std::vector<T> sort(std::vector<T> &&vec)
@@ -44,13 +43,13 @@ std::vector<T> sort(std::vector<T> &&vec)
 void no_op_generator(nvbench::state &state)
 {
   fmt::memory_buffer params;
-  fmt::format_to(params, "Params:");
+  fmt::format_to(std::back_inserter(params), "Params:");
   const auto &axis_values = state.get_axis_values();
   for (const auto &name : sort(axis_values.get_names()))
   {
     std::visit(
       [&params, &name](const auto &value) {
-        fmt::format_to(params, " {}: {}", name, value);
+        fmt::format_to(std::back_inserter(params), " {}: {}", name, value);
       },
       axis_values.get_value(name));
   }
@@ -61,34 +60,26 @@ void no_op_generator(nvbench::state &state)
 NVBENCH_DEFINE_CALLABLE(no_op_generator, no_op_callable);
 
 template <typename Integer, typename Float, typename Other>
-void template_no_op_generator(nvbench::state &state,
-                              nvbench::type_list<Integer, Float, Other>)
+void template_no_op_generator(nvbench::state &state, nvbench::type_list<Integer, Float, Other>)
 {
-  ASSERT(nvbench::type_strings<Integer>::input_string() ==
-         state.get_string("Integer"));
-  ASSERT(nvbench::type_strings<Float>::input_string() ==
-         state.get_string("Float"));
-  ASSERT(nvbench::type_strings<Other>::input_string() ==
-         state.get_string("Other"));
+  ASSERT(nvbench::type_strings<Integer>::input_string() == state.get_string("Integer"));
+  ASSERT(nvbench::type_strings<Float>::input_string() == state.get_string("Float"));
+  ASSERT(nvbench::type_strings<Other>::input_string() == state.get_string("Other"));
 
   // Enum params using non-templated version:
   no_op_generator(state);
 }
-NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator,
-                                 template_no_op_callable);
+NVBENCH_DEFINE_CALLABLE_TEMPLATE(template_no_op_generator, template_no_op_callable);
 
-using int_list = nvbench::type_list<nvbench::int8_t,
-                                    nvbench::int16_t,
-                                    nvbench::int32_t,
-                                    nvbench::int64_t>;
+using int_list =
+  nvbench::type_list<nvbench::int8_t, nvbench::int16_t, nvbench::int32_t, nvbench::int64_t>;
 
 using float_list = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
 
 using misc_list = nvbench::type_list<bool, void>;
 
 using lots_of_types_bench =
-  nvbench::benchmark<template_no_op_callable,
-                     nvbench::type_list<int_list, float_list, misc_list>>;
+  nvbench::benchmark<template_no_op_callable, nvbench::type_list<int_list, float_list, misc_list>>;
 
 using no_types_bench = nvbench::benchmark<no_op_callable>;
 
@@ -101,17 +92,16 @@ void test_type_axes()
   const auto &axes = bench.get_axes().get_axes();
   for (const auto &axis : axes)
   {
-    fmt::format_to(buffer, "Axis: {}\n", axis->get_name());
+    fmt::format_to(std::back_inserter(buffer), "Axis: {}\n", axis->get_name());
     const auto num_values = axis->get_size();
     for (std::size_t i = 0; i < num_values; ++i)
     {
       auto input_string = axis->get_input_string(i);
       auto description  = axis->get_description(i);
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      " - {}{}\n",
                      input_string,
-                     description.empty() ? ""
-                                         : fmt::format(" ({})", description));
+                     description.empty() ? "" : fmt::format(" ({})", description));
     }
   }
 
@@ -148,7 +138,7 @@ void test_type_configs()
       using Integer = nvbench::tl::get<0, Conf>;
       using Float   = nvbench::tl::get<1, Conf>;
       using Other   = nvbench::tl::get<2, Conf>;
-      fmt::format_to(buffer,
+      fmt::format_to(std::back_inserter(buffer),
                      "type_configs[{:2d}] = <{:>3}, {:>3}, {:>4}>\n",
                      idx++,
                      nvbench::type_strings<Integer>::input_string(),
@@ -292,11 +282,11 @@ void test_get_config_count()
   bench.set_type_axes_names({"Integer", "Float", "Other"});
   bench.get_axes().get_type_axis(0).set_active_inputs({"I16", "I32"}); // 2,  2
   bench.get_axes().get_type_axis(1).set_active_inputs({"F32", "F64"}); // 2,  4
-  bench.get_axes().get_type_axis(2).set_active_inputs({"bool"});       // 1,  4
-  bench.add_float64_axis("foo", {0.4, 2.3, 4.3});                      // 3, 12
-  bench.add_int64_axis("bar", {4, 6, 15});                             // 3, 36
-  bench.add_string_axis("baz", {"str", "ing"});                        // 2, 72
-  bench.add_string_axis("fez", {"single"});                            // 1, 72
+  bench.get_axes().get_type_axis(2).set_active_inputs({"bool"});           // 1,  4
+  bench.add_float64_axis("foo", {0.4, 2.3, 4.3});                     // 3, 12
+  bench.add_int64_axis("bar", {4, 6, 15});                            // 3, 36
+  bench.add_string_axis("baz", {"str", "ing"});                           // 2, 72
+  bench.add_string_axis("fez", {"single"});                                   // 1, 72
 
   auto const num_devices = bench.get_devices().size();
   ASSERT_MSG(bench.get_config_count() == 72 * num_devices,

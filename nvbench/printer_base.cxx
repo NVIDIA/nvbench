@@ -38,19 +38,10 @@ void printer_base::do_set_completed_state_count(std::size_t states)
 
 void printer_base::do_add_completed_state() { ++m_completed_state_count; }
 
-std::size_t printer_base::do_get_completed_state_count() const
-{
-  return m_completed_state_count;
-}
+std::size_t printer_base::do_get_completed_state_count() const { return m_completed_state_count; }
 
-void printer_base::do_set_total_state_count(std::size_t states)
-{
-  m_total_state_count = states;
-}
+void printer_base::do_set_total_state_count(std::size_t states) { m_total_state_count = states; }
 
-std::size_t printer_base::do_get_total_state_count() const
-{
-  return m_total_state_count;
-}
+std::size_t printer_base::do_get_total_state_count() const { return m_total_state_count; }
 
 } // namespace nvbench

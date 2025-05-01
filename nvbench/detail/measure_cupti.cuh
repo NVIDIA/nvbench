@@ -24,13 +24,12 @@
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
 #include <nvbench/cupti_profiler.cuh>
-#include <nvbench/device_info.cuh>
-#include <nvbench/exec_tag.cuh>
-#include <nvbench/launch.cuh>
-
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/statistics.cuh>
+#include <nvbench/device_info.cuh>
+#include <nvbench/exec_tag.cuh>
+#include <nvbench/launch.cuh>
 
 #include <cuda_runtime.h>
 
@@ -50,10 +49,10 @@ namespace detail
 struct measure_cupti_base
 {
   explicit measure_cupti_base(nvbench::state &exec_state);
-  measure_cupti_base(const measure_cupti_base &) = delete;
-  measure_cupti_base(measure_cupti_base &&)      = delete;
+  measure_cupti_base(const measure_cupti_base &)            = delete;
+  measure_cupti_base(measure_cupti_base &&)                 = delete;
   measure_cupti_base &operator=(const measure_cupti_base &) = delete;
-  measure_cupti_base &operator=(measure_cupti_base &&) = delete;
+  measure_cupti_base &operator=(measure_cupti_base &&)      = delete;
 
 protected:
   struct kernel_launch_timer;
@@ -61,10 +60,7 @@ protected:
   void check();
   void generate_summaries();
 
-  __forceinline__ void flush_device_l2()
-  {
-    m_l2flush.flush(m_launch.get_stream());
-  }
+  __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
 
   __forceinline__ void sync_stream() const
   {

@@ -92,10 +92,10 @@ struct summary : public nvbench::named_values
   {}
 
   // move-only
-  summary(const summary &) = delete;
-  summary(summary &&)      = default;
+  summary(const summary &)            = delete;
+  summary(summary &&)                 = default;
   summary &operator=(const summary &) = delete;
-  summary &operator=(summary &&) = default;
+  summary &operator=(summary &&)      = default;
 
   void set_tag(std::string tag) { m_tag = std::move(tag); }
   [[nodiscard]] const std::string &get_tag() const { return m_tag; }

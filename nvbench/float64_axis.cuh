@@ -19,7 +19,6 @@
 #pragma once
 
 #include <nvbench/axis_base.cuh>
-
 #include <nvbench/types.cuh>
 
 #include <vector>
@@ -41,17 +40,11 @@ struct float64_axis final : public axis_base
 
   ~float64_axis() final;
 
-  void set_inputs(std::vector<nvbench::float64_t> inputs)
-  {
-    m_values = std::move(inputs);
-  }
-  [[nodiscard]] nvbench::float64_t get_value(std::size_t i) const
-  {
-    return m_values[i];
-  }
+  void set_inputs(std::vector<nvbench::float64_t> inputs) { m_values = std::move(inputs); }
+  [[nodiscard]] nvbench::float64_t get_value(std::size_t i) const { return m_values[i]; }
 
 private:
-  std::unique_ptr<axis_base> do_clone() const
+  std::unique_ptr<axis_base> do_clone() const final
   {
     return std::make_unique<float64_axis>(*this);
   }

@@ -25,6 +25,17 @@ features:
   * Batch Measurements:
     * Executes the benchmark multiple times back-to-back and records total time.
     * Reports the average execution time (total time / number of executions).
+  * [CPU-only Measurements](docs/benchmarks.md#cpu-only-benchmarks)
+    * Measures the host-side execution time of a non-GPU benchmark.
+    * Not suitable for microbenchmarking.
+
+# Supported Compilers and Tools
+
+- CMake > 3.30.4
+- CUDA Toolkit + nvcc: 12.0 and above
+- g++: 7 -> 14
+- clang++: 14 -> 19
+- Headers are tested with C++17 -> C++20.
 
 # Getting Started
 
@@ -34,7 +45,7 @@ A basic kernel benchmark can be created with just a few lines of CUDA C++:
 
 ```cpp
 void my_benchmark(nvbench::state& state) {
-  state.exec([](nvbench::launch& launch) { 
+  state.exec([](nvbench::launch& launch) {
     my_kernel<<<num_blocks, 256, 0, launch.get_stream()>>>();
   });
 }
@@ -57,10 +68,12 @@ This repository provides a number of [examples](examples/) that demonstrate
 various NVBench features and usecases:
 
 - [Runtime and compile-time parameter sweeps](examples/axes.cu)
+- [CPU-only benchmarking](examples/cpu_only.cu)
 - [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
 - [Benchmarking on a specific stream](examples/stream.cu)
+- [Adding / hiding columns (summaries) in markdown output](examples/summaries.cu)
 - [Benchmarks that sync CUDA devices: `nvbench::exec_tag::sync`](examples/exec_tag_sync.cu)
 - [Manual timing: `nvbench::exec_tag::timer`](examples/exec_tag_timer.cu)
 
@@ -70,9 +83,9 @@ To build the examples:
 ```
 mkdir -p build
 cd build
-cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURE=70 .. && make
+cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURES=70 .. && make
 ```
-Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on. 
+Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on.
 
 Examples are built by default into `build/bin` and are prefixed with `nvbench.example`.
 
@@ -119,7 +132,7 @@ Pass: Batch: 0.261963ms GPU, 7.18s total GPU, 27394x
 ## Demo Project
 
 To get started using NVBench with your own kernels, consider trying out
-the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo). 
+the [NVBench Demo Project](https://github.com/allisonvacanti/nvbench_demo).
 
 `nvbench_demo` provides a simple CMake project that uses NVBench to build an
 example benchmark. It's a great way to experiment with the library without a lot
@@ -129,7 +142,7 @@ of investment.
 
 Contributions are welcome!
 
-For current issues, see the [issue board](https://github.com/NVIDIA/nvbench/issues). Issues labeled with [![](https://img.shields.io/github/labels/NVIDIA/nvbench/good%20first%20issue)](https://github.com/NVIDIA/nvbench/labels/good%20first%20issue) are good for first time contributors. 
+For current issues, see the [issue board](https://github.com/NVIDIA/nvbench/issues). Issues labeled with [![](https://img.shields.io/github/labels/NVIDIA/nvbench/good%20first%20issue)](https://github.com/NVIDIA/nvbench/labels/good%20first%20issue) are good for first time contributors.
 
 ## Tests
 
@@ -146,7 +159,7 @@ To run all tests:
 ```
 make test
 ```
-or 
+or
 ```
 ctest
 ```
@@ -163,6 +176,7 @@ testing and parameter tuning of individual kernels. For in-depth analysis of
 end-to-end performance of multiple applications, the NVIDIA Nsight tools are
 more appropriate.
 
-NVBench is focused on evaluating the performance of CUDA kernels and is not
-optimized for CPU microbenchmarks. This may change in the future, but for now,
+NVBench is focused on evaluating the performance of CUDA kernels. It also provides
+CPU-only benchmarking facilities intended for non-trivial CPU workloads, but is
+not optimized for CPU microbenchmarks. This may change in the future, but for now,
 consider using Google Benchmark for high resolution CPU benchmarks.

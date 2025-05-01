@@ -21,13 +21,12 @@
 #include <nvbench/config.cuh>
 #include <nvbench/device_info.cuh>
 
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 namespace nvbench::detail
 {
-
 
 #ifdef NVBENCH_HAS_CUPTI
 /**
@@ -62,7 +61,7 @@ namespace nvbench::detail
  */
 class cupti_profiler
 {
-  bool m_available {};
+  bool m_available{};
   std::string m_chip_name;
 
   // Counter data
@@ -87,11 +86,10 @@ public:
   cupti_profiler(cupti_profiler &&) noexcept;
   cupti_profiler &operator=(cupti_profiler &&) noexcept;
 
-  cupti_profiler(const cupti_profiler &) = delete;
+  cupti_profiler(const cupti_profiler &)            = delete;
   cupti_profiler &operator=(const cupti_profiler &) = delete;
 
-  cupti_profiler(nvbench::device_info device,
-                 std::vector<std::string> &&metric_names);
+  cupti_profiler(nvbench::device_info device, std::vector<std::string> &&metric_names);
   ~cupti_profiler();
 
   [[nodiscard]] bool is_initialized() const;
@@ -124,6 +122,5 @@ private:
   void initialize_counter_data_image();
 };
 #endif
-
 
 } // namespace nvbench::detail

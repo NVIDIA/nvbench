@@ -32,8 +32,7 @@ void test_empty()
 
   const auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::string_axis *>(clone_base.get());
+  const auto *clone = dynamic_cast<const nvbench::string_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Empty");
@@ -61,8 +60,7 @@ void test_basic()
 
   const auto clone_base = axis.clone();
   ASSERT(clone_base.get() != nullptr);
-  const auto *clone =
-    dynamic_cast<const nvbench::string_axis *>(clone_base.get());
+  const auto *clone = dynamic_cast<const nvbench::string_axis *>(clone_base.get());
   ASSERT(clone != nullptr);
 
   ASSERT(clone->get_name() == "Basic");

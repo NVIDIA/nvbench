@@ -20,8 +20,8 @@
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/device_info.cuh>
-#include <nvbench/device_manager.cuh>
 #include <nvbench/state.cuh>
+#include <nvbench/stopping_criterion.cuh>
 
 #include <functional> // reference_wrapper, ref
 #include <memory>
@@ -52,7 +52,6 @@ struct benchmark_base
   template <typename TypeAxes>
   explicit benchmark_base(TypeAxes type_axes)
       : m_axes(type_axes)
-      , m_devices(nvbench::device_manager::get().get_devices())
   {}
 
   virtual ~benchmark_base();
@@ -80,32 +79,28 @@ struct benchmark_base
     return *this;
   }
 
-  benchmark_base &add_float64_axis(std::string name,
-                                   std::vector<nvbench::float64_t> data)
+  benchmark_base &add_float64_axis(std::string name, std::vector<nvbench::float64_t> data)
   {
     m_axes.add_float64_axis(std::move(name), std::move(data));
     return *this;
   }
 
-  benchmark_base &add_int64_axis(
-    std::string name,
-    std::vector<nvbench::int64_t> data,
-    nvbench::int64_axis_flags flags = nvbench::int64_axis_flags::none)
+  benchmark_base &add_int64_axis(std::string name,
+                                 std::vector<nvbench::int64_t> data,
+                                 nvbench::int64_axis_flags flags = nvbench::int64_axis_flags::none)
   {
     m_axes.add_int64_axis(std::move(name), std::move(data), flags);
     return *this;
   }
 
-  benchmark_base &add_int64_power_of_two_axis(std::string name,
-                                              std::vector<nvbench::int64_t> data)
+  benchmark_base &add_int64_power_of_two_axis(std::string name, std::vector<nvbench::int64_t> data)
   {
     return this->add_int64_axis(std::move(name),
                                 std::move(data),
                                 nvbench::int64_axis_flags::power_of_two);
   }
 
-  benchmark_base &add_string_axis(std::string name,
-                                  std::vector<std::string> data)
+  benchmark_base &add_string_axis(std::string name, std::vector<std::string> data)
   {
     m_axes.add_string_axis(std::move(name), std::move(data));
     return *this;
@@ -170,51 +165,43 @@ struct benchmark_base
     return *this;
   }
 
-  [[nodiscard]] const std::vector<nvbench::device_info> &get_devices() const
-  {
-    return m_devices;
-  }
+  [[nodiscard]] const std::vector<nvbench::device_info> &get_devices() const { return m_devices; }
 
   [[nodiscard]] nvbench::axes_metadata &get_axes() { return m_axes; }
 
-  [[nodiscard]] const nvbench::axes_metadata &get_axes() const
-  {
-    return m_axes;
-  }
+  [[nodiscard]] const nvbench::axes_metadata &get_axes() const { return m_axes; }
 
   // Computes the number of configs in the benchmark.
   // Unlike get_states().size(), this method may be used prior to calling run().
   [[nodiscard]] std::size_t get_config_count() const;
 
   // Is empty until run() is called.
-  [[nodiscard]] const std::vector<nvbench::state> &get_states() const
-  {
-    return m_states;
-  }
+  [[nodiscard]] const std::vector<nvbench::state> &get_states() const { return m_states; }
   [[nodiscard]] std::vector<nvbench::state> &get_states() { return m_states; }
 
   void run() { this->do_run(); }
 
-  void set_printer(nvbench::printer_base &printer)
-  {
-    m_printer = std::ref(printer);
-  }
+  void set_printer(nvbench::printer_base &printer) { m_printer = std::ref(printer); }
 
   void clear_printer() { m_printer = std::nullopt; }
 
-  [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const
-  {
-    return m_printer;
-  }
+  [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const { return m_printer; }
 
   /// Execute at least this many trials per measurement. @{
-  [[nodiscard]] nvbench::int64_t get_min_samples() const
-  {
-    return m_min_samples;
-  }
+  [[nodiscard]] nvbench::int64_t get_min_samples() const { return m_min_samples; }
   benchmark_base &set_min_samples(nvbench::int64_t min_samples)
   {
     m_min_samples = min_samples;
+    return *this;
+  }
+  /// @}
+
+  /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
+  /// @{
+  [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
+  benchmark_base &set_is_cpu_only(bool is_cpu_only)
+  {
+    m_is_cpu_only = is_cpu_only;
     return *this;
   }
   /// @}
@@ -230,22 +217,40 @@ struct benchmark_base
   }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  /// If true, the benchmark does not use the blocking_kernel. This is intended
+  /// for use with external profiling tools. @{
+  [[nodiscard]] bool get_disable_blocking_kernel() const { return m_disable_blocking_kernel; }
+  benchmark_base &set_disable_blocking_kernel(bool v)
+  {
+    m_disable_blocking_kernel = v;
+    return *this;
+  }
+  /// @}
+
+  /// Accumulate at least this many seconds of timing data per measurement.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const
+  {
+    return m_criterion_params.get_float64("min-time");
+  }
   benchmark_base &set_min_time(nvbench::float64_t min_time)
   {
-    m_min_time = min_time;
+    m_criterion_params.set_float64("min-time", min_time);
     return *this;
   }
   /// @}
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
+  /// `noise = stdev / mean_time`.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const
+  {
+    return m_criterion_params.get_float64("max-noise");
+  }
   benchmark_base &set_max_noise(nvbench::float64_t max_noise)
   {
-    m_max_noise = max_noise;
+    m_criterion_params.set_float64("max-noise", max_noise);
     return *this;
   }
   /// @}
@@ -279,6 +284,72 @@ struct benchmark_base
   }
   /// @}
 
+  [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
+
+  benchmark_base &set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  {
+    m_throttle_threshold = throttle_threshold;
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
+  {
+    return m_throttle_recovery_delay;
+  }
+
+  benchmark_base &set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  {
+    m_throttle_recovery_delay = throttle_recovery_delay;
+    return *this;
+  }
+
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
+  benchmark_base &set_stopping_criterion(std::string criterion);
+  /// @}
+
+  [[nodiscard]] bool has_criterion_param(const std::string &name) const
+  {
+    return m_criterion_params.has_value(name);
+  }
+
+  [[nodiscard]] nvbench::int64_t get_criterion_param_int64(const std::string &name) const
+  {
+    return m_criterion_params.get_int64(name);
+  }
+  benchmark_base &set_criterion_param_int64(const std::string &name, nvbench::int64_t value)
+  {
+    m_criterion_params.set_int64(name, value);
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::float64_t get_criterion_param_float64(const std::string &name) const
+  {
+    return m_criterion_params.get_float64(name);
+  }
+  benchmark_base &set_criterion_param_float64(const std::string &name, nvbench::float64_t value)
+  {
+    m_criterion_params.set_float64(name, value);
+    return *this;
+  }
+
+  [[nodiscard]] std::string get_criterion_param_string(const std::string &name) const
+  {
+    return m_criterion_params.get_string(name);
+  }
+  benchmark_base &set_criterion_param_string(const std::string &name, std::string value)
+  {
+    m_criterion_params.set_string(name, std::move(value));
+    return *this;
+  }
+
+  [[nodiscard]] nvbench::criterion_params &get_criterion_params() { return m_criterion_params; }
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
+  {
+    return m_criterion_params;
+  }
+
 protected:
   friend struct nvbench::runner_base;
 
@@ -292,14 +363,20 @@ protected:
 
   optional_ref<nvbench::printer_base> m_printer;
 
+  bool m_is_cpu_only{false};
   bool m_run_once{false};
+  bool m_disable_blocking_kernel{false};
 
   nvbench::int64_t m_min_samples{10};
-  nvbench::float64_t m_min_time{0.5};
-  nvbench::float64_t m_max_noise{0.005}; // 0.5% relative standard deviation
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
+
+  nvbench::float32_t m_throttle_threshold{0.75f};      // [% of default SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay{0.05f}; // [seconds]
+
+  nvbench::criterion_params m_criterion_params;
+  std::string m_stopping_criterion{"stdrel"};
 
 private:
   // route these through virtuals so the templated subclass can inject type info

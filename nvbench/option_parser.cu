@@ -16,19 +16,19 @@
  *  limitations under the License.
  */
 
-#include <nvbench/option_parser.cuh>
-
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/csv_printer.cuh>
+#include <nvbench/detail/throw.cuh>
+#include <nvbench/device_manager.cuh>
 #include <nvbench/git_revision.cuh>
 #include <nvbench/json_printer.cuh>
 #include <nvbench/markdown_printer.cuh>
+#include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/range.cuh>
 #include <nvbench/version.cuh>
-
-#include <nvbench/detail/throw.cuh>
 
 // These are generated from the markdown docs by CMake in the build directory:
 #include <nvbench/internal/cli_help.cuh>
@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -83,18 +84,33 @@ std::string_view submatch_to_sv(const sv_submatch &in)
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
 void parse(std::string_view input, nvbench::int32_t &val)
+try
 {
   val = std::stoi(std::string(input));
 }
+catch (const std::exception &)
+{ // The default exception messages are not very useful on gcc...it's just "stoi".
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse int32 value from string '{}'", input);
+}
 
 void parse(std::string_view input, nvbench::int64_t &val)
+try
 {
   val = std::stoll(std::string(input));
 }
+catch (const std::exception &)
+{
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse int64 value from string '{}'", input);
+}
 
 void parse(std::string_view input, nvbench::float64_t &val)
+try
 {
   val = std::stod(std::string(input));
+}
+catch (const std::exception &)
+{
+  NVBENCH_THROW(std::invalid_argument, "Failed to parse float64 value from string '{}'", input);
 }
 
 void parse(std::string_view input, std::string &val) { val = input; }
@@ -112,9 +128,8 @@ std::vector<T> parse_list_values(std::string_view list_spec)
     "(?:,|$)"  // Delimiters
   };
 
-  auto values_begin =
-    sv_regex_iterator(list_spec.cbegin(), list_spec.cend(), value_regex);
-  auto values_end = sv_regex_iterator{};
+  auto values_begin = sv_regex_iterator(list_spec.cbegin(), list_spec.cend(), value_regex);
+  auto values_end   = sv_regex_iterator{};
   while (values_begin != values_end)
   {
     auto match          = *values_begin++;
@@ -131,8 +146,7 @@ std::vector<T> parse_list_values(std::string_view list_spec)
 // Parses a range specification "<start> : <stop> [ : <stride> ]" and returns
 // a vector filled with the specified range.
 template <typename T>
-std::vector<T> parse_range_values(std::string_view range_spec,
-                                  nvbench::wrapped_type<T>)
+std::vector<T> parse_range_values(std::string_view range_spec, nvbench::wrapped_type<T>)
 {
   std::vector<T> range_params;
 
@@ -143,9 +157,8 @@ std::vector<T> parse_range_values(std::string_view range_spec,
     "(?:$|:)"  // Delimiters
   };
 
-  auto values_begin =
-    sv_regex_iterator(range_spec.cbegin(), range_spec.cend(), value_regex);
-  auto values_end = sv_regex_iterator{};
+  auto values_begin = sv_regex_iterator(range_spec.cbegin(), range_spec.cend(), value_regex);
+  auto values_end   = sv_regex_iterator{};
   for (; values_begin != values_end; ++values_begin)
   {
     auto match          = *values_begin;
@@ -221,25 +234,15 @@ std::vector<T> parse_values(std::string_view value_spec)
                                        "$"};        // EOS
 
   sv_match match;
-  if (std::regex_search(value_spec.cbegin(),
-                        value_spec.cend(),
-                        match,
-                        list_regex))
+  if (std::regex_search(value_spec.cbegin(), value_spec.cend(), match, list_regex))
   {
     return parse_list_values<T>(submatch_to_sv(match[1]));
   }
-  else if (std::regex_search(value_spec.cbegin(),
-                             value_spec.cend(),
-                             match,
-                             range_regex))
+  else if (std::regex_search(value_spec.cbegin(), value_spec.cend(), match, range_regex))
   {
-    return parse_range_values(submatch_to_sv(match[1]),
-                              nvbench::wrapped_type<T>{});
+    return parse_range_values(submatch_to_sv(match[1]), nvbench::wrapped_type<T>{});
   }
-  else if (std::regex_search(value_spec.cbegin(),
-                             value_spec.cend(),
-                             match,
-                             single_regex))
+  else if (std::regex_search(value_spec.cbegin(), value_spec.cend(), match, single_regex))
   {
     T val;
     parse(submatch_to_sv(match[1]), val);
@@ -247,9 +250,7 @@ std::vector<T> parse_values(std::string_view value_spec)
   }
   else
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid axis value spec: {}",
-                  value_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid axis value spec: {}", value_spec);
   }
 }
 
@@ -389,7 +390,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
   }
 
   auto check_params = [&first, &last](std::size_t num_params) {
-    const std::size_t rem_args = std::distance(first, last) - 1;
+    const std::size_t rem_args = static_cast<std::size_t>(std::distance(first, last) - 1);
     if (rem_args < num_params)
     {
       NVBENCH_THROW(std::runtime_error,
@@ -399,6 +400,9 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
                     rem_args);
     }
   };
+
+  const nvbench::criterion_manager::params_description criterion_params =
+    nvbench::criterion_manager::get().get_params_description();
 
   while (first < last)
   {
@@ -423,7 +427,21 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
     }
     else if (arg == "--list" || arg == "-l")
     {
-      this->print_list();
+      nvbench::markdown_printer printer{std::cout};
+      this->print_list(printer);
+      std::exit(0);
+    }
+    else if (arg == "--jsonlist-benches")
+    {
+      nvbench::json_printer printer{std::cout};
+      const auto &bench_mgr = nvbench::benchmark_manager::get();
+      printer.print_benchmark_list(bench_mgr.get_benchmarks());
+      std::exit(0);
+    }
+    else if (arg == "--jsonlist-devices")
+    {
+      nvbench::json_printer printer{std::cout};
+      printer.print_devices_json();
       std::exit(0);
     }
     else if (arg == "--persistence-mode" || arg == "--pm")
@@ -443,7 +461,24 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->enable_run_once();
       first += 1;
     }
-    else if (arg == "--quiet" | arg == "-q")
+    else if (arg == "--stopping-criterion")
+    {
+      check_params(1);
+      this->set_stopping_criterion(first[1]);
+      first += 2;
+    }
+    else if (arg == "--disable-blocking-kernel")
+    {
+      this->disable_blocking_kernel();
+      first += 1;
+    }
+    else if (arg == "--profile")
+    {
+      this->enable_run_once();
+      this->disable_blocking_kernel();
+      first += 1;
+    }
+    else if (arg == "--quiet" || arg == "-q")
     {
       // Setting this flag prevents the default stdout printer from being
       // added.
@@ -503,18 +538,35 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--min-time" || arg == "--max-noise" ||
-             arg == "--skip-time" || arg == "--timeout")
+    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--throttle-threshold" ||
+             arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
       first += 2;
     }
     else
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "Unrecognized command-line argument: `{}`.",
-                    arg);
+    { // Try criterion params
+      if (arg.size() < 3 || arg[0] != '-' || arg[1] != '-')
+      {
+        NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+      }
+
+      std::string_view name(arg.c_str() + 2, arg.size() - 2);
+      auto it = std::find_if(criterion_params.begin(),
+                             criterion_params.end(),
+                             [&name](const auto &param) { return param.first == name; });
+
+      if (it != criterion_params.end())
+      {
+        check_params(1);
+        this->update_criterion_prop(first[0], first[1], it->second);
+        first += 2;
+      }
+      else
+      {
+        NVBENCH_THROW(std::runtime_error, "Unrecognized command-line argument: `{}`.", arg);
+      }
     }
   }
 }
@@ -523,7 +575,7 @@ void option_parser::add_markdown_printer(const std::string &spec)
 try
 {
   std::ostream &stream = this->printer_spec_to_ostream(spec);
-  auto &printer = m_printer.emplace<nvbench::markdown_printer>(stream, spec);
+  auto &printer        = m_printer.emplace<nvbench::markdown_printer>(stream, spec);
   if (spec == "stdout")
   {
     printer.set_color(m_color_md_stdout_printer);
@@ -545,14 +597,10 @@ try
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error while adding csv output for `{}`:\n{}",
-                spec,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error while adding csv output for `{}`:\n{}", spec, e.what());
 }
 
-void option_parser::add_json_printer(const std::string &spec,
-                                     bool enable_binary)
+void option_parser::add_json_printer(const std::string &spec, bool enable_binary)
 try
 {
   std::ostream &stream = this->printer_spec_to_ostream(spec);
@@ -599,11 +647,9 @@ void option_parser::print_version() const
              NVBENCH_GIT_VERSION);
 }
 
-void option_parser::print_list() const
+void option_parser::print_list(printer_base &printer) const
 {
   const auto &bench_mgr = nvbench::benchmark_manager::get();
-
-  nvbench::markdown_printer printer{std::cout};
   printer.print_device_info();
   printer.print_benchmark_list(bench_mgr.get_benchmarks());
 }
@@ -613,10 +659,7 @@ void option_parser::print_help() const
   fmt::print("{}\n{}\n", ::cli_help_text, ::cli_help_axis_text);
 }
 
-void option_parser::print_help_axis() const
-{
-  fmt::print("{}\n", ::cli_help_axis_text);
-}
+void option_parser::print_help_axis() const { fmt::print("{}\n", ::cli_help_axis_text); }
 
 void option_parser::set_persistence_mode(const std::string &state)
 try
@@ -674,9 +717,7 @@ try
   {
     if (rate_val == nvbench::device_info::clock_rate::none)
     {
-      fmt::print("Unlocking clocks for device '{}' ({}).\n",
-                 device.get_name(),
-                 device.get_id());
+      fmt::print("Unlocking clocks for device '{}' ({}).\n", device.get_name(), device.get_id());
     }
     else
     {
@@ -710,6 +751,41 @@ void option_parser::enable_run_once()
   bench.set_run_once(true);
 }
 
+void option_parser::set_stopping_criterion(const std::string &criterion)
+try
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--stopping-criterion");
+    m_global_benchmark_args.push_back(criterion);
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_stopping_criterion(criterion);
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `--stopping-criterion {}`:\n{}",
+                criterion,
+                e.what());
+}
+
+void option_parser::disable_blocking_kernel()
+{
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--disable-blocking-kernel");
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_disable_blocking_kernel(true);
+}
+
 void option_parser::add_benchmark(const std::string &name)
 try
 {
@@ -725,7 +801,7 @@ try
   catch (std::invalid_argument &)
   {}
 
-  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(idx).clone()
+  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(static_cast<std::size_t>(idx)).clone()
                                   : mgr.get_benchmark(name).clone());
 
   // Initialize the new benchmark with any global arguments:
@@ -733,16 +809,12 @@ try
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error handling option --benchmark `{}`:\n{}",
-                name,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error handling option --benchmark `{}`:\n{}", name, e.what());
 }
 
 void option_parser::replay_global_args()
 {
-  this->parse_range(m_global_benchmark_args.cbegin(),
-                    m_global_benchmark_args.cend());
+  this->parse_range(m_global_benchmark_args.cbegin(), m_global_benchmark_args.cend());
 }
 
 void option_parser::update_devices(const std::string &devices)
@@ -759,17 +831,17 @@ try
   else
   {
     benchmark_base &bench = *m_benchmarks.back();
-    bench.set_devices(device_vec);
+    if (!bench.get_is_cpu_only())
+    {
+      bench.set_devices(device_vec);
+    }
   }
 
   m_recent_devices = std::move(device_vec);
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error handling option --devices `{}`:\n{}",
-                devices,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error handling option --devices `{}`:\n{}", devices, e.what());
 }
 
 void option_parser::update_axis(const std::string &spec)
@@ -808,28 +880,20 @@ try
   switch (axis.get_type())
   {
     case axis_type::type:
-      this->update_type_axis(static_cast<nvbench::type_axis &>(axis),
-                             values,
-                             flags);
+      this->update_type_axis(static_cast<nvbench::type_axis &>(axis), values, flags);
       break;
 
     case axis_type::int64:
-      this->update_int64_axis(static_cast<nvbench::int64_axis &>(axis),
-                              values,
-                              flags);
+      this->update_int64_axis(static_cast<nvbench::int64_axis &>(axis), values, flags);
       break;
 
     case axis_type::float64:
-      this->update_float64_axis(static_cast<nvbench::float64_axis &>(axis),
-                                values,
-                                flags);
+      this->update_float64_axis(static_cast<nvbench::float64_axis &>(axis), values, flags);
 
       break;
 
     case axis_type::string:
-      this->update_string_axis(static_cast<nvbench::string_axis &>(axis),
-                               values,
-                               flags);
+      this->update_string_axis(static_cast<nvbench::string_axis &>(axis), values, flags);
 
       break;
 
@@ -842,10 +906,7 @@ try
 }
 catch (std::exception &e)
 {
-  NVBENCH_THROW(std::runtime_error,
-                "Error handling option --axis `{}`:\n{}",
-                spec,
-                e.what());
+  NVBENCH_THROW(std::runtime_error, "Error handling option --axis `{}`:\n{}", spec, e.what());
 }
 
 void option_parser::update_int64_axis(int64_axis &axis,
@@ -864,9 +925,7 @@ void option_parser::update_int64_axis(int64_axis &axis,
   }
   else
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for int64 axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for int64 axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<nvbench::int64_t>(value_spec);
@@ -881,9 +940,7 @@ void option_parser::update_float64_axis(float64_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for float64 axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for float64 axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<nvbench::float64_t>(value_spec);
@@ -898,9 +955,7 @@ void option_parser::update_string_axis(string_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for string axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for string axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<std::string>(value_spec);
@@ -915,9 +970,7 @@ void option_parser::update_type_axis(type_axis &axis,
   // Validate flags:
   if (!flag_spec.empty())
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Invalid flag for type axis: `{}`",
-                  flag_spec);
+    NVBENCH_THROW(std::runtime_error, "Invalid flag for type axis: `{}`", flag_spec);
   }
 
   auto input_values = parse_values<std::string>(value_spec);
@@ -925,8 +978,7 @@ void option_parser::update_type_axis(type_axis &axis,
   axis.set_active_inputs(input_values);
 }
 
-void option_parser::update_int64_prop(const std::string &prop_arg,
-                                      const std::string &prop_val)
+void option_parser::update_int64_prop(const std::string &prop_arg, const std::string &prop_val)
 try
 {
   // If no active benchmark, save args as global.
@@ -959,8 +1011,80 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::update_float64_prop(const std::string &prop_arg,
-                                        const std::string &prop_val)
+void option_parser::update_criterion_prop(const std::string &prop_arg,
+                                          const std::string &prop_val,
+                                          const nvbench::named_values::type type)
+try
+{
+  const std::string name(prop_arg.begin() + 2, prop_arg.end());
+
+  // If no active benchmark, save args as global.
+  if (m_benchmarks.empty())
+  {
+    // Any global params must either belong to the default criterion or follow a
+    // `--stopping-criterion` arg:
+    nvbench::criterion_params params;
+    if (!params.has_value(name) &&
+        std::find(m_global_benchmark_args.cbegin(),
+                  m_global_benchmark_args.cend(),
+                  "--stopping-criterion") == m_global_benchmark_args.cend())
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "Unrecognized stopping criterion parameter: `{}` for default criterion.",
+                    name);
+    }
+
+    m_global_benchmark_args.push_back(prop_arg);
+    m_global_benchmark_args.push_back(prop_val);
+    return;
+  }
+
+  benchmark_base &bench = *m_benchmarks.back();
+
+  if (!bench.has_criterion_param(name))
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Unrecognized stopping criterion parameter: `{}` for `{}`.",
+                  name,
+                  bench.get_stopping_criterion());
+  }
+
+  if (type == nvbench::named_values::type::float64)
+  {
+    nvbench::float64_t value{};
+    ::parse(prop_val, value);
+
+    if (prop_arg == "--max-noise")
+    { // Specified as percentage, stored as ratio:
+      value /= 100.0;
+    }
+    bench.set_criterion_param_float64(name, value);
+  }
+  else if (type == nvbench::named_values::type::int64)
+  {
+    nvbench::int64_t value{};
+    ::parse(prop_val, value);
+    bench.set_criterion_param_int64(name, value);
+  }
+  else if (type == nvbench::named_values::type::string)
+  {
+    bench.set_criterion_param_string(name, prop_val);
+  }
+  else
+  {
+    NVBENCH_THROW(std::runtime_error, "Unrecognized type for property: `{}`", name);
+  }
+}
+catch (std::exception &e)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "Error handling option `{} {}`:\n{}",
+                prop_arg,
+                prop_val,
+                e.what());
+}
+
+void option_parser::update_float64_prop(const std::string &prop_arg, const std::string &prop_val)
 try
 {
   // If no active benchmark, save args as global.
@@ -975,21 +1099,21 @@ try
 
   nvbench::float64_t value{};
   ::parse(prop_val, value);
-  if (prop_arg == "--min-time")
-  {
-    bench.set_min_time(value);
-  }
-  else if (prop_arg == "--max-noise")
-  { // Specified as percentage, stored as ratio:
-    bench.set_max_noise(value / 100.);
-  }
-  else if (prop_arg == "--skip-time")
+  if (prop_arg == "--skip-time")
   {
     bench.set_skip_time(value);
   }
   else if (prop_arg == "--timeout")
   {
     bench.set_timeout(value);
+  }
+  else if (prop_arg == "--throttle-threshold")
+  {
+    bench.set_throttle_threshold(static_cast<nvbench::float32_t>(value) / 100.0f);
+  }
+  else if (prop_arg == "--throttle-recovery-delay")
+  {
+    bench.set_throttle_recovery_delay(static_cast<nvbench::float32_t>(value));
   }
   else
   {

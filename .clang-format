@@ -36,9 +36,33 @@ BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeComma
 BreakInheritanceList: BeforeComma
-ColumnLimit: 80
+ColumnLimit: 100
 CompactNamespaces: false
 ContinuationIndentWidth: 2
+IncludeBlocks:   Regroup
+IncludeCategories:
+  - Regex:           '^<nvbench'
+    Priority:        1
+  - Regex:           '^<cub'
+    Priority:        2
+  - Regex:           '^<thrust'
+    Priority:        3
+  - Regex:           '^<cuda/'
+    Priority:        4
+  - Regex:           '^<cuda'
+    Priority:        5
+  - Regex:           '^<nvml'
+    Priority:        6
+  - Regex:           '^<cupti'
+    Priority:        7
+  - Regex:           '^<nvperf'
+    Priority:        8
+  - Regex:           '^<nlohmann'
+    Priority:        9
+  - Regex:           '^<fmt'
+    Priority:        10
+  - Regex:           '^<[a-z_]*>$'
+    Priority:        11
 IndentCaseLabels: true
 IndentPPDirectives: None
 IndentWidth: 2
@@ -55,7 +79,7 @@ PenaltyExcessCharacter: 100
 PenaltyReturnTypeOnItsOwnLine: 90
 PointerAlignment: Right
 ReflowComments: true
-SortIncludes: true
+SortIncludes: CaseInsensitive
 SpaceAfterCStyleCast: false
 SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: true

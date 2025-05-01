@@ -22,6 +22,7 @@
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/named_values.cuh>
+#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
@@ -58,105 +59,101 @@ struct state_tester;
 struct state
 {
   // move-only
-  state(const state &) = delete;
-  state(state &&)      = default;
+  state(const state &)            = delete;
+  state(state &&)                 = default;
   state &operator=(const state &) = delete;
-  state &operator=(state &&) = default;
+  state &operator=(state &&)      = default;
 
-  [[nodiscard]] const nvbench::cuda_stream &get_cuda_stream() const
+  /// If a stream exists, return that. Otherwise, create a new stream using the current
+  /// device (or the current device if none is set), save it, and return it.
+  /// @sa get_cuda_stream_optional
+  [[nodiscard]] nvbench::cuda_stream &get_cuda_stream()
+  {
+    if (!m_cuda_stream.has_value())
+    {
+      m_cuda_stream = nvbench::cuda_stream{m_device};
+    }
+    return m_cuda_stream.value();
+  }
+  [[nodiscard]] const std::optional<nvbench::cuda_stream> &get_cuda_stream_optional() const
   {
     return m_cuda_stream;
   }
-  void set_cuda_stream(nvbench::cuda_stream &&stream)
-  {
-    m_cuda_stream = std::move(stream);
-  }
+  void set_cuda_stream(nvbench::cuda_stream &&stream) { m_cuda_stream = std::move(stream); }
 
   /// The CUDA device associated with with this benchmark state. May be
   /// nullopt for CPU-only benchmarks.
-  [[nodiscard]] const std::optional<nvbench::device_info> &get_device() const
-  {
-    return m_device;
-  }
+  [[nodiscard]] const std::optional<nvbench::device_info> &get_device() const { return m_device; }
+
+  /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
+  /// @{
+  // No setter, this should not be modified after construction, as it is a benchmark-wide property.
+  [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
+  /// @}
 
   /// An index into a benchmark::type_configs type_list. Returns 0 if no type
   /// axes in the associated benchmark.
-  [[nodiscard]] std::size_t get_type_config_index() const
-  {
-    return m_type_config_index;
-  }
+  [[nodiscard]] std::size_t get_type_config_index() const { return m_type_config_index; }
 
   [[nodiscard]] nvbench::int64_t get_int64(const std::string &axis_name) const;
-  [[nodiscard]] nvbench::int64_t
-  get_int64_or_default(const std::string &axis_name,
-                       nvbench::int64_t default_value) const;
+  [[nodiscard]] nvbench::int64_t get_int64_or_default(const std::string &axis_name,
+                                                      nvbench::int64_t default_value) const;
 
-  [[nodiscard]] nvbench::float64_t
-  get_float64(const std::string &axis_name) const;
-  [[nodiscard]] nvbench::float64_t
-  get_float64_or_default(const std::string &axis_name,
-                         nvbench::float64_t default_value) const;
+  [[nodiscard]] nvbench::float64_t get_float64(const std::string &axis_name) const;
+  [[nodiscard]] nvbench::float64_t get_float64_or_default(const std::string &axis_name,
+                                                          nvbench::float64_t default_value) const;
 
-  [[nodiscard]] const std::string &
-  get_string(const std::string &axis_name) const;
-  [[nodiscard]] const std::string &
-  get_string_or_default(const std::string &axis_name,
-                        const std::string &default_value) const;
+  [[nodiscard]] const std::string &get_string(const std::string &axis_name) const;
+  [[nodiscard]] const std::string &get_string_or_default(const std::string &axis_name,
+                                                         const std::string &default_value) const;
 
   void add_element_count(std::size_t elements, std::string column_name = {});
 
   void set_element_count(std::size_t elements) { m_element_count = elements; }
-  [[nodiscard]] std::size_t get_element_count() const
-  {
-    return m_element_count;
-  }
+  [[nodiscard]] std::size_t get_element_count() const { return m_element_count; }
 
   template <typename ElementType>
   void add_global_memory_reads(std::size_t count, std::string column_name = {})
   {
-    this->add_global_memory_reads(count * sizeof(ElementType),
-                                  std::move(column_name));
+    this->add_global_memory_reads(count * sizeof(ElementType), std::move(column_name));
   }
   void add_global_memory_reads(std::size_t bytes, std::string column_name = {});
 
   template <typename ElementType>
   void add_global_memory_writes(std::size_t count, std::string column_name = {})
   {
-    this->add_global_memory_writes(count * sizeof(ElementType),
-                                   std::move(column_name));
+    this->add_global_memory_writes(count * sizeof(ElementType), std::move(column_name));
   }
-  void add_global_memory_writes(std::size_t bytes,
-                                std::string column_name = {});
+  void add_global_memory_writes(std::size_t bytes, std::string column_name = {});
 
   void add_buffer_size(std::size_t num_bytes,
                        std::string summary_tag,
                        std::string column_name = {},
                        std::string description = {});
 
-  void set_global_memory_rw_bytes(std::size_t bytes)
-  {
-    m_global_memory_rw_bytes = bytes;
-  }
-  [[nodiscard]] std::size_t get_global_memory_rw_bytes() const
-  {
-    return m_global_memory_rw_bytes;
-  }
+  void set_global_memory_rw_bytes(std::size_t bytes) { m_global_memory_rw_bytes = bytes; }
+  [[nodiscard]] std::size_t get_global_memory_rw_bytes() const { return m_global_memory_rw_bytes; }
 
   void skip(std::string reason) { m_skip_reason = std::move(reason); }
   [[nodiscard]] bool is_skipped() const { return !m_skip_reason.empty(); }
-  [[nodiscard]] const std::string &get_skip_reason() const
-  {
-    return m_skip_reason;
-  }
+  [[nodiscard]] const std::string &get_skip_reason() const { return m_skip_reason; }
 
   /// Execute at least this many trials per measurement. @{
-  [[nodiscard]] nvbench::int64_t get_min_samples() const
+  [[nodiscard]] nvbench::int64_t get_min_samples() const { return m_min_samples; }
+  void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
+  /// @}
+
+  [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
   {
-    return m_min_samples;
+    return m_criterion_params;
   }
-  void set_min_samples(nvbench::int64_t min_samples)
+
+  /// Control the stopping criterion for the measurement loop.
+  /// @{
+  [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
+  void set_stopping_criterion(std::string criterion)
   {
-    m_min_samples = min_samples;
+    m_stopping_criterion = std::move(criterion);
   }
   /// @}
 
@@ -167,16 +164,36 @@ struct state
   void set_run_once(bool v) { m_run_once = v; }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
-  void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
+  /// If true, the benchmark does not use the blocking_kernel. This is intended
+  /// for use with external profiling tools. @{
+  [[nodiscard]] bool get_disable_blocking_kernel() const { return m_disable_blocking_kernel; }
+  void set_disable_blocking_kernel(bool v) { m_disable_blocking_kernel = v; }
+  /// @}
+
+  /// Accumulate at least this many seconds of timing data per measurement.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const
+  {
+    return m_criterion_params.get_float64("min-time");
+  }
+  void set_min_time(nvbench::float64_t min_time)
+  {
+    m_criterion_params.set_float64("min-time", min_time);
+  }
   /// @}
 
   /// Specify the maximum amount of noise if a measurement supports noise.
   /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const { return m_max_noise; }
-  void set_max_noise(nvbench::float64_t max_noise) { m_max_noise = max_noise; }
+  /// `noise = stdev / mean_time`.
+  /// Only applies to `stdrel` stopping criterion. @{
+  [[nodiscard]] nvbench::float64_t get_max_noise() const
+  {
+    return m_criterion_params.get_float64("max-noise");
+  }
+  void set_max_noise(nvbench::float64_t max_noise)
+  {
+    m_criterion_params.set_float64("max-noise", max_noise);
+  }
   /// @}
 
   /// If a warmup run finishes in less than `skip_time`, the measurement will
@@ -200,6 +217,23 @@ struct state
   void set_timeout(nvbench::float64_t timeout) { m_timeout = timeout; }
   /// @}
 
+  [[nodiscard]] nvbench::float32_t get_throttle_threshold() const { return m_throttle_threshold; }
+
+  void set_throttle_threshold(nvbench::float32_t throttle_threshold)
+  {
+    m_throttle_threshold = throttle_threshold;
+  }
+
+  [[nodiscard]] nvbench::float32_t get_throttle_recovery_delay() const
+  {
+    return m_throttle_recovery_delay;
+  }
+
+  void set_throttle_recovery_delay(nvbench::float32_t throttle_recovery_delay)
+  {
+    m_throttle_recovery_delay = throttle_recovery_delay;
+  }
+
   /// If a `KernelLauncher` syncs and `nvbench::exec_tag::sync` is not passed
   /// to `state.exec(...)`, a deadlock may occur. If a `blocking_kernel` blocks
   /// for more than `blocking_kernel_timeout` seconds, an error will be printed
@@ -216,20 +250,14 @@ struct state
   }
   ///@}
 
-  [[nodiscard]] const named_values &get_axis_values() const
-  {
-    return m_axis_values;
-  }
+  [[nodiscard]] const named_values &get_axis_values() const { return m_axis_values; }
 
   /*!
    * Return a string of "axis_name1=input_string1 axis_name2=input_string2 ..."
    */
   [[nodiscard]] std::string get_axis_values_as_string(bool color = false) const;
 
-  [[nodiscard]] const benchmark_base &get_benchmark() const
-  {
-    return m_benchmark;
-  }
+  [[nodiscard]] const benchmark_base &get_benchmark() const { return m_benchmark; }
 
   void collect_l1_hit_rates() { m_collect_l1_hit_rates = true; }
   void collect_l2_hit_rates() { m_collect_l2_hit_rates = true; }
@@ -246,26 +274,11 @@ struct state
     collect_dram_throughput();
   }
 
-  [[nodiscard]] bool is_l1_hit_rate_collected() const
-  {
-    return m_collect_l1_hit_rates;
-  }
-  [[nodiscard]] bool is_l2_hit_rate_collected() const
-  {
-    return m_collect_l2_hit_rates;
-  }
-  [[nodiscard]] bool is_stores_efficiency_collected() const
-  {
-    return m_collect_stores_efficiency;
-  }
-  [[nodiscard]] bool is_loads_efficiency_collected() const
-  {
-    return m_collect_loads_efficiency;
-  }
-  [[nodiscard]] bool is_dram_throughput_collected() const
-  {
-    return m_collect_dram_throughput;
-  }
+  [[nodiscard]] bool is_l1_hit_rate_collected() const { return m_collect_l1_hit_rates; }
+  [[nodiscard]] bool is_l2_hit_rate_collected() const { return m_collect_l2_hit_rates; }
+  [[nodiscard]] bool is_stores_efficiency_collected() const { return m_collect_stores_efficiency; }
+  [[nodiscard]] bool is_loads_efficiency_collected() const { return m_collect_loads_efficiency; }
+  [[nodiscard]] bool is_dram_throughput_collected() const { return m_collect_dram_throughput; }
 
   [[nodiscard]] bool is_cupti_required() const
   {
@@ -300,8 +313,7 @@ struct state
   template <typename KernelLauncher>
   void exec(KernelLauncher &&kernel_launcher)
   {
-    this->exec(nvbench::exec_tag::none,
-               std::forward<KernelLauncher>(kernel_launcher));
+    this->exec(nvbench::exec_tag::none, std::forward<KernelLauncher>(kernel_launcher));
   }
 
 private:
@@ -315,20 +327,27 @@ private:
         std::optional<nvbench::device_info> device,
         std::size_t type_config_index);
 
-  nvbench::cuda_stream m_cuda_stream;
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;
   std::size_t m_type_config_index{};
 
+  bool m_is_cpu_only{false};
   bool m_run_once{false};
+  bool m_disable_blocking_kernel{false};
+
+  nvbench::criterion_params m_criterion_params;
+  std::string m_stopping_criterion;
 
   nvbench::int64_t m_min_samples;
-  nvbench::float64_t m_min_time;
-  nvbench::float64_t m_max_noise;
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
+
+  nvbench::float32_t m_throttle_threshold;      // [% of default SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay; // [seconds]
+
+  std::optional<nvbench::cuda_stream> m_cuda_stream;
 
   // Deadlock protection. See blocking_kernel's class doc for details.
   nvbench::float64_t m_blocking_kernel_timeout{30.0};

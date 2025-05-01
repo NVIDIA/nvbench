@@ -40,10 +40,7 @@ struct device_manager
   /**
    * @return The total number of detected CUDA devices.
    */
-  [[nodiscard]] int get_number_of_devices() const
-  {
-    return static_cast<int>(m_devices.size());
-  }
+  [[nodiscard]] int get_number_of_devices() const { return static_cast<int>(m_devices.size()); }
 
   /**
    * @return The number of devices actually used by all benchmarks.
@@ -57,39 +54,27 @@ struct device_manager
   /**
    * @return The device_info object corresponding to `id`.
    */
-  [[nodiscard]] const nvbench::device_info &get_device(int id)
-  {
-    return m_devices.at(id);
-  }
+  [[nodiscard]] const nvbench::device_info &get_device(int id);
 
   /**
    * @return A vector containing device_info objects for all detected CUDA
    * devices.
    */
-  [[nodiscard]] const device_info_vector &get_devices() const
-  {
-    return m_devices;
-  }
+  [[nodiscard]] const device_info_vector &get_devices() const { return m_devices; }
 
   /**
    * @return A vector containing device_info objects for devices that are
    * actively used by all benchmarks.
    * @note This is only valid after nvbench::option_parser::parse executes.
    */
-  [[nodiscard]] const device_info_vector &get_used_devices() const
-  {
-    return m_used_devices;
-  }
+  [[nodiscard]] const device_info_vector &get_used_devices() const { return m_used_devices; }
 
 private:
   device_manager();
 
   friend struct option_parser;
 
-  void set_used_devices(device_info_vector devices)
-  {
-    m_used_devices = std::move(devices);
-  }
+  void set_used_devices(device_info_vector devices) { m_used_devices = std::move(devices); }
 
   device_info_vector m_devices;
   device_info_vector m_used_devices;
