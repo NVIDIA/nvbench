@@ -21,6 +21,7 @@
 #include <nvbench/detail/transform_reduce.cuh>
 
 #include <algorithm>
+#include <cstdint>
 
 namespace nvbench
 {
@@ -89,7 +90,7 @@ std::size_t benchmark_base::get_config_count() const
     std::multiplies<>{},
     [&axes](const auto &space) { return space->get_active_count(axes); });
 
-  return (value_count * type_count) * std::max(1UL, m_devices.size());
+  return (value_count * type_count) * std::max(std::size_t(1), m_devices.size());
 }
 
 benchmark_base &benchmark_base::set_stopping_criterion(std::string criterion)
