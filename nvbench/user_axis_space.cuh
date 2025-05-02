@@ -24,45 +24,44 @@ namespace nvbench
 {
 
 /*!
- * Provides user defined iteration over multiple axes
+ * Provides user defined iteration over one or more axes
  *
- * Consider two axes with the following values:
- * { 0, 1, 2, 3, 4, 5 }
- * { 0, 1, 2, 3, 4, 5 }
- *
- * If we wanted to provide an axis space that skipped every third value
- * We would implement it like this:
+ * If we wanted to provide an axis space that only returns every third
+ * value in an axis we would implement it like this:
  *
  * struct every_third final : nvbench::user_axis_space
  * {
- *   every_third(std::vector<std::size_t> input_indices)
+ *   explicit every_third(std::vector<std::size_t> input_indices)
  *       : nvbench::user_axis_space(std::move(input_indices))
  *   {}
  *
  *   nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
  *   {
  *     // our increment function
- *     auto adv_func = [&, info](std::size_t &inc_index,
- *                               std::size_t len) -> bool {
- *       inc_index += 3; return inc_index >= len;
+ *     auto adv_func = [](std::size_t &inc_index,
+ *                        std::size_t len) -> bool {
+ *       inc_index += 3;
+ *       return inc_index >= len;
  *     };
  *
  *     // our update function
- *     auto update_func = [=](std::size_t inc_index,
- *                            axes_info::iterator start,
- *                            axes_info::iterator end) {
- *           for (; start != end; ++start) {
- *              start->index = inc_index;
- *           }
+ *     auto update_func = [](std::size_t inc_index,
+ *                           axes_info::iterator start,
+ *                           axes_info::iterator end) {
+ *       for (; start != end; ++start) {
+ *         start->index = inc_index;
+ *       }
  *     };
  *    return detail::axis_space_iterator(info, (info[0].size/3),
  *                                       adv_func, update_func);
  *   }
  *
- *   std::size_t do_get_size(const axes_info &info) const { return
- * (info[0].size/3); }
+ *   std::size_t do_get_size(const axes_info &info) const
+ *   {
+ *     return (info[0].size/3);
+ *   }
  *   ...
- *
+ * };
  */
 struct user_axis_space : iteration_space_base
 {
