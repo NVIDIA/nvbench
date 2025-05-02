@@ -32,7 +32,7 @@ namespace nvbench
  *
  * Using a zip_axis_space over these two axes will generate 6 values
  * ( {0,0}, {1,1}, {2,2}, ... ) instead of the default 36 values
- * ( {0,0}, {0,1}, {0,2}, ...).
+ * ( {0,0}, {0,1}, {0,2}, ... ).
  *
  */
 struct zip_axis_space final : iteration_space_base
