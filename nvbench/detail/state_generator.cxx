@@ -92,8 +92,8 @@ state_generator::state_generator(const benchmark_base &bench)
 void state_generator::build_axis_configs()
 {
   const axes_metadata &axes = m_benchmark.get_axes();
-  const auto &type_space    = axes.get_type_iteration_space();
-  const auto &value_space   = axes.get_value_iteration_space();
+  const auto &type_spaces   = axes.get_type_iteration_spaces();
+  const auto &value_spaces  = axes.get_value_iteration_spaces();
 
   state_iterator ti;
   state_iterator vi;
@@ -105,12 +105,16 @@ void state_generator::build_axis_configs()
   // instantiations.
   {
     const auto &axes_vec = axes.get_axes();
-    std::for_each(type_space.crbegin(), type_space.crend(), [&ti, &axes_vec](const auto &space) {
-      ti.add_iteration_space(space->get_iterator(axes_vec));
-    });
-    std::for_each(value_space.begin(), value_space.end(), [&vi, &axes_vec](const auto &space) {
-      vi.add_iteration_space(space->get_iterator(axes_vec));
-    });
+    std::for_each(type_spaces.crbegin(), //
+                  type_spaces.crend(),
+                  [&ti, &axes_vec](const auto &space) {
+                    ti.add_iteration_space(space->get_iterator(axes_vec));
+                  });
+    std::for_each(value_spaces.begin(), //
+                  value_spaces.end(),
+                  [&vi, &axes_vec](const auto &space) {
+                    vi.add_iteration_space(space->get_iterator(axes_vec));
+                  });
   }
 
   m_type_axis_configs.clear();

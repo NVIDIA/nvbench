@@ -77,15 +77,15 @@ std::size_t benchmark_base::get_config_count() const
 {
   const auto &axes = m_axes.get_axes();
   const std::size_t value_count =
-    nvbench::detail::transform_reduce(m_axes.get_value_iteration_space().cbegin(),
-                                      m_axes.get_value_iteration_space().cend(),
+    nvbench::detail::transform_reduce(m_axes.get_value_iteration_spaces().cbegin(),
+                                      m_axes.get_value_iteration_spaces().cend(),
                                       std::size_t{1},
                                       std::multiplies<>{},
                                       [&axes](const auto &space) { return space->get_size(axes); });
 
   const std::size_t type_count = nvbench::detail::transform_reduce(
-    m_axes.get_type_iteration_space().cbegin(),
-    m_axes.get_type_iteration_space().cend(),
+    m_axes.get_type_iteration_spaces().cbegin(),
+    m_axes.get_type_iteration_spaces().cend(),
     std::size_t{1},
     std::multiplies<>{},
     [&axes](const auto &space) { return space->get_active_count(axes); });

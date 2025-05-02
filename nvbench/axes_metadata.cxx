@@ -41,16 +41,16 @@ axes_metadata::axes_metadata(const axes_metadata &other)
   }
 
   m_type_axe_count = other.m_type_axe_count;
-  m_type_space.reserve(other.m_type_space.size());
-  for (const auto &iter : other.m_type_space)
+  m_type_iteration_spaces.reserve(other.m_type_iteration_spaces.size());
+  for (const auto &iter : other.m_type_iteration_spaces)
   {
-    m_type_space.push_back(iter->clone());
+    m_type_iteration_spaces.push_back(iter->clone());
   }
 
-  m_value_space.reserve(other.m_value_space.size());
-  for (const auto &iter : other.m_value_space)
+  m_value_iteration_spaces.reserve(other.m_value_iteration_spaces.size());
+  for (const auto &iter : other.m_value_iteration_spaces)
   {
-    m_value_space.push_back(iter->clone());
+    m_value_iteration_spaces.push_back(iter->clone());
   }
 }
 
@@ -65,18 +65,18 @@ axes_metadata &axes_metadata::operator=(const axes_metadata &other)
 
   m_type_axe_count = other.m_type_axe_count;
 
-  m_type_space.clear();
-  m_type_space.reserve(other.m_type_space.size());
-  for (const auto &iter : other.m_type_space)
+  m_type_iteration_spaces.clear();
+  m_type_iteration_spaces.reserve(other.m_type_iteration_spaces.size());
+  for (const auto &iter : other.m_type_iteration_spaces)
   {
-    m_type_space.push_back(iter->clone());
+    m_type_iteration_spaces.push_back(iter->clone());
   }
 
-  m_value_space.clear();
-  m_value_space.reserve(other.m_value_space.size());
-  for (const auto &iter : other.m_value_space)
+  m_value_iteration_spaces.clear();
+  m_value_iteration_spaces.reserve(other.m_value_iteration_spaces.size());
+  for (const auto &iter : other.m_value_iteration_spaces)
   {
-    m_value_space.push_back(iter->clone());
+    m_value_iteration_spaces.push_back(iter->clone());
   }
 
   return *this;
@@ -128,7 +128,7 @@ void axes_metadata::add_string_axis(std::string name, std::vector<std::string> d
 
 void axes_metadata::add_axis(const axis_base &axis)
 {
-  m_value_space.push_back(std::make_unique<linear_axis_space>(m_axes.size()));
+  m_value_iteration_spaces.push_back(std::make_unique<linear_axis_space>(m_axes.size()));
   m_axes.push_back(axis.clone());
 }
 
@@ -161,7 +161,7 @@ void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
 
   // add the new tied iteration space
   auto tied = std::make_unique<zip_axis_space>(std::move(input_indices));
-  m_value_space.push_back(std::move(tied));
+  m_value_iteration_spaces.push_back(std::move(tied));
 }
 
 void axes_metadata::add_user_iteration_space(std::function<nvbench::make_user_space_signature> make,
@@ -182,7 +182,7 @@ void axes_metadata::add_user_iteration_space(std::function<nvbench::make_user_sp
   }
 
   auto user_func = make(std::move(input_indices));
-  m_value_space.push_back(std::move(user_func));
+  m_value_iteration_spaces.push_back(std::move(user_func));
 }
 
 const int64_axis &axes_metadata::get_int64_axis(std::string_view name) const
