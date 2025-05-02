@@ -35,7 +35,7 @@ namespace nvbench
  *       : nvbench::user_axis_space(std::move(input_indices))
  *   {}
  *
- *   nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
+ *   nvbench::detail::axis_space_iterator do_get_iterator(axis_value_indices info) const
  *   {
  *     // our increment function
  *     auto adv_func = [](std::size_t &inc_index,
@@ -46,19 +46,19 @@ namespace nvbench
  *
  *     // our update function
  *     auto update_func = [](std::size_t inc_index,
- *                           axes_info::iterator start,
- *                           axes_info::iterator end) {
+ *                           axis_value_indices::iterator start,
+ *                           axis_value_indices::iterator end) {
  *       for (; start != end; ++start) {
  *         start->index = inc_index;
  *       }
  *     };
- *    return detail::axis_space_iterator(info, (info[0].size/3),
+ *    return detail::axis_space_iterator(info, (info[0].axis_size/3),
  *                                       adv_func, update_func);
  *   }
  *
- *   std::size_t do_get_size(const axes_info &info) const
+ *   std::size_t do_get_size(const axis_value_indices &info) const
  *   {
- *     return (info[0].size/3);
+ *     return (info[0].axis_size/3);
  *   }
  *   ...
  * };

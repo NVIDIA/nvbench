@@ -18,6 +18,7 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/detail/state_generator.cuh>
+#include <nvbench/detail/throw.cuh>
 #include <nvbench/detail/transform_reduce.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/named_values.cuh>
@@ -25,6 +26,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <exception>
 #include <functional>
 #include <numeric>
 
@@ -34,10 +36,10 @@ namespace nvbench::detail
 
 void state_iterator::add_iteration_space(const nvbench::detail::axis_space_iterator &iter)
 {
-  m_axes_count += iter.m_info.size();
-  m_max_iteration *= iter.m_iteration_size;
+  m_axes_count += iter.get_axis_value_indices().size();
+  m_max_iteration *= iter.get_iteration_size();
 
-  m_space.push_back(std::move(iter));
+  m_axis_space_iterators.push_back(std::move(iter));
 }
 
 [[nodiscard]] std::size_t state_iterator::get_number_of_states() const
@@ -45,22 +47,26 @@ void state_iterator::add_iteration_space(const nvbench::detail::axis_space_itera
   return this->m_max_iteration;
 }
 
-void state_iterator::init()
-{
-  m_current_space     = 0;
-  m_current_iteration = 0;
-}
+void state_iterator::init() { m_current_iteration = 0; }
 
-[[nodiscard]] std::vector<axis_index> state_iterator::get_current_indices() const
+[[nodiscard]] std::vector<axis_value_index> state_iterator::get_current_axis_value_indices() const
 {
-  std::vector<axis_index> indices;
-  indices.reserve(m_axes_count);
-  for (auto &m : m_space)
+  std::vector<axis_value_index> info;
+  info.reserve(m_axes_count);
+  for (auto &iter : m_axis_space_iterators)
   {
-    m.update_indices(indices);
+    iter.update_axis_value_indices(info);
   }
-  // verify length
-  return indices;
+
+  if (info.size() != m_axes_count)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Internal error: State iterator has {} axes, but only {} were updated.",
+                  m_axes_count,
+                  info.size());
+  }
+
+  return info;
 }
 
 [[nodiscard]] bool state_iterator::iter_valid() const
@@ -72,9 +78,9 @@ void state_iterator::next()
 {
   m_current_iteration++;
 
-  for (auto &&space : this->m_space)
+  for (auto &iter : this->m_axis_space_iterators)
   {
-    auto rolled_over = space.next();
+    const auto rolled_over = iter.next();
     if (rolled_over)
     {
       continue;
@@ -128,13 +134,13 @@ void state_generator::build_axis_configs()
     auto &[config, active_mask] =
       m_type_axis_configs.emplace_back(std::make_pair(nvbench::named_values{}, true));
 
-    for (const auto &axis_info : ti.get_current_indices())
+    for (const auto &info : ti.get_current_axis_value_indices())
     {
-      const auto &axis = axes.get_type_axis(axis_info.name);
+      const auto &axis = axes.get_type_axis(info.axis_name);
 
-      active_mask &= axis.get_is_active(axis_info.index);
+      active_mask &= axis.get_is_active(info.value_index);
 
-      config.set_string(axis.get_name(), axis.get_input_string(axis_info.index));
+      config.set_string(axis.get_name(), axis.get_input_string(info.value_index));
     }
   }
 
@@ -143,30 +149,33 @@ void state_generator::build_axis_configs()
     auto &config = m_non_type_axis_configs.emplace_back();
 
     // Add non-type parameters to state:
-    for (const auto &axis_info : vi.get_current_indices())
+    for (const auto &axis_value : vi.get_current_axis_value_indices())
     {
-      switch (axis_info.type)
+      switch (axis_value.axis_type)
       {
         default:
         case axis_type::type:
           assert("unreachable." && false);
           break;
         case axis_type::int64:
-          config.set_int64(axis_info.name,
-                           axes.get_int64_axis(axis_info.name).get_value(axis_info.index));
+          config.set_int64(
+            axis_value.axis_name,
+            axes.get_int64_axis(axis_value.axis_name).get_value(axis_value.value_index));
           break;
 
         case axis_type::float64:
-          config.set_float64(axis_info.name,
-                             axes.get_float64_axis(axis_info.name).get_value(axis_info.index));
+          config.set_float64(
+            axis_value.axis_name,
+            axes.get_float64_axis(axis_value.axis_name).get_value(axis_value.value_index));
           break;
 
         case axis_type::string:
-          config.set_string(axis_info.name,
-                            axes.get_string_axis(axis_info.name).get_value(axis_info.index));
+          config.set_string(
+            axis_value.axis_name,
+            axes.get_string_axis(axis_value.axis_name).get_value(axis_value.value_index));
           break;
       } // switch (type)
-    } // for (axis_info : current_indices)
+    } // for (axis_values)
   }
 
   if (m_type_axis_configs.empty())

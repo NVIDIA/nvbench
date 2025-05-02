@@ -23,8 +23,8 @@
 namespace nvbench
 {
 
-iteration_space_base::iteration_space_base(std::vector<std::size_t> input_indices)
-    : m_input_indices(std::move(input_indices))
+iteration_space_base::iteration_space_base(std::vector<std::size_t> input_axis_indices)
+    : m_axis_indices(std::move(input_axis_indices))
 {}
 
 iteration_space_base::~iteration_space_base() = default;
@@ -37,15 +37,15 @@ std::unique_ptr<iteration_space_base> iteration_space_base::clone() const
 
 namespace
 {
-nvbench::iteration_space_base::axes_info
-get_axes_info(const nvbench::iteration_space_base::axes_type &axes,
-              const std::vector<std::size_t> &indices)
+nvbench::iteration_space_base::axis_value_indices
+get_axis_value_indices(const nvbench::iteration_space_base::axes_type &axes,
+                       const std::vector<std::size_t> &indices)
 {
-  nvbench::iteration_space_base::axes_info info;
+  nvbench::iteration_space_base::axis_value_indices info;
   info.reserve(indices.size());
-  for (auto &n : indices)
+  for (auto &idx : indices)
   {
-    info.emplace_back(axes[n].get());
+    info.emplace_back(axes[idx].get());
   }
   return info;
 }
@@ -53,16 +53,16 @@ get_axes_info(const nvbench::iteration_space_base::axes_type &axes,
 
 detail::axis_space_iterator iteration_space_base::get_iterator(const axes_type &axes) const
 {
-  return this->do_get_iterator(get_axes_info(axes, m_input_indices));
+  return this->do_get_iterator(get_axis_value_indices(axes, m_axis_indices));
 }
 
 std::size_t iteration_space_base::get_size(const axes_type &axes) const
 {
-  return this->do_get_size(get_axes_info(axes, m_input_indices));
+  return this->do_get_size(get_axis_value_indices(axes, m_axis_indices));
 }
 std::size_t iteration_space_base::get_active_count(const axes_type &axes) const
 {
-  return this->do_get_active_count(get_axes_info(axes, m_input_indices));
+  return this->do_get_active_count(get_axis_value_indices(axes, m_axis_indices));
 }
 
 } // namespace nvbench

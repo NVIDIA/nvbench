@@ -96,13 +96,13 @@ struct under_diag final : nvbench::user_axis_space
   mutable std::size_t y_pos   = 0;
   mutable std::size_t x_start = 0;
 
-  nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
+  nvbench::detail::axis_space_iterator do_get_iterator(axis_value_indices info) const
   {
     // generate our increment function
     auto adv_func = [&, info](std::size_t &inc_index, std::size_t /*len*/) -> bool {
       inc_index++;
       x_pos++;
-      if (x_pos == info[0].size)
+      if (x_pos == info[0].axis_size)
       {
         x_pos = ++x_start;
         y_pos = x_start;
@@ -112,25 +112,24 @@ struct under_diag final : nvbench::user_axis_space
     };
 
     // our update function
-    auto diag_under = [&, info](std::size_t,
-                                std::vector<nvbench::detail::axis_index>::iterator start,
-                                std::vector<nvbench::detail::axis_index>::iterator end) {
-      start->index = x_pos;
-      end->index   = y_pos;
-    };
+    auto diag_under =
+      [&, info](std::size_t, axis_value_indices::iterator start, axis_value_indices::iterator end) {
+        start->value_index = x_pos;
+        end->value_index   = y_pos;
+      };
 
-    const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
+    const size_t iteration_length = ((info[0].axis_size * (info[1].axis_size + 1)) / 2);
     return nvbench::detail::axis_space_iterator(info, iteration_length, adv_func, diag_under);
   }
 
-  std::size_t do_get_size(const axes_info &info) const
+  std::size_t do_get_size(const axis_value_indices &info) const
   {
-    return ((info[0].size * (info[1].size + 1)) / 2);
+    return ((info[0].axis_size * (info[1].axis_size + 1)) / 2);
   }
 
-  std::size_t do_get_active_count(const axes_info &info) const
+  std::size_t do_get_active_count(const axis_value_indices &info) const
   {
-    return ((info[0].size * (info[1].size + 1)) / 2);
+    return ((info[0].axis_size * (info[1].axis_size + 1)) / 2);
   }
 
   std::unique_ptr<nvbench::iteration_space_base> do_clone() const
@@ -160,36 +159,38 @@ struct gauss final : nvbench::user_axis_space
       : nvbench::user_axis_space(std::move(input_indices))
   {}
 
-  nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
+  nvbench::detail::axis_space_iterator do_get_iterator(axis_value_indices info) const
   {
-    const double mid_point = static_cast<double>((info[0].size / 2));
+    const double mid_point = static_cast<double>((info[0].axis_size / 2));
 
     std::random_device rd{};
     std::mt19937 gen{rd()};
     std::normal_distribution<> d{mid_point, 2};
 
-    const size_t iteration_length = info[0].size;
+    const size_t iteration_length = info[0].axis_size;
     std::vector<std::size_t> gauss_indices(iteration_length);
     for (auto &g : gauss_indices)
     {
-      auto v = std::min(static_cast<double>(info[0].size), d(gen));
+      auto v = std::min(static_cast<double>(info[0].axis_size), d(gen));
       v      = std::max(0.0, v);
       g      = static_cast<std::size_t>(v);
     }
 
     // our update function
-    auto gauss_func = [=](std::size_t index,
-                          std::vector<nvbench::detail::axis_index>::iterator start,
-                          std::vector<nvbench::detail::axis_index>::iterator) {
-      start->index = gauss_indices[index];
-    };
+    auto gauss_func =
+      [=](std::size_t index, axis_value_indices::iterator start, axis_value_indices::iterator) {
+        start->value_index = gauss_indices[index];
+      };
 
     return nvbench::detail::axis_space_iterator(info, iteration_length, gauss_func);
   }
 
-  std::size_t do_get_size(const axes_info &info) const { return info[0].size; }
+  std::size_t do_get_size(const axis_value_indices &info) const { return info[0].axis_size; }
 
-  std::size_t do_get_active_count(const axes_info &info) const { return info[0].size; }
+  std::size_t do_get_active_count(const axis_value_indices &info) const
+  {
+    return info[0].axis_size;
+  }
 
   std::unique_ptr<iteration_space_base> do_clone() const { return std::make_unique<gauss>(*this); }
 };

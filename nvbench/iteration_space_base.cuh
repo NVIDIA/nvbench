@@ -51,30 +51,24 @@ namespace nvbench
  */
 struct iteration_space_base
 {
-  using axes_type = std::vector<std::unique_ptr<nvbench::axis_base>>;
-  using axes_info = std::vector<detail::axis_index>;
+  using axes_type          = std::vector<std::unique_ptr<nvbench::axis_base>>;
+  using axis_value_indices = std::vector<detail::axis_value_index>;
 
-  using AdvanceSignature = nvbench::detail::axis_space_iterator::AdvanceSignature;
-  using UpdateSignature  = nvbench::detail::axis_space_iterator::UpdateSignature;
+  using advance_signature = nvbench::detail::axis_space_iterator::advance_signature;
+  using update_signature  = nvbench::detail::axis_space_iterator::update_signature;
 
   /*!
    * Construct a new derived iteration_space
    *
-   * The input_indices and output_indices combine together to allow the iteration space to know
-   * what axes they should query from axes_metadata and where each of those map to in the output
-   * iteration space.
-   * @param[input_indices] recorded indices of each axis from the axes metadata value space
+   * @param[input_axis_indices] Index of each associated axis in axes_metadata.
    */
-  iteration_space_base(std::vector<std::size_t> input_indices);
+  iteration_space_base(std::vector<std::size_t> input_axis_indices);
   virtual ~iteration_space_base();
 
   [[nodiscard]] std::unique_ptr<iteration_space_base> clone() const;
 
   /*!
-   * Returns the iterator over the @a axis provided
-   *
-   * @param[axes]
-   *
+   * Returns the iterator over the @a axes provided
    */
   [[nodiscard]] detail::axis_space_iterator get_iterator(const axes_type &axes) const;
 
@@ -97,12 +91,12 @@ struct iteration_space_base
   [[nodiscard]] std::size_t get_active_count(const axes_type &axes) const;
 
 protected:
-  std::vector<std::size_t> m_input_indices;
+  std::vector<std::size_t> m_axis_indices;
 
-  virtual std::unique_ptr<iteration_space_base> do_clone() const            = 0;
-  virtual detail::axis_space_iterator do_get_iterator(axes_info info) const = 0;
-  virtual std::size_t do_get_size(const axes_info &info) const              = 0;
-  virtual std::size_t do_get_active_count(const axes_info &info) const      = 0;
+  virtual std::unique_ptr<iteration_space_base> do_clone() const                     = 0;
+  virtual detail::axis_space_iterator do_get_iterator(axis_value_indices info) const = 0;
+  virtual std::size_t do_get_size(const axis_value_indices &info) const              = 0;
+  virtual std::size_t do_get_active_count(const axis_value_indices &info) const      = 0;
 };
 
 } // namespace nvbench

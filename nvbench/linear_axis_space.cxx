@@ -23,26 +23,30 @@
 namespace nvbench
 {
 
-linear_axis_space::linear_axis_space(std::size_t in_index)
-    : iteration_space_base({in_index})
+linear_axis_space::linear_axis_space(std::size_t axis_index)
+    : iteration_space_base({axis_index})
 {}
 
 linear_axis_space::~linear_axis_space() = default;
 
-detail::axis_space_iterator linear_axis_space::do_get_iterator(axes_info info) const
+detail::axis_space_iterator linear_axis_space::do_get_iterator(axis_value_indices info) const
 {
-  auto update_func = [=](std::size_t inc_index, axes_info::iterator start, axes_info::iterator) {
-    start->index = inc_index;
-  };
+  auto update_func = [](std::size_t current_iteration,
+                        axis_value_indices::iterator start,
+                        axis_value_indices::iterator) { start->value_index = current_iteration; };
 
-  return detail::axis_space_iterator(info, info[0].size, update_func);
+  const auto axis_size = info[0].axis_size;
+  return detail::axis_space_iterator(std::move(info), axis_size, update_func);
 }
 
-std::size_t linear_axis_space::do_get_size(const axes_info &info) const { return info[0].size; }
-
-std::size_t linear_axis_space::do_get_active_count(const axes_info &info) const
+std::size_t linear_axis_space::do_get_size(const axis_value_indices &info) const
 {
-  return info[0].active_size;
+  return info[0].axis_size;
+}
+
+std::size_t linear_axis_space::do_get_active_count(const axis_value_indices &info) const
+{
+  return info[0].axis_active_size;
 }
 
 std::unique_ptr<iteration_space_base> linear_axis_space::do_clone() const

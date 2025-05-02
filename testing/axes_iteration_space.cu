@@ -188,13 +188,13 @@ struct under_diag final : nvbench::user_axis_space
   mutable std::size_t y_pos   = 0;
   mutable std::size_t x_start = 0;
 
-  nvbench::detail::axis_space_iterator do_get_iterator(axes_info info) const
+  nvbench::detail::axis_space_iterator do_get_iterator(axis_value_indices info) const
   {
     // generate our increment function
     auto adv_func = [&, info](std::size_t &inc_index, std::size_t /*len*/) -> bool {
       inc_index++;
       x_pos++;
-      if (x_pos == info[0].size)
+      if (x_pos == info[0].axis_size)
       {
         x_pos = ++x_start;
         y_pos = x_start;
@@ -204,25 +204,24 @@ struct under_diag final : nvbench::user_axis_space
     };
 
     // our update function
-    auto diag_under = [&, info](std::size_t,
-                                std::vector<nvbench::detail::axis_index>::iterator start,
-                                std::vector<nvbench::detail::axis_index>::iterator end) {
-      start->index = x_pos;
-      end->index   = y_pos;
-    };
+    auto diag_under =
+      [&, info](std::size_t, axis_value_indices::iterator start, axis_value_indices::iterator end) {
+        start->value_index = x_pos;
+        end->value_index   = y_pos;
+      };
 
-    const size_t iteration_length = ((info[0].size * (info[1].size + 1)) / 2);
+    const size_t iteration_length = ((info[0].axis_size * (info[1].axis_size + 1)) / 2);
     return nvbench::detail::axis_space_iterator(info, iteration_length, adv_func, diag_under);
   }
 
-  std::size_t do_get_size(const axes_info &info) const
+  std::size_t do_get_size(const axis_value_indices &info) const
   {
-    return ((info[0].size * (info[1].size + 1)) / 2);
+    return ((info[0].axis_size * (info[1].axis_size + 1)) / 2);
   }
 
-  std::size_t do_get_active_count(const axes_info &info) const
+  std::size_t do_get_active_count(const axis_value_indices &info) const
   {
-    return ((info[0].size * (info[1].size + 1)) / 2);
+    return ((info[0].axis_size * (info[1].axis_size + 1)) / 2);
   }
 
   std::unique_ptr<nvbench::iteration_space_base> do_clone() const

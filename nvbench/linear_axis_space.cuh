@@ -27,17 +27,16 @@ namespace nvbench
  * Provides linear forward iteration over a single axis.
  *
  * The default for all axes added to a benchmark
- *
  */
 struct linear_axis_space final : iteration_space_base
 {
-  linear_axis_space(std::size_t in);
+  linear_axis_space(std::size_t axis_index);
   ~linear_axis_space();
 
   std::unique_ptr<iteration_space_base> do_clone() const override;
-  detail::axis_space_iterator do_get_iterator(axes_info info) const override;
-  std::size_t do_get_size(const axes_info &info) const override;
-  std::size_t do_get_active_count(const axes_info &info) const override;
+  detail::axis_space_iterator do_get_iterator(axis_value_indices info) const override;
+  std::size_t do_get_size(const axis_value_indices &info) const override;
+  std::size_t do_get_active_count(const axis_value_indices &info) const override;
 };
 
 } // namespace nvbench

@@ -78,13 +78,12 @@ struct state_iterator
 
   [[nodiscard]] std::size_t get_number_of_states() const;
   void init();
-  [[nodiscard]] std::vector<axis_index> get_current_indices() const;
+  [[nodiscard]] std::vector<axis_value_index> get_current_axis_value_indices() const;
   [[nodiscard]] bool iter_valid() const;
   void next();
 
-  std::vector<axis_space_iterator> m_space;
+  std::vector<axis_space_iterator> m_axis_space_iterators;
   std::size_t m_axes_count        = 0;
-  std::size_t m_current_space     = 0;
   std::size_t m_current_iteration = 0;
   std::size_t m_max_iteration     = 1;
 };

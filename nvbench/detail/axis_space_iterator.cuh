@@ -30,76 +30,86 @@ namespace nvbench
 namespace detail
 {
 
-struct axis_index
+// Tracks current value and axis information used while iterating through axes.
+struct axis_value_index
 {
-  axis_index() = default;
+  axis_value_index() = default;
 
-  explicit axis_index(const axis_base *axis)
-      : index(0)
-      , name(axis->get_name())
-      , type(axis->get_type())
-      , size(axis->get_size())
-      , active_size(axis->get_size())
-  {
-    if (type == nvbench::axis_type::type)
-    {
-      active_size = static_cast<const nvbench::type_axis *>(axis)->get_active_count();
-    }
-  }
-  std::size_t index;
-  std::string name;
-  nvbench::axis_type type;
-  std::size_t size;
-  std::size_t active_size;
+  explicit axis_value_index(const axis_base *axis)
+      : value_index(0)
+      , axis_name(axis->get_name())
+      , axis_type(axis->get_type())
+      , axis_size(axis->get_size())
+      , axis_active_size(axis_type == nvbench::axis_type::type
+                           ? static_cast<const nvbench::type_axis *>(axis)->get_active_count()
+                           : axis->get_size())
+  {}
+
+  std::size_t value_index;
+  std::string axis_name;
+  nvbench::axis_type axis_type;
+  std::size_t axis_size;
+  std::size_t axis_active_size;
 };
 
 struct axis_space_iterator
 {
-  using axes_info        = std::vector<detail::axis_index>;
-  using AdvanceSignature = bool(std::size_t &current_index, std::size_t length);
-  using UpdateSignature  = void(std::size_t index,
-                               axes_info::iterator start,
-                               axes_info::iterator end);
+  using axis_value_indices = std::vector<detail::axis_value_index>;
+  using advance_signature  = bool(std::size_t &current_iteration, std::size_t iteration_size);
+  using update_signature   = void(std::size_t current_iteration,
+                                axis_value_indices::iterator start_axis_value_info,
+                                axis_value_indices::iterator end_axis_value_info);
 
-  axis_space_iterator(std::vector<detail::axis_index> info,
-                      std::size_t iter_count,
-                      std::function<axis_space_iterator::AdvanceSignature> &&advance,
-                      std::function<axis_space_iterator::UpdateSignature> &&update)
-      : m_info(info)
-      , m_iteration_size(iter_count)
+  axis_space_iterator(axis_value_indices info,
+                      std::size_t iteration_size,
+                      std::function<axis_space_iterator::advance_signature> &&advance,
+                      std::function<axis_space_iterator::update_signature> &&update)
+      : m_iteration_size(iteration_size)
+      , m_axis_value_indices(std::move(info))
       , m_advance(std::move(advance))
       , m_update(std::move(update))
   {}
 
-  axis_space_iterator(std::vector<detail::axis_index> info,
+  axis_space_iterator(axis_value_indices info,
                       std::size_t iter_count,
-                      std::function<axis_space_iterator::UpdateSignature> &&update)
-      : m_info(info)
-      , m_iteration_size(iter_count)
+                      std::function<axis_space_iterator::update_signature> &&update)
+      : m_iteration_size(iter_count)
+      , m_axis_value_indices(std::move(info))
       , m_update(std::move(update))
   {}
 
-  [[nodiscard]] bool next() { return this->m_advance(m_current_index, m_iteration_size); }
+  [[nodiscard]] bool next() { return m_advance(m_current_iteration, m_iteration_size); }
 
-  void update_indices(std::vector<axis_index> &indices) const
+  void update_axis_value_indices(axis_value_indices &info) const
   {
-    using diff_t = typename axes_info::difference_type;
-    indices.insert(indices.end(), m_info.begin(), m_info.end());
-    axes_info::iterator end   = indices.end();
-    axes_info::iterator start = end - static_cast<diff_t>(m_info.size());
-    this->m_update(m_current_index, start, end);
+    using diff_t = typename axis_value_indices::difference_type;
+    info.insert(info.end(), m_axis_value_indices.begin(), m_axis_value_indices.end());
+    axis_value_indices::iterator end   = info.end();
+    axis_value_indices::iterator start = end - static_cast<diff_t>(m_axis_value_indices.size());
+    m_update(m_current_iteration, start, end);
   }
 
-  axes_info m_info;
-  std::size_t m_iteration_size              = 1;
-  std::function<AdvanceSignature> m_advance = [](std::size_t &current_index, std::size_t length) {
-    (current_index + 1 == length) ? current_index = 0 : current_index++;
-    return (current_index == 0); // we rolled over
-  };
-  std::function<UpdateSignature> m_update = nullptr;
+  [[nodiscard]] const axis_value_indices &get_axis_value_indices() const
+  {
+    return m_axis_value_indices;
+  }
+  [[nodiscard]] axis_value_indices &get_axis_value_indices() { return m_axis_value_indices; }
+
+  [[nodiscard]] std::size_t get_iteration_size() const { return m_iteration_size; }
 
 private:
-  std::size_t m_current_index = 0;
+  std::size_t m_current_iteration = 0;
+  std::size_t m_iteration_size    = 1;
+
+  axis_value_indices m_axis_value_indices;
+
+  std::function<advance_signature> m_advance = [](std::size_t &current_iteration,
+                                                  std::size_t iteration_size) {
+    (current_iteration + 1 == iteration_size) ? current_iteration = 0 : current_iteration++;
+    return (current_iteration == 0); // we rolled over
+  };
+
+  std::function<update_signature> m_update = nullptr;
 };
 
 } // namespace detail
