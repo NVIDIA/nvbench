@@ -20,7 +20,7 @@
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/axis_base.cuh>
-#include <nvbench/detail/axes_iterator.cuh>
+#include <nvbench/detail/axis_space_iterator.cuh>
 #include <nvbench/state.cuh>
 
 #include <optional>

@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <nvbench/detail/axes_iterator.cuh>
+#include <nvbench/detail/axis_space_iterator.cuh>
 
 namespace nvbench
 {
