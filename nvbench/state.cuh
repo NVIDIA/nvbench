@@ -174,7 +174,11 @@ struct state
   /// Only applies to `stdrel` stopping criterion. @{
   [[nodiscard]] nvbench::float64_t get_min_time() const
   {
-    return m_criterion_params.get_float64("min-time");
+    if (m_criterion_params.has_value("min-time"))
+    {
+      return m_criterion_params.get_float64("min-time");
+    }
+    return 0.;
   }
   void set_min_time(nvbench::float64_t min_time)
   {
@@ -188,7 +192,11 @@ struct state
   /// Only applies to `stdrel` stopping criterion. @{
   [[nodiscard]] nvbench::float64_t get_max_noise() const
   {
-    return m_criterion_params.get_float64("max-noise");
+    if (m_criterion_params.has_value("max-noise"))
+    {
+      return m_criterion_params.get_float64("max-noise");
+    }
+    return 1.;
   }
   void set_max_noise(nvbench::float64_t max_noise)
   {
