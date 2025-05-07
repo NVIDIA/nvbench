@@ -401,7 +401,7 @@ void measure_cold_base::generate_summaries()
       get_param(max_noise, "max-noise");
 
       std::optional<nvbench::float64_t> min_time;
-      get_param(max_noise, "min-time");
+      get_param(min_time, "min-time");
 
       if (max_noise && cuda_noise > *max_noise)
       {
