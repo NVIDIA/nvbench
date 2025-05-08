@@ -763,8 +763,6 @@ void test_devices()
 void test_termination_criteria()
 {
   const nvbench::int64_t min_samples = 1000;
-  const nvbench::float64_t min_time  = 2000;
-  const nvbench::float64_t max_noise = 3000;
   const nvbench::float64_t skip_time = 4000;
   const nvbench::float64_t timeout   = 5000;
 
@@ -774,8 +772,6 @@ void test_termination_criteria()
   dummy_bench bench;
   bench.set_devices(std::vector<int>{});
   bench.set_min_samples(min_samples);
-  bench.set_min_time(min_time);
-  bench.set_max_noise(max_noise);
   bench.set_skip_time(skip_time);
   bench.set_timeout(timeout);
 
@@ -783,8 +779,6 @@ void test_termination_criteria()
 
   ASSERT(states.size() == 1);
   ASSERT(min_samples == states[0].get_min_samples());
-  ASSERT(within_one(min_time, states[0].get_min_time()));
-  ASSERT(within_one(max_noise, states[0].get_max_noise()));
   ASSERT(within_one(skip_time, states[0].get_skip_time()));
   ASSERT(within_one(timeout, states[0].get_timeout()));
 }

@@ -22,12 +22,6 @@
 namespace nvbench
 {
 
-// Default constructor for compatibility with old code
-criterion_params::criterion_params()
-    : criterion_params{{"max-noise", nvbench::detail::compat_max_noise()},
-                       {"min-time", nvbench::detail::compat_min_time()}}
-{}
-
 criterion_params::criterion_params(
   std::initializer_list<std::pair<std::string, nvbench::named_values::value_type>> list)
 {

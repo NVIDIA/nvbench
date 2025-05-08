@@ -52,7 +52,9 @@ struct benchmark_base
   template <typename TypeAxes>
   explicit benchmark_base(TypeAxes type_axes)
       : m_axes(type_axes)
-  {}
+  {
+    this->set_stopping_criterion(nvbench::detail::default_stopping_criterion());
+  }
 
   virtual ~benchmark_base();
 
@@ -190,34 +192,6 @@ struct benchmark_base
   }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement.
-  /// Only applies to `stdrel` stopping criterion. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const
-  {
-    return m_criterion_params.get_float64("min-time");
-  }
-  benchmark_base &set_min_time(nvbench::float64_t min_time)
-  {
-    m_criterion_params.set_float64("min-time", min_time);
-    return *this;
-  }
-  /// @}
-
-  /// Specify the maximum amount of noise if a measurement supports noise.
-  /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`.
-  /// Only applies to `stdrel` stopping criterion. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const
-  {
-    return m_criterion_params.get_float64("max-noise");
-  }
-  benchmark_base &set_max_noise(nvbench::float64_t max_noise)
-  {
-    m_criterion_params.set_float64("max-noise", max_noise);
-    return *this;
-  }
-  /// @}
-
   /// If a warmup run finishes in less than `skip_time`, the measurement will
   /// be skipped.
   /// Extremely fast kernels (< 5000 ns) often timeout before they can
@@ -339,7 +313,7 @@ protected:
   nvbench::float32_t m_throttle_recovery_delay{0.05f}; // [seconds]
 
   nvbench::criterion_params m_criterion_params;
-  std::string m_stopping_criterion{"stdrel"};
+  std::string m_stopping_criterion{};
 
 private:
   // route these through virtuals so the templated subclass can inject type info

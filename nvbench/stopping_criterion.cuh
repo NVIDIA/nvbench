@@ -30,13 +30,7 @@ namespace nvbench
 
 namespace detail
 {
-
-constexpr nvbench::float64_t compat_min_time() { return 0.5; } // 0.5 seconds
-constexpr nvbench::float64_t compat_max_noise()
-{
-  return 0.005;
-} // 0.5% relative standard deviation
-
+inline std::string default_stopping_criterion() { return "stdrel"; }
 } // namespace detail
 
 /**
@@ -47,7 +41,7 @@ class criterion_params
   nvbench::named_values m_named_values;
 
 public:
-  criterion_params();
+  criterion_params() = default;
   criterion_params(std::initializer_list<std::pair<std::string, nvbench::named_values::value_type>>);
 
   /**

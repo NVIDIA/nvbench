@@ -170,40 +170,6 @@ struct state
   void set_disable_blocking_kernel(bool v) { m_disable_blocking_kernel = v; }
   /// @}
 
-  /// Accumulate at least this many seconds of timing data per measurement.
-  /// Only applies to `stdrel` stopping criterion. @{
-  [[nodiscard]] nvbench::float64_t get_min_time() const
-  {
-    if (m_criterion_params.has_value("min-time"))
-    {
-      return m_criterion_params.get_float64("min-time");
-    }
-    return 0.;
-  }
-  void set_min_time(nvbench::float64_t min_time)
-  {
-    m_criterion_params.set_float64("min-time", min_time);
-  }
-  /// @}
-
-  /// Specify the maximum amount of noise if a measurement supports noise.
-  /// Noise is the relative standard deviation:
-  /// `noise = stdev / mean_time`.
-  /// Only applies to `stdrel` stopping criterion. @{
-  [[nodiscard]] nvbench::float64_t get_max_noise() const
-  {
-    if (m_criterion_params.has_value("max-noise"))
-    {
-      return m_criterion_params.get_float64("max-noise");
-    }
-    return 1.;
-  }
-  void set_max_noise(nvbench::float64_t max_noise)
-  {
-    m_criterion_params.set_float64("max-noise", max_noise);
-  }
-  /// @}
-
   /// If a warmup run finishes in less than `skip_time`, the measurement will
   /// be skipped.
   /// Extremely fast kernels (< 5000 ns) often timeout before they can

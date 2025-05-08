@@ -1155,26 +1155,6 @@ void test_min_samples()
   ASSERT(states[0].get_min_samples() == 12345);
 }
 
-void test_min_time()
-{
-  nvbench::option_parser parser;
-  parser.parse({"--benchmark", "DummyBench", "--min-time", "12345e2"});
-  const auto &states = parser_to_states(parser);
-
-  ASSERT(states.size() == 1);
-  ASSERT(std::abs(states[0].get_min_time() - 12345e2) < 1.);
-}
-
-void test_max_noise()
-{
-  nvbench::option_parser parser;
-  parser.parse({"--benchmark", "DummyBench", "--max-noise", "50.3"});
-  const auto &states = parser_to_states(parser);
-
-  ASSERT(states.size() == 1);
-  ASSERT(std::abs(states[0].get_max_noise() - 0.503) < 1.e-4);
-}
-
 void test_skip_time()
 {
   nvbench::option_parser parser;
@@ -1486,8 +1466,6 @@ try
   test_axis_before_benchmark();
 
   test_min_samples();
-  test_min_time();
-  test_max_noise();
   test_skip_time();
   test_timeout();
 

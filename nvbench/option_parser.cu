@@ -1023,7 +1023,10 @@ try
   {
     // Any global params must either belong to the default criterion or follow a
     // `--stopping-criterion` arg:
-    nvbench::criterion_params params;
+    nvbench::criterion_params params =
+      criterion_manager::get()
+        .get_criterion(nvbench::detail::default_stopping_criterion())
+        .get_params();
     if (!params.has_value(name) &&
         std::find(m_global_benchmark_args.cbegin(),
                   m_global_benchmark_args.cend(),
