@@ -21,27 +21,6 @@
 
 #include "test_asserts.cuh"
 
-void test_compat_parameters()
-{
-  nvbench::criterion_params params;
-
-  ASSERT(params.has_value("max-noise"));
-  ASSERT(params.has_value("min-time"));
-
-  ASSERT(params.get_float64("max-noise") == nvbench::detail::compat_max_noise());
-  ASSERT(params.get_float64("min-time") == nvbench::detail::compat_min_time());
-}
-
-void test_compat_overwrite()
-{
-  nvbench::criterion_params params;
-  params.set_float64("max-noise", 40000.0);
-  params.set_float64("min-time", 42000.0);
-
-  ASSERT(params.get_float64("max-noise") == 40000.0);
-  ASSERT(params.get_float64("min-time") == 42000.0);
-}
-
 void test_overwrite()
 {
   nvbench::criterion_params params;
@@ -54,9 +33,4 @@ void test_overwrite()
   ASSERT(params.get_float64("custom") == 4.2);
 }
 
-int main()
-{
-  test_compat_parameters();
-  test_compat_overwrite();
-  test_overwrite();
-}
+int main() { test_overwrite(); }

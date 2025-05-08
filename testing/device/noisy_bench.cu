@@ -140,4 +140,4 @@ NVBENCH_BENCH(noisy_bench)
   .add_float64_axis("Noise", {0.1, 5., 25.})             // %
   // disable this; we want to test that the benchmarking loop will still exit
   // when max_noise is never reached:
-  .set_max_noise(0.0000001);
+  .set_criterion_param_float64("max-noise", 0.0000001);

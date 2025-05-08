@@ -38,7 +38,9 @@ measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
     , m_min_samples{exec_state.get_min_samples()}
-    , m_min_time{exec_state.get_min_time()}
+    , m_min_time{exec_state.get_criterion_params().has_value("min-time")
+                   ? exec_state.get_criterion_params().get_float64("min-time")
+                   : 0.5}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
 {
