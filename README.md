@@ -29,7 +29,7 @@ features:
     * Measures the host-side execution time of a non-GPU benchmark.
     * Not suitable for microbenchmarking.
 
-Check out [this talk](https://www.youtube.com/watch?v=1i7dxoAfKOU) for an overview
+Check out [this talk](https://www.youtube.com/watch?v=CtrqBmYtSEk) for an overview
 of the challenges inherent to CUDA kernel benchmarking and how NVBench solves them for you!
 
 # Supported Compilers and Tools
