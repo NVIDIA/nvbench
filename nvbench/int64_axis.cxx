@@ -25,23 +25,22 @@
 #include <stdexcept>
 #include <vector>
 
-namespace nvbench
+namespace
 {
 
-int64_axis::~int64_axis() = default;
-
-void int64_axis::set_inputs(std::vector<int64_t> inputs, int64_axis_flags flags)
+std::vector<nvbench::int64_t> construct_values(nvbench::int64_axis_flags flags,
+                                               const std::vector<nvbench::int64_t> &inputs)
 {
-  m_inputs = std::move(inputs);
-  m_flags  = flags;
 
-  if (!this->is_power_of_two())
+  std::vector<int64_t> values;
+  const bool is_power_of_two = static_cast<bool>(flags & nvbench::int64_axis_flags::power_of_two);
+  if (!is_power_of_two)
   {
-    m_values = m_inputs;
+    values = inputs;
   }
   else
   {
-    m_values.resize(m_inputs.size());
+    values.resize(inputs.size());
 
     auto conv = [](int64_t in) -> int64_t {
       if (in < 0 || in >= 64)
@@ -51,11 +50,33 @@ void int64_axis::set_inputs(std::vector<int64_t> inputs, int64_axis_flags flags)
                       "Input={} ValidRange=[0, 63]",
                       in);
       }
-      return int64_axis::compute_pow2(in);
+      return nvbench::int64_axis::compute_pow2(in);
     };
 
-    std::transform(m_inputs.cbegin(), m_inputs.cend(), m_values.begin(), conv);
+    std::transform(inputs.cbegin(), inputs.cend(), values.begin(), conv);
   }
+
+  return values;
+}
+} // namespace
+
+namespace nvbench
+{
+
+int64_axis::int64_axis(std::string name, std::vector<int64_t> inputs, int64_axis_flags flags)
+    : axis_base{std::move(name), axis_type::int64}
+    , m_inputs{std::move(inputs)}
+    , m_values{construct_values(flags, m_inputs)}
+    , m_flags{flags}
+{}
+
+int64_axis::~int64_axis() = default;
+
+void int64_axis::set_inputs(std::vector<int64_t> inputs, int64_axis_flags flags)
+{
+  m_inputs = std::move(inputs);
+  m_flags  = flags;
+  m_values = construct_values(flags, m_inputs);
 }
 
 std::string int64_axis::do_get_input_string(std::size_t i) const
