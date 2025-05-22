@@ -77,4 +77,15 @@ function(nvbench_config_target target_name)
     LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
   )
+  # CUPTI libraries are installed in random locations depending on the platform
+  # and installation method. Sometimes they're next to the CUDA libraries and in
+  # the library path, other times they're in a subdirectory that isn't added to
+  # the library path...
+  # To simplify installed nvbench usage, add the CUPTI libraries path to the
+  # installed nvbench rpath:
+  if (NVBench_ENABLE_CUPTI AND nvbench_cupti_root)
+    set_target_properties(${target_name} PROPERTIES
+      INSTALL_RPATH "${nvbench_cupti_root}/lib64"
+    )
+  endif()
 endfunction()
