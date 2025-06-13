@@ -33,7 +33,7 @@ struct device_manager
   using device_info_vector = std::vector<nvbench::device_info>;
 
   /**
-   * @return The singleton benchmark_manager instance.
+   * @return The singleton device_manager instance.
    */
   [[nodiscard]] static device_manager &get();
 
