@@ -58,12 +58,16 @@ struct benchmark final : public benchmark_base
 
   static constexpr std::size_t num_type_configs = nvbench::tl::size<type_configs>{};
 
-  benchmark()
+  benchmark(kernel_generator kgen = {})
       : benchmark_base(type_axes{})
+      , m_kernel_generator(kgen)
   {}
 
 private:
-  std::unique_ptr<benchmark_base> do_clone() const final { return std::make_unique<benchmark>(); }
+  std::unique_ptr<benchmark_base> do_clone() const final
+  {
+    return std::make_unique<benchmark>(this->m_kernel_generator);
+  }
 
   void do_set_type_axes_names(std::vector<std::string> names) final
   {
@@ -72,10 +76,12 @@ private:
 
   void do_run() final
   {
-    nvbench::runner<benchmark> runner{*this};
+    nvbench::runner<benchmark> runner{*this, this->m_kernel_generator};
     runner.generate_states();
     runner.run();
   }
+
+  kernel_generator m_kernel_generator;
 };
 
 } // namespace nvbench
