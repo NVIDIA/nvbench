@@ -1,12 +1,13 @@
 # Called before project(...)
 macro(nvbench_load_rapids_cmake)
-  if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/NVBENCH_RAPIDS.cmake")
-    file(DOWNLOAD
-      https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-25.04/RAPIDS.cmake
-      "${CMAKE_CURRENT_BINARY_DIR}/NVBENCH_RAPIDS.cmake"
-    )
-  endif()
-  include("${CMAKE_CURRENT_BINARY_DIR}/NVBENCH_RAPIDS.cmake")
+  # - Including directly, see https://github.com/rapidsai/rmm/pull/1886
+  # - Versioned download URL:
+  #   https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-XX.YY/RAPIDS.cmake
+  # - This macro is always called before project() in the root CMakeLists.txt, so:
+  #   - we can't just use NVBench_SOURCE_DIR, it's not defined yet.
+  #   - We can't rely on CMAKE_CURRENT_LIST_DIR because of macro expansion.
+  #   - We can fallback to CURRENT_SOURCE_DIR because we know this will be expanded in the root:
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/RAPIDS.cmake")
 
   include(rapids-cmake)
   include(rapids-cpm)
