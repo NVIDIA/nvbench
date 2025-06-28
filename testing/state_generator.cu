@@ -55,15 +55,22 @@ void test_single_state()
 {
   // one single-value axis = one state
   nvbench::detail::state_iterator sg;
-  sg.add_axis("OnlyAxis", nvbench::axis_type::string, 1);
+  nvbench::string_axis si("OnlyAxis");
+  si.set_inputs({""});
+
+  std::vector<std::unique_ptr<nvbench::axis_base>> axes;
+  axes.push_back(std::make_unique<nvbench::string_axis>(si));
+
+  sg.add_iteration_space(nvbench::linear_axis_space{0}.get_iterator(axes));
   ASSERT(sg.get_number_of_states() == 1);
   sg.init();
   ASSERT(sg.iter_valid());
-  ASSERT(sg.get_current_indices().size() == 1);
-  ASSERT(sg.get_current_indices()[0].axis == "OnlyAxis");
-  ASSERT(sg.get_current_indices()[0].index == 0);
-  ASSERT(sg.get_current_indices()[0].size == 1);
-  ASSERT(sg.get_current_indices()[0].type == nvbench::axis_type::string);
+  ASSERT(sg.get_current_axis_value_indices().size() == 1);
+  ASSERT(sg.get_current_axis_value_indices()[0].axis_name == "OnlyAxis");
+  ASSERT(sg.get_current_axis_value_indices()[0].axis_size == 1);
+  ASSERT(sg.get_current_axis_value_indices()[0].axis_active_size == 1);
+  ASSERT(sg.get_current_axis_value_indices()[0].axis_type == nvbench::axis_type::string);
+  ASSERT(sg.get_current_axis_value_indices()[0].value_index == 0);
 
   sg.next();
   ASSERT(!sg.iter_valid());
@@ -72,10 +79,27 @@ void test_single_state()
 void test_basic()
 {
   nvbench::detail::state_iterator sg;
-  sg.add_axis("Axis1", nvbench::axis_type::string, 2);
-  sg.add_axis("Axis2", nvbench::axis_type::string, 3);
-  sg.add_axis("Axis3", nvbench::axis_type::string, 3);
-  sg.add_axis("Axis4", nvbench::axis_type::string, 2);
+
+  nvbench::string_axis si1("Axis1");
+  nvbench::string_axis si2("Axis2");
+  nvbench::string_axis si3("Axis3");
+  nvbench::string_axis si4("Axis4");
+
+  si1.set_inputs({"", ""});
+  si2.set_inputs({"", "", ""});
+  si3.set_inputs({"", "", ""});
+  si4.set_inputs({"", ""});
+
+  std::vector<std::unique_ptr<nvbench::axis_base>> axes;
+  axes.emplace_back(std::make_unique<nvbench::string_axis>(si1));
+  axes.emplace_back(std::make_unique<nvbench::string_axis>(si2));
+  axes.emplace_back(std::make_unique<nvbench::string_axis>(si3));
+  axes.emplace_back(std::make_unique<nvbench::string_axis>(si4));
+
+  sg.add_iteration_space(nvbench::linear_axis_space{0}.get_iterator(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{1}.get_iterator(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{2}.get_iterator(axes));
+  sg.add_iteration_space(nvbench::linear_axis_space{3}.get_iterator(axes));
 
   ASSERT_MSG(sg.get_number_of_states() == (2 * 3 * 3 * 2),
              "Actual: {} Expected: {}",
@@ -89,14 +113,14 @@ void test_basic()
   {
     line.clear();
     fmt::format_to(std::back_inserter(line), "| {:^2}", line_num++);
-    for (auto &axis_index : sg.get_current_indices())
+    for (auto &axis_value : sg.get_current_axis_value_indices())
     {
-      ASSERT(axis_index.type == nvbench::axis_type::string);
+      ASSERT(axis_value.axis_type == nvbench::axis_type::string);
       fmt::format_to(std::back_inserter(line),
                      " | {}: {}/{}",
-                     axis_index.axis,
-                     axis_index.index,
-                     axis_index.size);
+                     axis_value.axis_name,
+                     axis_value.value_index,
+                     axis_value.axis_size);
     }
     fmt::format_to(std::back_inserter(buffer), "{} |\n", fmt::to_string(line));
   }
