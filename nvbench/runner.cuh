@@ -54,8 +54,9 @@ struct runner : public runner_base
   using type_configs                            = typename benchmark_type::type_configs;
   static constexpr std::size_t num_type_configs = benchmark_type::num_type_configs;
 
-  explicit runner(benchmark_type &bench)
+  explicit runner(benchmark_type &bench, kernel_generator kgen = {})
       : runner_base{bench}
+      , m_kernel_generator{kgen}
   {}
 
   void run()
@@ -98,7 +99,8 @@ private:
             self.run_state_prologue(cur_state);
             try
             {
-              kernel_generator{}(cur_state, type_config{});
+              auto kernel_generator_copy = self.m_kernel_generator;
+              kernel_generator_copy(cur_state, type_config{});
               if (cur_state.is_skipped())
               {
                 self.print_skip_notification(cur_state);
@@ -115,6 +117,8 @@ private:
         ++type_config_index;
       });
   }
+
+  kernel_generator m_kernel_generator;
 };
 
 } // namespace nvbench
