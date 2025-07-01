@@ -12,7 +12,20 @@ except Exception:
 for libname in ("cupti", "nvperf_target", "nvperf_host"):
     _load_nvidia_dynamic_library(libname)
 
-from ._nvbench import *  # noqa: E402, F403
-from ._nvbench import register, run_all_benchmarks  # noqa: E402
+from ._nvbench import (  # noqa: E402
+    Benchmark,
+    CudaStream,
+    Launch,
+    State,
+    register,
+    run_all_benchmarks,
+)
 
-__all__ = ["register", "run_all_benchmarks"]
+__all__ = [
+    "register",
+    "run_all_benchmarks",
+    "CudaStream",
+    "Launch",
+    "State",
+    "Benchmark",
+]
