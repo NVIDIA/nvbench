@@ -345,7 +345,10 @@ PYBIND11_MODULE(_nvbench, m)
     return state.get_benchmark().get_printer().has_value();
   });
 
-  pystate_cls.def("getStream", &nvbench::state::get_cuda_stream);
+  pystate_cls.def(
+    "getStream",
+    [](nvbench::state &state) { return std::ref(state.get_cuda_stream()); },
+    py::return_value_policy::reference);
 
   pystate_cls.def("getInt64", &nvbench::state::get_int64);
   pystate_cls.def("getInt64", &nvbench::state::get_int64_or_default);
