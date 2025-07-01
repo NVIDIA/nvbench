@@ -333,7 +333,7 @@ PYBIND11_MODULE(_nvbench, m)
   //        nvbench::state::get_short_description
   //        nvbench::state::exec
   // NOTE:
-  //    PyState wraps std::reference_wrapper<nvbench::state>
+  //    State wraps std::reference_wrapper<nvbench::state>
 
   using state_ref_t = std::reference_wrapper<nvbench::state>;
   auto pystate_cls  = py::class_<nvbench::state>(m, "State");
@@ -400,8 +400,8 @@ PYBIND11_MODULE(_nvbench, m)
   pystate_cls.def("getTimeout", &nvbench::state::get_timeout);
   pystate_cls.def("setTimeout", &nvbench::state::set_timeout);
 
-  pystate_cls.def("getBlockingKernel", &nvbench::state::get_blocking_kernel_timeout);
-  pystate_cls.def("setBlockingKernel", &nvbench::state::set_blocking_kernel_timeout);
+  pystate_cls.def("getBlockingKernelTimeout", &nvbench::state::get_blocking_kernel_timeout);
+  pystate_cls.def("setBlockingKernelTimeout", &nvbench::state::set_blocking_kernel_timeout);
 
   pystate_cls.def("collectCUPTIMetrics", &nvbench::state::collect_cupti_metrics);
   pystate_cls.def("isCUPTIRequired", &nvbench::state::is_cupti_required);
