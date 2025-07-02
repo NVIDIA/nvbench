@@ -7,6 +7,11 @@ import cuda.core.experimental as core
 import cuda.nvbench as nvbench
 
 
+def as_core_Stream(cs: nvbench.CudaStream) -> core.Stream:
+    "Create view of native stream used by NVBench"
+    return core.Stream.from_handle(cs.addressof())
+
+
 def make_fill_kernel(data_type: Optional[str] = None):
     src = r"""
 #include <cuda/std/cstdint>
@@ -40,11 +45,8 @@ def synchronizing_bench(state: nvbench.State):
     n_values = 64 * 1024 * 1024
     n_bytes = n_values * ctypes.sizeof(ctypes.c_int32(0))
 
-    dev = core.Device(state.getDevice())
-    dev.set_current()
-
-    alloc_stream = dev.create_stream(state.getStream())
-    buffer = core.DeviceMemoryResource(dev).allocate(n_bytes, alloc_stream)
+    alloc_s = as_core_Stream(state.getStream())
+    buffer = core.DeviceMemoryResource(state.getDevice()).allocate(n_bytes, alloc_s)
 
     state.addElementCount(n_values, "Items")
     state.addGlobalMemoryWrites(n_bytes, "Size")
@@ -53,10 +55,7 @@ def synchronizing_bench(state: nvbench.State):
     launch_config = core.LaunchConfig(grid=256, block=256, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        dev = core.Device()
-        dev.set_current()
-
-        s = dev.create_stream(launch.getStream())
+        s = as_core_Stream(launch.getStream())
         core.launch(s, launch_config, krn, buffer, 0, n_values)
         s.sync()
 

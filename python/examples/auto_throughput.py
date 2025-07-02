@@ -63,13 +63,9 @@ def throughput_bench(state: nvbench.State):
     state.exec(launcher)
 
 
-(
-    nvbench.register(throughput_bench)
-    .addInt64Axis("Stride", [1, 4])
-    .addInt64Axis("ItemsPerThread", [1, 2, 3, 4])
-)
-
-
 if __name__ == "__main__":
-    print(nvbench.__version__)
+    b = nvbench.register(throughput_bench)
+    b.addInt64Axis("Stride", [1, 2, 4])
+    b.addInt64Axis("ItemsPerThread", [1, 2, 3, 4])
+
     nvbench.run_all_benchmarks(sys.argv)

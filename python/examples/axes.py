@@ -7,6 +7,10 @@ import cuda.core.experimental as core
 import cuda.nvbench as nvbench
 
 
+def as_core_Stream(cs: nvbench.CudaStream) -> core.Stream:
+    return core.Stream.from_handle(cs.addressof())
+
+
 def make_sleep_kernel():
     """JITs sleep_kernel(seconds)"""
     src = r"""
@@ -45,10 +49,7 @@ def simple(state: nvbench.State):
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        dev = core.Device()
-        dev.set_current()
-        s = dev.create_stream(launch.getStream())
-
+        s = as_core_Stream(launch.getStream())
         core.launch(s, launch_config, krn, sleep_dur)
 
     state.exec(launcher)
@@ -61,10 +62,7 @@ def single_float64_axis(state: nvbench.State):
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        dev = core.Device()
-        dev.set_current()
-        s = dev.create_stream(launch.getStream())
-
+        s = as_core_Stream(launch.getStream())
         core.launch(s, launch_config, krn, sleep_dur)
 
     state.exec(launcher)
@@ -117,21 +115,16 @@ def copy_sweep_grid_shape(state: nvbench.State):
     state.addGlobalMemoryReads(nbytes)
     state.addGlobalMemoryWrites(nbytes)
 
-    dev = core.Device(state.getDevice())
-    dev.set_current()
-
-    alloc_stream = dev.create_stream(state.getStream())
-    input_buf = core.DeviceMemoryResource(dev.device_id).allocate(nbytes, alloc_stream)
-    output_buf = core.DeviceMemoryResource(dev.device_id).allocate(nbytes, alloc_stream)
+    dev_id = state.getDevice()
+    alloc_s = as_core_Stream(state.getStream())
+    input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
+    output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
 
     krn = make_copy_kernel()
     launch_config = core.LaunchConfig(grid=num_blocks, block=block_size, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        dev = core.Device()
-        dev.set_current()
-        s = dev.create_stream(launch.getStream())
-
+        s = as_core_Stream(launch.getStream())
         core.launch(s, launch_config, krn, input_buf, output_buf, num_values)
 
     state.exec(launcher)
@@ -160,21 +153,16 @@ def copy_type_sweep(state: nvbench.State):
     state.addGlobalMemoryReads(nbytes)
     state.addGlobalMemoryWrites(nbytes)
 
-    dev = core.Device(state.getDevice())
-    dev.set_current()
-
-    alloc_stream = dev.create_stream(state.getStream())
-    input_buf = core.DeviceMemoryResource(dev.device_id).allocate(nbytes, alloc_stream)
-    output_buf = core.DeviceMemoryResource(dev.device_id).allocate(nbytes, alloc_stream)
+    dev_id = state.getDevice()
+    alloc_s = as_core_Stream(state.getStream())
+    input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
+    output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
 
     krn = make_copy_kernel(value_cuda_t, value_cuda_t)
     launch_config = core.LaunchConfig(grid=256, block=256, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        dev = core.Device()
-        dev.set_current()
-        s = dev.create_stream(launch.getStream())
-
+        s = as_core_Stream(launch.getStream())
         core.launch(s, launch_config, krn, input_buf, output_buf, num_values)
 
     state.exec(launcher)
