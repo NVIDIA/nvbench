@@ -150,6 +150,7 @@ def copy_type_sweep(state: nvbench.State):
     }
 
     value_ctype, value_cuda_t = types_map[type_id]
+    state.add_summary("Type", value_cuda_t)
 
     # Number of elements in 256MiB
     nbytes = 256 * 1024 * 1024
