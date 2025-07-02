@@ -187,6 +187,9 @@ class State:
             Default: `False`.
         """
         ...
+    def add_summary(self, column_name: str, value: Union[int, float, str]) -> None:
+        "Add summary column with a value"
+        ...
 
 def register(fn: Callable[[State], None]) -> Benchmark:
     """

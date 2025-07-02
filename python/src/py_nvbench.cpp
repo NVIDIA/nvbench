@@ -338,13 +338,13 @@ PYBIND11_MODULE(_nvbench, m)
   using state_ref_t = std::reference_wrapper<nvbench::state>;
   auto pystate_cls  = py::class_<nvbench::state>(m, "State");
 
-  pystate_cls.def("hasDevice", [](nvbench::state &state) -> bool {
+  pystate_cls.def("hasDevice", [](const nvbench::state &state) -> bool {
     return static_cast<bool>(state.get_device());
   });
-  pystate_cls.def("hasPrinters", [](nvbench::state &state) -> bool {
+  pystate_cls.def("hasPrinters", [](const nvbench::state &state) -> bool {
     return state.get_benchmark().get_printer().has_value();
   });
-  pystate_cls.def("getDevice", [](nvbench::state &state) {
+  pystate_cls.def("getDevice", [](const nvbench::state &state) {
     auto dev = state.get_device();
     if (dev.has_value())
     {
@@ -398,7 +398,7 @@ PYBIND11_MODULE(_nvbench, m)
     py::arg("column_name") = py::str(""));
   pystate_cls.def(
     "getBenchmark",
-    [](nvbench::state &state) { return std::ref(state.get_benchmark()); },
+    [](const nvbench::state &state) { return std::ref(state.get_benchmark()); },
     py::return_value_policy::reference);
   pystate_cls.def("getThrottleThreshold", &nvbench::state::get_throttle_threshold);
 
@@ -455,6 +455,30 @@ PYBIND11_MODULE(_nvbench, m)
     py::pos_only{},
     py::arg("batched") = true,
     py::arg("sync")    = false);
+
+  pystate_cls.def("get_short_description",
+                  [](const nvbench::state &state) { return state.get_short_description(); });
+
+  pystate_cls.def("add_summary",
+                  [](nvbench::state &state, std::string column_name, std::string value) {
+                    auto &summ = state.add_summary("nv/python/" + column_name);
+                    summ.set_string("description", "User tag: " + column_name);
+                    summ.set_string("name", std::move(column_name));
+                    summ.set_string("value", std::move(value));
+                  });
+  pystate_cls.def("add_summary",
+                  [](nvbench::state &state, std::string column_name, std::int64_t value) {
+                    auto &summ = state.add_summary("nv/python/" + column_name);
+                    summ.set_string("description", "User tag: " + column_name);
+                    summ.set_string("name", std::move(column_name));
+                    summ.set_int64("value", value);
+                  });
+  pystate_cls.def("add_summary", [](nvbench::state &state, std::string column_name, double value) {
+    auto &summ = state.add_summary("nv/python/" + column_name);
+    summ.set_string("description", "User tag: " + column_name);
+    summ.set_string("name", std::move(column_name));
+    summ.set_float64("value", value);
+  });
 
   // == STEP 6
   //    ATTN: nvbench::benchmark_manager is a singleton
