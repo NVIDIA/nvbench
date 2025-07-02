@@ -1,7 +1,7 @@
 # from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import Optional, Self
+from typing import Optional, Self, Union
 
 class CudaStream:
     """Represents CUDA stream
@@ -15,6 +15,18 @@ class CudaStream:
         Special method implement CUDA stream protocol
         from `cuda.core`. Returns a pair of integers:
         (protocol_version, integral_value_of_cudaStream_t pointer)
+
+        Example
+        -------
+            import cuda.core.experimental as core
+            import cuda.nvbench as nvbench
+
+            def bench(state: nvbench.State):
+                dev = core.Device(state.getDevice())
+                dev.set_current()
+                # converts CudaString to core.Stream
+                # using __cuda_stream__ protocol
+                dev.create_stream(state.getStream())
         """
         ...
 
@@ -67,6 +79,9 @@ class State:
         ...
     def hasPrinters(self) -> bool:
         "True if configuration has a printer"
+        ...
+    def getDevice(self) -> Union[int, None]:
+        "Get device_id of the device from this configuration"
         ...
     def getStream(self) -> CudaStream:
         "CudaStream object from this configuration"
@@ -150,6 +165,8 @@ class State:
     def exec(
         self,
         fn: Callable[[Launch], None],
+        /,
+        *,
         batched: Optional[bool] = True,
         sync: Optional[bool] = False,
     ):

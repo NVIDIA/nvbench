@@ -344,6 +344,14 @@ PYBIND11_MODULE(_nvbench, m)
   pystate_cls.def("hasPrinters", [](nvbench::state &state) -> bool {
     return state.get_benchmark().get_printer().has_value();
   });
+  pystate_cls.def("getDevice", [](nvbench::state &state) {
+    auto dev = state.get_device();
+    if (dev.has_value())
+    {
+      return py::cast(dev.value().get_id());
+    }
+    return py::object(py::none());
+  });
 
   pystate_cls.def(
     "getStream",
@@ -359,7 +367,10 @@ PYBIND11_MODULE(_nvbench, m)
   pystate_cls.def("getString", &nvbench::state::get_string);
   pystate_cls.def("getString", &nvbench::state::get_string_or_default);
 
-  pystate_cls.def("addElementCount", &nvbench::state::add_element_count);
+  pystate_cls.def("addElementCount",
+                  &nvbench::state::add_element_count,
+                  py::arg("count"),
+                  py::arg("column_name") = py::str(""));
   pystate_cls.def("setElementCount", &nvbench::state::set_element_count);
   pystate_cls.def("getElementCount", &nvbench::state::get_element_count);
 
