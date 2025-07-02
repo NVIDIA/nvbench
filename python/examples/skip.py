@@ -5,6 +5,11 @@ import cuda.core.experimental as core
 import cuda.nvbench as nvbench
 
 
+def as_core_Stream(cs: nvbench.CudaStream) -> core.Stream:
+    "Create view into native stream provided by NVBench"
+    return core.Stream.from_handle(cs.addressof())
+
+
 def make_sleep_kernel():
     """JITs sleep_kernel(seconds)"""
     src = r"""
@@ -54,10 +59,7 @@ def runtime_skip(state: nvbench.State):
     launch_cfg = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        dev = core.Device()
-        dev.set_current()
-
-        s = dev.create_stream(launch.getStream())
+        s = as_core_Stream(launch.getStream())
         core.launch(s, launch_cfg, krn, duration)
 
     state.exec(launcher)
