@@ -246,7 +246,7 @@ PYBIND11_MODULE(_nvbench, m)
   py_benchmark_cls.def(
     "addInt64Axis",
     [](nvbench::benchmark_base &self, std::string name, const std::vector<nvbench::int64_t> &data) {
-      self.add_int64_axis(name, data);
+      self.add_int64_axis(std::move(name), data);
       return std::ref(self);
     },
     py::return_value_policy::reference);
@@ -255,14 +255,21 @@ PYBIND11_MODULE(_nvbench, m)
     [](nvbench::benchmark_base &self,
        std::string name,
        const std::vector<nvbench::float64_t> &data) {
-      self.add_float64_axis(name, data);
+      self.add_float64_axis(std::move(name), data);
       return std::ref(self);
     },
     py::return_value_policy::reference);
   py_benchmark_cls.def(
     "addStringAxis",
     [](nvbench::benchmark_base &self, std::string name, const std::vector<std::string> &data) {
-      self.add_string_axis(name, data);
+      self.add_string_axis(std::move(name), data);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference);
+  py_benchmark_cls.def(
+    "setName",
+    [](nvbench::benchmark_base &self, std::string name) {
+      self.set_name(std::move(name));
       return std::ref(self);
     },
     py::return_value_policy::reference);
