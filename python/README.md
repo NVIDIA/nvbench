@@ -17,5 +17,28 @@ nvbench_DIR=$(pwd)/nvbench_install/lib/cmake CUDACXX=/usr/local/cuda/bin/nvcc pi
 ### Verify that package works
 
 ```
+export PYTHONPATH=$(pwd):${PYTHONPATH}
 python test/run_1.py
+```
+
+### Run examples
+
+```
+# Example benchmarking numba.cuda kernel
+python examples/throughput.py
+```
+
+```
+# Example benchmarking kernels authored using cuda.core
+python examples/axes.py
+```
+
+```
+# Example benchmarking algorithms from cuda.cccl.parallel
+python examples/cccl_parallel_segmented_reduce.py
+```
+
+```
+# Example benchmarking CuPy function
+python examples/cupy_extract.py
 ```
