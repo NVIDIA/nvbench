@@ -20,15 +20,14 @@
 
 #include <nvbench/flags.cuh>
 
-#include <cuda/std/cstdint>
-
+#include <cstdint>
 #include <type_traits>
 
 namespace nvbench::detail
 {
 
 // See the similarly named tags in nvbench::exec_tag:: for documentation.
-enum class exec_flag : ::cuda::std::uint16_t
+enum class exec_flag : std::uint16_t
 {
   none = 0x0,
 
