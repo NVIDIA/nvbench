@@ -76,7 +76,7 @@ struct benchmark_wrapper_t
   benchmark_wrapper_t() = default;
 
   explicit benchmark_wrapper_t(py::object o)
-      : m_fn{std::shared_ptr<py::object>(new py::object(o), PyObjectDeleter{})}
+      : m_fn{std::shared_ptr<py::object>(new py::object(std::move(o)), PyObjectDeleter{})}
   {
     if (!PyCallable_Check(m_fn->ptr()))
     {
