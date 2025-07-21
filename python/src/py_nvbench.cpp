@@ -286,6 +286,13 @@ PYBIND11_MODULE(_nvbench, m)
       return std::ref(self);
     },
     py::return_value_policy::reference);
+  py_benchmark_cls.def(
+    "setIsCPUOnly",
+    [](nvbench::benchmark_base &self, bool is_cpu_only) {
+      self.set_is_cpu_only(is_cpu_only);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference);
 
   // == STEP 5
   // Define PyState class
