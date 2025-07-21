@@ -255,7 +255,7 @@ PYBIND11_MODULE(_nvbench, m)
   auto py_launch_cls = py::class_<nvbench::launch>(m, "Launch");
 
   py_launch_cls.def(
-    "getStream",
+    "get_stream",
     [](nvbench::launch &launch) { return std::ref(launch.get_stream()); },
     py::return_value_policy::reference);
 
@@ -263,16 +263,16 @@ PYBIND11_MODULE(_nvbench, m)
   // Define Benchmark class
 
   auto py_benchmark_cls = py::class_<nvbench::benchmark_base>(m, "Benchmark");
-  py_benchmark_cls.def("getName", &nvbench::benchmark_base::get_name);
+  py_benchmark_cls.def("get_name", &nvbench::benchmark_base::get_name);
   py_benchmark_cls.def(
-    "addInt64Axis",
+    "add_int64_axis",
     [](nvbench::benchmark_base &self, std::string name, const std::vector<nvbench::int64_t> &data) {
       self.add_int64_axis(std::move(name), data);
       return std::ref(self);
     },
     py::return_value_policy::reference);
   py_benchmark_cls.def(
-    "addFloat64Axis",
+    "add_float64_axis",
     [](nvbench::benchmark_base &self,
        std::string name,
        const std::vector<nvbench::float64_t> &data) {
@@ -281,21 +281,21 @@ PYBIND11_MODULE(_nvbench, m)
     },
     py::return_value_policy::reference);
   py_benchmark_cls.def(
-    "addStringAxis",
+    "add_string_axis",
     [](nvbench::benchmark_base &self, std::string name, const std::vector<std::string> &data) {
       self.add_string_axis(std::move(name), data);
       return std::ref(self);
     },
     py::return_value_policy::reference);
   py_benchmark_cls.def(
-    "setName",
+    "set_name",
     [](nvbench::benchmark_base &self, std::string name) {
       self.set_name(std::move(name));
       return std::ref(self);
     },
     py::return_value_policy::reference);
   py_benchmark_cls.def(
-    "setIsCPUOnly",
+    "set_is_cpu_only",
     [](nvbench::benchmark_base &self, bool is_cpu_only) {
       self.set_is_cpu_only(is_cpu_only);
       return std::ref(self);
@@ -373,13 +373,13 @@ PYBIND11_MODULE(_nvbench, m)
   using state_ref_t = std::reference_wrapper<nvbench::state>;
   auto pystate_cls  = py::class_<nvbench::state>(m, "State");
 
-  pystate_cls.def("hasDevice", [](const nvbench::state &state) -> bool {
+  pystate_cls.def("has_device", [](const nvbench::state &state) -> bool {
     return static_cast<bool>(state.get_device());
   });
-  pystate_cls.def("hasPrinters", [](const nvbench::state &state) -> bool {
+  pystate_cls.def("has_printers", [](const nvbench::state &state) -> bool {
     return state.get_benchmark().get_printer().has_value();
   });
-  pystate_cls.def("getDevice", [](const nvbench::state &state) {
+  pystate_cls.def("get_device", [](const nvbench::state &state) {
     auto dev = state.get_device();
     if (dev.has_value())
     {
@@ -389,32 +389,32 @@ PYBIND11_MODULE(_nvbench, m)
   });
 
   pystate_cls.def(
-    "getStream",
+    "get_stream",
     [](nvbench::state &state) { return std::ref(state.get_cuda_stream()); },
     py::return_value_policy::reference);
 
-  pystate_cls.def("getInt64", &nvbench::state::get_int64);
-  pystate_cls.def("getInt64", &nvbench::state::get_int64_or_default);
+  pystate_cls.def("get_int64", &nvbench::state::get_int64);
+  pystate_cls.def("get_int64", &nvbench::state::get_int64_or_default);
 
-  pystate_cls.def("getFloat64", &nvbench::state::get_float64);
-  pystate_cls.def("getFloat64", &nvbench::state::get_float64_or_default);
+  pystate_cls.def("get_float64", &nvbench::state::get_float64);
+  pystate_cls.def("get_float64", &nvbench::state::get_float64_or_default);
 
-  pystate_cls.def("getString", &nvbench::state::get_string);
-  pystate_cls.def("getString", &nvbench::state::get_string_or_default);
+  pystate_cls.def("get_string", &nvbench::state::get_string);
+  pystate_cls.def("get_string", &nvbench::state::get_string_or_default);
 
-  pystate_cls.def("addElementCount",
+  pystate_cls.def("add_element_count",
                   &nvbench::state::add_element_count,
                   py::arg("count"),
                   py::arg("column_name") = py::str(""));
-  pystate_cls.def("setElementCount", &nvbench::state::set_element_count);
-  pystate_cls.def("getElementCount", &nvbench::state::get_element_count);
+  pystate_cls.def("set_element_count", &nvbench::state::set_element_count);
+  pystate_cls.def("get_element_count", &nvbench::state::get_element_count);
 
   pystate_cls.def("skip", &nvbench::state::skip);
-  pystate_cls.def("isSkipped", &nvbench::state::is_skipped);
-  pystate_cls.def("getSkipReason", &nvbench::state::get_skip_reason);
+  pystate_cls.def("is_skipped", &nvbench::state::is_skipped);
+  pystate_cls.def("get_skip_reason", &nvbench::state::get_skip_reason);
 
   pystate_cls.def(
-    "addGlobalMemoryReads",
+    "add_global_memory_reads",
     [](nvbench::state &state, std::size_t nbytes, const std::string &column_name) -> void {
       state.add_global_memory_reads(nbytes, column_name);
     },
@@ -423,7 +423,7 @@ PYBIND11_MODULE(_nvbench, m)
     py::pos_only{},
     py::arg("column_name") = py::str(""));
   pystate_cls.def(
-    "addGlobalMemoryWrites",
+    "add_global_memory_writes",
     [](nvbench::state &state, std::size_t nbytes, const std::string &column_name) -> void {
       state.add_global_memory_writes(nbytes, column_name);
     },
@@ -432,28 +432,28 @@ PYBIND11_MODULE(_nvbench, m)
     py::pos_only{},
     py::arg("column_name") = py::str(""));
   pystate_cls.def(
-    "getBenchmark",
+    "get_benchmark",
     [](const nvbench::state &state) { return std::ref(state.get_benchmark()); },
     py::return_value_policy::reference);
-  pystate_cls.def("getThrottleThreshold", &nvbench::state::get_throttle_threshold);
+  pystate_cls.def("get_throttle_threshold", &nvbench::state::get_throttle_threshold);
 
-  pystate_cls.def("getMinSamples", &nvbench::state::get_min_samples);
-  pystate_cls.def("setMinSamples", &nvbench::state::set_min_samples);
+  pystate_cls.def("get_min_samples", &nvbench::state::get_min_samples);
+  pystate_cls.def("set_min_samples", &nvbench::state::set_min_samples);
 
-  pystate_cls.def("getDisableBlockingKernel", &nvbench::state::get_disable_blocking_kernel);
-  pystate_cls.def("setDisableBlockingKernel", &nvbench::state::set_disable_blocking_kernel);
+  pystate_cls.def("get_disable_blocking_kernel", &nvbench::state::get_disable_blocking_kernel);
+  pystate_cls.def("set_disable_blocking_kernel", &nvbench::state::set_disable_blocking_kernel);
 
-  pystate_cls.def("getRunOnce", &nvbench::state::get_run_once);
-  pystate_cls.def("setRunOnce", &nvbench::state::set_run_once);
+  pystate_cls.def("get_run_once", &nvbench::state::get_run_once);
+  pystate_cls.def("set_run_once", &nvbench::state::set_run_once);
 
-  pystate_cls.def("getTimeout", &nvbench::state::get_timeout);
-  pystate_cls.def("setTimeout", &nvbench::state::set_timeout);
+  pystate_cls.def("get_timeout", &nvbench::state::get_timeout);
+  pystate_cls.def("set_timeout", &nvbench::state::set_timeout);
 
-  pystate_cls.def("getBlockingKernelTimeout", &nvbench::state::get_blocking_kernel_timeout);
-  pystate_cls.def("setBlockingKernelTimeout", &nvbench::state::set_blocking_kernel_timeout);
+  pystate_cls.def("get_blocking_kernel_timeout", &nvbench::state::get_blocking_kernel_timeout);
+  pystate_cls.def("set_blocking_kernel_timeout", &nvbench::state::set_blocking_kernel_timeout);
 
-  pystate_cls.def("collectCUPTIMetrics", &nvbench::state::collect_cupti_metrics);
-  pystate_cls.def("isCUPTIRequired", &nvbench::state::is_cupti_required);
+  pystate_cls.def("collect_cupti_metrics", &nvbench::state::collect_cupti_metrics);
+  pystate_cls.def("is_cupti_required", &nvbench::state::is_cupti_required);
 
   pystate_cls.def(
     "exec",
@@ -533,6 +533,7 @@ PYBIND11_MODULE(_nvbench, m)
   m.def(
     "register",
     [&](py::object fn) { return std::ref(global_registry->add_bench(fn)); },
+    "Register benchmark function of type Callable[[nvbench.State], None]",
     py::return_value_policy::reference);
 
   m.def(
@@ -545,6 +546,6 @@ PYBIND11_MODULE(_nvbench, m)
       std::vector<std::string> args = py::cast<std::vector<std::string>>(argv);
       global_registry->run(args);
     },
-    "Run all benchmarks",
+    "Run all registered benchmarks",
     py::arg("argv") = py::list());
 }
