@@ -192,16 +192,14 @@ public:
     }
     catch (const std::exception &e)
     {
-      std::stringstream ss;
-      ss << "Caught exception while running benchmarks: ";
-      ss << e.what();
-
-      const std::string &exc_message = ss.str();
+      const std::string &exc_message = e.what();
       py::set_error(benchmark_exc, exc_message.c_str());
+      throw py::error_already_set();
     }
     catch (...)
     {
       py::set_error(benchmark_exc, "Caught unknown exception in nvbench_main");
+      throw py::error_already_set();
     }
   }
 };
