@@ -16,6 +16,12 @@
  *  limitations under the License.
  */
 
+// clang-format off
+// Include Pybind11 headers first thing
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+// clang-format on
+
 #include <nvbench/nvbench.cuh>
 
 #include <cstdio>
@@ -26,9 +32,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
