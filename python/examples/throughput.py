@@ -41,33 +41,27 @@ def make_kernel(items_per_thread: int) -> Callable:
 
 
 def throughput_bench(state: nvbench.State) -> None:
-    stride = state.getInt64("Stride")
-    ipt = state.getInt64("ItemsPerThread")
+    stride = state.get_int64("Stride")
+    ipt = state.get_int64("ItemsPerThread")
 
     nbytes = 128 * 1024 * 1024
     elements = nbytes // np.dtype(np.int32).itemsize
 
-    alloc_stream = as_cuda_Stream(state.getStream())
+    alloc_stream = as_cuda_Stream(state.get_stream())
     inp_arr = cuda.device_array(elements, dtype=np.int32, stream=alloc_stream)
     out_arr = cuda.device_array(elements * ipt, dtype=np.int32, stream=alloc_stream)
 
-    state.addElementCount(elements, column_name="Elements")
-    state.addGlobalMemoryReads(inp_arr.nbytes, column_name="Datasize")
-    state.addGlobalMemoryWrites(inp_arr.nbytes)
+    state.add_element_count(elements, column_name="Elements")
+    state.add_global_memory_reads(inp_arr.nbytes, column_name="Datasize")
+    state.add_global_memory_writes(inp_arr.nbytes)
 
     threads_per_block = 256
     blocks_in_grid = (elements + threads_per_block - 1) // threads_per_block
 
     krn = make_kernel(ipt)
 
-    # warm-up call ensures that kernel is loaded into context
-    # before blocking kernel is launched
-    krn[blocks_in_grid, threads_per_block, alloc_stream, 0](
-        stride, elements, inp_arr, out_arr
-    )
-
     def launcher(launch: nvbench.Launch):
-        exec_stream = as_cuda_Stream(launch.getStream())
+        exec_stream = as_cuda_Stream(launch.get_stream())
         krn[blocks_in_grid, threads_per_block, exec_stream, 0](
             stride, elements, inp_arr, out_arr
         )
@@ -77,7 +71,7 @@ def throughput_bench(state: nvbench.State) -> None:
 
 if __name__ == "__main__":
     b = nvbench.register(throughput_bench)
-    b.addInt64Axis("Stride", [1, 2, 4])
-    b.addInt64Axis("ItemsPerThread", [1, 2, 3, 4])
+    b.add_int64_axis("Stride", [1, 2, 4])
+    b.add_int64_axis("ItemsPerThread", [1, 2, 3, 4])
 
     nvbench.run_all_benchmarks(sys.argv)

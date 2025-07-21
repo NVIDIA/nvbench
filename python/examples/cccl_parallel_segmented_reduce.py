@@ -35,15 +35,15 @@ def as_cp_ExternalStream(
 
 def segmented_reduce(state: nvbench.State):
     "Benchmark segmented_reduce example"
-    n_elems = state.getInt64("numElems")
-    n_cols = state.getInt64("numCols")
+    n_elems = state.get_int64("numElems")
+    n_cols = state.get_int64("numCols")
     n_rows = n_elems // n_cols
 
     state.add_summary("numRows", n_rows)
-    state.collectCUPTIMetrics()
+    state.collect_cupti_metrics()
 
-    dev_id = state.getDevice()
-    cp_stream = as_cp_ExternalStream(state.getStream(), dev_id)
+    dev_id = state.get_device()
+    cp_stream = as_cp_ExternalStream(state.get_stream(), dev_id)
 
     with cp_stream:
         rng = cp.random.default_rng()
@@ -75,20 +75,19 @@ def segmented_reduce(state: nvbench.State):
         d_input, d_output, start_offsets, end_offsets, add_op, h_init
     )
 
-    # print(1)
-    cccl_stream = as_cccl_Stream(state.getStream())
-    # print(2, core_stream, core_stream.__cuda_stream__())
+    cccl_stream = as_cccl_Stream(state.get_stream())
+
     # query size of temporary storage and allocate
     temp_nbytes = alg(
         None, d_input, d_output, n_rows, start_offsets, end_offsets, h_init, cccl_stream
     )
     h_init = np.zeros(tuple(), dtype=np.int32)
-    # print(3)
+
     with cp_stream:
         temp_storage = cp.empty(temp_nbytes, dtype=cp.uint8)
 
     def launcher(launch: nvbench.Launch):
-        s = as_cccl_Stream(launch.getStream())
+        s = as_cccl_Stream(launch.get_stream())
         alg(
             temp_storage,
             d_input,
@@ -105,7 +104,7 @@ def segmented_reduce(state: nvbench.State):
 
 if __name__ == "__main__":
     b = nvbench.register(segmented_reduce)
-    b.addInt64Axis("numElems", [2**20, 2**22, 2**24])
-    b.addInt64Axis("numCols", [1024, 2048, 4096, 8192])
+    b.add_int64_axis("numElems", [2**20, 2**22, 2**24])
+    b.add_int64_axis("numCols", [1024, 2048, 4096, 8192])
 
     nvbench.run_all_benchmarks(sys.argv)

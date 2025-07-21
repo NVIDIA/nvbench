@@ -43,13 +43,13 @@ __global__ void sleep_kernel(double seconds) {
 
 
 def simple(state: nvbench.State):
-    state.setMinSamples(1000)
+    state.set_min_samples(1000)
     sleep_dur = 1e-3
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        s = as_core_Stream(launch.getStream())
+        s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, sleep_dur)
 
     state.exec(launcher)
@@ -57,12 +57,13 @@ def simple(state: nvbench.State):
 
 def single_float64_axis(state: nvbench.State):
     # get axis value, or default
-    sleep_dur = state.getFloat64("Duration", 3.14e-4)
+    default_sleep_dur = 3.14e-4
+    sleep_dur = state.get_float64("Duration", default_sleep_dur)
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        s = as_core_Stream(launch.getStream())
+        s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, sleep_dur)
 
     state.exec(launcher)
@@ -104,19 +105,19 @@ __global__ void copy_kernel(const T *in, U *out, ::cuda::std::size_t n)
 
 
 def copy_sweep_grid_shape(state: nvbench.State):
-    block_size = state.getInt64("BlockSize")
-    num_blocks = state.getInt64("NumBlocks")
+    block_size = state.get_int64("BlockSize")
+    num_blocks = state.get_int64("NumBlocks")
 
     # Number of int32 elements in 256MiB
     nbytes = 256 * 1024 * 1024
     num_values = nbytes // ctypes.sizeof(ctypes.c_int32(0))
 
-    state.addElementCount(num_values)
-    state.addGlobalMemoryReads(nbytes)
-    state.addGlobalMemoryWrites(nbytes)
+    state.add_element_count(num_values)
+    state.add_global_memory_reads(nbytes)
+    state.add_global_memory_writes(nbytes)
 
-    dev_id = state.getDevice()
-    alloc_s = as_core_Stream(state.getStream())
+    dev_id = state.get_device()
+    alloc_s = as_core_Stream(state.get_stream())
     input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
     output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
 
@@ -124,20 +125,20 @@ def copy_sweep_grid_shape(state: nvbench.State):
     launch_config = core.LaunchConfig(grid=num_blocks, block=block_size, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        s = as_core_Stream(launch.getStream())
+        s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, input_buf, output_buf, num_values)
 
     state.exec(launcher)
 
 
 def copy_type_sweep(state: nvbench.State):
-    type_id = state.getInt64("TypeID")
+    type_id = state.get_int64("TypeID")
 
     types_map = {
-        0: (ctypes.c_uint8, "::cuda::std::uint8_t"),
-        1: (ctypes.c_uint16, "::cuda::std::uint16_t"),
-        2: (ctypes.c_uint32, "::cuda::std::uint32_t"),
-        3: (ctypes.c_uint64, "::cuda::std::uint64_t"),
+        0: (ctypes.c_uint8, "cuda::std::uint8_t"),
+        1: (ctypes.c_uint16, "cuda::std::uint16_t"),
+        2: (ctypes.c_uint32, "cuda::std::uint32_t"),
+        3: (ctypes.c_uint64, "cuda::std::uint64_t"),
         4: (ctypes.c_float, "float"),
         5: (ctypes.c_double, "double"),
     }
@@ -149,12 +150,12 @@ def copy_type_sweep(state: nvbench.State):
     nbytes = 256 * 1024 * 1024
     num_values = nbytes // ctypes.sizeof(value_ctype(0))
 
-    state.addElementCount(num_values)
-    state.addGlobalMemoryReads(nbytes)
-    state.addGlobalMemoryWrites(nbytes)
+    state.add_element_count(num_values)
+    state.add_global_memory_reads(nbytes)
+    state.add_global_memory_writes(nbytes)
 
-    dev_id = state.getDevice()
-    alloc_s = as_core_Stream(state.getStream())
+    dev_id = state.get_device()
+    alloc_s = as_core_Stream(state.get_stream())
     input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
     output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
 
@@ -162,7 +163,7 @@ def copy_type_sweep(state: nvbench.State):
     launch_config = core.LaunchConfig(grid=256, block=256, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        s = as_core_Stream(launch.getStream())
+        s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, input_buf, output_buf, num_values)
 
     state.exec(launcher)
@@ -175,13 +176,15 @@ if __name__ == "__main__":
     # benchmark with no axes, that uses default value
     nvbench.register(default_value)
     # specify axis
-    nvbench.register(single_float64_axis).addFloat64Axis("Duration", [7e-5, 1e-4, 5e-4])
+    nvbench.register(single_float64_axis).add_float64_axis(
+        "Duration", [7e-5, 1e-4, 5e-4]
+    )
 
     copy1_bench = nvbench.register(copy_sweep_grid_shape)
-    copy1_bench.addInt64Axis("BlockSize", [2**x for x in range(6, 10, 2)])
-    copy1_bench.addInt64Axis("NumBlocks", [2**x for x in range(6, 10, 2)])
+    copy1_bench.add_int64_axis("BlockSize", [2**x for x in range(6, 10, 2)])
+    copy1_bench.add_int64_axis("NumBlocks", [2**x for x in range(6, 10, 2)])
 
     copy2_bench = nvbench.register(copy_type_sweep)
-    copy2_bench.addInt64Axis("TypeID", range(0, 6))
+    copy2_bench.add_int64_axis("TypeID", range(0, 6))
 
     nvbench.run_all_benchmarks(sys.argv)
