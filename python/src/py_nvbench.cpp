@@ -449,9 +449,13 @@ PYBIND11_MODULE(_nvbench, m)
 
   pystate_cls.def(
     "exec",
-    [](nvbench::state &state, py::object fn, bool batched, bool sync) {
-      auto launcher_fn = [fn](nvbench::launch &launch_descr) -> void {
-        fn(py::cast(std::ref(launch_descr), py::return_value_policy::reference));
+    [](nvbench::state &state, py::object callable_fn, bool batched, bool sync) {
+      // wrapper to invoke Python callable
+      auto launcher_fn = [callable_fn](nvbench::launch &launch_descr) -> void {
+        // cast C++ object to python object
+        auto launch_pyarg = py::cast(std::ref(launch_descr), py::return_value_policy::reference);
+        // call Python callable
+        callable_fn(launch_pyarg);
       };
 
       if (sync)
