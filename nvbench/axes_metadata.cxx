@@ -63,7 +63,7 @@ try
   for (std::size_t i = 0; i < names.size(); ++i)
   {
     auto &axis = *m_axes[i];
-    assert(axis.get_type() != nvbench::axis_type::type);
+    assert(axis.get_type() == nvbench::axis_type::type);
     axis.set_name(std::move(names[i]));
   }
 }
