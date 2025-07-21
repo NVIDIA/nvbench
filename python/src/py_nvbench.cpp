@@ -73,21 +73,29 @@ struct PyObjectDeleter
 struct benchmark_wrapper_t
 {
 
-  benchmark_wrapper_t()
-      : m_fn() {};
+  benchmark_wrapper_t() = default;
+
   explicit benchmark_wrapper_t(py::object o)
       : m_fn{std::shared_ptr<py::object>(new py::object(o), PyObjectDeleter{})}
-  {}
+  {
+    if (!PyCallable_Check(m_fn->ptr()))
+    {
+      throw py::value_error("Argument must be a callable");
+    }
+  }
 
-  benchmark_wrapper_t(const benchmark_wrapper_t &other)
-      : m_fn{other.m_fn}
-  {}
+  // Only copy constructor is used, delete copy-assign, and moves
+  benchmark_wrapper_t(const benchmark_wrapper_t &other)            = default;
   benchmark_wrapper_t &operator=(const benchmark_wrapper_t &other) = delete;
   benchmark_wrapper_t(benchmark_wrapper_t &&) noexcept             = delete;
   benchmark_wrapper_t &operator=(benchmark_wrapper_t &&) noexcept  = delete;
 
   void operator()(nvbench::state &state, nvbench::type_list<>)
   {
+    if (!m_fn)
+    {
+      throw std::runtime_error("No function to execute");
+    }
     // box as Python object, using reference semantics
     auto arg = py::cast(std::ref(state), py::return_value_policy::reference);
 
