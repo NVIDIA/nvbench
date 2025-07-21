@@ -101,6 +101,10 @@ private:
   std::shared_ptr<py::object> m_fn;
 };
 
+class nvbench_run_error : std::runtime_error
+{};
+constinit py::handle benchmark_exc{};
+
 class GlobalBenchmarkRegistry
 {
   bool m_finalized;
@@ -173,17 +177,23 @@ public:
         NVBENCH_MAIN_PRINT_RESULTS(parser);
       } /* Tear down parser before finalization */
     }
+    catch (py::error_already_set &e)
+    {
+      py::raise_from(e, benchmark_exc.ptr(), "Python error raised ");
+      throw py::error_already_set();
+    }
     catch (const std::exception &e)
     {
       std::stringstream ss;
-      ss << "Caught exception while running benchmakrs: ";
+      ss << "Caught exception while running benchmarks: ";
       ss << e.what();
-      ss << "\n";
-      py::print(py::cast(ss.str(), py::return_value_policy::move));
+
+      const std::string &exc_message = ss.str();
+      py::set_error(benchmark_exc, exc_message.c_str());
     }
     catch (...)
     {
-      py::print("Caught exception in nvbench_main\n");
+      py::set_error(benchmark_exc, "Caught unknown exception in nvbench_main");
     }
   }
 };
@@ -490,6 +500,10 @@ PYBIND11_MODULE(_nvbench, m)
     summ.set_float64("value", value);
   });
 
+  // Use handle to take a memory leak here, since this object's destructor may be called after
+  // interpreter has shut down
+  benchmark_exc =
+    py::exception<nvbench_run_error>(m, "NVBenchRuntimeException", PyExc_RuntimeError).release();
   // == STEP 6
   //    ATTN: nvbench::benchmark_manager is a singleton
 
