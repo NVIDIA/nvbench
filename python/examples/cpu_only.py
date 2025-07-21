@@ -13,6 +13,6 @@ def throughput_bench(state: nvbench.State) -> None:
 
 if __name__ == "__main__":
     b = nvbench.register(throughput_bench)
-    b.setIsCPUOnly(True)
+    b.set_is_cpu_only(True)
 
     nvbench.run_all_benchmarks(sys.argv)

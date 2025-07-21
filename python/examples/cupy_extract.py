@@ -12,18 +12,18 @@ def as_cp_ExternalStream(
 
 
 def cupy_extract_by_mask(state: nvbench.State):
-    n_cols = state.getInt64("numCols")
-    n_rows = state.getInt64("numRows")
+    n_cols = state.get_int64("numCols")
+    n_rows = state.get_int64("numRows")
 
-    dev_id = state.getDevice()
-    cp_s = as_cp_ExternalStream(state.getStream(), dev_id)
+    dev_id = state.get_device()
+    cp_s = as_cp_ExternalStream(state.get_stream(), dev_id)
 
-    state.collectCUPTIMetrics()
-    state.addElementCount(n_rows * n_cols, "# Elements")
-    state.addGlobalMemoryReads(
+    state.collect_cupti_metrics()
+    state.add_element_count(n_rows * n_cols, "# Elements")
+    state.add_global_memory_reads(
         n_rows * n_cols * (cp.dtype(cp.int32).itemsize + cp.dtype("?").itemsize)
     )
-    state.addGlobalMemoryWrites(n_rows * n_cols * (cp.dtype(cp.int32).itemsize))
+    state.add_global_memory_writes(n_rows * n_cols * (cp.dtype(cp.int32).itemsize))
 
     with cp_s:
         X = cp.full((n_cols, n_rows), fill_value=3, dtype=cp.int32)
@@ -31,7 +31,7 @@ def cupy_extract_by_mask(state: nvbench.State):
         _ = X[mask]
 
     def launcher(launch: nvbench.Launch):
-        with as_cp_ExternalStream(launch.getStream(), dev_id):
+        with as_cp_ExternalStream(launch.get_stream(), dev_id):
             _ = X[mask]
 
     state.exec(launcher, sync=True)
@@ -39,7 +39,7 @@ def cupy_extract_by_mask(state: nvbench.State):
 
 if __name__ == "__main__":
     b = nvbench.register(cupy_extract_by_mask)
-    b.addInt64Axis("numCols", [1024, 2048, 4096, 2 * 4096])
-    b.addInt64Axis("numRows", [1024, 2048, 4096, 2 * 4096])
+    b.add_int64_axis("numCols", [1024, 2048, 4096, 2 * 4096])
+    b.add_int64_axis("numRows", [1024, 2048, 4096, 2 * 4096])
 
     nvbench.run_all_benchmarks(sys.argv)

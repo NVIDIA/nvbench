@@ -45,17 +45,17 @@ def synchronizing_bench(state: nvbench.State):
     n_values = 64 * 1024 * 1024
     n_bytes = n_values * ctypes.sizeof(ctypes.c_int32(0))
 
-    alloc_s = as_core_Stream(state.getStream())
-    buffer = core.DeviceMemoryResource(state.getDevice()).allocate(n_bytes, alloc_s)
+    alloc_s = as_core_Stream(state.get_stream())
+    buffer = core.DeviceMemoryResource(state.get_device()).allocate(n_bytes, alloc_s)
 
-    state.addElementCount(n_values, "Items")
-    state.addGlobalMemoryWrites(n_bytes, "Size")
+    state.add_element_count(n_values, "Items")
+    state.add_global_memory_writes(n_bytes, "Size")
 
     krn = make_fill_kernel()
     launch_config = core.LaunchConfig(grid=256, block=256, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        s = as_core_Stream(launch.getStream())
+        s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, buffer, 0, n_values)
         s.sync()
 

@@ -42,8 +42,8 @@ __global__ void sleep_kernel(double seconds) {
 
 
 def runtime_skip(state: nvbench.State):
-    duration = state.getFloat64("Duration")
-    kramble = state.getString("Kramble")
+    duration = state.get_float64("Duration")
+    kramble = state.get_string("Kramble")
 
     # Skip Baz benchmarks with 0.8 ms duration
     if kramble == "Baz" and duration < 0.8e-3:
@@ -59,7 +59,7 @@ def runtime_skip(state: nvbench.State):
     launch_cfg = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
     def launcher(launch: nvbench.Launch):
-        s = as_core_Stream(launch.getStream())
+        s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_cfg, krn, duration)
 
     state.exec(launcher)
@@ -67,7 +67,7 @@ def runtime_skip(state: nvbench.State):
 
 if __name__ == "__main__":
     b = nvbench.register(runtime_skip)
-    b.addFloat64Axis("Duration", [1e-4 + k * 0.25e-3 for k in range(5)])
-    b.addStringAxis("Kramble", ["Foo", "Bar", "Baz"])
+    b.add_float64_axis("Duration", [1e-4 + k * 0.25e-3 for k in range(5)])
+    b.add_string_axis("Kramble", ["Foo", "Bar", "Baz"])
 
     nvbench.run_all_benchmarks(sys.argv)
