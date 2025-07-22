@@ -14,7 +14,7 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
   # pathfinder
-  "cuda-bindings",
+  "cuda-pathfinder",
 
   # Library expects to find shared libraries
   # libcupti, libnvperf_target, libnvperf_host
