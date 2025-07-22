@@ -43,7 +43,7 @@ def add_two(state):
 
 def add_float(state):
     N = state.get_int64("elements")
-    v = state.get_gloat64("v")
+    v = state.get_float64("v")
     name = state.get_string("name")
     a = cuda.to_device(np.random.random(N).astype(np.float32))
     b = cuda.to_device(np.random.random(N).astype(np.float32))
