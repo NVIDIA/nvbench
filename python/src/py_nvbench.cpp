@@ -264,24 +264,31 @@ PYBIND11_MODULE(_nvbench, m)
   py_benchmark_cls.def("get_name", &nvbench::benchmark_base::get_name);
   py_benchmark_cls.def(
     "add_int64_axis",
-    [](nvbench::benchmark_base &self, std::string name, const std::vector<nvbench::int64_t> &data) {
-      self.add_int64_axis(std::move(name), data);
+    [](nvbench::benchmark_base &self, std::string name, std::vector<nvbench::int64_t> data) {
+      self.add_int64_axis(std::move(name), std::move(data));
+      return std::ref(self);
+    },
+    py::return_value_policy::reference);
+  py_benchmark_cls.def(
+    "add_int64_power_of_two_axis",
+    [](nvbench::benchmark_base &self, std::string name, std::vector<nvbench::int64_t> data) {
+      self.add_int64_axis(std::move(name),
+                          std::move(data),
+                          nvbench::int64_axis_flags::power_of_two);
       return std::ref(self);
     },
     py::return_value_policy::reference);
   py_benchmark_cls.def(
     "add_float64_axis",
-    [](nvbench::benchmark_base &self,
-       std::string name,
-       const std::vector<nvbench::float64_t> &data) {
-      self.add_float64_axis(std::move(name), data);
+    [](nvbench::benchmark_base &self, std::string name, std::vector<nvbench::float64_t> data) {
+      self.add_float64_axis(std::move(name), std::move(data));
       return std::ref(self);
     },
     py::return_value_policy::reference);
   py_benchmark_cls.def(
     "add_string_axis",
-    [](nvbench::benchmark_base &self, std::string name, const std::vector<std::string> &data) {
-      self.add_string_axis(std::move(name), data);
+    [](nvbench::benchmark_base &self, std::string name, std::vector<std::string> data) {
+      self.add_string_axis(std::move(name), std::move(data));
       return std::ref(self);
     },
     py::return_value_policy::reference);

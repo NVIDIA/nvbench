@@ -49,6 +49,9 @@ class Benchmark:
     def add_int64_axis(self, name: str, values: Sequence[int]) -> Self:
         "Add integral type parameter axis with given name and values to sweep over"
         ...
+    def add_int64_power_of_two_axis(self, name: str, values: Sequence[int]) -> Self:
+        "Add integral type parameter axis with given name and values to sweep over"
+        ...
     def add_float64_axis(self, name: str, values: Sequence[float]) -> Self:
         "Add floating-point type parameter axis with given name and values to sweep over"
         ...
