@@ -58,7 +58,7 @@ def simple(state: nvbench.State):
 def single_float64_axis(state: nvbench.State):
     # get axis value, or default
     default_sleep_dur = 3.14e-4
-    sleep_dur = state.get_float64("Duration", default_sleep_dur)
+    sleep_dur = state.get_float64_or_default("Duration", default_sleep_dur)
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
