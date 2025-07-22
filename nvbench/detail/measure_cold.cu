@@ -242,7 +242,7 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/absolute");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("description", "Relative standard deviation of isolated CPU times");
+    summ.set_string("description", "Standard deviation of isolated CPU times");
     summ.set_float64("value", cpu_stdev);
     summ.set_string("hide", "Hidden by default.");
   }
