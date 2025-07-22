@@ -5,7 +5,7 @@ import cupy as cp
 
 
 def as_cp_ExternalStream(
-    cs: nvbench.CudaStream, dev_id: int = -1
+    cs: nvbench.CudaStream, dev_id: int | None = -1
 ) -> cp.cuda.ExternalStream:
     h = cs.addressof()
     return cp.cuda.ExternalStream(h, dev_id)
