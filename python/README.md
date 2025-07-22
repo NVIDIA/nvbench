@@ -26,7 +26,6 @@ nvbench_DIR=$(pwd)/nvbench_install/lib/cmake CUDACXX=/usr/local/cuda/bin/nvcc pi
 ### Verify that package works
 
 ```
-export PYTHONPATH=$(pwd):${PYTHONPATH}
 python test/run_1.py
 ```
 
