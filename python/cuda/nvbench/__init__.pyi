@@ -43,17 +43,26 @@ class Benchmark:
         Use `~register` function to create Benchmark and register
         it with NVBench.
     """
-    def getName(self) -> str:
+    def get_name(self) -> str:
         "Get benchmark name"
         ...
-    def addInt64Axis(self, name: str, values: Sequence[int]) -> Self:
+    def add_int64_axis(self, name: str, values: Sequence[int]) -> Self:
         "Add integral type parameter axis with given name and values to sweep over"
         ...
-    def addFloat64Axis(self, name: str, values: Sequence[float]) -> Self:
+    def add_float64_axis(self, name: str, values: Sequence[float]) -> Self:
         "Add floating-point type parameter axis with given name and values to sweep over"
         ...
-    def addStringAxis(sef, name: str, values: Sequence[str]) -> Self:
+    def add_string_axis(sef, name: str, values: Sequence[str]) -> Self:
         "Add string type parameter axis with given name and values to sweep over"
+        ...
+    def set_name(self, name: str) -> Self:
+        ""
+        ...
+    def set_is_cpu_only(self, is_cpu_only: bool) -> Self:
+        "Set whether this benchmark only executes on CPU"
+        ...
+    def set_run_once(self, v: bool) -> Self:
+        "Set whether all benchmark configurations are executed only once"
         ...
 
 class Launch:
@@ -63,7 +72,7 @@ class Launch:
     ----
         The class is not user-constructible.
     """
-    def getStream(self) -> CudaStream:
+    def get_stream(self) -> CudaStream:
         "Get CUDA stream of this configuration"
         ...
 
@@ -74,92 +83,91 @@ class State:
     ----
         The class is not user-constructible.
     """
-    def hasDevice(self) -> bool:
+    def has_device(self) -> bool:
         "True if configuration has a device"
         ...
-    def hasPrinters(self) -> bool:
+    def has_printers(self) -> bool:
         "True if configuration has a printer"
         ...
-    def getDevice(self) -> Union[int, None]:
+    def get_device(self) -> Union[int, None]:
         "Get device_id of the device from this configuration"
         ...
-    def getStream(self) -> CudaStream:
+    def get_stream(self) -> CudaStream:
         "CudaStream object from this configuration"
         ...
-    def getInt64(self, name: str, default_value: Optional[int] = None) -> int:
+    def get_int64(self, name: str, default_value: Optional[int] = None) -> int:
         "Get value for given Int64 axis from this configuration"
         ...
-    def getFloat64(self, name: str, default_value: Optional[float] = None) -> float:
+    def get_float64(self, name: str, default_value: Optional[float] = None) -> float:
         "Get value for given Float64 axis from this configuration"
         ...
-    def getString(self, name: str, default_value: Optional[str] = None) -> str:
+    def get_string(self, name: str, default_value: Optional[str] = None) -> str:
         "Get value for given String axis from this configuration"
         ...
-    def addElementCount(self, count: int, column_name: Optional[str] = None) -> None:
+    def add_element_count(self, count: int, column_name: Optional[str] = None) -> None:
         "Add element count"
         ...
-    def setElementCount(self, count: int) -> None:
+    def set_element_count(self, count: int) -> None:
         "Set element count"
         ...
-    def getElementCount(self) -> int:
+    def get_element_count(self) -> int:
         "Get element count"
         ...
     def skip(self, reason: str) -> None:
         "Skip this configuration"
         ...
-    def isSkipped(self) -> bool:
+    def is_skipped(self) -> bool:
         "Has this configuration been skipped"
         ...
-    def getSkipReason(self) -> str:
+    def get_skip_reason(self) -> str:
         "Get reason provided for skipping this configuration"
         ...
-    def addGlobalMemoryReads(self, nbytes: int) -> None:
+    def add_global_memory_reads(self, nbytes: int, /, column_name: str = "") -> None:
         "Inform NVBench that given amount of bytes is being read by the benchmark from global memory"
         ...
-    def addGlobalMemoryWrites(self, nbytes: int) -> None:
+    def add_global_memory_writes(self, nbytes: int, /, column_name: str = "") -> None:
         "Inform NVBench that given amount of bytes is being written by the benchmark into global memory"
         ...
-    def getBenchmark(self) -> Benchmark:
+    def get_benchmark(self) -> Benchmark:
         "Get Benchmark this configuration is a part of"
         ...
-    def getThrottleThreshold(self) -> float:
+    def get_throttle_threshold(self) -> float:
         "Get throttle threshold value"
         ...
-    def getMinSamples(self) -> int:
+    def get_min_samples(self) -> int:
         "Get the number of benchmark timings NVBench performs before stopping criterion begins being used"
         ...
-    def setMinSamples(self, count: int) -> None:
+    def set_min_samples(self, count: int) -> None:
         "Set the number of benchmark timings for NVBench to perform before stopping criterion begins being used"
         ...
-    def getDisableBlockingKernel(self) -> bool:
+    def get_disable_blocking_kernel(self) -> bool:
         "True if use of blocking kernel by NVBench is disabled, False otherwise"
         ...
-    def setDisableBlockingKernel(self, flag: bool) -> None:
+    def set_disable_blocking_kernel(self, flag: bool) -> None:
         "Use flag = True to disable use of blocking kernel by NVBench"
         ...
-    def getRunOnce(self) -> bool:
+    def get_run_once(self) -> bool:
         "Boolean flag whether configuration should only run once"
         ...
-
-    def setRunOnce(self, flag: bool) -> None:
+    def set_run_once(self, flag: bool) -> None:
         "Set run-once flag for this configuration"
         ...
-    def getTimeout(self) -> float:
+    def get_timeout(self) -> float:
         "Get time-out value for benchmark execution of this configuration"
         ...
-    def setTimeout(self, duration: float) -> None:
+    def set_timeout(self, duration: float) -> None:
         "Set time-out value for benchmark execution of this configuration"
         ...
-    def getBlockingKernelTimeout(self) -> float:
+    def get_blocking_kernel_timeout(self) -> float:
         "Get time-out value for execution of blocking kernel"
         ...
-    def setBlockingKernelTimeout(self, duration: float) -> None:
+    def set_blocking_kernel_timeout(self, duration: float) -> None:
         "Set time-out value for execution of blocking kernel"
         ...
-    def collectCUPTIMetrics(self) -> None:
+    def collect_cupti_metrics(self) -> None:
         "Request NVBench to record CUPTI metrics while running benchmark for this configuration"
         ...
-    def isCUPTIRequired(self) -> bool:
+    def is_cupti_required(self) -> bool:
         "True if (some) CUPTI metrics are being collected"
         ...
     def exec(
@@ -186,6 +194,9 @@ class State:
             NVBench disables use of blocking kernel in this case.
             Default: `False`.
         """
+        ...
+    def get_short_description(self) -> str:
+        "Get short description for this configuration"
         ...
     def add_summary(self, column_name: str, value: Union[int, float, str]) -> None:
         "Add summary column with a value"

@@ -1,6 +1,6 @@
 import ctypes
 import sys
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import cuda.cccl.headers as headers
 import cuda.core.experimental as core
@@ -134,7 +134,7 @@ def copy_sweep_grid_shape(state: nvbench.State):
 def copy_type_sweep(state: nvbench.State):
     type_id = state.get_int64("TypeID")
 
-    types_map = {
+    types_map: Dict[int, Tuple[type, str]] = {
         0: (ctypes.c_uint8, "cuda::std::uint8_t"),
         1: (ctypes.c_uint16, "cuda::std::uint16_t"),
         2: (ctypes.c_uint32, "cuda::std::uint32_t"),
@@ -148,7 +148,7 @@ def copy_type_sweep(state: nvbench.State):
 
     # Number of elements in 256MiB
     nbytes = 256 * 1024 * 1024
-    num_values = nbytes // ctypes.sizeof(value_ctype(0))
+    num_values = nbytes // ctypes.sizeof(value_ctype)
 
     state.add_element_count(num_values)
     state.add_global_memory_reads(nbytes)
