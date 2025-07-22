@@ -98,13 +98,22 @@ class State:
     def get_stream(self) -> CudaStream:
         "CudaStream object from this configuration"
         ...
-    def get_int64(self, name: str, default_value: Optional[int] = None) -> int:
+    def get_int64(self, name: str) -> int:
         "Get value for given Int64 axis from this configuration"
         ...
-    def get_float64(self, name: str, default_value: Optional[float] = None) -> float:
+    def get_int64_or_default_value(self, name: str, default_value: int) -> int:
+        "Get value for given Int64 axis from this configuration"
+        ...
+    def get_float64(self, name: str) -> float:
         "Get value for given Float64 axis from this configuration"
         ...
-    def get_string(self, name: str, default_value: Optional[str] = None) -> str:
+    def get_float64_or_default_value(self, name: str, default_value: float) -> float:
+        "Get value for given Float64 axis from this configuration"
+        ...
+    def get_string(self, name: str) -> str:
+        "Get value for given String axis from this configuration"
+        ...
+    def get_string_or_default_value(self, name: str, default_value: str) -> str:
         "Get value for given String axis from this configuration"
         ...
     def add_element_count(self, count: int, column_name: Optional[str] = None) -> None:
@@ -140,7 +149,7 @@ class State:
     def get_min_samples(self) -> int:
         "Get the number of benchmark timings NVBench performs before stopping criterion begins being used"
         ...
-    def set_min_samples(self, count: int) -> None:
+    def set_min_samples(self, min_samples_count: int) -> None:
         "Set the number of benchmark timings for NVBench to perform before stopping criterion begins being used"
         ...
     def get_disable_blocking_kernel(self) -> bool:
@@ -152,20 +161,20 @@ class State:
     def get_run_once(self) -> bool:
         "Boolean flag whether configuration should only run once"
         ...
-    def set_run_once(self, flag: bool) -> None:
+    def set_run_once(self, run_once_flag: bool) -> None:
         "Set run-once flag for this configuration"
         ...
     def get_timeout(self) -> float:
         "Get time-out value for benchmark execution of this configuration"
         ...
     def set_timeout(self, duration: float) -> None:
-        "Set time-out value for benchmark execution of this configuration"
+        "Set time-out value for benchmark execution of this configuration, in seconds"
         ...
     def get_blocking_kernel_timeout(self) -> float:
         "Get time-out value for execution of blocking kernel"
         ...
     def set_blocking_kernel_timeout(self, duration: float) -> None:
-        "Set time-out value for execution of blocking kernel"
+        "Set time-out value for execution of blocking kernel, in seconds"
         ...
     def collect_cupti_metrics(self) -> None:
         "Request NVBench to record CUPTI metrics while running benchmark for this configuration"

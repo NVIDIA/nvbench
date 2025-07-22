@@ -405,14 +405,26 @@ PYBIND11_MODULE(_nvbench, m)
     [](nvbench::state &state) { return std::ref(state.get_cuda_stream()); },
     py::return_value_policy::reference);
 
-  pystate_cls.def("get_int64", &nvbench::state::get_int64);
-  pystate_cls.def("get_int64", &nvbench::state::get_int64_or_default);
+  pystate_cls.def("get_int64", &nvbench::state::get_int64, py::arg("name"));
+  pystate_cls.def("get_int64_or_default",
+                  &nvbench::state::get_int64_or_default,
+                  py::arg("name"),
+                  py::pos_only{},
+                  py::arg("default_value"));
 
-  pystate_cls.def("get_float64", &nvbench::state::get_float64);
-  pystate_cls.def("get_float64", &nvbench::state::get_float64_or_default);
+  pystate_cls.def("get_float64", &nvbench::state::get_float64, py::arg("name"));
+  pystate_cls.def("get_float64_or_default",
+                  &nvbench::state::get_float64_or_default,
+                  py::arg("name"),
+                  py::pos_only{},
+                  py::arg("default_value"));
 
-  pystate_cls.def("get_string", &nvbench::state::get_string);
-  pystate_cls.def("get_string", &nvbench::state::get_string_or_default);
+  pystate_cls.def("get_string", &nvbench::state::get_string, py::arg("name"));
+  pystate_cls.def("get_string_or_default",
+                  &nvbench::state::get_string_or_default,
+                  py::arg("name"),
+                  py::pos_only{},
+                  py::arg("default_value"));
 
   pystate_cls.def("add_element_count",
                   &nvbench::state::add_element_count,
@@ -421,7 +433,7 @@ PYBIND11_MODULE(_nvbench, m)
   pystate_cls.def("set_element_count", &nvbench::state::set_element_count);
   pystate_cls.def("get_element_count", &nvbench::state::get_element_count);
 
-  pystate_cls.def("skip", &nvbench::state::skip);
+  pystate_cls.def("skip", &nvbench::state::skip, py::arg("reason"));
   pystate_cls.def("is_skipped", &nvbench::state::is_skipped);
   pystate_cls.def("get_skip_reason", &nvbench::state::get_skip_reason);
 
@@ -450,19 +462,25 @@ PYBIND11_MODULE(_nvbench, m)
   pystate_cls.def("get_throttle_threshold", &nvbench::state::get_throttle_threshold);
 
   pystate_cls.def("get_min_samples", &nvbench::state::get_min_samples);
-  pystate_cls.def("set_min_samples", &nvbench::state::set_min_samples);
+  pystate_cls.def("set_min_samples",
+                  &nvbench::state::set_min_samples,
+                  py::arg("min_samples_count"));
 
   pystate_cls.def("get_disable_blocking_kernel", &nvbench::state::get_disable_blocking_kernel);
-  pystate_cls.def("set_disable_blocking_kernel", &nvbench::state::set_disable_blocking_kernel);
+  pystate_cls.def("set_disable_blocking_kernel",
+                  &nvbench::state::set_disable_blocking_kernel,
+                  py::arg("disable_blocking_kernel"));
 
   pystate_cls.def("get_run_once", &nvbench::state::get_run_once);
-  pystate_cls.def("set_run_once", &nvbench::state::set_run_once);
+  pystate_cls.def("set_run_once", &nvbench::state::set_run_once, py::arg("run_once"));
 
   pystate_cls.def("get_timeout", &nvbench::state::get_timeout);
-  pystate_cls.def("set_timeout", &nvbench::state::set_timeout);
+  pystate_cls.def("set_timeout", &nvbench::state::set_timeout, py::arg("duration"));
 
   pystate_cls.def("get_blocking_kernel_timeout", &nvbench::state::get_blocking_kernel_timeout);
-  pystate_cls.def("set_blocking_kernel_timeout", &nvbench::state::set_blocking_kernel_timeout);
+  pystate_cls.def("set_blocking_kernel_timeout",
+                  &nvbench::state::set_blocking_kernel_timeout,
+                  py::arg("duration"));
 
   pystate_cls.def("collect_cupti_metrics", &nvbench::state::collect_cupti_metrics);
   pystate_cls.def("is_cupti_required", &nvbench::state::is_cupti_required);
@@ -510,26 +528,36 @@ PYBIND11_MODULE(_nvbench, m)
   pystate_cls.def("get_short_description",
                   [](const nvbench::state &state) { return state.get_short_description(); });
 
-  pystate_cls.def("add_summary",
-                  [](nvbench::state &state, std::string column_name, std::string value) {
-                    auto &summ = state.add_summary("nv/python/" + column_name);
-                    summ.set_string("description", "User tag: " + column_name);
-                    summ.set_string("name", std::move(column_name));
-                    summ.set_string("value", std::move(value));
-                  });
-  pystate_cls.def("add_summary",
-                  [](nvbench::state &state, std::string column_name, std::int64_t value) {
-                    auto &summ = state.add_summary("nv/python/" + column_name);
-                    summ.set_string("description", "User tag: " + column_name);
-                    summ.set_string("name", std::move(column_name));
-                    summ.set_int64("value", value);
-                  });
-  pystate_cls.def("add_summary", [](nvbench::state &state, std::string column_name, double value) {
-    auto &summ = state.add_summary("nv/python/" + column_name);
-    summ.set_string("description", "User tag: " + column_name);
-    summ.set_string("name", std::move(column_name));
-    summ.set_float64("value", value);
-  });
+  pystate_cls.def(
+    "add_summary",
+    [](nvbench::state &state, std::string column_name, std::string value) {
+      auto &summ = state.add_summary("nv/python/" + column_name);
+      summ.set_string("description", "User tag: " + column_name);
+      summ.set_string("name", std::move(column_name));
+      summ.set_string("value", std::move(value));
+    },
+    py::arg("column_name"),
+    py::arg("value"));
+  pystate_cls.def(
+    "add_summary",
+    [](nvbench::state &state, std::string column_name, std::int64_t value) {
+      auto &summ = state.add_summary("nv/python/" + column_name);
+      summ.set_string("description", "User tag: " + column_name);
+      summ.set_string("name", std::move(column_name));
+      summ.set_int64("value", value);
+    },
+    py::arg("name"),
+    py::arg("value"));
+  pystate_cls.def(
+    "add_summary",
+    [](nvbench::state &state, std::string column_name, double value) {
+      auto &summ = state.add_summary("nv/python/" + column_name);
+      summ.set_string("description", "User tag: " + column_name);
+      summ.set_string("name", std::move(column_name));
+      summ.set_float64("value", value);
+    },
+    py::arg("name"),
+    py::arg("value"));
 
   // Use handle to take a memory leak here, since this object's destructor may be called after
   // interpreter has shut down
@@ -546,7 +574,8 @@ PYBIND11_MODULE(_nvbench, m)
     "register",
     [&](py::object fn) { return std::ref(global_registry->add_bench(fn)); },
     "Register benchmark function of type Callable[[nvbench.State], None]",
-    py::return_value_policy::reference);
+    py::return_value_policy::reference,
+    py::arg("benchmark_fn"));
 
   m.def(
     "run_all_benchmarks",
