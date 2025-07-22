@@ -299,6 +299,13 @@ PYBIND11_MODULE(_nvbench, m)
       return std::ref(self);
     },
     py::return_value_policy::reference);
+  py_benchmark_cls.def(
+    "set_run_once",
+    [](nvbench::benchmark_base &self, bool v) {
+      self.set_run_once(v);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference);
 
   // == STEP 5
   // Define PyState class
