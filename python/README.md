@@ -19,9 +19,17 @@ Now switch to python folder, configure and install NVBench library, and install 
 cd nvbench/python
 cmake -B nvbench_build --preset nvbench-ci -S $(pwd)/.. -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DNVBench_ENABLE_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=$(pwd)/nvbench_install
 cmake --build nvbench_build/ --config Release --target install
+```
 
+### Build Python extension
+
+Specify location local installation of `NVBench` library and perform editable `pip install`:
+
+```
 nvbench_DIR=$(pwd)/nvbench_install/lib/cmake CUDACXX=/usr/local/cuda/bin/nvcc pip install -e .
 ```
+
+Note that `CUDACXX` must be set for NVBench cmake script to work, but Python extension itself only uses host compiler.
 
 ### Verify that package works
 
