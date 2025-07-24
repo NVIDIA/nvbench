@@ -209,6 +209,12 @@ constinit std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry
 
 } // end of anonymous namespace
 
+// ==========================================
+// PLEASE KEEP IN SYNC WITH __init__.pyi FILE
+// ==========================================
+// If you modify these bindings, please be sure to update the
+// corresponding type hints in ``../cuda/nvbench/__init__.pyi``
+
 PYBIND11_MODULE(_nvbench, m)
 {
   // == STEP 1
@@ -222,9 +228,6 @@ PYBIND11_MODULE(_nvbench, m)
   // This line ensures that benchmark_manager has been created during module init
   // It is reinitialized before running all benchmarks to set devices to use
   nvbench::benchmark_manager::get().initialize();
-
-  // TODO: Use cuModuleGetLoadingMode(&mode) to confirm that (mode == CU_MODULE_EAGER_LOADING)
-  // and issue warning otherwise
 
   // == STEP 2
   // Define CudaStream class
