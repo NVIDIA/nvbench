@@ -19,11 +19,10 @@ import sys
 
 import cuda.bindings.driver as driver
 import cuda.core.experimental as core
+import cuda.nvbench as nvbench
 import cupy as cp
 import cutlass
 import numpy as np
-
-import nvbench
 
 
 def as_bindings_Stream(cs: nvbench.CudaStream) -> driver.CUstream:
