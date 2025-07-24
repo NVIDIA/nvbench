@@ -126,19 +126,19 @@ class State:
     def get_int64(self, name: str) -> int:
         "Get value for given Int64 axis from this configuration"
         ...
-    def get_int64_or_default_value(self, name: str, default_value: int) -> int:
+    def get_int64_or_default(self, name: str, default_value: int) -> int:
         "Get value for given Int64 axis from this configuration"
         ...
     def get_float64(self, name: str) -> float:
         "Get value for given Float64 axis from this configuration"
         ...
-    def get_float64_or_default_value(self, name: str, default_value: float) -> float:
+    def get_float64_or_default(self, name: str, default_value: float) -> float:
         "Get value for given Float64 axis from this configuration"
         ...
     def get_string(self, name: str) -> str:
         "Get value for given String axis from this configuration"
         ...
-    def get_string_or_default_value(self, name: str, default_value: str) -> str:
+    def get_string_or_default(self, name: str, default_value: str) -> str:
         "Get value for given String axis from this configuration"
         ...
     def add_element_count(self, count: int, column_name: Optional[str] = None) -> None:
