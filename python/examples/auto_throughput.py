@@ -25,7 +25,7 @@ def as_cuda_Stream(cs: nvbench.CudaStream) -> cuda.cudadrv.driver.Stream:
     return cuda.external_stream(cs.addressof())
 
 
-def make_kernel(items_per_thread: int) -> cuda.compiler.AutoJitCUDAKernel:
+def make_kernel(items_per_thread: int) -> cuda.dispatcher.CUDADispatcher:
     @cuda.jit
     def kernel(stride: np.uintp, elements: np.uintp, in_arr, out_arr):
         tid = cuda.grid(1)
@@ -59,7 +59,8 @@ def throughput_bench(state: nvbench.State) -> None:
     krn = make_kernel(ipt)
 
     # warm-up call ensures that kernel is loaded into context
-    # before blocking kernel is launched
+    # before blocking kernel is launched. Kernel loading may cause
+    # a synchronization to occur.
     krn[blocks_in_grid, threads_per_block, alloc_stream, 0](
         stride, elements, inp_arr, out_arr
     )
