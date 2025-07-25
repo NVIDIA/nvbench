@@ -195,6 +195,25 @@ public:
   }
 };
 
+py::dict py_get_axis_values(const nvbench::state &state)
+{
+  auto named_values = state.get_axis_values();
+
+  auto names = named_values.get_names();
+  py::dict res;
+
+  for (const auto &name : names)
+  {
+    if (named_values.has_value(name))
+    {
+      auto v            = named_values.get_value(name);
+      res[name.c_str()] = py::cast(v);
+    }
+  }
+
+  return res;
+}
+
 // essentially a global variable, but allocated on the heap during module initialization
 constinit std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry{};
 
@@ -569,6 +588,9 @@ PYBIND11_MODULE(_nvbench, m)
     },
     py::arg("name"),
     py::arg("value"));
+  pystate_cls.def("get_axis_values_as_string",
+                  [](const nvbench::state &state) { return state.get_axis_values_as_string(); });
+  pystate_cls.def("get_axis_values", &py_get_axis_values);
 
   // Use handle to take a memory leak here, since this object's destructor may be called after
   // interpreter has shut down
