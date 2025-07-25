@@ -238,6 +238,12 @@ class State:
     def add_summary(self, column_name: str, value: Union[int, float, str]) -> None:
         "Add summary column with a value"
         ...
+    def get_axis_values(self) -> dict[str, int | float | str]:
+        "Get dictionary with axis values for this configuration"
+        ...
+    def get_axis_values_as_string(self) -> str:
+        "Get string of space-separated name=value pairs for this configuration"
+        ...
 
 def register(fn: Callable[[State], None]) -> Benchmark:
     """
