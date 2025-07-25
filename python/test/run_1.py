@@ -24,6 +24,9 @@ def add_two(state):
     a = cuda.to_device(np.random.random(N))
     c = cuda.device_array_like(a)
 
+    assert "elements" in state.get_axis_values()
+    assert "elements=" in state.get_axis_values_as_string()
+
     state.add_global_memory_reads(a.nbytes)
     state.add_global_memory_writes(c.nbytes)
 
@@ -54,6 +57,14 @@ def add_float(state):
 
     nthreads = 64
     nblocks = (len(a) + nthreads - 1) // nthreads
+
+    axis_values = state.get_axis_values()
+    assert "elements" in axis_values
+    assert "v" in axis_values
+    assert "name" in axis_values
+    assert axis_values["elements"] == N
+    assert axis_values["v"] == v
+    assert axis_values["name"] == name
 
     def kernel_launcher(launch):
         _ = v
