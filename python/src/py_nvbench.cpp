@@ -38,15 +38,6 @@ namespace py = pybind11;
 namespace
 {
 
-inline void set_env(const char *name, const char *value)
-{
-#ifdef _MSC_VER
-  _putenv_s(name, value);
-#else
-  setenv(name, value, 1);
-#endif
-}
-
 struct PyObjectDeleter
 {
   void operator()(py::object *p)
@@ -219,9 +210,6 @@ PYBIND11_MODULE(_nvbench, m)
 {
   // == STEP 1
   // Set environment variable CUDA_MODULE_LOADING=EAGER
-
-  // See NVIDIA/NVBench#136 for CUDA_MODULE_LOADING
-  set_env("CUDA_MODULE_LOADING", "EAGER");
 
   NVBENCH_DRIVER_API_CALL(cuInit(0));
 
