@@ -222,7 +222,10 @@ private:
 
   void run_trials()
   {
-    kernel_launch_timer timer(*this);
+    // do not use blocking kernel if benchmark is only run once, e.g., when profiling
+    // ref: https://github.com/NVIDIA/nvbench/issue/242
+    const bool disable_blocking_kernel = m_run_once || m_disable_blocking_kernel;
+    kernel_launch_timer timer(*this, disable_blocking_kernel);
     do
     {
       this->launch_kernel(timer);
