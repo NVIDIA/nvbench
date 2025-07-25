@@ -595,7 +595,7 @@ PYBIND11_MODULE(_nvbench, m)
   // Use handle to take a memory leak here, since this object's destructor may be called after
   // interpreter has shut down
   benchmark_exc =
-    py::exception<nvbench_run_error>(m, "NVBenchRuntimeException", PyExc_RuntimeError).release();
+    py::exception<nvbench_run_error>(m, "NVBenchRuntimeError", PyExc_RuntimeError).release();
   // == STEP 6
   //    ATTN: nvbench::benchmark_manager is a singleton
 
