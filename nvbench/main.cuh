@@ -172,20 +172,8 @@
 namespace nvbench::detail
 {
 
-inline void set_env(const char *name, const char *value)
-{
-#ifdef _MSC_VER
-  _putenv_s(name, value);
-#else
-  setenv(name, value, 1);
-#endif
-}
-
 inline void main_initialize(int, char **)
 {
-  // See NVIDIA/NVBench#136 for CUDA_MODULE_LOADING
-  set_env("CUDA_MODULE_LOADING", "EAGER");
-
   // Initialize CUDA driver API if needed:
 #ifdef NVBENCH_HAS_CUPTI
   NVBENCH_DRIVER_API_CALL(cuInit(0));

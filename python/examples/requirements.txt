@@ -1,0 +1,7 @@
+numpy
+numba
+cupy
+nvidia-cutlass
+cuda-cccl
+cuda-core
+cuda-bindings
