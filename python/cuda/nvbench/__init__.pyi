@@ -261,3 +261,8 @@ def run_all_benchmarks(argv: Sequence[str]) -> None:
         Sequence of CLI arguments controlling NVBench. Usually, it is `sys.argv`.
     """
     ...
+
+class NVBenchRuntimeError(RuntimeError):
+    """An exception raised if running benchmarks encounters an error"""
+
+    ...
