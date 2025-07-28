@@ -751,7 +751,8 @@ catch (std::exception &e)
 
 void option_parser::enable_profile()
 {
-  // If no active benchmakr, save args as global
+  // If no active benchmark, save args as global
+  if (m_benchmarks.empty())
   {
     m_global_benchmark_args.push_back("--profile");
     return;
