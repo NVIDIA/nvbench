@@ -1,29 +1,42 @@
 cmake_minimum_required(VERSION 3.30...4.0)
 
-project(${SKBUILD_PROJECT_NAME} LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# CUDA is transitive dependency of nvbench
+project(${SKBUILD_PROJECT_NAME} LANGUAGES CXX CUDA)
 
 find_package(Python REQUIRED COMPONENTS Development.Module)
 find_package(CUDAToolkit REQUIRED)
 
-include(FetchContent)
-
-FetchContent_Declare(
-    pybind11
-    URL https://github.com/pybind/pybind11/archive/refs/tags/v2.13.6.tar.gz
-    URL_HASH SHA256=e08cb87f4773da97fa7b5f035de8763abc656d87d5773e62f6da0587d1f0ec20
-    FIND_PACKAGE_ARGS NAMES pybind11
+# Get CMake package manager
+set(_cpm_download_location ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
+file(
+  DOWNLOAD
+  https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.42.0/CPM.cmake
+  ${_cpm_download_location}
+  EXPECTED_HASH SHA256=2020b4fc42dba44817983e06342e682ecfc3d2f484a581f11cc5731fbe4dce8a
 )
-FetchContent_MakeAvailable(pybind11)
+include(${_cpm_download_location})
 
-find_package(nvbench CONFIG REQUIRED)
+CPMAddPackage(
+   NAME nvbench
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
+   OPTIONS "NVBench_INSTALL_RULES ON"
+   FIND_PACKAGE_ARGS CONFIG REQUIRED
+)
+
+CPMAddPackage("gh:pybind/pybind11@3.0.0")
 
 pybind11_add_module(_nvbench MODULE src/py_nvbench.cpp)
 target_link_libraries(_nvbench PUBLIC nvbench::nvbench)
 target_link_libraries(_nvbench PRIVATE CUDA::cudart_static)
+
 set_target_properties(_nvbench PROPERTIES INSTALL_RPATH "$ORIGIN")
+set_target_properties(_nvbench PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+set_target_properties(_nvbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(_nvbench PROPERTIES CXX_STANDARD 20)
 
 install(TARGETS _nvbench DESTINATION cuda/nvbench)
-install(IMPORTED_RUNTIME_ARTIFACTS nvbench::nvbench DESTINATION cuda/nvbench)
+
+# Determine target that nvbench::nvbench is an alias of,
+# necessary because ALIAS targets cannot be installed
+get_target_property(_aliased_target_name nvbench::nvbench ALIASED_TARGET)
+install(IMPORTED_RUNTIME_ARTIFACTS ${_aliased_target_name} DESTINATION cuda/nvbench)

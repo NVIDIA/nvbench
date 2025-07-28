@@ -4,7 +4,7 @@ This package provides Python API to CUDA Kernel Benchmarking Library `NVBench`.
 
 ## Building
 
-### Build `NVBench` project
+### Ensure recent version of CMake
 
 Since `nvbench` requires a rather new version of CMake (>=3.30.4), either build CMake from sources, or create a conda environment with a recent version of CMake, using
 
@@ -13,48 +13,49 @@ conda create -n build_env --yes  cmake ninja
 conda activate build_env
 ```
 
+### Ensure CUDA compiler
+
+Since building `NVBench` library requires CUDA compiler, ensure that appropriate environment variables
+are set. For example, assuming CUDA toolkit is installedsystem-wide, and assuming Ampere GPU architecture:
+
+```bash
+export CUDACXX=/usr/local/cuda/bin/nvcc
+export CUDAARCHS=86
+``
+
+### Build Python project
+
 Now switch to python folder, configure and install NVBench library, and install the package in editable mode:
 
-```
+```bash
 cd nvbench/python
-cmake -B nvbench_build --preset nvbench-ci -S $(pwd)/.. -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DNVBench_ENABLE_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=$(pwd)/nvbench_install
-cmake --build nvbench_build/ --config Release --target install
+pip install -e .
 ```
-
-### Build Python extension
-
-Specify location local installation of `NVBench` library and perform editable `pip install`:
-
-```
-nvbench_DIR=$(pwd)/nvbench_install/lib/cmake CUDACXX=/usr/local/cuda/bin/nvcc pip install -e .
-```
-
-Note that `CUDACXX` must be set for NVBench cmake script to work, but Python extension itself only uses host compiler.
 
 ### Verify that package works
 
-```
+```bash
 python test/run_1.py
 ```
 
 ### Run examples
 
-```
+```bash
 # Example benchmarking numba.cuda kernel
 python examples/throughput.py
 ```
 
-```
+```bash
 # Example benchmarking kernels authored using cuda.core
 python examples/axes.py
 ```
 
-```
+```bash
 # Example benchmarking algorithms from cuda.cccl.parallel
 python examples/cccl_parallel_segmented_reduce.py
 ```
 
-```
+```bash
 # Example benchmarking CuPy function
 python examples/cupy_extract.py
 ```
