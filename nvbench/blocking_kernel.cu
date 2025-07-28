@@ -83,7 +83,7 @@ __global__ void block_stream(const volatile nvbench::int32_t *flag,
            "NVBench documentation.\n"
            "\n"
            "If this happens while profiling with an external tool,\n"
-           "pass the `--disable-blocking-kernel` flag or the `--profile` flag\n"
+           "the `--profile` flag\n"
            "(to also only run the benchmark once) to the executable.\n"
            "\n"
            "For more information, see the 'Benchmark Properties' section of the\n"
