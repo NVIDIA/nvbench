@@ -269,6 +269,24 @@ PYBIND11_MODULE(_nvbench, m)
 
   // == STEP 4
   // Define Benchmark class
+  //    ATTN: nvbench::benchmark_base is move-only class
+  //    Methods:
+  //        nvbench::benchmark_base::get_name
+  //        nvbench::benchmark_base::add_int64_axis
+  //        nvbench::benchmark_base::add_int64_power_of_two_axis
+  //        nvbench::benchmark_base::add_float64_axis
+  //        nvbench::benchmark_base::add_string_axis
+  //        nvbench::benchmark_base::set_name
+  //        nvbench::benchmark_base::set_is_cpu_only
+  //        nvbench::benchmark_base::set_skip_time
+  //        nvbench::benchmark_base::set_timeout
+  //        nvbench::benchmark_base::set_throttle_threshold
+  //        nvbench::benchmark_base::set_throttle_recovery_delay
+  //        nvbench::benchmark_base::set_stopping_criterion
+  //        nvbench::benchmark_base::set_criterion_param_int64
+  //        nvbench::benchmark_base::set_criterion_param_float64
+  //        nvbench::benchmark_base::set_criterion_param_string
+  //        nvbench::benchmark_base::set_min_samples
 
   auto py_benchmark_cls = py::class_<nvbench::benchmark_base>(m, "Benchmark");
   py_benchmark_cls.def("get_name", &nvbench::benchmark_base::get_name);
@@ -326,6 +344,7 @@ PYBIND11_MODULE(_nvbench, m)
     },
     py::return_value_policy::reference,
     py::arg("is_cpu_only"));
+  // TODO: should this be exposed?
   py_benchmark_cls.def(
     "set_run_once",
     [](nvbench::benchmark_base &self, bool run_once) {
@@ -334,6 +353,81 @@ PYBIND11_MODULE(_nvbench, m)
     },
     py::return_value_policy::reference,
     py::arg("run_once"));
+  py_benchmark_cls.def(
+    "set_skip_time",
+    [](nvbench::benchmark_base &self, nvbench::float64_t skip_duration_seconds) {
+      self.set_skip_time(skip_duration_seconds);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("duration_seconds"));
+  py_benchmark_cls.def(
+    "set_timeout",
+    [](nvbench::benchmark_base &self, nvbench::float64_t duration_seconds) {
+      self.set_timeout(duration_seconds);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("duration_seconds"));
+  py_benchmark_cls.def(
+    "set_throttle_threshold",
+    [](nvbench::benchmark_base &self, nvbench::float64_t threshold) {
+      self.set_throttle_threshold(threshold);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("threshold"));
+  py_benchmark_cls.def(
+    "set_throttle_recovery_delay",
+    [](nvbench::benchmark_base &self, nvbench::float64_t delay) {
+      self.set_throttle_recovery_delay(delay);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("delay_seconds"));
+  py_benchmark_cls.def(
+    "set_stopping_criterion",
+    [](nvbench::benchmark_base &self, std::string criterion) {
+      self.set_stopping_criterion(std::move(criterion));
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("criterion"));
+  py_benchmark_cls.def(
+    "set_criterion_param_int64",
+    [](nvbench::benchmark_base &self, std::string name, nvbench::int64_t value) {
+      self.set_criterion_param_int64(std::move(name), value);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("name"),
+    py::arg("value"));
+  py_benchmark_cls.def(
+    "set_criterion_param_float64",
+    [](nvbench::benchmark_base &self, std::string name, nvbench::float64_t value) {
+      self.set_criterion_param_float64(std::move(name), value);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("name"),
+    py::arg("value"));
+  py_benchmark_cls.def(
+    "set_criterion_param_string",
+    [](nvbench::benchmark_base &self, std::string name, std::string value) {
+      self.set_criterion_param_string(std::move(name), std::move(value));
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("name"),
+    py::arg("value"));
+  py_benchmark_cls.def(
+    "set_min_samples",
+    [](nvbench::benchmark_base &self, nvbench::int64_t count) {
+      self.set_min_samples(count);
+      return std::ref(self);
+    },
+    py::return_value_policy::reference,
+    py::arg("min_samples_count"));
 
   // == STEP 5
   // Define PyState class
@@ -594,6 +688,7 @@ PYBIND11_MODULE(_nvbench, m)
   pystate_cls.def("get_axis_values_as_string",
                   [](const nvbench::state &state) { return state.get_axis_values_as_string(); });
   pystate_cls.def("get_axis_values", &py_get_axis_values);
+  pystate_cls.def("get_stopping_criterion", &nvbench::state::get_stopping_criterion);
 
   // Use handle to take a memory leak here, since this object's destructor may be called after
   // interpreter has shut down

@@ -92,6 +92,33 @@ class Benchmark:
     def set_run_once(self, v: bool) -> Self:
         "Set whether all benchmark configurations are executed only once"
         ...
+    def set_skip_time(self, duration_seconds: float) -> Self:
+        "Set run durations, in seconds, that should be skipped"
+        ...
+    def set_throttle_recovery_delay(self, delay_seconds: float) -> Self:
+        "Set throttle recovery delay, in seconds"
+        ...
+    def set_throttle_threshold(self, threshold: float) -> Self:
+        "Set throttle threshold, as a fraction of maximal GPU frequency"
+        ...
+    def set_timeout(self, duration_seconds: float) -> Self:
+        "Set benchmark run duration timeout value, in seconds"
+        ...
+    def set_stopping_criterion(self, criterion: str) -> Self:
+        "Set stopping criterion to be used"
+        ...
+    def set_criterion_param_float64(self, name: str, value: float) -> Self:
+        "Set stopping criterion floating point parameter value"
+        ...
+    def set_criterion_param_int64(self, name: str, value: int) -> Self:
+        "Set stopping criterion integer parameter value"
+        ...
+    def set_criterion_param_string(self, name: str, value: str) -> Self:
+        "Set stopping criterion string parameter value"
+        ...
+    def set_min_samples(self, count: int) -> Self:
+        "Set minimal samples count before stopping criterion applies"
+        ...
 
 class Launch:
     """Configuration object for function launch.
@@ -246,6 +273,9 @@ class State:
         ...
     def get_axis_values_as_string(self) -> str:
         "Get string of space-separated name=value pairs for this configuration"
+        ...
+    def get_stopping_criterion(self) -> str:
+        "Get string name of stopping criterion used"
         ...
 
 def register(fn: Callable[[State], None]) -> Benchmark:
