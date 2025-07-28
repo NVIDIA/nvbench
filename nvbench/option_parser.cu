@@ -456,26 +456,15 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->lock_gpu_clocks(first[1]);
       first += 2;
     }
-    else if (arg == "--run-once")
-    {
-      this->enable_run_once();
-      first += 1;
-    }
     else if (arg == "--stopping-criterion")
     {
       check_params(1);
       this->set_stopping_criterion(first[1]);
       first += 2;
     }
-    else if (arg == "--disable-blocking-kernel")
-    {
-      this->disable_blocking_kernel();
-      first += 1;
-    }
     else if (arg == "--profile")
     {
-      this->enable_run_once();
-      this->disable_blocking_kernel();
+      this->enable_profile();
       first += 1;
     }
     else if (arg == "--quiet" || arg == "-q")
@@ -738,19 +727,6 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::enable_run_once()
-{
-  // If no active benchmark, save args as global.
-  if (m_benchmarks.empty())
-  {
-    m_global_benchmark_args.push_back("--run-once");
-    return;
-  }
-
-  benchmark_base &bench = *m_benchmarks.back();
-  bench.set_run_once(true);
-}
-
 void option_parser::set_stopping_criterion(const std::string &criterion)
 try
 {
@@ -773,17 +749,16 @@ catch (std::exception &e)
                 e.what());
 }
 
-void option_parser::disable_blocking_kernel()
+void option_parser::enable_profile()
 {
-  // If no active benchmark, save args as global.
-  if (m_benchmarks.empty())
+  // If no active benchmakr, save args as global
   {
-    m_global_benchmark_args.push_back("--disable-blocking-kernel");
+    m_global_benchmark_args.push_back("--profile");
     return;
   }
-
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_disable_blocking_kernel(true);
+  bench.set_run_once(true);
 }
 
 void option_parser::add_benchmark(const std::string &name)
