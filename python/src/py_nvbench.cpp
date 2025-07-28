@@ -481,6 +481,9 @@ PYBIND11_MODULE(_nvbench, m)
     [](const nvbench::state &state) { return std::ref(state.get_benchmark()); },
     py::return_value_policy::reference);
   pystate_cls.def("get_throttle_threshold", &nvbench::state::get_throttle_threshold);
+  pystate_cls.def("set_throttle_threshold",
+                  &nvbench::state::set_throttle_threshold,
+                  py::arg("throttle_fraction"));
 
   pystate_cls.def("get_min_samples", &nvbench::state::get_min_samples);
   pystate_cls.def("set_min_samples",

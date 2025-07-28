@@ -169,7 +169,10 @@ class State:
         "Get Benchmark this configuration is a part of"
         ...
     def get_throttle_threshold(self) -> float:
-        "Get throttle threshold value"
+        "Get throttle threshold value, as fraction of maximal frequency"
+        ...
+    def set_throttle_threshold(self, threshold_fraction: float) -> None:
+        "Set throttle threshold fraction to specified value, expected to be between 0 and 1"
         ...
     def get_min_samples(self) -> int:
         "Get the number of benchmark timings NVBench performs before stopping criterion begins being used"
