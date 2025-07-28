@@ -109,9 +109,8 @@
     before any `--benchmark` arguments.
 
 * `--profile`
-  * Don't use the `blocking_kernel`.
-  * Only run the benchmark once, skipping any warmup runs and batched
-    measurements.
+  * Only run each benchmark once.
+  * Disable any instrumentation that may interfere with profilers.
   * Intended for use with external profiling tools.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
