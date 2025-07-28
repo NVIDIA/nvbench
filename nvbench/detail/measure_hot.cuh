@@ -106,19 +106,10 @@ private:
   // measurement.
   void run_warmup()
   {
-    if (!m_disable_blocking_kernel)
-    {
-      this->block_stream();
-    }
-
     m_cuda_timer.start(m_launch.get_stream());
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
-    if (!m_disable_blocking_kernel)
-    {
-      this->unblock_stream();
-    }
     this->sync_stream();
 
     this->check_skip_time(m_cuda_timer.get_duration());
