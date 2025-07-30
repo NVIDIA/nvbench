@@ -26,7 +26,7 @@
 # with definitions given here.
 
 from collections.abc import Callable, Sequence
-from typing import Optional, Self, Union
+from typing import Optional, Self, SupportsFloat, SupportsInt, Union
 
 class CudaStream:
     """Represents CUDA stream
@@ -71,13 +71,15 @@ class Benchmark:
     def get_name(self) -> str:
         "Get benchmark name"
         ...
-    def add_int64_axis(self, name: str, values: Sequence[int]) -> Self:
+    def add_int64_axis(self, name: str, values: Sequence[SupportsInt]) -> Self:
         "Add integral type parameter axis with given name and values to sweep over"
         ...
-    def add_int64_power_of_two_axis(self, name: str, values: Sequence[int]) -> Self:
+    def add_int64_power_of_two_axis(
+        self, name: str, values: Sequence[SupportsInt]
+    ) -> Self:
         "Add integral type parameter axis with given name and values to sweep over"
         ...
-    def add_float64_axis(self, name: str, values: Sequence[float]) -> Self:
+    def add_float64_axis(self, name: str, values: Sequence[SupportsFloat]) -> Self:
         "Add floating-point type parameter axis with given name and values to sweep over"
         ...
     def add_string_axis(sef, name: str, values: Sequence[str]) -> Self:
@@ -92,31 +94,31 @@ class Benchmark:
     def set_run_once(self, v: bool) -> Self:
         "Set whether all benchmark configurations are executed only once"
         ...
-    def set_skip_time(self, duration_seconds: float) -> Self:
+    def set_skip_time(self, duration_seconds: SupportsFloat) -> Self:
         "Set run durations, in seconds, that should be skipped"
         ...
-    def set_throttle_recovery_delay(self, delay_seconds: float) -> Self:
+    def set_throttle_recovery_delay(self, delay_seconds: SupportsFloat) -> Self:
         "Set throttle recovery delay, in seconds"
         ...
-    def set_throttle_threshold(self, threshold: float) -> Self:
+    def set_throttle_threshold(self, threshold: SupportsFloat) -> Self:
         "Set throttle threshold, as a fraction of maximal GPU frequency"
         ...
-    def set_timeout(self, duration_seconds: float) -> Self:
+    def set_timeout(self, duration_seconds: SupportsFloat) -> Self:
         "Set benchmark run duration timeout value, in seconds"
         ...
     def set_stopping_criterion(self, criterion: str) -> Self:
         "Set stopping criterion to be used"
         ...
-    def set_criterion_param_float64(self, name: str, value: float) -> Self:
+    def set_criterion_param_float64(self, name: str, value: SupportsFloat) -> Self:
         "Set stopping criterion floating point parameter value"
         ...
-    def set_criterion_param_int64(self, name: str, value: int) -> Self:
+    def set_criterion_param_int64(self, name: str, value: SupportsInt) -> Self:
         "Set stopping criterion integer parameter value"
         ...
     def set_criterion_param_string(self, name: str, value: str) -> Self:
         "Set stopping criterion string parameter value"
         ...
-    def set_min_samples(self, count: int) -> Self:
+    def set_min_samples(self, count: SupportsInt) -> Self:
         "Set minimal samples count before stopping criterion applies"
         ...
 
@@ -153,13 +155,13 @@ class State:
     def get_int64(self, name: str) -> int:
         "Get value for given Int64 axis from this configuration"
         ...
-    def get_int64_or_default(self, name: str, default_value: int) -> int:
+    def get_int64_or_default(self, name: str, default_value: SupportsInt) -> int:
         "Get value for given Int64 axis from this configuration"
         ...
     def get_float64(self, name: str) -> float:
         "Get value for given Float64 axis from this configuration"
         ...
-    def get_float64_or_default(self, name: str, default_value: float) -> float:
+    def get_float64_or_default(self, name: str, default_value: SupportsFloat) -> float:
         "Get value for given Float64 axis from this configuration"
         ...
     def get_string(self, name: str) -> str:
@@ -168,10 +170,12 @@ class State:
     def get_string_or_default(self, name: str, default_value: str) -> str:
         "Get value for given String axis from this configuration"
         ...
-    def add_element_count(self, count: int, column_name: Optional[str] = None) -> None:
+    def add_element_count(
+        self, count: SupportsInt, column_name: Optional[str] = None
+    ) -> None:
         "Add element count"
         ...
-    def set_element_count(self, count: int) -> None:
+    def set_element_count(self, count: SupportsInt) -> None:
         "Set element count"
         ...
     def get_element_count(self) -> int:
@@ -186,10 +190,14 @@ class State:
     def get_skip_reason(self) -> str:
         "Get reason provided for skipping this configuration"
         ...
-    def add_global_memory_reads(self, nbytes: int, /, column_name: str = "") -> None:
+    def add_global_memory_reads(
+        self, nbytes: SupportsInt, /, column_name: str = ""
+    ) -> None:
         "Inform NVBench that given amount of bytes is being read by the benchmark from global memory"
         ...
-    def add_global_memory_writes(self, nbytes: int, /, column_name: str = "") -> None:
+    def add_global_memory_writes(
+        self, nbytes: SupportsInt, /, column_name: str = ""
+    ) -> None:
         "Inform NVBench that given amount of bytes is being written by the benchmark into global memory"
         ...
     def get_benchmark(self) -> Benchmark:
@@ -198,13 +206,13 @@ class State:
     def get_throttle_threshold(self) -> float:
         "Get throttle threshold value, as fraction of maximal frequency"
         ...
-    def set_throttle_threshold(self, threshold_fraction: float) -> None:
+    def set_throttle_threshold(self, threshold_fraction: SupportsFloat) -> None:
         "Set throttle threshold fraction to specified value, expected to be between 0 and 1"
         ...
     def get_min_samples(self) -> int:
         "Get the number of benchmark timings NVBench performs before stopping criterion begins being used"
         ...
-    def set_min_samples(self, min_samples_count: int) -> None:
+    def set_min_samples(self, min_samples_count: SupportsInt) -> None:
         "Set the number of benchmark timings for NVBench to perform before stopping criterion begins being used"
         ...
     def get_disable_blocking_kernel(self) -> bool:
@@ -222,13 +230,13 @@ class State:
     def get_timeout(self) -> float:
         "Get time-out value for benchmark execution of this configuration"
         ...
-    def set_timeout(self, duration: float) -> None:
+    def set_timeout(self, duration: SupportsFloat) -> None:
         "Set time-out value for benchmark execution of this configuration, in seconds"
         ...
     def get_blocking_kernel_timeout(self) -> float:
         "Get time-out value for execution of blocking kernel"
         ...
-    def set_blocking_kernel_timeout(self, duration: float) -> None:
+    def set_blocking_kernel_timeout(self, duration: SupportsFloat) -> None:
         "Set time-out value for execution of blocking kernel, in seconds"
         ...
     def collect_cupti_metrics(self) -> None:
@@ -265,7 +273,9 @@ class State:
     def get_short_description(self) -> str:
         "Get short description for this configuration"
         ...
-    def add_summary(self, column_name: str, value: Union[int, float, str]) -> None:
+    def add_summary(
+        self, column_name: str, value: Union[SupportsInt, SupportsFloat, str]
+    ) -> None:
         "Add summary column with a value"
         ...
     def get_axis_values(self) -> dict[str, int | float | str]:
