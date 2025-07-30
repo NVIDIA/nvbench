@@ -151,10 +151,7 @@ struct state
   /// Control the stopping criterion for the measurement loop.
   /// @{
   [[nodiscard]] const std::string &get_stopping_criterion() const { return m_stopping_criterion; }
-  void set_stopping_criterion(std::string criterion)
-  {
-    m_stopping_criterion = std::move(criterion);
-  }
+  void set_stopping_criterion(std::string criterion);
   /// @}
 
   /// If true, the benchmark is only run once, skipping all warmup runs and only

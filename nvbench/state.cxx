@@ -16,6 +16,7 @@
  *  limitations under the License.
  */
 #include <nvbench/benchmark_base.cuh>
+#include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/types.cuh>
@@ -298,6 +299,12 @@ void state::add_buffer_size(std::size_t num_bytes,
   {
     summ.set_string("description", std::move(description));
   }
+}
+
+void state::set_stopping_criterion(std::string criterion)
+{
+  m_stopping_criterion = std::move(criterion);
+  m_criterion_params   = criterion_manager::get().get_criterion(m_stopping_criterion).get_params();
 }
 
 } // namespace nvbench
