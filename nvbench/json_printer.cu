@@ -58,17 +58,17 @@ static_assert(false, "No <filesystem> or <experimental/filesystem> found.");
 namespace
 {
 
-bool is_little_endian()
-{
 #if NVBENCH_CPP_DIALECT >= 2020
-  return std::endian::native == std::endian::little;
+constexpr bool is_little_endian() noexcept { return std::endian::native == std::endian::little; }
 #else
+bool is_little_endian() noexcept
+{
   const nvbench::uint32_t word = {0xBadDecaf};
   nvbench::uint8_t bytes[4];
   std::memcpy(bytes, &word, 4);
   return bytes[0] == 0xaf;
-#endif
 }
+#endif
 
 template <typename JsonNode>
 void write_named_values(JsonNode &node, const nvbench::named_values &values)
@@ -167,23 +167,42 @@ void json_printer::do_process_bulk_data_float64(state &state,
       out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
       out.open(result_path, std::ios::binary | std::ios::out);
 
-      // FIXME: SLOW -- Writing the binary file, 4 bytes at a time...
-      // There are a lot of optimizations that could be done here if this ends
-      // up being a noticeable bottleneck.
+      // choose buffer to be block size of modern SSD
+      static constexpr std::size_t buffer_nbytes = 4096;
+      static constexpr std::size_t value_nbytes  = sizeof(nvbench::float32_t);
+      static_assert(buffer_nbytes % value_nbytes == 0);
+
+      alignas(alignof(nvbench::float32_t)) char buffer[buffer_nbytes];
+      std::size_t bytes_in_buffer = 0;
+
       for (auto value64 : data)
       {
-        const auto value32 = static_cast<nvbench::float32_t>(value64);
-        char buffer[4];
-        std::memcpy(buffer, &value32, 4);
+        const auto value32   = static_cast<nvbench::float32_t>(value64);
+        auto value_subbuffer = &buffer[bytes_in_buffer];
+        std::memcpy(value_subbuffer, &value32, value_nbytes);
+
         // the c++17 implementation of is_little_endian isn't constexpr, but
         // all supported compilers optimize this branch as if it were.
         if (!is_little_endian())
         {
           using std::swap;
-          swap(buffer[0], buffer[3]);
-          swap(buffer[1], buffer[2]);
+          swap(value_subbuffer[0], value_subbuffer[3]);
+          swap(value_subbuffer[1], value_subbuffer[2]);
         }
-        out.write(buffer, 4);
+        bytes_in_buffer += value_nbytes;
+
+        // if buffer is full, write it out and wrap around
+        if (bytes_in_buffer == buffer_nbytes)
+        {
+          out.write(buffer, buffer_nbytes);
+          bytes_in_buffer = 0;
+        }
+      } // end of foreach value64 in data
+
+      if (bytes_in_buffer)
+      {
+        out.write(buffer, bytes_in_buffer);
+        bytes_in_buffer = 0;
       }
     }
     catch (std::exception &e)
