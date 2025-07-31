@@ -237,9 +237,36 @@ NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
 ```
 
 This would generate a total of 36 configurations and instantiate the benchmark 6
-times. Keep the rapid growth of these combinations in mind when choosing the
-number of values in an axis. See the section about combinatorial explosion for
-more examples and information.
+times.
+
+Keep the rapid growth of combinations due to multiple parameter axes in mind when
+choosing the number of values in an axis. See the section about combinatorial
+explosion for more examples and information.
+
+## Zipped Iteration of Value Axes
+
+At times multiple value axes need to be iterated like they are actually a tuple
+or zipped together. To enable this behavior you can request axes to be 'zipped'
+together.
+
+```cpp
+// InputTypes: {char, int, unsigned int}
+// OutputTypes: {float, double}
+// NumInputs: {1000, 10000, 100000, 200000, 200000, 200000}
+// Quality: {0.05, 0.1, 0.25, 0.5, 0.75, 1.}
+
+using input_types = nvbench::type_list<char, int, unsigned int>;
+using output_types = nvbench::type_list<float, double>;
+NVBENCH_BENCH_TYPES(benchmark, NVBENCH_TYPE_AXES(input_types, output_types))
+  .set_type_axes_names({"InputType", "OutputType"})
+  .add_zip_axes(nvbench::int64_axis{"NumInputs", {1000, 10000, 100000, 200000, 200000, 200000}},
+                nvbench::float64_axis{"Quality", {0.05, 0.1, 0.25, 0.5, 0.75, 1.}});
+```
+
+Zipping these two axes reduces the total combinations from 216 to 36, reducing the
+combinatorial explosion.
+
+Note: Only value axes may be zipped together.
 
 # Throughput Measurements
 
@@ -507,9 +534,10 @@ NVBENCH_BENCH_TYPES(my_benchmark,
 ```
 
 For large configuration spaces like this, pruning some of the less useful
-combinations (e.g. `sizeof(init_type) < sizeof(output)`) using the techniques
-described in the [Skip Uninteresting / Invalid Benchmarks](#skip-uninteresting--invalid-benchmarks)
-section can help immensely with keeping compile / run times manageable.
+combinations using the techniques described in the
+[Zipped/Tied Iteration of Value Axes](#zipped-iteration-of-value-axes)
+or [Skip Uninteresting / Invalid Benchmarks](#skip-uninteresting--invalid-benchmarks)
+sections can help immensely with keeping compile / run times manageable.
 
 Splitting a single large configuration space into multiple, more focused
 benchmarks with reduced dimensionality will likely be worth the effort as well.
