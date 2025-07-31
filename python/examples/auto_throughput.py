@@ -21,11 +21,11 @@ import numpy as np
 from numba import cuda
 
 
-def as_cuda_Stream(cs: nvbench.CudaStream) -> cuda.cudadrv.driver.Stream:
+def as_cuda_stream(cs: nvbench.CudaStream) -> cuda.cudadrv.driver.Stream:
     return cuda.external_stream(cs.addressof())
 
 
-def make_kernel(items_per_thread: int) -> cuda.dispatcher.CUDADispatcher:
+def make_throughput_kernel(items_per_thread: int) -> cuda.dispatcher.CUDADispatcher:
     @cuda.jit
     def kernel(stride: np.uintp, elements: np.uintp, in_arr, out_arr):
         tid = cuda.grid(1)
@@ -46,7 +46,7 @@ def throughput_bench(state: nvbench.State) -> None:
     nbytes = 128 * 1024 * 1024
     elements = nbytes // np.dtype(np.int32).itemsize
 
-    alloc_stream = as_cuda_Stream(state.get_stream())
+    alloc_stream = as_cuda_stream(state.get_stream())
     inp_arr = cuda.device_array(elements, dtype=np.int32, stream=alloc_stream)
     out_arr = cuda.device_array(elements * ipt, dtype=np.int32, stream=alloc_stream)
 
@@ -56,7 +56,7 @@ def throughput_bench(state: nvbench.State) -> None:
     threads_per_block = 256
     blocks_in_grid = (elements + threads_per_block - 1) // threads_per_block
 
-    krn = make_kernel(ipt)
+    krn = make_throughput_kernel(ipt)
 
     # warm-up call ensures that kernel is loaded into context
     # before blocking kernel is launched. Kernel loading may cause
@@ -66,7 +66,7 @@ def throughput_bench(state: nvbench.State) -> None:
     )
 
     def launcher(launch: nvbench.Launch):
-        exec_stream = as_cuda_Stream(launch.get_stream())
+        exec_stream = as_cuda_stream(launch.get_stream())
         krn[blocks_in_grid, threads_per_block, exec_stream, 0](
             stride, elements, inp_arr, out_arr
         )

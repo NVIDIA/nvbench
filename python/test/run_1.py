@@ -14,12 +14,15 @@ def kernel(a, b, c):
         c[tid] = a[tid] + b[tid]
 
 
-def get_numba_stream(launch):
+def get_numba_stream(launch: nvbench.Launch):
     return cuda.external_stream(launch.get_stream().addressof())
 
 
-def add_two(state):
-    # state.skip("Skipping this benchmark for no reason")
+def skipit(state: nvbench.State) -> None:
+    state.skip("Skipping this benchmark for no reason")
+
+
+def add_two(state: nvbench.State):
     N = state.get_int64("elements")
     a = cuda.to_device(np.random.random(N))
     c = cuda.device_array_like(a)
@@ -44,7 +47,7 @@ def add_two(state):
     state.exec(kernel_launcher, batched=True, sync=True)
 
 
-def add_float(state):
+def add_float(state: nvbench.State):
     N = state.get_int64("elements")
     v = state.get_float64("v")
     name = state.get_string("name")
@@ -75,7 +78,7 @@ def add_float(state):
     state.exec(kernel_launcher, batched=True, sync=True)
 
 
-def add_three(state):
+def add_three(state: nvbench.State):
     N = state.get_int64("elements")
     a = cuda.to_device(np.random.random(N).astype(np.float32))
     b = cuda.to_device(np.random.random(N).astype(np.float32))
@@ -105,13 +108,10 @@ def register_benchmarks():
         nvbench.register(add_float)
         .add_float64_axis("v", [0.1, 0.3])
         .add_string_axis("name", ["Anne", "Lynda"])
-        .add_int64_axis("elements", [2**pow2 for pow2 in range(20, 23)])
+        .add_int64_power_of_two_axis("elements", range(20, 23))
     )
-    (
-        nvbench.register(add_three).add_int64_axis(
-            "elements", [2**pow2 for pow2 in range(20, 22)]
-        )
-    )
+    (nvbench.register(add_three).add_int64_power_of_two_axis("elements", range(20, 22)))
+    nvbench.register(skipit)
 
 
 if __name__ == "__main__":

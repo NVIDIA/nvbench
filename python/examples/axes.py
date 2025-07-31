@@ -193,7 +193,7 @@ if __name__ == "__main__":
     nvbench.register(default_value)
     # specify axis
     nvbench.register(single_float64_axis).add_float64_axis(
-        "Duration", [7e-5, 1e-4, 5e-4]
+        "Duration (s)", [7e-5, 1e-4, 5e-4]
     )
 
     copy1_bench = nvbench.register(copy_sweep_grid_shape)

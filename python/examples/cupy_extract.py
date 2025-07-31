@@ -36,14 +36,16 @@ def cupy_extract_by_mask(state: nvbench.State):
 
     state.collect_cupti_metrics()
     state.add_element_count(n_rows * n_cols, "# Elements")
+    int32_dt = cp.dtype(cp.int32)
+    bool_dt = cp.dtype(cp.bool_)
     state.add_global_memory_reads(
-        n_rows * n_cols * (cp.dtype(cp.int32).itemsize + cp.dtype("?").itemsize)
+        n_rows * n_cols * (int32_dt.itemsize + bool_dt.itemsize)
     )
-    state.add_global_memory_writes(n_rows * n_cols * (cp.dtype(cp.int32).itemsize))
+    state.add_global_memory_writes(n_rows * n_cols * (int32_dt.itemsize))
 
     with cp_s:
-        X = cp.full((n_cols, n_rows), fill_value=3, dtype=cp.int32)
-        mask = cp.ones((n_cols, n_rows), dtype="?")
+        X = cp.full((n_cols, n_rows), fill_value=3, dtype=int32_dt)
+        mask = cp.ones((n_cols, n_rows), dtype=bool_dt)
         _ = X[mask]
 
     def launcher(launch: nvbench.Launch):
