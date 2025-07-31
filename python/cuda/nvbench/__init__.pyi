@@ -86,7 +86,7 @@ class Benchmark:
         "Add string type parameter axis with given name and values to sweep over"
         ...
     def set_name(self, name: str) -> Self:
-        ""
+        "Set benchmark name"
         ...
     def set_is_cpu_only(self, is_cpu_only: bool) -> Self:
         "Set whether this benchmark only executes on CPU"
@@ -228,13 +228,13 @@ class State:
         "Set run-once flag for this configuration"
         ...
     def get_timeout(self) -> float:
-        "Get time-out value for benchmark execution of this configuration"
+        "Get time-out value for benchmark execution of this configuration, in seconds"
         ...
     def set_timeout(self, duration: SupportsFloat) -> None:
         "Set time-out value for benchmark execution of this configuration, in seconds"
         ...
     def get_blocking_kernel_timeout(self) -> float:
-        "Get time-out value for execution of blocking kernel"
+        "Get time-out value for execution of blocking kernel, in seconds"
         ...
     def set_blocking_kernel_timeout(self, duration: SupportsFloat) -> None:
         "Set time-out value for execution of blocking kernel, in seconds"
@@ -290,7 +290,7 @@ class State:
 
 def register(fn: Callable[[State], None]) -> Benchmark:
     """
-    Register bencharking function with NVBench.
+    Register given benchmarking function with NVBench.
     """
     ...
 
