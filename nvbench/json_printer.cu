@@ -194,14 +194,14 @@ void json_printer::do_process_bulk_data_float64(state &state,
         // if buffer is full, write it out and wrap around
         if (bytes_in_buffer == buffer_nbytes)
         {
-          out.write(buffer, buffer_nbytes);
+          out.write(buffer, static_cast<std::streamsize>(buffer_nbytes));
           bytes_in_buffer = 0;
         }
       } // end of foreach value64 in data
 
       if (bytes_in_buffer)
       {
-        out.write(buffer, bytes_in_buffer);
+        out.write(buffer, static_cast<std::streamsize>(bytes_in_buffer));
         bytes_in_buffer = 0;
       }
     }
