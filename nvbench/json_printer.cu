@@ -106,6 +106,45 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
   } // end foreach value name
 }
 
+template <std::size_t buffer_nbytes>
+void write_out_values(std::ofstream &out, const std::vector<nvbench::float64_t> &data)
+{
+  static constexpr std::size_t value_nbytes = sizeof(nvbench::float32_t);
+  static_assert(buffer_nbytes % value_nbytes == 0);
+
+  alignas(alignof(nvbench::float32_t)) char buffer[buffer_nbytes];
+  std::size_t bytes_in_buffer = 0;
+
+  for (auto value64 : data)
+  {
+    const auto value32   = static_cast<nvbench::float32_t>(value64);
+    auto value_subbuffer = &buffer[bytes_in_buffer];
+    std::memcpy(value_subbuffer, &value32, value_nbytes);
+
+    // the c++17 implementation of is_little_endian isn't constexpr, but
+    // all supported compilers optimize this branch as if it were.
+    if (!is_little_endian())
+    {
+      std::swap(value_subbuffer[0], value_subbuffer[3]);
+      std::swap(value_subbuffer[1], value_subbuffer[2]);
+    }
+    bytes_in_buffer += value_nbytes;
+
+    // if buffer is full, write it out and wrap around
+    if (bytes_in_buffer == buffer_nbytes)
+    {
+      out.write(buffer, static_cast<std::streamsize>(buffer_nbytes));
+      bytes_in_buffer = 0;
+    }
+  } // end of foreach value64 in data
+
+  if (bytes_in_buffer)
+  {
+    out.write(buffer, static_cast<std::streamsize>(bytes_in_buffer));
+    bytes_in_buffer = 0;
+  }
+}
+
 } // end namespace
 
 namespace nvbench
@@ -168,42 +207,9 @@ void json_printer::do_process_bulk_data_float64(state &state,
       out.open(result_path, std::ios::binary | std::ios::out);
 
       // choose buffer to be block size of modern SSD
-      static constexpr std::size_t buffer_nbytes = 4096;
-      static constexpr std::size_t value_nbytes  = sizeof(nvbench::float32_t);
-      static_assert(buffer_nbytes % value_nbytes == 0);
-
-      alignas(alignof(nvbench::float32_t)) char buffer[buffer_nbytes];
-      std::size_t bytes_in_buffer = 0;
-
-      for (auto value64 : data)
-      {
-        const auto value32   = static_cast<nvbench::float32_t>(value64);
-        auto value_subbuffer = &buffer[bytes_in_buffer];
-        std::memcpy(value_subbuffer, &value32, value_nbytes);
-
-        // the c++17 implementation of is_little_endian isn't constexpr, but
-        // all supported compilers optimize this branch as if it were.
-        if (!is_little_endian())
-        {
-          using std::swap;
-          swap(value_subbuffer[0], value_subbuffer[3]);
-          swap(value_subbuffer[1], value_subbuffer[2]);
-        }
-        bytes_in_buffer += value_nbytes;
-
-        // if buffer is full, write it out and wrap around
-        if (bytes_in_buffer == buffer_nbytes)
-        {
-          out.write(buffer, static_cast<std::streamsize>(buffer_nbytes));
-          bytes_in_buffer = 0;
-        }
-      } // end of foreach value64 in data
-
-      if (bytes_in_buffer)
-      {
-        out.write(buffer, static_cast<std::streamsize>(bytes_in_buffer));
-        bytes_in_buffer = 0;
-      }
+      // see: https://github.com/NVIDIA/nvbench/issues/255
+      constexpr std::size_t buffer_nbytes = 4096;
+      write_out_values<buffer_nbytes>(out, data);
     }
     catch (std::exception &e)
     {
