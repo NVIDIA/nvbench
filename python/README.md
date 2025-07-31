@@ -16,7 +16,7 @@ conda activate build_env
 ### Ensure CUDA compiler
 
 Since building `NVBench` library requires CUDA compiler, ensure that appropriate environment variables
-are set. For example, assuming CUDA toolkit is installedsystem-wide, and assuming Ampere GPU architecture:
+are set. For example, assuming CUDA toolkit is installed system-wide, and assuming Ampere GPU architecture:
 
 ```bash
 export CUDACXX=/usr/local/cuda/bin/nvcc
