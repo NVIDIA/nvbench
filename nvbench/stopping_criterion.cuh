@@ -111,7 +111,7 @@ public:
 
 protected:
   /**
-   * Initialize the criterion after updaring the parameters
+   * Initialize the criterion after updating the parameters
    */
   virtual void do_initialize() = 0;
 
