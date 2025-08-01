@@ -82,7 +82,7 @@ class Benchmark:
     def add_float64_axis(self, name: str, values: Sequence[SupportsFloat]) -> Self:
         "Add floating-point type parameter axis with given name and values to sweep over"
         ...
-    def add_string_axis(sef, name: str, values: Sequence[str]) -> Self:
+    def add_string_axis(self, name: str, values: Sequence[str]) -> Self:
         "Add string type parameter axis with given name and values to sweep over"
         ...
     def set_name(self, name: str) -> Self:
