@@ -23,6 +23,9 @@ set_target_properties(nvbench.build_interface PROPERTIES
 
 function(nvbench_add_cxx_flag target_name type flag)
   string(MAKE_C_IDENTIFIER "NVBench_CXX_FLAG_${flag}" var)
+  if (NOT ${NVBench_TOPLEVEL_PROJECT})
+    set(CMAKE_REQUIRED_QUIET ON)
+  endif()
   check_cxx_compiler_flag(${flag} ${var})
 
   if (${${var}})
