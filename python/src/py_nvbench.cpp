@@ -102,7 +102,7 @@ private:
 
 class nvbench_run_error : std::runtime_error
 {};
-constinit py::handle benchmark_exc{};
+py::handle benchmark_exc{};
 
 class GlobalBenchmarkRegistry
 {
@@ -215,7 +215,7 @@ py::dict py_get_axis_values(const nvbench::state &state)
 }
 
 // essentially a global variable, but allocated on the heap during module initialization
-constinit std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry{};
+std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry{};
 
 } // end of anonymous namespace
 

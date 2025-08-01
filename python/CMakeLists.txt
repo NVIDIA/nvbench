@@ -32,7 +32,6 @@ target_link_libraries(_nvbench PRIVATE CUDA::cudart_static)
 set_target_properties(_nvbench PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(_nvbench PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
 set_target_properties(_nvbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(_nvbench PROPERTIES CXX_STANDARD 20)
 
 install(TARGETS _nvbench DESTINATION cuda/nvbench)
 
