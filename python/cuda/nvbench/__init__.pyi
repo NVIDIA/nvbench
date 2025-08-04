@@ -35,7 +35,7 @@ class CudaStream:
     ----
         The class is not directly constructible.
     """
-    def __cuda_stream__(self) -> tuple[int]:
+    def __cuda_stream__(self) -> tuple[int, int]:
         """
         Special method implement CUDA stream protocol
         from `cuda.core`. Returns a pair of integers:
