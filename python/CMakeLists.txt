@@ -33,9 +33,9 @@ set_target_properties(_nvbench PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(_nvbench PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
 set_target_properties(_nvbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-install(TARGETS _nvbench DESTINATION cuda/nvbench)
+install(TARGETS _nvbench DESTINATION cuda/bench)
 
 # Determine target that nvbench::nvbench is an alias of,
 # necessary because ALIAS targets cannot be installed
 get_target_property(_aliased_target_name nvbench::nvbench ALIASED_TARGET)
-install(IMPORTED_RUNTIME_ARTIFACTS ${_aliased_target_name} DESTINATION cuda/nvbench)
+install(IMPORTED_RUNTIME_ARTIFACTS ${_aliased_target_name} DESTINATION cuda/bench)

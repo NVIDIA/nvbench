@@ -16,18 +16,18 @@
 
 import sys
 
-import cuda.nvbench as nvbench
+import cuda.bench as bench
 import cupy as cp
 
 
 def as_cp_ExternalStream(
-    cs: nvbench.CudaStream, dev_id: int | None = -1
+    cs: bench.CudaStream, dev_id: int | None = -1
 ) -> cp.cuda.ExternalStream:
     h = cs.addressof()
     return cp.cuda.ExternalStream(h, dev_id)
 
 
-def cupy_extract_by_mask(state: nvbench.State):
+def cupy_extract_by_mask(state: bench.State):
     n_cols = state.get_int64("numCols")
     n_rows = state.get_int64("numRows")
 
@@ -48,7 +48,7 @@ def cupy_extract_by_mask(state: nvbench.State):
         mask = cp.ones((n_cols, n_rows), dtype=bool_dt)
         _ = X[mask]
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         with as_cp_ExternalStream(launch.get_stream(), dev_id):
             _ = X[mask]
 
@@ -56,8 +56,8 @@ def cupy_extract_by_mask(state: nvbench.State):
 
 
 if __name__ == "__main__":
-    b = nvbench.register(cupy_extract_by_mask)
+    b = bench.register(cupy_extract_by_mask)
     b.add_int64_axis("numCols", [1024, 2048, 4096, 2 * 4096])
     b.add_int64_axis("numRows", [1024, 2048, 4096, 2 * 4096])
 
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)

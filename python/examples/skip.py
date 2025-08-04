@@ -16,12 +16,12 @@
 
 import sys
 
+import cuda.bench as bench
 import cuda.cccl.headers as headers
 import cuda.core.experimental as core
-import cuda.nvbench as nvbench
 
 
-def as_core_Stream(cs: nvbench.CudaStream) -> core.Stream:
+def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
     "Create view into native stream provided by NVBench"
     return core.Stream.from_handle(cs.addressof())
 
@@ -57,7 +57,7 @@ __global__ void sleep_kernel(double seconds) {
     return mod.get_kernel("sleep_kernel")
 
 
-def runtime_skip(state: nvbench.State):
+def runtime_skip(state: bench.State):
     duration = state.get_float64("Duration")
     kramble = state.get_string("Kramble")
 
@@ -74,7 +74,7 @@ def runtime_skip(state: nvbench.State):
     krn = make_sleep_kernel()
     launch_cfg = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_cfg, krn, duration)
 
@@ -82,8 +82,8 @@ def runtime_skip(state: nvbench.State):
 
 
 if __name__ == "__main__":
-    b = nvbench.register(runtime_skip)
+    b = bench.register(runtime_skip)
     b.add_float64_axis("Duration", [1e-4 + k * 0.25e-3 for k in range(5)])
     b.add_string_axis("Kramble", ["Foo", "Bar", "Baz"])
 
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)

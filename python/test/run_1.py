@@ -1,6 +1,6 @@
 import sys
 
-import cuda.nvbench as nvbench
+import cuda.bench as bench
 import numpy as np
 from numba import cuda
 
@@ -14,15 +14,15 @@ def kernel(a, b, c):
         c[tid] = a[tid] + b[tid]
 
 
-def get_numba_stream(launch: nvbench.Launch):
+def get_numba_stream(launch: bench.Launch):
     return cuda.external_stream(launch.get_stream().addressof())
 
 
-def skipit(state: nvbench.State) -> None:
+def skipit(state: bench.State) -> None:
     state.skip("Skipping this benchmark for no reason")
 
 
-def add_two(state: nvbench.State):
+def add_two(state: bench.State):
     N = state.get_int64("elements")
     a = cuda.to_device(np.random.random(N))
     c = cuda.device_array_like(a)
@@ -47,7 +47,7 @@ def add_two(state: nvbench.State):
     state.exec(kernel_launcher, batched=True, sync=True)
 
 
-def add_float(state: nvbench.State):
+def add_float(state: bench.State):
     N = state.get_int64("elements")
     v = state.get_float64("v")
     name = state.get_string("name")
@@ -78,7 +78,7 @@ def add_float(state: nvbench.State):
     state.exec(kernel_launcher, batched=True, sync=True)
 
 
-def add_three(state: nvbench.State):
+def add_three(state: bench.State):
     N = state.get_int64("elements")
     a = cuda.to_device(np.random.random(N).astype(np.float32))
     b = cuda.to_device(np.random.random(N).astype(np.float32))
@@ -100,20 +100,20 @@ def add_three(state: nvbench.State):
 
 def register_benchmarks():
     (
-        nvbench.register(add_two).add_int64_axis(
-            "elements", [2**pow2 for pow2 in range(20, 23)]
+        bench.register(add_two).add_int64_axis(
+            "elements", [2**pow2 - 1 for pow2 in range(20, 23)]
         )
     )
     (
-        nvbench.register(add_float)
+        bench.register(add_float)
         .add_float64_axis("v", [0.1, 0.3])
         .add_string_axis("name", ["Anne", "Lynda"])
         .add_int64_power_of_two_axis("elements", range(20, 23))
     )
-    (nvbench.register(add_three).add_int64_power_of_two_axis("elements", range(20, 22)))
-    nvbench.register(skipit)
+    bench.register(add_three).add_int64_power_of_two_axis("elements", range(20, 22))
+    bench.register(skipit)
 
 
 if __name__ == "__main__":
     register_benchmarks()
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)

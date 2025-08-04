@@ -17,21 +17,21 @@
 import sys
 import time
 
+import cuda.bench as bench
 import cuda.cccl.headers as headers
 import cuda.core.experimental as core
-import cuda.nvbench as nvbench
 
 host_sleep_duration = 0.1
 
 
-def cpu_only_sleep_bench(state: nvbench.State) -> None:
-    def launcher(launch: nvbench.Launch):
+def cpu_only_sleep_bench(state: bench.State) -> None:
+    def launcher(launch: bench.Launch):
         time.sleep(host_sleep_duration)
 
     state.exec(launcher)
 
 
-def as_core_Stream(cs: nvbench.CudaStream) -> core.Stream:
+def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
     return core.Stream.from_handle(cs.addressof())
 
 
@@ -66,7 +66,7 @@ __global__ void sleep_kernel(double seconds) {
     return mod.get_kernel("sleep_kernel")
 
 
-def mixed_sleep_bench(state: nvbench.State) -> None:
+def mixed_sleep_bench(state: bench.State) -> None:
     sync = state.get_string("Sync")
     sync_flag = sync == "Do sync"
 
@@ -74,7 +74,7 @@ def mixed_sleep_bench(state: nvbench.State) -> None:
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         # host overhead
         time.sleep(host_sleep_duration)
         # GPU computation
@@ -87,11 +87,11 @@ def mixed_sleep_bench(state: nvbench.State) -> None:
 if __name__ == "__main__":
     # time function only doing work (sleeping) on the host
     # using CPU timer only
-    b = nvbench.register(cpu_only_sleep_bench)
+    b = bench.register(cpu_only_sleep_bench)
     b.set_is_cpu_only(True)
 
     # time the function that does work on both GPU and CPU
-    b2 = nvbench.register(mixed_sleep_bench)
+    b2 = bench.register(mixed_sleep_bench)
     b2.add_string_axis("Sync", ["Do not sync", "Do sync"])
 
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)

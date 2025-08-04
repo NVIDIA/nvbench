@@ -34,25 +34,25 @@ except Exception as e:
 for libname in ("cupti", "nvperf_target", "nvperf_host"):
     load_nvidia_dynamic_lib(libname)
 
-from cuda.nvbench._nvbench import (  # noqa: E402
+from cuda.bench._nvbench import (  # noqa: E402
     Benchmark as Benchmark,
 )
-from cuda.nvbench._nvbench import (  # noqa: E402
+from cuda.bench._nvbench import (  # noqa: E402
     CudaStream as CudaStream,
 )
-from cuda.nvbench._nvbench import (  # noqa: E402
+from cuda.bench._nvbench import (  # noqa: E402
     Launch as Launch,
 )
-from cuda.nvbench._nvbench import (  # noqa: E402
+from cuda.bench._nvbench import (  # noqa: E402
     NVBenchRuntimeError as NVBenchRuntimeError,
 )
-from cuda.nvbench._nvbench import (  # noqa: E402
+from cuda.bench._nvbench import (  # noqa: E402
     State as State,
 )
-from cuda.nvbench._nvbench import (  # noqa: E402
+from cuda.bench._nvbench import (  # noqa: E402
     register as register,
 )
-from cuda.nvbench._nvbench import (  # noqa: E402
+from cuda.bench._nvbench import (  # noqa: E402
     run_all_benchmarks as run_all_benchmarks,
 )
 

@@ -56,4 +56,4 @@ root = ".."
 
 [tool.scikit-build.wheel.packages]
 "cuda" = "cuda"
-"cuda/nvbench" = "cuda/nvbench"
+"cuda/bench" = "cuda/bench"

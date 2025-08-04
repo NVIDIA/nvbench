@@ -44,9 +44,9 @@ class CudaStream:
         Example
         -------
             import cuda.core.experimental as core
-            import cuda.nvbench as nvbench
+            import cuda.bench as bench
 
-            def bench(state: nvbench.State):
+            def bench(state: bench.State):
                 dev = core.Device(state.get_device())
                 dev.set_current()
                 # converts CudaString to core.Stream

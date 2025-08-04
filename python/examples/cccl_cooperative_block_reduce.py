@@ -16,8 +16,8 @@
 
 import sys
 
+import cuda.bench as bench
 import cuda.cccl.cooperative.experimental as coop
-import cuda.nvbench as nvbench
 import numba
 import numpy as np
 from numba import cuda
@@ -45,11 +45,11 @@ class BitsetRing:
         return op1 & op2
 
 
-def as_cuda_Stream(cs: nvbench.CudaStream) -> cuda.cudadrv.driver.Stream:
+def as_cuda_Stream(cs: bench.CudaStream) -> cuda.cudadrv.driver.Stream:
     return cuda.external_stream(cs.addressof())
 
 
-def multi_block_bench(state: nvbench.State):
+def multi_block_bench(state: bench.State):
     threads_per_block = state.get_int64("ThreadsPerBlock")
     num_blocks = state.get_int64("NumBlocks")
     total_elements = threads_per_block * num_blocks
@@ -78,15 +78,11 @@ def multi_block_bench(state: nvbench.State):
     d_inp = cuda.to_device(h_inp)
     d_out = cuda.device_array(num_blocks, dtype=ring.dt)
 
-    cuda_s = as_cuda_Stream(state.get_stream())
-    # warmup
-    kernel[num_blocks, threads_per_block, cuda_s, 0](d_inp, d_out)
-
     state.add_element_count(total_elements)
     state.add_global_memory_reads(total_elements * h_inp.itemsize)
     state.add_global_memory_writes(num_blocks * h_inp.itemsize)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         cuda_s = as_cuda_Stream(launch.get_stream())
         kernel[num_blocks, threads_per_block, cuda_s, 0](d_inp, d_out)
 
@@ -96,8 +92,8 @@ def multi_block_bench(state: nvbench.State):
 if __name__ == "__main__":
     patch.patch_numba_linker(lto=True)
 
-    b = nvbench.register(multi_block_bench)
+    b = bench.register(multi_block_bench)
     b.add_int64_axis("ThreadsPerBlock", [64, 128, 192, 256])
     b.add_int64_power_of_two_axis("NumBlocks", [10, 11, 12, 14, 16])
 
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)

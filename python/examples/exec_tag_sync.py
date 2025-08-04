@@ -18,12 +18,12 @@ import ctypes
 import sys
 from typing import Optional
 
+import cuda.bench as bench
 import cuda.cccl.headers as headers
 import cuda.core.experimental as core
-import cuda.nvbench as nvbench
 
 
-def as_core_Stream(cs: nvbench.CudaStream) -> core.Stream:
+def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
     "Create view of native stream used by NVBench"
     return core.Stream.from_handle(cs.addressof())
 
@@ -57,7 +57,7 @@ __global__ void fill_kernel(T *buf, T v, ::cuda::std::size_t n)
     return mod.get_kernel(instance_name)
 
 
-def synchronizing_bench(state: nvbench.State):
+def synchronizing_bench(state: bench.State):
     n_values = 64 * 1024 * 1024
     n_bytes = n_values * ctypes.sizeof(ctypes.c_int32(0))
 
@@ -70,7 +70,7 @@ def synchronizing_bench(state: nvbench.State):
     krn = make_fill_kernel()
     launch_config = core.LaunchConfig(grid=256, block=256, shmem_size=0)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, buffer, 0, n_values)
         s.sync()
@@ -81,5 +81,5 @@ def synchronizing_bench(state: nvbench.State):
 
 
 if __name__ == "__main__":
-    nvbench.register(synchronizing_bench)
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.register(synchronizing_bench)
+    bench.run_all_benchmarks(sys.argv)

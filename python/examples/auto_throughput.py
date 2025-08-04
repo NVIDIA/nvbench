@@ -16,12 +16,12 @@
 
 import sys
 
-import cuda.nvbench as nvbench
+import cuda.bench as bench
 import numpy as np
 from numba import cuda
 
 
-def as_cuda_stream(cs: nvbench.CudaStream) -> cuda.cudadrv.driver.Stream:
+def as_cuda_stream(cs: bench.CudaStream) -> cuda.cudadrv.driver.Stream:
     return cuda.external_stream(cs.addressof())
 
 
@@ -39,7 +39,7 @@ def make_throughput_kernel(items_per_thread: int) -> cuda.dispatcher.CUDADispatc
     return kernel
 
 
-def throughput_bench(state: nvbench.State) -> None:
+def throughput_bench(state: bench.State) -> None:
     stride = state.get_int64("Stride")
     ipt = state.get_int64("ItemsPerThread")
 
@@ -58,7 +58,7 @@ def throughput_bench(state: nvbench.State) -> None:
 
     krn = make_throughput_kernel(ipt)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         exec_stream = as_cuda_stream(launch.get_stream())
         krn[blocks_in_grid, threads_per_block, exec_stream, 0](
             stride, elements, inp_arr, out_arr
@@ -68,8 +68,8 @@ def throughput_bench(state: nvbench.State) -> None:
 
 
 if __name__ == "__main__":
-    b = nvbench.register(throughput_bench)
+    b = bench.register(throughput_bench)
     b.add_int64_axis("Stride", [1, 2, 4])
     b.add_int64_axis("ItemsPerThread", [1, 2, 3, 4])
 
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)

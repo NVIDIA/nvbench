@@ -1,18 +1,18 @@
 import sys
 
-import cuda.nvbench as nvbench
+import cuda.bench as bench
 import torch
 
 
 def as_torch_cuda_Stream(
-    cs: nvbench.CudaStream, dev: int | None
+    cs: bench.CudaStream, dev: int | None
 ) -> torch.cuda.ExternalStream:
     return torch.cuda.ExternalStream(
         stream_ptr=cs.addressof(), device=torch.cuda.device(dev)
     )
 
 
-def torch_bench(state: nvbench.State) -> None:
+def torch_bench(state: bench.State) -> None:
     state.set_throttle_threshold(0.25)
 
     dev_id = state.get_device()
@@ -31,7 +31,7 @@ def torch_bench(state: nvbench.State) -> None:
 
     learning_rate = 1e-4
 
-    def launcher(launch: nvbench.Launch) -> None:
+    def launcher(launch: bench.Launch) -> None:
         tc_s = as_torch_cuda_Stream(launch.get_stream(), dev_id)
         with torch.cuda.stream(tc_s):
             x2 = torch.square(x)
@@ -53,6 +53,6 @@ def torch_bench(state: nvbench.State) -> None:
 
 
 if __name__ == "__main__":
-    nvbench.register(torch_bench)
+    bench.register(torch_bench)
 
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)

@@ -18,12 +18,12 @@ import ctypes
 import sys
 from typing import Dict, Optional, Tuple
 
+import cuda.bench as bench
 import cuda.cccl.headers as headers
 import cuda.core.experimental as core
-import cuda.nvbench as nvbench
 
 
-def as_core_Stream(cs: nvbench.CudaStream) -> core.Stream:
+def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
     return core.Stream.from_handle(cs.addressof())
 
 
@@ -58,34 +58,34 @@ __global__ void sleep_kernel(double seconds) {
     return mod.get_kernel("sleep_kernel")
 
 
-def simple(state: nvbench.State):
+def simple(state: bench.State):
     state.set_min_samples(1000)
     sleep_dur = 1e-3
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, sleep_dur)
 
     state.exec(launcher)
 
 
-def single_float64_axis(state: nvbench.State):
+def single_float64_axis(state: bench.State):
     # get axis value, or default
     default_sleep_dur = 3.14e-4
     sleep_dur = state.get_float64_or_default("Duration", default_sleep_dur)
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, sleep_dur)
 
     state.exec(launcher)
 
 
-def default_value(state: nvbench.State):
+def default_value(state: bench.State):
     single_float64_axis(state)
 
 
@@ -120,7 +120,7 @@ __global__ void copy_kernel(const T *in, U *out, ::cuda::std::size_t n)
     return mod.get_kernel(instance_name)
 
 
-def copy_sweep_grid_shape(state: nvbench.State):
+def copy_sweep_grid_shape(state: bench.State):
     block_size = state.get_int64("BlockSize")
     num_blocks = state.get_int64("NumBlocks")
 
@@ -140,14 +140,14 @@ def copy_sweep_grid_shape(state: nvbench.State):
     krn = make_copy_kernel()
     launch_config = core.LaunchConfig(grid=num_blocks, block=block_size, shmem_size=0)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, input_buf, output_buf, num_values)
 
     state.exec(launcher)
 
 
-def copy_type_sweep(state: nvbench.State):
+def copy_type_sweep(state: bench.State):
     type_id = state.get_int64("TypeID")
 
     types_map: Dict[int, Tuple[type, str]] = {
@@ -178,7 +178,7 @@ def copy_type_sweep(state: nvbench.State):
     krn = make_copy_kernel(value_cuda_t, value_cuda_t)
     launch_config = core.LaunchConfig(grid=256, block=256, shmem_size=0)
 
-    def launcher(launch: nvbench.Launch):
+    def launcher(launch: bench.Launch):
         s = as_core_Stream(launch.get_stream())
         core.launch(s, launch_config, krn, input_buf, output_buf, num_values)
 
@@ -187,20 +187,20 @@ def copy_type_sweep(state: nvbench.State):
 
 if __name__ == "__main__":
     # Benchmark without axes
-    nvbench.register(simple)
+    bench.register(simple)
 
     # benchmark with no axes, that uses default value
-    nvbench.register(default_value)
+    bench.register(default_value)
     # specify axis
-    nvbench.register(single_float64_axis).add_float64_axis(
+    bench.register(single_float64_axis).add_float64_axis(
         "Duration (s)", [7e-5, 1e-4, 5e-4]
     )
 
-    copy1_bench = nvbench.register(copy_sweep_grid_shape)
+    copy1_bench = bench.register(copy_sweep_grid_shape)
     copy1_bench.add_int64_axis("BlockSize", [2**x for x in range(6, 10, 2)])
     copy1_bench.add_int64_axis("NumBlocks", [2**x for x in range(6, 10, 2)])
 
-    copy2_bench = nvbench.register(copy_type_sweep)
+    copy2_bench = bench.register(copy_type_sweep)
     copy2_bench.add_int64_axis("TypeID", range(0, 6))
 
-    nvbench.run_all_benchmarks(sys.argv)
+    bench.run_all_benchmarks(sys.argv)
