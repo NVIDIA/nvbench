@@ -376,7 +376,7 @@ PYBIND11_MODULE(_nvbench, m)
     py::arg("duration_seconds"));
   py_benchmark_cls.def(
     "set_throttle_threshold",
-    [](nvbench::benchmark_base &self, nvbench::float64_t threshold) {
+    [](nvbench::benchmark_base &self, nvbench::float32_t threshold) {
       self.set_throttle_threshold(threshold);
       return std::ref(self);
     },
@@ -384,7 +384,7 @@ PYBIND11_MODULE(_nvbench, m)
     py::arg("threshold"));
   py_benchmark_cls.def(
     "set_throttle_recovery_delay",
-    [](nvbench::benchmark_base &self, nvbench::float64_t delay) {
+    [](nvbench::benchmark_base &self, nvbench::float32_t delay) {
       self.set_throttle_recovery_delay(delay);
       return std::ref(self);
     },
