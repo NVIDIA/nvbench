@@ -58,13 +58,6 @@ def throughput_bench(state: nvbench.State) -> None:
 
     krn = make_throughput_kernel(ipt)
 
-    # warm-up call ensures that kernel is loaded into context
-    # before blocking kernel is launched. Kernel loading may cause
-    # a synchronization to occur.
-    krn[blocks_in_grid, threads_per_block, alloc_stream, 0](
-        stride, elements, inp_arr, out_arr
-    )
-
     def launcher(launch: nvbench.Launch):
         exec_stream = as_cuda_stream(launch.get_stream())
         krn[blocks_in_grid, threads_per_block, exec_stream, 0](
