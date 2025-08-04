@@ -100,8 +100,13 @@ private:
   std::shared_ptr<py::object> m_fn;
 };
 
-class nvbench_run_error : std::runtime_error
-{};
+// Use struct to ensure public inheritance
+struct nvbench_run_error : std::runtime_error
+{
+  // ask compiler to generate all constructor signatures
+  // that are defined for the base class
+  using std::runtime_error::runtime_error;
+};
 py::handle benchmark_exc{};
 
 class GlobalBenchmarkRegistry
