@@ -725,4 +725,10 @@ PYBIND11_MODULE(_nvbench, m)
     },
     "Run all registered benchmarks",
     py::arg("argv") = py::list());
+
+  m.def("test_cpp_exception", []() { throw nvbench_run_error("Test"); });
+  m.def("test_py_exception", []() {
+    py::set_error(benchmark_exc, "Test");
+    throw py::error_already_set();
+  });
 }
