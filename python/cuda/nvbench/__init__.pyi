@@ -33,7 +33,7 @@ class CudaStream:
 
     Note
     ----
-        The class is not directly constructible.
+        The class is not user-constructible.
     """
     def __cuda_stream__(self) -> tuple[int, int]:
         """
@@ -65,6 +65,7 @@ class Benchmark:
     Note
     ----
         The class is not user-constructible.
+
         Use `~register` function to create Benchmark and register
         it with NVBench.
     """

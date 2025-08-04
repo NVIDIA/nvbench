@@ -44,6 +44,9 @@ from cuda.nvbench._nvbench import (  # noqa: E402
     Launch as Launch,
 )
 from cuda.nvbench._nvbench import (  # noqa: E402
+    NVBenchRuntimeError as NVBenchRuntimeError,
+)
+from cuda.nvbench._nvbench import (  # noqa: E402
     State as State,
 )
 from cuda.nvbench._nvbench import (  # noqa: E402
