@@ -207,7 +207,7 @@ def compare_benches(ref_benches, cmp_benches, threshold, plot):
                     continue
 
                 has_batch_data = cmp_batch_summary and ref_batch_summary
-                if not added_batch_headers:
+                if has_batch_data and not added_batch_headers:
                     headers.append("B Ref Time")
                     colalign.append("right")
                     headers.append("B Cmp Time")
