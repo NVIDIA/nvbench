@@ -87,7 +87,6 @@
   try                                                                                              \
   {                                                                                                \
     NVBENCH_MAIN_BODY(argc, argv);                                                                 \
-    return 0;                                                                                      \
   }                                                                                                \
   NVBENCH_MAIN_CATCH_EXCEPTIONS_CUSTOM                                                             \
   NVBENCH_MAIN_CATCH_EXCEPTIONS
