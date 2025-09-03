@@ -1,8 +1,9 @@
-cuda_curr_min: &cuda_curr_min '12.0'
-cuda_curr_max: &cuda_curr_max '12.9'
+cuda_curr_min: &cuda_prev_min '12.0'
+cuda_curr_max: &cuda_prev_max '12.9'
+cuda_curr_max: &cuda_curr_max '13.0'
 
 # The version of the devcontainer images to use from https://hub.docker.com/r/rapidsai/devcontainers
-devcontainer_version: '25.06'
+devcontainer_version: '25.10'
 
 # gcc compiler configurations
 gcc7: &gcc7 { name: 'gcc', version: '7', exe: 'g++' }
@@ -35,24 +36,33 @@ llvm19: &llvm19 { name: 'llvm', version: '19', exe: 'clang++' }
 # Configurations that will run for every PR
 pull_request:
   nvcc:
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7     }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8     }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9     }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12    }
-    - {cuda: *cuda_curr_min, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc7     }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc8     }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc9     }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *gcc10    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc11    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc12    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *gcc13    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu24.04', cpu: 'amd64', compiler: *gcc14    }
-    - {cuda: *cuda_curr_max, os: 'ubuntu20.04', cpu: 'amd64', compiler: *llvm14   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm15   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm16   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm17   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm18   }
-    - {cuda: *cuda_curr_max, os: 'ubuntu22.04', cpu: 'amd64', compiler: *llvm19   }
+    - {cuda: *cuda_prev_min, compiler: *gcc7,   cpu: 'amd64'}
+    - {cuda: *cuda_prev_min, compiler: *gcc8,   cpu: 'amd64'}
+    - {cuda: *cuda_prev_min, compiler: *gcc9,   cpu: 'amd64'}
+    - {cuda: *cuda_prev_min, compiler: *gcc10,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_min, compiler: *gcc11,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_min, compiler: *gcc12,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_min, compiler: *llvm14, cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc7,   cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc8,   cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc9,   cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc10,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc11,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc12,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc13,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *gcc14,  cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *llvm14, cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *llvm15, cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *llvm16, cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *llvm17, cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *llvm18, cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, compiler: *llvm19, cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *gcc11,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *gcc12,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *gcc13,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *gcc14,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *llvm15, cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *llvm16, cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *llvm17, cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *llvm18, cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *llvm19, cpu: 'amd64'}
