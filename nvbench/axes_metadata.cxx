@@ -24,7 +24,10 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
+#include <numeric>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace nvbench
 {
@@ -36,6 +39,19 @@ axes_metadata::axes_metadata(const axes_metadata &other)
   {
     m_axes.push_back(axis->clone());
   }
+
+  m_type_axe_count = other.m_type_axe_count;
+  m_type_iteration_spaces.reserve(other.m_type_iteration_spaces.size());
+  for (const auto &iter : other.m_type_iteration_spaces)
+  {
+    m_type_iteration_spaces.push_back(iter->clone());
+  }
+
+  m_value_iteration_spaces.reserve(other.m_value_iteration_spaces.size());
+  for (const auto &iter : other.m_value_iteration_spaces)
+  {
+    m_value_iteration_spaces.push_back(iter->clone());
+  }
 }
 
 axes_metadata &axes_metadata::operator=(const axes_metadata &other)
@@ -46,6 +62,23 @@ axes_metadata &axes_metadata::operator=(const axes_metadata &other)
   {
     m_axes.push_back(axis->clone());
   }
+
+  m_type_axe_count = other.m_type_axe_count;
+
+  m_type_iteration_spaces.clear();
+  m_type_iteration_spaces.reserve(other.m_type_iteration_spaces.size());
+  for (const auto &iter : other.m_type_iteration_spaces)
+  {
+    m_type_iteration_spaces.push_back(iter->clone());
+  }
+
+  m_value_iteration_spaces.clear();
+  m_value_iteration_spaces.reserve(other.m_value_iteration_spaces.size());
+  for (const auto &iter : other.m_value_iteration_spaces)
+  {
+    m_value_iteration_spaces.push_back(iter->clone());
+  }
+
   return *this;
 }
 
@@ -78,25 +111,78 @@ catch (std::exception &e)
 
 void axes_metadata::add_float64_axis(std::string name, std::vector<nvbench::float64_t> data)
 {
-  auto axis = std::make_unique<nvbench::float64_axis>(std::move(name));
-  axis->set_inputs(std::move(data));
-  m_axes.push_back(std::move(axis));
+  this->add_axis(nvbench::float64_axis{name, data});
 }
 
 void axes_metadata::add_int64_axis(std::string name,
                                    std::vector<nvbench::int64_t> data,
                                    nvbench::int64_axis_flags flags)
 {
-  auto axis = std::make_unique<nvbench::int64_axis>(std::move(name));
-  axis->set_inputs(std::move(data), flags);
-  m_axes.push_back(std::move(axis));
+  this->add_axis(nvbench::int64_axis{name, data, flags});
 }
 
 void axes_metadata::add_string_axis(std::string name, std::vector<std::string> data)
 {
-  auto axis = std::make_unique<nvbench::string_axis>(std::move(name));
-  axis->set_inputs(std::move(data));
-  m_axes.push_back(std::move(axis));
+  this->add_axis(nvbench::string_axis{name, data});
+}
+
+void axes_metadata::add_axis(const axis_base &axis)
+{
+  m_value_iteration_spaces.push_back(std::make_unique<linear_axis_space>(m_axes.size()));
+  m_axes.push_back(axis.clone());
+}
+
+void axes_metadata::add_zip_space(std::size_t first_index, std::size_t count)
+{
+  NVBENCH_THROW_IF((count < 2),
+                   std::runtime_error,
+                   "At least two axes ( {} provided ) need to be provided "
+                   "when using zip_axes.",
+                   count);
+
+  // compute the numeric indice for each name we have
+  std::vector<std::size_t> input_indices(count);
+  std::iota(input_indices.begin(), input_indices.end(), first_index);
+
+  const auto expected_size = m_axes[input_indices[0]]->get_size();
+  for (auto i : input_indices)
+  {
+    NVBENCH_THROW_IF((m_axes[i]->get_type() == nvbench::axis_type::type),
+                     std::runtime_error,
+                     "Currently no support for zipping type axis ( {} ).",
+                     m_axes[i]->get_name());
+
+    NVBENCH_THROW_IF((m_axes[i]->get_size() < expected_size),
+                     std::runtime_error,
+                     "All axes that are zipped together must be at least as long "
+                     "as the first axis provided ( {} ).",
+                     expected_size);
+  }
+
+  // add the new tied iteration space
+  auto tied = std::make_unique<zip_axis_space>(std::move(input_indices));
+  m_value_iteration_spaces.push_back(std::move(tied));
+}
+
+void axes_metadata::add_user_iteration_space(std::function<nvbench::make_user_space_signature> make,
+                                             std::size_t first_index,
+                                             std::size_t count)
+{
+  // compute the numeric indice for each name we have
+  std::vector<std::size_t> input_indices(count);
+  std::iota(input_indices.begin(), input_indices.end(), first_index);
+
+  for (auto i : input_indices)
+  {
+    NVBENCH_THROW_IF((m_axes[i]->get_type() == nvbench::axis_type::type),
+                     std::runtime_error,
+                     "Currently no support for using type axis with "
+                     "user_iteration_axes ( {} ).",
+                     m_axes[i]->get_name());
+  }
+
+  auto user_func = make(std::move(input_indices));
+  m_value_iteration_spaces.push_back(std::move(user_func));
 }
 
 const int64_axis &axes_metadata::get_int64_axis(std::string_view name) const
