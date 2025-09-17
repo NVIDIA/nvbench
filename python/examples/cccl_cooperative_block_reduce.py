@@ -21,7 +21,6 @@ import cuda.cccl.cooperative.experimental as coop
 import numba
 import numpy as np
 from numba import cuda
-from pynvjitlink import patch
 
 
 class BitsetRing:
@@ -90,8 +89,6 @@ def multi_block_bench(state: bench.State):
 
 
 if __name__ == "__main__":
-    patch.patch_numba_linker(lto=True)
-
     b = bench.register(multi_block_bench)
     b.add_int64_axis("ThreadsPerBlock", [64, 128, 192, 256])
     b.add_int64_power_of_two_axis("NumBlocks", [10, 11, 12, 14, 16])
