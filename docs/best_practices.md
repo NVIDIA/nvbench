@@ -293,4 +293,4 @@ We can see that the performance of the two approaches is essentially the same.
 
 ---
 
-For more information on how to use NVBench in your projects, please check the [NVBench repository](https://github.com/NVIDIA/nvbench). Feel free to raise questions or feature requests via **GitHub issues** or **discussions**, and enjoy benchmarking with NVBench!
+For more information on how to use NVBench in your projects, please check the [NVBench repository](https://github.com/NVIDIA/nvbench). Feel free to raise questions or feature requests via GitHub [issues](https://github.com/NVIDIA/nvbench/issues) or [discussions](https://github.com/NVIDIA/nvbench/discussions), and enjoy benchmarking with NVBench!
