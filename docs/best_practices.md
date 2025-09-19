@@ -128,7 +128,7 @@ Pass: Cold: 0.007819ms GPU, 0.013864ms CPU, 0.50s total GPU, 3.59s total wall, 6
 |  63952x | 13.864 us | 432.95% | 7.819 us | 447.95% |
 ```
 
-By default, NVBench runs all GPUs locally unless specified. If not specified, it will run all available GPUs. This is especially problematic if your system has multiple GPUs and you want to target a particular GPU to save build time. In our case, we target **RTX8000**:
+By default, NVBench runs benchmarks on all available GPUs unless specified otherwise. On multi-GPU systems, this can unnecessarily increase runtime and resource usage. To target a specific GPU, saving both time and resources, you can set the `CUDA_VISIBLE_DEVICES` environment variable. In our case, we target the **RTX8000**:
 
 ```bash
 user@nvbench-test:~/nvbench/build/bin$ export CUDA_VISIBLE_DEVICES=0
