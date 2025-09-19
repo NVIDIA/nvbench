@@ -1,10 +1,8 @@
 # NVBench Best Practices
 
-NVBench is a **small but actively developed benchmarking library** for CUDA GPU workloads. The [README](https://github.com/NVIDIA/cuCollections/blob/dev/README.md) is the best starting point, listing all the details where users can get hands-on 101 from installation to usage of the framework. It has links to, e.g., the [benchmark documentation](https://github.com/NVIDIA/nvbench/blob/main/docs/benchmarks.md), which contains all the information needed for users to use NVBench and all the key features NVBench supports. It also has links and pointers to [code examples](https://github.com/NVIDIA/nvbench/tree/main/examples) where users can get hands-on samples on how to apply NVBench to their own codebase.
+NVBench is a **small yet actively developed benchmarking library** for CUDA GPU workloads. The [README](https://github.com/NVIDIA/cuCollections/blob/dev/README.md) serves as the ideal starting point, providing detailed guidance for users to get hands-on experience—from installation to framework usage. It includes links to the [benchmark documentation](https://github.com/NVIDIA/nvbench/blob/main/docs/benchmarks.md), which covers all essential features and usage instructions, as well as links to [code examples](https://github.com/NVIDIA/nvbench/tree/main/examples) that demonstrate how to integrate NVBench into a user’s codebase.
 
-This document is not meant to replace the detailed benchmark documentation ([here](https://github.com/NVIDIA/nvbench/blob/main/docs/benchmarks.md)) or the CLI help guides ([CLI help](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help.md) and [CLI axis help](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help_axis.md)). All the examples shown are for demonstration purposes and are **not a recommendation guide for the best use in real-case problems**.
-
----
+This document is **not intended to replace** the detailed benchmark documentation ([here](https://github.com/NVIDIA/nvbench/blob/main/docs/benchmarks.md)) or the CLI help guides ([CLI help](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help.md) and [CLI axis help](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help_axis.md)). All examples provided are for demonstration purposes and are **not intended as recommendations for best practices in real-world scenarios**.
 
 ## NVBench
 
@@ -14,8 +12,6 @@ This document is not meant to replace the detailed benchmark documentation ([her
 * The natural choice for benchmarking GPU-accelerated code.
 * Also supports benchmarking normal CPU implementations.
 * Python code support is in the roadmap.
-
----
 
 ## Benchmark Your GPU Code with NVBench
 Let’s begin with a simple example for users who are new to NVBench and want to learn the basics of benchmarking GPU code. Consider measuring the performance of `thrust::sequence` on a GPU. Similar to `std::iota`, suppose we have an input array of 10 elements, and we want `thrust::sequence` to populate it with the sequence of values from 0 to 9. The following example demonstrates this approach:
@@ -232,8 +228,6 @@ Pass: Cold: 0.006586ms GPU, 0.010193ms CPU, 0.50s total GPU, 4.14s total wall, 7
 ```
 
 For more details about **CLI axis control**, please check [here](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help_axis.md).
-
----
 
 ## Comparing Algorithms Using NVBench
 
