@@ -1,29 +1,24 @@
 # NVBench Best Practices
 
-NVBench is a **small but actively developed benchmarking library** for **CUDA GPU workloads**. It is **well-documented** and comes with many examples to help users get started quickly.
+NVBench is a **small but actively developed benchmarking library** for CUDA GPU workloads. The [README](https://github.com/NVIDIA/cuCollections/blob/dev/README.md) is the best starting point, listing all the details where users can get hands-on 101 from installation to usage of the framework. It has links to, e.g., the [benchmark documentation](https://github.com/NVIDIA/nvbench/blob/main/docs/benchmarks.md), which contains all the information needed for users to use NVBench and all the key features NVBench supports. It also has links and pointers to [code examples](https://github.com/NVIDIA/nvbench/tree/main/examples) where users can get hands-on samples on how to apply NVBench to their own codebase.
 
-* [README](https://github.com/NVIDIA/cuCollections/blob/dev/README.md) — installation and basic usage.
-* [Benchmark documentation](https://github.com/NVIDIA/nvbench/blob/main/docs/benchmarks.md) — detailed features.
-* [Examples](https://github.com/NVIDIA/nvbench/tree/main/examples) — sample benchmarks.
-* [CLI guides](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help.md) and [CLI axis documentation](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help_axis.md).
-
-> **Note:** This document complements the official guides. All code is for demonstration purposes and is **not a production recommendation**.
+This document is not meant to replace the detailed benchmark documentation ([here](https://github.com/NVIDIA/nvbench/blob/main/docs/benchmarks.md)) or the CLI help guides ([CLI help](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help.md) and [CLI axis help](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help_axis.md)). All the examples shown are for demonstration purposes and are **not a recommendation guide for the best use in real-case problems**.
 
 ---
 
-## Key Features
+## NVBench
 
-* Purpose-built for **CUDA GPU workloads**.
-* Provides **GPU-aware features**: warmup runs, synchronization, throughput/latency metrics, parameter sweeps, etc.
-* Produces **machine-readable output** (JSON, CSV) for regression tracking and CI pipelines.
-* **Natural choice for GPU benchmarking**, also supports CPU code.
-* Python bindings are planned for future releases.
+* Purpose-built for CUDA GPU workloads.
+* Provides GPU-aware features: warmup runs, synchronization, throughput/latency metrics, and parameter sweeps, etc.
+* Produces machine-readable output (JSON, CSV) suitable for regression tracking and CI pipelines.
+* The natural choice for benchmarking GPU-accelerated code.
+* Also supports benchmarking normal CPU implementations.
+* Python code support is in the roadmap.
 
 ---
 
-## Getting Started: Benchmarking a Simple GPU Kernel
-
-### Naive Example
+## Benchmark Your GPU Code with NVBench
+Let’s begin with a simple example for users who are new to NVBench and want to learn the basics of benchmarking GPU code. Consider measuring the performance of `thrust::sequence` on a GPU. Similar to `std::iota`, suppose we have an input array of 10 elements, and we want `thrust::sequence` to populate it with the sequence of values from 0 to 9. The following example demonstrates this approach:
 
 ```cpp
 void sequence_bench(nvbench::state& state) {
@@ -35,12 +30,12 @@ void sequence_bench(nvbench::state& state) {
 NVBENCH_BENCH(sequence_bench);
 ```
 
-> This may compile with **unused parameter warnings** and may **hang at runtime**, because NVBench requires explicit CUDA stream targeting and careful handling of synchronous kernels.
+Will this code work as-is? Depending on the build system configuration, compilation may succeed but produce warnings indicating that `launch` is an unused parameter. The code may or may not execute correctly. This is a common scenario when users, accustomed to a sequential programming mindset, overlook the fact that GPU architectures are highly parallel. Streams and synchronization play a critical role in accurately measuring performance in benchmark code.
 
----
+In this context, two common mistakes should be noted:
 
-### Correct Usage with Stream
-
+1. Stream Awareness: NVBench requires knowledge of the exact CUDA stream being targeted to correctly trace kernel execution and measure performance.
+2. Explicit Stream Specification: Users must explicitly provide the stream to be benchmarked. For example, passing the NVBench launch stream ensures correct execution and measurement:
 ```cpp
 void sequence_bench(nvbench::state& state) {
   auto data = thrust::device_vector<int>(10);
@@ -51,9 +46,28 @@ void sequence_bench(nvbench::state& state) {
 NVBENCH_BENCH(sequence_bench);
 ```
 
----
+By explicitly specifying `launch.get_stream()`, NVBench can correctly target the kernels executed on that stream. After recompilation, the compilation warnings will be resolved, and the build will complete successfully. However, at runtime, the code may hang, for example:
 
-### Avoiding Deadlocks with `exec_tag::sync`
+
+```bash
+
+######################################################################
+##################### Possible Deadlock Detected #####################
+######################################################################
+
+Forcing unblock: The current measurement appears to have deadlocked
+and the results cannot be trusted.
+
+This happens when the KernelLauncher synchronizes the CUDA device.
+If this is the case, pass the `sync` exec_tag to the `exec` call:
+
+    state.exec(<KernelLauncher>); // Deadlock
+    state.exec(nvbench::exec_tag::sync, <KernelLauncher>); // Safe
+```
+
+The runtime execution log indicates a deadlock, and NVBench terminated the run to prevent unnecessary execution. The log shows that the issue arises from implicit synchronization within the target kernel—in this case, the `thrust::sequence` call. By default, unless explicitly specified, `thrust` uses a synchronous execution policy internally. Therefore, users must pass `nvbench::exec_tag::sync` to ensure correct benchmarking. This will **not** produce a build-time error but can cause runtime hangs if omitted.
+
+Now, we fix the code:
 
 ```cpp
 void sequence_bench(nvbench::state& state) {
@@ -65,19 +79,69 @@ void sequence_bench(nvbench::state& state) {
 NVBENCH_BENCH(sequence_bench);
 ```
 
-> This ensures correct timing and avoids hangs caused by implicit synchronization in `thrust` calls.
-
----
-
-## Multi-GPU Awareness
-
-By default, NVBench runs on **all available GPUs**, which may increase runtime significantly. Target a specific GPU using:
+If we run the benchmark now, results are displayed without issues. Users may notice, especially in a multi-GPU environment, that many results are collected more than expected:
 
 ```bash
-export CUDA_VISIBLE_DEVICES=0
+user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench 
+# Devices
+
+## [0] `Quadro RTX 8000`
+* SM Version: 750 (PTX Version: 750)
+* Number of SMs: 72
+* SM Default Clock Rate: 1770 MHz
+* Global Memory: 48232 MiB Free / 48403 MiB Total
+* Global Memory Bus Peak: 672 GB/sec (384-bit DDR @7001MHz)
+* Max Shared Memory: 64 KiB/SM, 48 KiB/Block
+* L2 Cache Size: 6144 KiB
+* Maximum Active Blocks: 16/SM
+* Maximum Active Threads: 1024/SM, 1024/Block
+* Available Registers: 65536/SM, 65536/Block
+* ECC Enabled: No
+
+## [1] `NVIDIA RTX A400`
+* SM Version: 860 (PTX Version: 860)
+* Number of SMs: 6
+* SM Default Clock Rate: 1762 MHz
+* Global Memory: 2801 MiB Free / 3769 MiB Total
+* Global Memory Bus Peak: 96 GB/sec (64-bit DDR @6001MHz)
+* Max Shared Memory: 100 KiB/SM, 48 KiB/Block
+* L2 Cache Size: 1024 KiB
+* Maximum Active Blocks: 16/SM
+* Maximum Active Threads: 1536/SM, 1024/Block
+* Available Registers: 65536/SM, 65536/Block
+* ECC Enabled: No
+
+# Log
+
+Run:  [1/2] sequence_bench [Device=0]
+Pass: Cold: 0.006150ms GPU, 0.009768ms CPU, 0.50s total GPU, 4.52s total wall, 81312x 
+Run:  [2/2] sequence_bench [Device=1]
+Pass: Cold: 0.007819ms GPU, 0.013864ms CPU, 0.50s total GPU, 3.59s total wall, 63952x 
+
+# Benchmark Results
+
+## sequence_bench
+
+### [0] Quadro RTX 8000
+
+| Samples | CPU Time | Noise  | GPU Time | Noise  |
+|---------|----------|--------|----------|--------|
+|  81312x | 9.768 us | 13.55% | 6.150 us | 20.16% |
+
+### [1] NVIDIA RTX A400
+
+| Samples | CPU Time  |  Noise  | GPU Time |  Noise  |
+|---------|-----------|---------|----------|---------|
+|  63952x | 13.864 us | 432.95% | 7.819 us | 447.95% |
 ```
 
-Example run output for a single GPU:
+By default, NVBench runs all GPUs locally unless specified. If not specified, it will run all available GPUs. This is especially problematic if your system has multiple GPUs and you want to target a particular GPU to save build time. In our case, we target **RTX8000**:
+
+```bash
+user@nvbench-test:~/nvbench/build/bin$ export CUDA_VISIBLE_DEVICES=0
+```
+
+Now, if we rerun:
 
 ```bash
 user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench 
@@ -112,11 +176,9 @@ Pass: Cold: 0.006257ms GPU, 0.009850ms CPU, 0.50s total GPU, 4.40s total wall, 7
 |  79920x | 9.850 us | 9.62% | 6.257 us | 13.32% |
 ```
 
----
-
 ## Benchmarking Multiple Problem Sizes
 
-Add an **axis** to test multiple input sizes without recompiling:
+Benchmarking the performance of a single problem size is usually **less desired in real-world problems**. In most cases, we want to run different problem sizes for the same kernel. NVBench provides an **“axis”** feature to help with this. For example, to test input sizes from `10` to `1000000`:
 
 ```cpp
 void sequence_bench(nvbench::state& state) {
@@ -127,12 +189,11 @@ void sequence_bench(nvbench::state& state) {
     thrust::sequence(thrust::device.on(launch.get_stream()), data.begin(), data.end());
   });
 }
-
 NVBENCH_BENCH(sequence_bench)
-  .add_int64_axis("Num", {10, 100, 1000, 1000000});
+  .add_int64_axis("Num", std::vector<nvbench::int64_t>{10, 100, 1000, 1000000});
 ```
 
-CLI override example:
+**Axis is a powerful tool** provided by NVBench. Users may encounter situations where they want to test only certain sizes. NVBench provides a **flexible CLI**, so users can change the benchmark parameters **without recompiling the code**:
 
 ```bash
 user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench -a Num=[10,100000]
@@ -170,11 +231,23 @@ Pass: Cold: 0.006586ms GPU, 0.010193ms CPU, 0.50s total GPU, 4.14s total wall, 7
 | 100000 |  75936x | 10.193 us | 9.62% | 6.586 us | 12.86% |
 ```
 
+For more details about **CLI axis control**, please check [here](https://github.com/NVIDIA/nvbench/blob/main/docs/cli_help_axis.md).
+
 ---
 
-## Comparing Algorithms
+## Comparing Algorithms Using NVBench
 
-You can easily benchmark alternative implementations. For example, replacing `thrust::sequence` with `thrust::transform`:
+Once benchmarks are set, a major use is to evaluate performance between different algorithms. For example, the same sequence algorithm can be written manually using `thrust::transform`. We can compare the performance of a manual transform sequence against `thrust::sequence`.
+
+### Step 1: Record Reference Performance
+
+Record the `thrust::sequence` benchmark in a JSON file for post-processing:
+
+```bash
+user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench --json sequence_ref.json
+```
+
+### Step 2: Update Code with `thrust::transform`
 
 ```cpp
 void sequence_bench(nvbench::state& state) {
@@ -193,13 +266,15 @@ void sequence_bench(nvbench::state& state) {
 }
 ```
 
-Record results to JSON for post-processing:
+### Step 3: Run Benchmark with Transform and Save JSON
 
 ```bash
 user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench --json sequence_transform.json
 ```
 
-Compare with reference `thrust::sequence` run using `nvbench_compare.py`:
+### Step 4: Compare Results
+
+NVBench provides a convenient script under `nvbench/scripts` called `nvbench_compare.py`. After copying the JSON files to the scripts folder:
 
 ```bash
 user@nvbench-test:~/nvbench/scripts$ ./nvbench_compare.py sequence_ref.json sequence_transform.json 
@@ -217,21 +292,14 @@ user@nvbench-test:~/nvbench/scripts$ ./nvbench_compare.py sequence_ref.json sequ
 
 # Summary
 
-- Total Matches: 4  
-  - Pass    (diff <= min_noise): 4  
-  - Unknown (infinite noise):    0  
+- Total Matches: 4
+  - Pass    (diff <= min_noise): 4
+  - Unknown (infinite noise):    0
   - Failure (diff > min_noise):  0
 ```
 
-> The two implementations perform nearly identically, demonstrating how NVBench can be used to **compare different algorithms or kernel implementations**.
+We can see that the performance of the two approaches is essentially the same.
 
 ---
 
-## Summary
-
-* Always **specify the CUDA stream** and use `exec_tag::sync` for synchronous kernels.
-* Use **axes** and **CLI overrides** for flexible multi-size benchmarking.
-* Record results in **JSON/CSV** for CI integration and regression analysis.
-* NVBench is **actively developed**, easy to use, and ideal for **GPU benchmarking**, but note that it is small and has **limited community support**.
-
-For more details and advanced examples, visit the [NVBench repository](https://github.com/NVIDIA/nvbench).
+For more information on how to use NVBench in your projects, please check the [NVBench repository](https://github.com/NVIDIA/nvbench). Feel free to raise questions or feature requests via **GitHub issues** or **discussions**, and enjoy benchmarking with NVBench!
