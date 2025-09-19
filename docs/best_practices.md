@@ -12,7 +12,7 @@ This document is **not intended to replace** the detailed benchmark documentatio
 * Also supports benchmarking normal CPU implementations.
 * Python code support is in the roadmap.
 
-## Benchmark Your GPU Code with NVBench
+## Benchmarking GPU Workloads with NVBench
 Let’s begin with a simple example for users who are new to NVBench and want to learn the basics of benchmarking GPU code. Consider measuring the performance of `thrust::sequence` on a GPU. Similar to `std::iota`, suppose we have an input array of 10 elements, and we want `thrust::sequence` to populate it with the sequence of values from 0 to 9. The following example demonstrates this approach:
 
 ```cpp
