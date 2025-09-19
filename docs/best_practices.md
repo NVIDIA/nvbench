@@ -288,7 +288,9 @@ user@nvbench-test:~/nvbench/scripts$ ./nvbench_compare.py sequence_ref.json sequ
   - Failure (diff > min_noise):  0
 ```
 
-We can see that the performance of the two approaches is essentially the same.
+We can see that the performance of the two approaches is essentially the same. 
+
+(wanted to mention users can also use the json file to trace regressions in CI)
 
 ---
 
