@@ -6,8 +6,7 @@ This document is **not intended to replace** the detailed benchmark documentatio
 
 ## NVBench
 
-* Purpose-built for CUDA GPU workloads.
-* Provides GPU-aware features: warmup runs, synchronization, throughput/latency metrics, and parameter sweeps, etc.
+* Provides GPU-aware features: runtime customization, throughput calculations, and parameter sweeps, etc.
 * Produces machine-readable output (JSON, CSV) suitable for regression tracking and CI pipelines.
 * The natural choice for benchmarking GPU-accelerated code.
 * Also supports benchmarking normal CPU implementations.
