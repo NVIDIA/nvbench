@@ -25,13 +25,10 @@ void sequence_bench(nvbench::state& state) {
 }
 NVBENCH_BENCH(sequence_bench);
 ```
+Will this code work as-is? Depending on the build system configuration, compilation may succeed but generate warnings indicating that `launch` is an unused parameter. The code may or may not execute correctly. This often occurs when users, accustomed to a sequential programming mindset, overlook the fact that GPU architectures are highly parallel. Proper use of streams and synchronization is essential for accurately measuring performance in benchmark code.
 
-Will this code work as-is? Depending on the build system configuration, compilation may succeed but produce warnings indicating that `launch` is an unused parameter. The code may or may not execute correctly. This is a common scenario when users, accustomed to a sequential programming mindset, overlook the fact that GPU architectures are highly parallel. Streams and synchronization play a critical role in accurately measuring performance in benchmark code.
+A common mistake in this context is neglecting stream specification: NVBench requires knowledge of the exact CUDA stream being targeted to correctly trace kernel execution and measure performance. Therefore, users must explicitly provide the stream to be benchmarked. For example, passing the NVBench launch stream ensures correct execution and accurate measurement:
 
-In this context, two common mistakes should be noted:
-
-1. Stream Awareness: NVBench requires knowledge of the exact CUDA stream being targeted to correctly trace kernel execution and measure performance.
-2. Explicit Stream Specification: Users must explicitly provide the stream to be benchmarked. For example, passing the NVBench launch stream ensures correct execution and measurement:
 ```cpp
 void sequence_bench(nvbench::state& state) {
   auto data = thrust::device_vector<int>(10);
@@ -75,7 +72,7 @@ void sequence_bench(nvbench::state& state) {
 NVBENCH_BENCH(sequence_bench);
 ```
 
-If we run the benchmark now, results are displayed without issues. Users may notice, especially in a multi-GPU environment, that many results are collected more than expected:
+When the benchmark is executed, results are displayed without issues. However, users, particularly in a multi-GPU environment, may observe that more results are collected than expected:
 
 ```bash
 user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench 
