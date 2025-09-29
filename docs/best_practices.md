@@ -18,13 +18,13 @@ Let’s begin with a simple example for users who are new to NVBench and want to
 ```cpp
 void sequence_bench(nvbench::state& state) {
   auto data = thrust::device_vector<int>(10);
-  state.exec([](nvbench::launch& launch) {
+  state.exec([](nvbench::launch&) {
     thrust::sequence(data.begin(), data.end());
   });
 }
 NVBENCH_BENCH(sequence_bench);
 ```
-Will this code work as-is? Depending on the build system configuration, compilation may succeed but generate warnings indicating that `launch` is an unused parameter. The code may or may not execute correctly. This often occurs when users, accustomed to a sequential programming mindset, overlook the fact that GPU architectures are highly parallel. Proper use of streams and synchronization is essential for accurately measuring performance in benchmark code.
+Will this code run correctly as written? While it may compile successfully, runtime behavior isn’t guaranteed. This is a common pitfall for developers used to sequential programming, who may overlook the massively parallel nature of GPU architectures. To ensure accurate performance measurement in benchmark code, proper use of streams and synchronization is crucial.
 
 A common mistake in this context is neglecting stream specification: NVBench requires knowledge of the exact CUDA stream being targeted to correctly trace kernel execution and measure performance. Therefore, users must explicitly provide the stream to be benchmarked. For example, passing the NVBench launch stream ensures correct execution and accurate measurement:
 
@@ -74,7 +74,7 @@ NVBENCH_BENCH(sequence_bench);
 When the benchmark is executed, results are displayed without issues. However, users, particularly in a multi-GPU environment, may observe that more results are collected than expected:
 
 ```bash
-user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench 
+user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench
 # Devices
 
 ## [0] `Quadro RTX 8000`
@@ -106,9 +106,9 @@ user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench
 # Log
 
 Run:  [1/2] sequence_bench [Device=0]
-Pass: Cold: 0.006150ms GPU, 0.009768ms CPU, 0.50s total GPU, 4.52s total wall, 81312x 
+Pass: Cold: 0.006150ms GPU, 0.009768ms CPU, 0.50s total GPU, 4.52s total wall, 81312x
 Run:  [2/2] sequence_bench [Device=1]
-Pass: Cold: 0.007819ms GPU, 0.013864ms CPU, 0.50s total GPU, 3.59s total wall, 63952x 
+Pass: Cold: 0.007819ms GPU, 0.013864ms CPU, 0.50s total GPU, 3.59s total wall, 63952x
 
 # Benchmark Results
 
@@ -136,7 +136,7 @@ user@nvbench-test:~/nvbench/build/bin$ export CUDA_VISIBLE_DEVICES=0
 Now, if we rerun:
 
 ```bash
-user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench 
+user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench
 # Devices
 
 ## [0] `Quadro RTX 8000`
@@ -155,7 +155,7 @@ user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench
 # Log
 
 Run:  [1/1] sequence_bench [Device=0]
-Pass: Cold: 0.006257ms GPU, 0.009850ms CPU, 0.50s total GPU, 4.40s total wall, 79920x 
+Pass: Cold: 0.006257ms GPU, 0.009850ms CPU, 0.50s total GPU, 4.40s total wall, 79920x
 
 # Benchmark Results
 
@@ -207,9 +207,9 @@ user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench -a Num=[10,100000]
 # Log
 
 Run:  [1/2] sequence_bench [Device=0 Num=10]
-Pass: Cold: 0.006318ms GPU, 0.009948ms CPU, 0.50s total GPU, 4.37s total wall, 79152x 
+Pass: Cold: 0.006318ms GPU, 0.009948ms CPU, 0.50s total GPU, 4.37s total wall, 79152x
 Run:  [2/2] sequence_bench [Device=0 Num=100000]
-Pass: Cold: 0.006586ms GPU, 0.010193ms CPU, 0.50s total GPU, 4.14s total wall, 75936x 
+Pass: Cold: 0.006586ms GPU, 0.010193ms CPU, 0.50s total GPU, 4.14s total wall, 75936x
 
 # Benchmark Results
 
@@ -267,7 +267,7 @@ user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench --json sequence_transfor
 NVBench provides a convenient script under `nvbench/scripts` called `nvbench_compare.py`. After copying the JSON files to the scripts folder:
 
 ```bash
-user@nvbench-test:~/nvbench/scripts$ ./nvbench_compare.py sequence_ref.json sequence_transform.json 
+user@nvbench-test:~/nvbench/scripts$ ./nvbench_compare.py sequence_ref.json sequence_transform.json
 ['sequence_ref.json', 'sequence_transform.json']
 # sequence_bench
 
@@ -288,7 +288,7 @@ user@nvbench-test:~/nvbench/scripts$ ./nvbench_compare.py sequence_ref.json sequ
   - Failure (diff > min_noise):  0
 ```
 
-We can see that the performance of the two approaches is essentially the same. 
+We can see that the performance of the two approaches is essentially the same.
 
 (wanted to mention users can also use the json file to trace regressions in CI)
 
