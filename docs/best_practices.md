@@ -127,16 +127,9 @@ Pass: Cold: 0.007819ms GPU, 0.013864ms CPU, 0.50s total GPU, 3.59s total wall, 6
 |  63952x | 13.864 us | 432.95% | 7.819 us | 447.95% |
 ```
 
-By default, NVBench runs benchmarks on all available GPUs unless specified otherwise. On multi-GPU systems, this can unnecessarily increase runtime and resource usage. To target a specific GPU, saving both time and resources, you can set the `CUDA_VISIBLE_DEVICES` environment variable. In our case, we target the **RTX8000**:
-
+By default, NVBench executes benchmarks on all available GPUs unless instructed otherwise. On multi-GPU systems, this can lead to longer runtimes and higher resource usage. To focus on a specific GPU and optimize both time and resources, users can use the `-d` CLI option to select the target GPU. In our example, we target the **RTX8000**:
 ```bash
-user@nvbench-test:~/nvbench/build/bin$ export CUDA_VISIBLE_DEVICES=0
-```
-
-Now, if we rerun:
-
-```bash
-user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench
+user@nvbench-test:~/nvbench/build/bin$ ./sequence_bench -d 0
 # Devices
 
 ## [0] `Quadro RTX 8000`
