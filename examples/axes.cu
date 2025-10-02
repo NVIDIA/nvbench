@@ -171,3 +171,35 @@ using ctcs_types = nvbench::type_list<nvbench::int8_t,
                                       nvbench::float64_t>;
 NVBENCH_BENCH_TYPES(copy_type_conversion_sweep, NVBENCH_TYPE_AXES(ctcs_types, ctcs_types))
   .set_type_axes_names({"In", "Out"});
+
+// ==================================================================================
+// Passing `type_list` of typenames, and `enum_type_list` to build cartesian product
+// of typenames and integral constants
+
+template <typename ValueT, uint BLOCK_DIM>
+void copy_type_and_block_size_sweep(nvbench::state &state,
+                                    nvbench::type_list<ValueT, nvbench::enum_type<BLOCK_DIM>>)
+{
+  const std::size_t nelems = 256 * 1024 * 1024 / sizeof(ValueT);
+  thrust::device_vector<ValueT> inp(nelems);
+  thrust::device_vector<ValueT> out(nelems);
+
+  const uint gridSize = (nelems + BLOCK_DIM - 1) / BLOCK_DIM;
+
+  const ValueT *inp_p = thrust::raw_pointer_cast(inp.data());
+  ValueT *out_p       = thrust::raw_pointer_cast(out.data());
+
+  state.add_element_count(nelems, "ElementCount");
+  state.add_global_memory_reads<ValueT>(nelems, "Input");
+  state.add_global_memory_writes<ValueT>(nelems, "Output");
+
+  state.exec([&](nvbench::launch &launch) {
+    nvbench::copy_kernel<<<gridSize, BLOCK_DIM, 0, launch.get_stream()>>>(inp_p, out_p, nelems);
+  });
+}
+
+using types_list =
+  nvbench::type_list<nvbench::int8_t, nvbench::int16_t, nvbench::int32_t, nvbench::int64_t>;
+using block_sizes = nvbench::enum_type_list<64u, 128u, 196u, 256u, 320u, 512u>;
+NVBENCH_BENCH_TYPES(copy_type_and_block_size_sweep, NVBENCH_TYPE_AXES(types_list, block_sizes))
+  .set_type_axes_names({"Type", "BlockSize"});
