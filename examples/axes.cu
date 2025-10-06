@@ -176,16 +176,20 @@ NVBENCH_BENCH_TYPES(copy_type_conversion_sweep, NVBENCH_TYPE_AXES(ctcs_types, ct
 // Passing list of typenames and `enum_type_list` to build cartesian product
 // of typenames and integral constants
 
+// define constant wrapper helper type
+template <auto V, typename T = decltype(V)>
+using cw_t = std::integral_constant<T, V>;
+
 template <typename ValueT, unsigned BLOCK_DIM>
 void copy_type_and_block_size_sweep(nvbench::state &state,
-                                    nvbench::type_list<ValueT, nvbench::enum_type<BLOCK_DIM>>)
+                                    nvbench::type_list<ValueT, cw_t<BLOCK_DIM>>)
 {
   const std::size_t nelems = 256 * 1024 * 1024 / sizeof(ValueT);
   ValueT fill_value{42};
   thrust::device_vector<ValueT> inp(nelems, fill_value);
   thrust::device_vector<ValueT> out(nelems, ValueT{});
 
-  const auto gridSize = cuda::ceil_div(nelems, BLOCK_DIM);
+  const auto gridSize = (nelems + BLOCK_DIM - 1) / BLOCK_DIM;
 
   const ValueT *inp_p = thrust::raw_pointer_cast(inp.data());
   ValueT *out_p       = thrust::raw_pointer_cast(out.data());
@@ -199,6 +203,9 @@ void copy_type_and_block_size_sweep(nvbench::state &state,
   });
 }
 
-using block_sizes = nvbench::enum_type_list<64u, 128u, 196u, 256u, 320u, 512u>;
+template <auto... V>
+using cw_list = nvbench::type_list<cw_t<V>...>;
+
+using block_sizes = cw_list<64u, 128u, 196u, 256u, 320u, 512u>;
 NVBENCH_BENCH_TYPES(copy_type_and_block_size_sweep, NVBENCH_TYPE_AXES(ctcs_types, block_sizes))
   .set_type_axes_names({"Type", "BlockSize"});
