@@ -68,7 +68,7 @@ void copy_sweep_grid_shape(nvbench::state &state)
   state.add_global_memory_writes<nvbench::int32_t>(num_values);
 
   // Allocate device memory:
-  thrust::device_vector<nvbench::int32_t> in(num_values, 0);
+  thrust::device_vector<nvbench::int32_t> in(num_values, 1);
   thrust::device_vector<nvbench::int32_t> out(num_values, 0);
 
   state.exec([block_size,
@@ -102,7 +102,7 @@ void copy_type_sweep(nvbench::state &state, nvbench::type_list<ValueType>)
   state.add_global_memory_writes<ValueType>(num_values);
 
   // Allocate device memory:
-  thrust::device_vector<ValueType> in(num_values, 0);
+  thrust::device_vector<ValueType> in(num_values, ValueType{17});
   thrust::device_vector<ValueType> out(num_values, 0);
 
   state.exec([num_values,
@@ -171,3 +171,42 @@ using ctcs_types = nvbench::type_list<nvbench::int8_t,
                                       nvbench::float64_t>;
 NVBENCH_BENCH_TYPES(copy_type_conversion_sweep, NVBENCH_TYPE_AXES(ctcs_types, ctcs_types))
   .set_type_axes_names({"In", "Out"});
+
+// ==================================================================================
+// Passing list of typenames and `enum_type_list` to build cartesian product
+// of typenames and integral constants
+
+// define constant wrapper helper type
+template <auto V, typename T = decltype(V)>
+using cw_t = std::integral_constant<T, V>;
+
+template <typename ValueT, unsigned BLOCK_DIM>
+void copy_type_and_block_size_sweep(nvbench::state &state,
+                                    nvbench::type_list<ValueT, cw_t<BLOCK_DIM>>)
+{
+  const std::size_t nelems = 256 * 1024 * 1024 / sizeof(ValueT);
+  ValueT fill_value{42};
+  thrust::device_vector<ValueT> inp(nelems, fill_value);
+  thrust::device_vector<ValueT> out(nelems, ValueT{});
+
+  // use cuda::ceil_div(nelems, BLOCK_DIM) with CCCL 2.8 and newer
+  const auto gridSize = (nelems + BLOCK_DIM - 1) / BLOCK_DIM;
+
+  const ValueT *inp_p = thrust::raw_pointer_cast(inp.data());
+  ValueT *out_p       = thrust::raw_pointer_cast(out.data());
+
+  state.add_element_count(nelems, "ElementCount");
+  state.add_global_memory_reads<ValueT>(nelems, "Input");
+  state.add_global_memory_writes<ValueT>(nelems, "Output");
+
+  state.exec([&](nvbench::launch &launch) {
+    nvbench::copy_kernel<<<gridSize, BLOCK_DIM, 0, launch.get_stream()>>>(inp_p, out_p, nelems);
+  });
+}
+
+template <auto... V>
+using cw_list = nvbench::type_list<cw_t<V>...>;
+
+using block_sizes = cw_list<64u, 128u, 196u, 256u, 320u, 512u>;
+NVBENCH_BENCH_TYPES(copy_type_and_block_size_sweep, NVBENCH_TYPE_AXES(ctcs_types, block_sizes))
+  .set_type_axes_names({"Type", "BlockSize"});
