@@ -189,6 +189,7 @@ void copy_type_and_block_size_sweep(nvbench::state &state,
   thrust::device_vector<ValueT> inp(nelems, fill_value);
   thrust::device_vector<ValueT> out(nelems, ValueT{});
 
+  // use cuda::ceil_div(nelems, BLOCK_DIM) with CCCL 2.8 and newer
   const auto gridSize = (nelems + BLOCK_DIM - 1) / BLOCK_DIM;
 
   const ValueT *inp_p = thrust::raw_pointer_cast(inp.data());
