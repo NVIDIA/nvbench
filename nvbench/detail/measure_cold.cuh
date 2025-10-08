@@ -33,7 +33,7 @@
 #include <nvbench/types.cuh>
 
 #include <cuda_runtime.h>
-
+#include <cuda_profiler_api.h>
 #include <utility>
 #include <vector>
 
@@ -76,7 +76,14 @@ protected:
   {
     NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
   }
-
+  __forceinline__ void profiler_start() const
+  {
+    NVBENCH_CUDA_CALL(cudaProfilerStart());
+  }
+   __forceinline__ void profiler_stop() const
+  {
+    NVBENCH_CUDA_CALL(cudaProfilerStop());
+  }
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
 
@@ -133,11 +140,13 @@ struct measure_cold_base::kernel_launch_timer
   kernel_launch_timer(measure_cold_base &measure)
       : m_measure{measure}
       , m_disable_blocking_kernel{measure.m_disable_blocking_kernel}
+      , m_run_once{measure.m_run_once}
   {}
 
-  explicit kernel_launch_timer(measure_cold_base &measure, bool disable_blocking_kernel)
+  explicit kernel_launch_timer(measure_cold_base &measure, bool disable_blocking_kernel, bool run_once)
       : m_measure{measure}
       , m_disable_blocking_kernel{disable_blocking_kernel}
+      , m_run_once{run_once}
   {}
 
   __forceinline__ void start()
@@ -151,6 +160,10 @@ struct measure_cold_base::kernel_launch_timer
     if (m_measure.m_check_throttling)
     {
       m_measure.gpu_frequency_start();
+    }
+    if(!m_run_once)
+    {
+      m_measure.profiler_start();
     }
     m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
     // start CPU timer irrespective of use of blocking kernel
@@ -170,12 +183,17 @@ struct measure_cold_base::kernel_launch_timer
       m_measure.gpu_frequency_stop();
     }
     m_measure.sync_stream();
+    if(!m_run_once)
+    {
+      m_measure.profiler_stop();
+    }
     m_measure.m_cpu_timer.stop();
   }
 
 private:
   measure_cold_base &m_measure;
   bool m_disable_blocking_kernel;
+  bool m_run_once;
 };
 
 template <typename KernelLauncher>
