@@ -230,7 +230,7 @@ private:
     // disable use of blocking kernel for warm-up run
     // see https://github.com/NVIDIA/nvbench/issues/240
     constexpr bool disable_blocking_kernel = true;
-    kernel_launch_timer timer(*this, disable_blocking_kernel);
+    kernel_launch_timer timer(*this, disable_blocking_kernel, m_run_once);
 
     this->launch_kernel(timer);
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -241,7 +241,7 @@ private:
     // do not use blocking kernel if benchmark is only run once, e.g., when profiling
     // ref: https://github.com/NVIDIA/nvbench/issue/242
     const bool disable_blocking_kernel = m_run_once || m_disable_blocking_kernel;
-    kernel_launch_timer timer(*this, disable_blocking_kernel);
+    kernel_launch_timer timer(*this, disable_blocking_kernel, m_run_once);
     do
     {
       this->launch_kernel(timer);
