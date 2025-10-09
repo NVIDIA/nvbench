@@ -1,5 +1,6 @@
 set(test_srcs
   axes_metadata.cu
+  axes_iteration_space.cu
   benchmark.cu
   create.cu
   cuda_timer.cu
