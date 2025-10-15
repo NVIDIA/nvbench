@@ -5,6 +5,7 @@ import math
 import os
 import sys
 
+import jsondiff
 import tabulate
 from colorama import Fore
 from nvbench_json import reader
@@ -371,9 +372,13 @@ def main():
         global all_devices
         all_devices = cmp_root["devices"]
 
-        # This is blunt but works for now:
         if ref_root["devices"] != cmp_root["devices"]:
             print("Device sections do not match.")
+            print(
+                jsondiff.diff(
+                    ref_root["devices"], cmp_root["devices"], syntax="symmetric"
+                )
+            )
             sys.exit(1)
 
         compare_benches(
