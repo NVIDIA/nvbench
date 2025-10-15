@@ -32,8 +32,9 @@
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
-#include <cuda_runtime.h>
 #include <cuda_profiler_api.h>
+#include <cuda_runtime.h>
+
 #include <utility>
 #include <vector>
 
@@ -76,14 +77,8 @@ protected:
   {
     NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
   }
-  __forceinline__ void profiler_start() const
-  {
-    NVBENCH_CUDA_CALL(cudaProfilerStart());
-  }
-   __forceinline__ void profiler_stop() const
-  {
-    NVBENCH_CUDA_CALL(cudaProfilerStop());
-  }
+  __forceinline__ void profiler_start() const { NVBENCH_CUDA_CALL(cudaProfilerStart()); }
+  __forceinline__ void profiler_stop() const { NVBENCH_CUDA_CALL(cudaProfilerStop()); }
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
 
@@ -143,7 +138,9 @@ struct measure_cold_base::kernel_launch_timer
       , m_run_once{measure.m_run_once}
   {}
 
-  explicit kernel_launch_timer(measure_cold_base &measure, bool disable_blocking_kernel, bool run_once)
+  explicit kernel_launch_timer(measure_cold_base &measure,
+                               bool disable_blocking_kernel,
+                               bool run_once)
       : m_measure{measure}
       , m_disable_blocking_kernel{disable_blocking_kernel}
       , m_run_once{run_once}
@@ -161,7 +158,7 @@ struct measure_cold_base::kernel_launch_timer
     {
       m_measure.gpu_frequency_start();
     }
-    if(!m_run_once)
+    if (!m_run_once)
     {
       m_measure.profiler_start();
     }
@@ -183,7 +180,7 @@ struct measure_cold_base::kernel_launch_timer
       m_measure.gpu_frequency_stop();
     }
     m_measure.sync_stream();
-    if(!m_run_once)
+    if (!m_run_once)
     {
       m_measure.profiler_stop();
     }
