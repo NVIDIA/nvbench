@@ -20,6 +20,7 @@
 
 #include <nvbench/axes_metadata.cuh>
 #include <nvbench/axis_base.cuh>
+#include <nvbench/detail/axis_space_iterator.cuh>
 #include <nvbench/state.cuh>
 
 #include <optional>
@@ -59,7 +60,7 @@ private:
 // Usage:
 // ```
 // state_iterator sg;
-// sg.add_axis(...);
+// sg.add_iteration_space(...);
 // for (sg.init(); sg.iter_valid(); sg.next())
 // {
 //   for (const auto& index : sg.get_current_indices())
@@ -73,25 +74,18 @@ private:
 // ```
 struct state_iterator
 {
-  struct axis_index
-  {
-    std::string axis;
-    nvbench::axis_type type;
-    std::size_t index;
-    std::size_t size;
-  };
+  void add_iteration_space(const nvbench::detail::axis_space_iterator &iter);
 
-  void add_axis(const nvbench::axis_base &axis);
-  void add_axis(std::string axis, nvbench::axis_type type, std::size_t size);
   [[nodiscard]] std::size_t get_number_of_states() const;
   void init();
-  [[nodiscard]] const std::vector<axis_index> &get_current_indices() const;
+  [[nodiscard]] std::vector<axis_value_index> get_current_axis_value_indices() const;
   [[nodiscard]] bool iter_valid() const;
   void next();
 
-  std::vector<axis_index> m_indices;
-  std::size_t m_current{};
-  std::size_t m_total{};
+  std::vector<axis_space_iterator> m_axis_space_iterators;
+  std::size_t m_axes_count        = 0;
+  std::size_t m_current_iteration = 0;
+  std::size_t m_max_iteration     = 1;
 };
 
 } // namespace detail
