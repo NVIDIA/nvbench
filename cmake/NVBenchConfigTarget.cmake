@@ -33,6 +33,39 @@ function(nvbench_add_cxx_flag target_name type flag)
   endif()
 endfunction()
 
+# We test to see if C++ compiler options exist using try-compiles in the CXX lang, and then reuse those flags as
+# -Xcompiler flags for CUDA targets. This requires that the CXX compiler and CUDA_HOST compilers are the same when
+# using nvcc.
+if (NVBench_TOPLEVEL_PROJECT AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+  set(cuda_host_matches_cxx_compiler FALSE)
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.31)
+    set(host_info "${CMAKE_CUDA_HOST_COMPILER} (${CMAKE_CUDA_HOST_COMPILER_ID} ${CMAKE_CUDA_HOST_COMPILER_VERSION})")
+    set(cxx_info "${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION})")
+    if (CMAKE_CUDA_HOST_COMPILER_ID STREQUAL CMAKE_CXX_COMPILER_ID AND
+        CMAKE_CUDA_HOST_COMPILER_VERSION VERSION_EQUAL CMAKE_CXX_COMPILER_VERSION)
+      set(cuda_host_matches_cxx_compiler TRUE)
+    endif()
+  else() # CMake < 3.31 doesn't have the CMAKE_CUDA_HOST_COMPILER_ID/VERSION variables
+    set(host_info "${CMAKE_CUDA_HOST_COMPILER}")
+    set(cxx_info "${CMAKE_CXX_COMPILER}")
+    if (CMAKE_CUDA_HOST_COMPILER STREQUAL CMAKE_CXX_COMPILER)
+      set(cuda_host_matches_cxx_compiler TRUE)
+    endif()
+  endif()
+
+  if (NOT cuda_host_matches_cxx_compiler)
+    message(FATAL_ERROR
+      "NVBench developer builds require that CMAKE_CUDA_HOST_COMPILER matches "
+      "CMAKE_CXX_COMPILER when using nvcc:\n"
+      "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}\n"
+      "CMAKE_CUDA_HOST_COMPILER: ${host_info}\n"
+      "CMAKE_CXX_COMPILER: ${cxx_info}\n"
+      "Rerun cmake with \"-DCMAKE_CUDA_HOST_COMPILER=${CMAKE_CXX_COMPILER}\".\n"
+      "Alternatively, configure the CUDAHOSTCXX and CXX environment variables to match.\n"
+    )
+  endif()
+endif()
+
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wall")
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wextra")
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wconversion")
