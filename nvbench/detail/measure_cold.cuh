@@ -158,7 +158,7 @@ struct measure_cold_base::kernel_launch_timer
     {
       m_measure.gpu_frequency_start();
     }
-    if (!m_run_once)
+    if (m_run_once)
     {
       m_measure.profiler_start();
     }
@@ -180,7 +180,7 @@ struct measure_cold_base::kernel_launch_timer
       m_measure.gpu_frequency_stop();
     }
     m_measure.sync_stream();
-    if (!m_run_once)
+    if (m_run_once)
     {
       m_measure.profiler_stop();
     }
