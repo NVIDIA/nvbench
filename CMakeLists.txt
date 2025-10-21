@@ -11,8 +11,13 @@ else()
   set(NVBench_TOPLEVEL_PROJECT OFF)
 endif()
 
+# Default to native if no cuda arches are specified:
+if (NOT (DEFINED CMAKE_CUDA_ARCHITECTURES OR DEFINED ENV{CUDAARCHS}))
+  set(CMAKE_CUDA_ARCHITECTURES "native")
+endif()
+
 include(cmake/NVBenchRapidsCMake.cmake)
-nvbench_load_rapids_cmake()
+nvbench_load_rapids_cmake(25.12)
 
 project(NVBench
   LANGUAGES CUDA CXX
