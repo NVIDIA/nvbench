@@ -9,7 +9,6 @@ if(NOT BUILD_SHARED_LIBS AND NVBench_ENABLE_INSTALL_RULES)
 endif()
 
 rapids_cpm_find(fmt 11.2.0 ${export_set_details}
-  GLOBAL_TARGETS fmt::fmt fmt::fmt-header-only
   CPM_ARGS
     GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
     GIT_TAG "11.2.0"
