@@ -245,11 +245,31 @@ struct state
     collect_dram_throughput();
   }
 
-  [[deprecated("Use get_collect_l1_hit_rates()")]] [[nodiscard]] bool is_l1_hit_rate_collected() const { return m_collect_l1_hit_rates; }
-  [[deprecated("Use get_collect_l2_hit_rates()")]] [[nodiscard]] bool is_l2_hit_rate_collected() const { return m_collect_l2_hit_rates; }
-  [[deprecated("Use get_collect_stores_efficiency()")]] [[nodiscard]] bool is_stores_efficiency_collected() const { return m_collect_stores_efficiency; }
-  [[deprecated("Use get_collect_loads_efficiency()")]] [[nodiscard]] bool is_loads_efficiency_collected() const { return m_collect_loads_efficiency; }
-  [[deprecated("Use get_collect_dram_throughput()")]] [[nodiscard]] bool is_dram_throughput_collected() const { return m_collect_dram_throughput; }
+  [[deprecated("Use get_collect_l1_hit_rates()")]] [[nodiscard]] bool
+  is_l1_hit_rate_collected() const
+  {
+    return m_collect_l1_hit_rates;
+  }
+  [[deprecated("Use get_collect_l2_hit_rates()")]] [[nodiscard]] bool
+  is_l2_hit_rate_collected() const
+  {
+    return m_collect_l2_hit_rates;
+  }
+  [[deprecated("Use get_collect_stores_efficiency()")]] [[nodiscard]] bool
+  is_stores_efficiency_collected() const
+  {
+    return m_collect_stores_efficiency;
+  }
+  [[deprecated("Use get_collect_loads_efficiency()")]] [[nodiscard]] bool
+  is_loads_efficiency_collected() const
+  {
+    return m_collect_loads_efficiency;
+  }
+  [[deprecated("Use get_collect_dram_throughput()")]] [[nodiscard]] bool
+  is_dram_throughput_collected() const
+  {
+    return m_collect_dram_throughput;
+  }
 
   [[nodiscard]] bool get_collect_l1_hit_rates() const { return m_collect_l1_hit_rates; }
   [[nodiscard]] bool get_collect_l2_hit_rates() const { return m_collect_l2_hit_rates; }
