@@ -159,7 +159,16 @@ std::vector<std::string> add_metrics(nvbench::state &state)
 }
 
 } // namespace
+/*
+  struct CustomCuptiMetrics{
+    const char *metric_name;
+    const char *name;
+    const char *hint;
+    const char *description;
+    const double divider;
+  }
 
+*/
 measure_cupti_base::measure_cupti_base(state &exec_state)
 // clang-format off
 // (formatter doesn't handle `try :` very well...)
@@ -167,6 +176,7 @@ try
   : m_state{exec_state}
   , m_launch{exec_state.get_cuda_stream()}
   , m_cupti{*m_state.get_device(), add_metrics(m_state)}
+  //Inside the state, have a std::vector<CustomCuptiMetrics>, so when calling add_metrics, it adds the ones created by the user.
 {}
 // clang-format on
 catch (const std::exception &ex)
