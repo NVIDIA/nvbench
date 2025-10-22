@@ -68,11 +68,17 @@ cupti_profiler::cupti_profiler(nvbench::device_info device, std::vector<std::str
   initialize_profiler();
   initialize_chip_name();
   initialize_availability_image();
+  /*
+    Update the std::vector<std::string> metric_names with the metrics that are available within the GPU.
+    Failing gracefully will enable the measurement of other metrics if a metric is not available
+
+    Using NVPW_MetricsEvaluator_GetMetricNames to see what metrics are available, and removing from the vector the ones that are not available.
+
+    */
   initialize_nvpw();
   initialize_config_image();
   initialize_counter_data_prefix_image();
   initialize_counter_data_image();
-
   m_available = true;
 }
 
@@ -149,7 +155,7 @@ void cupti_profiler::initialize_nvpw()
 
 namespace
 {
-
+// Eval Requests converts a single Human Readable CUPTI metric to a CUPTI metric evaluation request.
 class eval_request
 {
   NVPW_MetricsEvaluator *evaluator_ptr;
@@ -169,7 +175,7 @@ public:
 
     nvpw_call(NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest(&params));
   }
-
+  // Gets the depedencies of a metric name, ie what specific pointers is needed for a metric
   [[nodiscard]] std::vector<const char *> get_raw_dependencies()
   {
     std::vector<const char *> raw_dependencies;
@@ -195,7 +201,7 @@ public:
 
   NVPW_MetricEvalRequest request;
 };
-
+// Is responsible for the initialisation of the metric evaluator, so it is used to do eval requests
 class metric_evaluator
 {
   bool initialized{};
@@ -214,7 +220,6 @@ public:
       NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize_Params_STRUCT_SIZE;
     scratch_buffer_param.pChipName                 = chip_name.c_str();
     scratch_buffer_param.pCounterAvailabilityImage = counter_availability_image;
-
     nvpw_call(NVPW_CUDA_MetricsEvaluator_CalculateScratchBufferSize(&scratch_buffer_param));
 
     scratch_buffer.resize(scratch_buffer_param.scratchBufferSize);
@@ -260,7 +265,7 @@ public:
 
 namespace
 {
-
+// Gets the rawMectrics for each high level metrics, and put it into a RawMetricsRequest Vector
 [[nodiscard]] std::vector<NVPA_RawMetricRequest>
 get_raw_metric_requests(const std::string &chip_name,
                         const std::vector<std::string> &metric_names,
@@ -298,7 +303,7 @@ get_raw_metric_requests(const std::string &chip_name,
 class metrics_config
 {
   bool initialized{};
-
+  // create the availability image for the chip name
   void create(const std::string &chip_name, const std::uint8_t *availability_image)
   {
     NVPW_CUDA_RawMetricsConfig_Create_V2_Params params{};
@@ -313,7 +318,7 @@ class metrics_config
     raw_metrics_config = params.pRawMetricsConfig;
     initialized        = true;
   }
-
+  // Put the availability image into the raw_metrics_config
   void set_availability_image(const std::uint8_t *availability_image)
   {
     NVPW_RawMetricsConfig_SetCounterAvailability_Params params{};
@@ -324,7 +329,7 @@ class metrics_config
 
     nvpw_call(NVPW_RawMetricsConfig_SetCounterAvailability(&params));
   }
-
+  // Create a new group of metrics to measure
   void begin_config_group()
   {
     NVPW_RawMetricsConfig_BeginPassGroup_Params params{};
@@ -334,7 +339,7 @@ class metrics_config
 
     nvpw_call(NVPW_RawMetricsConfig_BeginPassGroup(&params));
   }
-
+  // Add the array of rawMetrics to the actual config
   void add_metrics(const std::vector<NVPA_RawMetricRequest> &raw_metric_requests)
   {
     NVPW_RawMetricsConfig_AddMetrics_Params params{};
@@ -346,7 +351,7 @@ class metrics_config
 
     nvpw_call(NVPW_RawMetricsConfig_AddMetrics(&params));
   }
-
+  // End the config group configuration
   void end_config_group()
   {
     NVPW_RawMetricsConfig_EndPassGroup_Params params{};
@@ -356,7 +361,7 @@ class metrics_config
 
     nvpw_call(NVPW_RawMetricsConfig_EndPassGroup(&params));
   }
-
+  // Finalize the image for the configuration
   void generate()
   {
     NVPW_RawMetricsConfig_GenerateConfigImage_Params params{};
@@ -368,6 +373,7 @@ class metrics_config
   }
 
 public:
+  // Initalize a metric config pass with the RawMetricRequests and builds its config image
   metrics_config(const std::string &chip_name,
                  const std::vector<NVPA_RawMetricRequest> &raw_metric_requests,
                  const std::uint8_t *availability_image)
@@ -380,7 +386,7 @@ public:
     end_config_group();
     generate();
   }
-
+  // Retreive the config image
   [[nodiscard]] std::vector<std::uint8_t> get_config_image()
   {
     NVPW_RawMetricsConfig_GetConfigImage_Params params{};
@@ -691,7 +697,7 @@ void cupti_profiler::process_user_loop()
     cupti_call(cuptiProfilerEndSession(&params));
   }
 }
-
+//Instead of returning a std::vector<double>, maybe returning a map string -> double, with the string being the .pct name.
 std::vector<double> cupti_profiler::get_counter_values()
 {
   metric_evaluator evaluator(m_chip_name,
