@@ -146,6 +146,15 @@ void cupti_profiler::initialize_availability_image()
   cupti_call(cuptiProfilerGetCounterAvailability(&params));
 }
 
+void cupti_profiler::verify_metric_names()
+{
+  metric_evaluator evaluator(m_chip_name, m_availability_image.data());
+  m_verified_metric_names = evaluator.list_metrics();
+  for(std::string item:m_verified_metric_names){
+    printf("%s\n", item.c_str());//TOCHECK
+  }
+}
+
 void cupti_profiler::initialize_nvpw()
 {
   NVPW_InitializeHost_Params params{};
@@ -239,6 +248,21 @@ public:
     evaluator_ptr = evaluator_params.pMetricsEvaluator;
     initialized   = true;
   }
+  std::vector<std::string> list_metrics(){
+    std::vector<std::string> available_metrics;
+    NVPW_MetricsEvaluator_GetMetricNames_Params list_metrics_params{};
+    list_metrics_params.structSize = NVPW_MetricsEvaluator_GetMetricNames_Params_STRUCT_SIZE;
+    list_metrics_params.metricType = NVPW_MetricType::NVPW_METRIC_TYPE_THROUGHPUT;
+    list_metrics_params.pMetricsEvaluator = evaluator_ptr;
+    available_metrics.resize(list_metrics_params.numMetrics);
+
+    nvpw_call(NVPW_MetricsEvaluator_GetMetricNames(&list_metrics_params));
+    for (size_t metric_ix = 0; metric_ix < list_metrics_params.numMetrics; metric_ix++){
+      size_t start_metric_ix = list_metrics_params.pMetricNameBeginIndices[metric_ix];
+      available_metrics.push_back(&list_metrics_params.pMetricNames[start_metric_ix]);
+    }
+    return available_metrics;
+  }
 
   ~metric_evaluator()
   {
@@ -303,7 +327,7 @@ get_raw_metric_requests(const std::string &chip_name,
 class metrics_config
 {
   bool initialized{};
-  // create the availability image for the chip name
+  // Inits a rawMetricsConfig from an availability_image or chip_name
   void create(const std::string &chip_name, const std::uint8_t *availability_image)
   {
     NVPW_CUDA_RawMetricsConfig_Create_V2_Params params{};
@@ -514,7 +538,7 @@ void cupti_profiler::initialize_counter_data_prefix_image()
 
 namespace
 {
-
+// From the data_image_prefix, get the counter data imagesize
 [[nodiscard]] std::size_t
 get_counter_data_image_size(CUpti_Profiler_CounterDataImageOptions *options)
 {
