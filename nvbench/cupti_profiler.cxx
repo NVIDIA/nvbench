@@ -68,6 +68,7 @@ cupti_profiler::cupti_profiler(nvbench::device_info device, std::vector<std::str
   initialize_profiler();
   initialize_chip_name();
   initialize_availability_image();
+  verify_metric_names();
   /*
     Update the std::vector<std::string> metric_names with the metrics that are available within the GPU.
     Failing gracefully will enable the measurement of other metrics if a metric is not available
@@ -146,14 +147,6 @@ void cupti_profiler::initialize_availability_image()
   cupti_call(cuptiProfilerGetCounterAvailability(&params));
 }
 
-void cupti_profiler::verify_metric_names()
-{
-  metric_evaluator evaluator(m_chip_name, m_availability_image.data());
-  m_verified_metric_names = evaluator.list_metrics();
-  for(std::string item:m_verified_metric_names){
-    printf("%s\n", item.c_str());//TOCHECK
-  }
-}
 
 void cupti_profiler::initialize_nvpw()
 {
@@ -447,6 +440,17 @@ public:
 };
 
 } // namespace
+
+void cupti_profiler::verify_metric_names()
+{
+  metric_evaluator evaluator(m_chip_name, m_availability_image.data());
+  m_verified_metric_names = evaluator.list_metrics();
+  printf("Metrics \n");//TEMPORARY - Asserting functionnality
+  for(std::string item:m_verified_metric_names){
+    printf("%s\n", item.c_str());
+  }
+  printf("---------------------\n");
+}
 
 void cupti_profiler::initialize_config_image()
 {
