@@ -66,6 +66,7 @@ class cupti_profiler
 
   // Counter data
   std::vector<std::string> m_metric_names;
+  std::vector<std::string> m_verified_metric_names;
   std::vector<std::uint8_t> m_data_image_prefix;
   std::vector<std::uint8_t> m_config_image;
   std::vector<std::uint8_t> m_data_image;
@@ -116,6 +117,7 @@ private:
   void initialize_profiler();
   void initialize_chip_name();
   void initialize_availability_image();
+  void verify_metric_names();
   static void initialize_nvpw();
   void initialize_config_image();
   void initialize_counter_data_prefix_image();
