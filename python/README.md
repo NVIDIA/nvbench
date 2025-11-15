@@ -21,7 +21,7 @@ are set. For example, assuming CUDA toolkit is installed system-wide, and assumi
 ```bash
 export CUDACXX=/usr/local/cuda/bin/nvcc
 export CUDAARCHS=86
-``
+```
 
 ### Build Python project
 
