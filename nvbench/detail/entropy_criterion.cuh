@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <nvbench/detail/online_linear_regression.cuh>
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
@@ -38,15 +39,10 @@ class entropy_criterion final : public stopping_criterion_base
   // TODO The window size should be user-configurable
   nvbench::detail::ring_buffer<nvbench::float64_t> m_entropy_tracker{299};
 
-  nvbench::float64_t m_sum_x{};
-  nvbench::float64_t m_sum_y{};
-  nvbench::float64_t m_sum_xy{};
-  nvbench::float64_t m_sum_x2{};
-  nvbench::float64_t m_sum_y2{};
+  online_linear_regression m_regression;
 
   nvbench::float64_t compute_entropy();
   void update_entropy_sum(nvbench::float64_t old_count, nvbench::float64_t new_count);
-  void update_regression_sum(nvbench::float64_t x, nvbench::float64_t y);
 
 public:
   entropy_criterion();
