@@ -104,7 +104,8 @@ void entropy_criterion::do_add_measurement(nvbench::float64_t measurement)
     }
   }
 
-  update_entropy_sum(old_count, old_count + 1);
+  update_entropy_sum(static_cast<nvbench::float64_t>(old_count),
+                     static_cast<nvbench::float64_t>(old_count + 1));
   const nvbench::float64_t entropy = compute_entropy();
   const nvbench::float64_t n       = static_cast<nvbench::float64_t>(m_entropy_tracker.size());
 

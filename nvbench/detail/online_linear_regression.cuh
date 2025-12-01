@@ -104,22 +104,21 @@ public:
 
   [[nodiscard]] nvbench::float64_t slope() const
   {
+    static constexpr nvbench::float_64_t q_nan =
+      std::numeric_limits<nvbench::float64_t>::quiet_NaN();
+
     if (m_count < 2)
-    {
-      return std::numeric_limits<nvbench::float64_t>::quiet_NaN();
-    }
+      return q_nan;
 
     const nvbench::float64_t n      = static_cast<nvbench::float64_t>(m_count);
-    const nvbench::float64_t mean_x = this->mean_x();
-    const nvbench::float64_t mean_y = this->mean_y();
+    const nvbench::float64_t mean_x = (m_sum_x / n);
+    const nvbench::float64_t mean_y = (m_sum_y / n);
 
-    const nvbench::float64_t numerator   = m_sum_xy - n * mean_x * mean_y;
-    const nvbench::float64_t denominator = m_sum_x2 - n * mean_x * mean_x;
+    const nvbench::float64_t numerator   = (m_sum_xy / n) - mean_x * mean_y;
+    const nvbench::float64_t denominator = (m_sum_x2 / n) - mean_x * mean_x;
 
-    if (std::abs(denominator) < 1e-9)
-    {
-      return std::numeric_limits<nvbench::float64_t>::quiet_NaN();
-    }
+    if (std::abs(denominator) < 1e-12)
+      return q_nan;
 
     return numerator / denominator;
   }
@@ -148,11 +147,12 @@ public:
       return std::numeric_limits<nvbench::float64_t>::quiet_NaN();
     }
 
+    // ss_tot and ss_res scaled by 1/n to avoid overflow
     const nvbench::float64_t n        = static_cast<nvbench::float64_t>(m_count);
     const nvbench::float64_t mean_y_v = mean_y();
-    const nvbench::float64_t ss_tot   = m_sum_y2 - n * mean_y_v * mean_y_v;
+    const nvbench::float64_t ss_tot   = (m_sum_y2 / n) - mean_y_v * mean_y_v;
 
-    if (ss_tot < 1e-9)
+    if (ss_tot == 0)
     {
       return 1.0;
     }
@@ -166,10 +166,10 @@ public:
     }
     else
     {
-      const nvbench::float64_t ss_res = m_sum_y2 - 2.0 * slope_v * m_sum_xy -
-                                        2.0 * intercept_v * m_sum_y + slope_v * slope_v * m_sum_x2 +
-                                        2.0 * slope_v * intercept_v * m_sum_x +
-                                        n * intercept_v * intercept_v;
+      const nvbench::float64_t ss_res =
+        (m_sum_y2 / n) - 2.0 * slope_v * (m_sum_xy / n) - 2.0 * intercept_v * (m_sum_y / n) +
+        slope_v * slope_v * (m_sum_x2 / n) + 2.0 * slope_v * intercept_v * (m_sum_x / n) +
+        intercept_v * intercept_v;
 
       return std::max(0.0, std::min(1.0, 1.0 - (ss_res / ss_tot)));
     }
