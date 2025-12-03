@@ -9,6 +9,11 @@ set -euo pipefail
 echo -e "#!/bin/bash\nsource /opt/rh/gcc-toolset-13/enable" >/etc/profile.d/enable_devtools.sh
 source /etc/profile.d/enable_devtools.sh
 
+# Install NVIDIA Management Library (required by pynvbench at runtime)
+# This is a driver library that we exclude from the wheel but need for testing
+echo "Installing libnvidia-ml.so.1..."
+/workspace/ci/util/retry.sh 5 30 dnf -y install nvidia-driver-libs
+
 # Set up Python environment (only if not already available)
 source /workspace/ci/pyenv_helper.sh
 if ! command -v python${py_version} &> /dev/null; then
