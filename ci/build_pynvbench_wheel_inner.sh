@@ -62,15 +62,22 @@ mkdir -p /workspace/wheelhouse
 for wheel in dist_repaired/pynvbench-*.whl; do
     if [[ -f "$wheel" ]]; then
         base_name=$(basename "$wheel" .whl)
-        # Insert CUDA version before the platform tag
-        # e.g., pynvbench-0.1.0-cp312-cp312-manylinux_2_28_x86_64.whl
-        # becomes pynvbench-0.1.0+cu12-cp312-cp312-manylinux_2_28_x86_64.whl
+        # Append CUDA version to the local version identifier
+        # e.g., pynvbench-0.1.0.dev1+gabc123-cp312-cp312-manylinux_2_28_x86_64.whl
+        # becomes pynvbench-0.1.0.dev1+gabc123.cu12-cp312-cp312-manylinux_2_28_x86_64.whl
         if [[ "$base_name" =~ ^(.*)-cp([0-9]+)-cp([0-9]+)-(.*) ]]; then
             pkg_version="${BASH_REMATCH[1]}"
             py_tag="cp${BASH_REMATCH[2]}"
             abi_tag="cp${BASH_REMATCH[3]}"
             platform="${BASH_REMATCH[4]}"
-            new_name="${pkg_version}+cu${cuda_major}-${py_tag}-${abi_tag}-${platform}.whl"
+            # If version has a local part (contains +), append .cu${cuda_major} to it
+            # Otherwise add +cu${cuda_major}
+            if [[ "$pkg_version" =~ \+ ]]; then
+                new_version="${pkg_version}.cu${cuda_major}"
+            else
+                new_version="${pkg_version}+cu${cuda_major}"
+            fi
+            new_name="${new_version}-${py_tag}-${abi_tag}-${platform}.whl"
             mv "$wheel" "/workspace/wheelhouse/${new_name}"
             echo "Renamed wheel to: ${new_name}"
         else
