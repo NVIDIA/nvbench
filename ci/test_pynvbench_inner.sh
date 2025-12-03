@@ -38,11 +38,6 @@ fi
 echo "Installing wheel: $PYNVBENCH_WHEEL_PATH"
 python -m pip install "${PYNVBENCH_WHEEL_PATH}[test]"
 
-# Capture the Python path before changing directories
-# This prevents .python-version file from interfering
-PYTHON_EXE="$(which python)"
-echo "Using Python: $PYTHON_EXE"
-
 # Run tests
 cd "/workspace/python/test/"
-"$PYTHON_EXE" -m pytest -v test_nvbench.py
+python -m pytest -v test_nvbench.py
