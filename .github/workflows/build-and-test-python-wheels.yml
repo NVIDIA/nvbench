@@ -86,7 +86,7 @@ jobs:
             --env py_version=${{ matrix.python }} \
             --env cuda_version=${{ matrix.cuda }} \
             rapidsai/ci-wheel:25.12-cuda${cuda_full_version}-rockylinux8-py${{ matrix.python }} \
-            /workspace/ci/test_pynvbench.sh -py-version ${{ matrix.python }} -cuda-version ${{ matrix.cuda }}
+            /workspace/ci/test_pynvbench_inner.sh
 
   verify-workflow:
     name: Verify all builds and tests succeeded
