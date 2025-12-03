@@ -41,16 +41,42 @@ export CUDAHOSTCXX="$(which g++)"
 # Build the wheel
 python -m pip wheel --no-deps --verbose --wheel-dir dist .
 
-# Rename wheel to include CUDA version suffix
+# Install auditwheel for manylinux compliance
+python -m pip install auditwheel
+
+# Repair wheel to make it manylinux compliant
+mkdir -p dist_repaired
 for wheel in dist/pynvbench-*.whl; do
     if [[ -f "$wheel" ]]; then
-        base_name=$(basename "$wheel" .whl)
-        new_name="${base_name}+cu${cuda_major}-py${py_version//.}-linux_$(uname -m).whl"
-        mv "$wheel" "dist/${new_name}"
-        echo "Renamed wheel to: ${new_name}"
+        echo "Repairing wheel: $wheel"
+        python -m auditwheel repair \
+            --exclude 'libcuda.so.1' \
+            --exclude 'libnvidia-ml.so.1' \
+            "$wheel" \
+            --wheel-dir dist_repaired
     fi
 done
 
-# Move wheel to output directory
+# Rename wheel to include CUDA version suffix
 mkdir -p /workspace/wheelhouse
-mv dist/pynvbench-*+cu*.whl /workspace/wheelhouse/
+for wheel in dist_repaired/pynvbench-*.whl; do
+    if [[ -f "$wheel" ]]; then
+        base_name=$(basename "$wheel" .whl)
+        # Insert CUDA version before the platform tag
+        # e.g., pynvbench-0.1.0-cp312-cp312-manylinux_2_28_x86_64.whl
+        # becomes pynvbench-0.1.0+cu12-cp312-cp312-manylinux_2_28_x86_64.whl
+        if [[ "$base_name" =~ ^(.*)-cp([0-9]+)-cp([0-9]+)-(.*) ]]; then
+            pkg_version="${BASH_REMATCH[1]}"
+            py_tag="cp${BASH_REMATCH[2]}"
+            abi_tag="cp${BASH_REMATCH[3]}"
+            platform="${BASH_REMATCH[4]}"
+            new_name="${pkg_version}+cu${cuda_major}-${py_tag}-${abi_tag}-${platform}.whl"
+            mv "$wheel" "/workspace/wheelhouse/${new_name}"
+            echo "Renamed wheel to: ${new_name}"
+        else
+            # Fallback if regex doesn't match
+            mv "$wheel" /workspace/wheelhouse/
+            echo "Moved wheel: $(basename $wheel)"
+        fi
+    fi
+done
