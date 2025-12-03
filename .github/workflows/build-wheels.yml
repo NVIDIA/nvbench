@@ -1,7 +1,8 @@
-name: Build Python Wheels
+name: Build Python Wheels (Manual)
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 defaults:
   run:
