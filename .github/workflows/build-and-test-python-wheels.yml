@@ -48,7 +48,7 @@ jobs:
   test-wheels:
     name: Test wheel (CUDA ${{ matrix.cuda }}, Python ${{ matrix.python }})
     needs: build-wheels
-    runs-on: ubuntu-latest
+    runs-on: linux-amd64-gpu-l4-latest-1
     permissions:
       id-token: write
       contents: read
@@ -82,6 +82,7 @@ jobs:
 
           docker run --rm \
             --workdir /workspace \
+            --gpus all \
             --mount type=bind,source=$(pwd),target=/workspace/ \
             --env py_version=${{ matrix.python }} \
             --env cuda_version=${{ matrix.cuda }} \
