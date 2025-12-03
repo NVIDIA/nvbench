@@ -8,3 +8,11 @@ cmake-build-*
 *~
 compile_commands.json
 CMakeUserPresets.json
+
+# Python wheel builds
+wheelhouse/
+*.whl
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo

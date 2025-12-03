@@ -68,3 +68,15 @@ pull_request:
     - {cuda: *cuda_curr_max, compiler: *llvm18, cpu: 'amd64'}
     - {cuda: *cuda_curr_max, compiler: *llvm19, cpu: 'amd64'}
     - {cuda: *cuda_curr_max, compiler: *llvm20, cpu: 'amd64'}
+
+# Python wheel builds
+python_wheels:
+  nvcc:
+    - {cuda: *cuda_prev_max, py_version: '3.10', cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, py_version: '3.11', cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, py_version: '3.12', cpu: 'amd64'}
+    - {cuda: *cuda_prev_max, py_version: '3.13', cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, py_version: '3.10', cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, py_version: '3.11', cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, py_version: '3.12', cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, py_version: '3.13', cpu: 'amd64'}

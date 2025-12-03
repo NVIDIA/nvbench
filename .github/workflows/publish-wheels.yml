@@ -1,0 +1,53 @@
+name: Publish Wheels to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: "The GitHub Actions run ID that generated validated artifacts"
+        required: true
+        type: string
+      wheel-dst:
+        description: "Which wheel index to publish to?"
+        required: true
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -xeuo pipefail {0}
+
+jobs:
+  publish-wheels:
+    name: Publish wheels to ${{ inputs.wheel-dst }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.wheel-dst }}
+      url: https://${{ (inputs.wheel-dst == 'testpypi' && 'test.') || '' }}pypi.org/p/pynvbench/
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download all wheel artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ inputs.run-id }}
+        run: |
+          gh run download ${RUN_ID} -D dl -R ${{ github.repository }} -p 'wheel-*'
+          mkdir -p dist
+          find dl -name '*.whl' -exec mv {} dist/ \;
+          rm -rf dl
+          ls -lh dist/
+
+      - name: Publish package distributions to PyPI
+        if: ${{ inputs.wheel-dst == 'pypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Publish package distributions to TestPyPI
+        if: ${{ inputs.wheel-dst == 'testpypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
