@@ -42,20 +42,15 @@ cuda_major_version=$(nvcc --version | grep release | awk '{print $6}' | tr -d ',
 # Setup Python environment
 setup_python_env "${py_version}"
 
-# Fetch the pynvbench wheel
-if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-  # In GitHub Actions, wheel is already downloaded to wheelhouse/ by the workflow
-  WHEELHOUSE_DIR="/workspace/wheelhouse"
-else
-  # For local testing, build the wheel
-  "$ci_dir/build_pynvbench_wheel.sh" -py-version "${py_version}" -cuda-version "${cuda_version}"
-  WHEELHOUSE_DIR="/workspace/wheelhouse"
-fi
+# Wheel should be in /workspace/wheelhouse (downloaded by workflow or built locally)
+WHEELHOUSE_DIR="/workspace/wheelhouse"
 
 # Find and install pynvbench wheel
 PYNVBENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/pynvbench-*+cu${cuda_version}*.whl 2>/dev/null | head -1)"
 if [[ -z "$PYNVBENCH_WHEEL_PATH" ]]; then
     echo "Error: No pynvbench wheel found in ${WHEELHOUSE_DIR}"
+    echo "Looking for: pynvbench-*+cu${cuda_version}*.whl"
+    echo "Contents of ${WHEELHOUSE_DIR}:"
     ls -la ${WHEELHOUSE_DIR}/ || true
     exit 1
 fi
