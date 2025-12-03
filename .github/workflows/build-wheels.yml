@@ -19,7 +19,7 @@ jobs:
       matrix:
         cuda: ['12', '13']
         python: ['3.10', '3.11', '3.12', '3.13']
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -55,4 +55,3 @@ jobs:
             exit 1
           fi
           echo "All wheels built successfully!"
-

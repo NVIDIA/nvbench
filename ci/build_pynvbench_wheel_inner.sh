@@ -54,4 +54,3 @@ done
 # Move wheel to output directory
 mkdir -p /workspace/wheelhouse
 mv dist/pynvbench-*+cu*.whl /workspace/wheelhouse/
-

@@ -37,4 +37,3 @@ require_py_version() {
         return 1
     fi
 }
-

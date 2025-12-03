@@ -30,4 +30,3 @@ for ((i=1; i<=num_tries; i++)); do
 done
 echo "Command '${command[*]}' failed after ${num_tries} attempts."
 exit 1
-

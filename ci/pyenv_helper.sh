@@ -45,4 +45,3 @@ setup_python_env() {
 
     pip install --upgrade pip
 }
-
