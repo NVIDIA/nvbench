@@ -42,25 +42,21 @@ cuda_major_version=$(nvcc --version | grep release | awk '{print $6}' | tr -d ',
 # Setup Python environment
 setup_python_env "${py_version}"
 
-# Fetch the pynvbench wheel from artifacts
+# Fetch the pynvbench wheel
 if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-  # In GitHub Actions, download from artifacts
-  wheel_name="wheel-pynvbench-cu${cuda_version}-py${py_version}"
-  mkdir -p /home/coder/nvbench/wheelhouse
-
-  # Download artifact (assumes it's already been downloaded by the workflow)
-  if [[ -d "/home/coder/nvbench/${wheel_name}" ]]; then
-    cp /home/coder/nvbench/${wheel_name}/*.whl /home/coder/nvbench/wheelhouse/
-  fi
+  # In GitHub Actions, wheel is already downloaded to wheelhouse/ by the workflow
+  WHEELHOUSE_DIR="/workspace/wheelhouse"
 else
   # For local testing, build the wheel
   "$ci_dir/build_pynvbench_wheel.sh" -py-version "${py_version}" -cuda-version "${cuda_version}"
+  WHEELHOUSE_DIR="/workspace/wheelhouse"
 fi
 
-# Install pynvbench
-PYNVBENCH_WHEEL_PATH="$(ls /home/coder/nvbench/wheelhouse/pynvbench-*.whl | head -1)"
+# Find and install pynvbench wheel
+PYNVBENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/pynvbench-*+cu${cuda_version}*.whl 2>/dev/null | head -1)"
 if [[ -z "$PYNVBENCH_WHEEL_PATH" ]]; then
-    echo "Error: No pynvbench wheel found"
+    echo "Error: No pynvbench wheel found in ${WHEELHOUSE_DIR}"
+    ls -la ${WHEELHOUSE_DIR}/ || true
     exit 1
 fi
 
@@ -68,5 +64,5 @@ echo "Installing wheel: $PYNVBENCH_WHEEL_PATH"
 python -m pip install "${PYNVBENCH_WHEEL_PATH}[test]"
 
 # Run tests
-cd "/home/coder/nvbench/python/test/"
+cd "/workspace/python/test/"
 python -m pytest -v test_nvbench.py

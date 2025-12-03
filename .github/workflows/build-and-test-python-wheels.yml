@@ -69,7 +69,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: wheel-pynvbench-cu${{ matrix.cuda }}-py${{ matrix.python }}
-          path: /home/coder/nvbench/wheel-pynvbench-cu${{ matrix.cuda }}-py${{ matrix.python }}
+          path: wheelhouse
 
       - name: Test wheel
         run: |
@@ -81,12 +81,12 @@ jobs:
           fi
 
           docker run --rm \
-            --workdir /home/coder/nvbench \
-            --mount type=bind,source=$(pwd),target=/home/coder/nvbench/ \
+            --workdir /workspace \
+            --mount type=bind,source=$(pwd),target=/workspace/ \
             --env py_version=${{ matrix.python }} \
             --env cuda_version=${{ matrix.cuda }} \
             rapidsai/ci-wheel:25.12-cuda${cuda_full_version}-rockylinux8-py${{ matrix.python }} \
-            /home/coder/nvbench/ci/test_pynvbench.sh -py-version ${{ matrix.python }} -cuda-version ${{ matrix.cuda }}
+            /workspace/ci/test_pynvbench.sh -py-version ${{ matrix.python }} -cuda-version ${{ matrix.cuda }}
 
   verify-workflow:
     name: Verify all builds and tests succeeded
