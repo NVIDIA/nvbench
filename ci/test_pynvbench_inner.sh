@@ -24,34 +24,25 @@ echo "CUDA version: $(nvcc --version | grep release)"
 # Wheel should be in /workspace/wheelhouse (downloaded by workflow or built locally)
 WHEELHOUSE_DIR="/workspace/wheelhouse"
 
-<<<<<<< HEAD
-# Find and install pynvbench wheel
-# Look for .cu${cuda_version} in the version string (e.g., pynvbench-0.0.1.dev1+g123.cu12-...)
-PYNVBENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/pynvbench-*.cu${cuda_version}-*.whl 2>/dev/null | head -1)"
+# Find the pynvbench wheel (multi-CUDA wheel)
+# Prefer manylinux wheels, fall back to any wheel
+PYNVBENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/pynvbench-*manylinux*.whl 2>/dev/null | head -1)"
+if [[ -z "$PYNVBENCH_WHEEL_PATH" ]]; then
+    PYNVBENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/pynvbench-*.whl 2>/dev/null | head -1)"
+fi
+
 if [[ -z "$PYNVBENCH_WHEEL_PATH" ]]; then
     echo "Error: No pynvbench wheel found in ${WHEELHOUSE_DIR}"
-    echo "Looking for: pynvbench-*.cu${cuda_version}-*.whl"
-=======
-# Find the pynvbench wheel (multi-CUDA wheel, no CUDA version in filename)
-PYNVBENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/pynvbench-*.whl 2>/dev/null | head -1)"
-if [[ -z "$PYNVBENCH_WHEEL_PATH" ]]; then
-    echo "Error: No pynvbench wheel found in ${WHEELHOUSE_DIR}"
->>>>>>> 1ab0a2e (Add multi-cuda wheel build)
     echo "Contents of ${WHEELHOUSE_DIR}:"
     ls -la ${WHEELHOUSE_DIR}/ || true
     exit 1
 fi
 
-<<<<<<< HEAD
-echo "Installing wheel: $PYNVBENCH_WHEEL_PATH"
-python -m pip install "${PYNVBENCH_WHEEL_PATH}[test]"
-=======
 # Determine which CUDA extra to install (defaults to cu12 if not specified)
-CUDA_EXTRA="${cuda_extra:-[cu${cuda_version}]}"
+CUDA_EXTRA="${cuda_extra:-cu${cuda_version}}"
 
-echo "Installing wheel: $PYNVBENCH_WHEEL_PATH with extras: ${CUDA_EXTRA}"
-python -m pip install "${PYNVBENCH_WHEEL_PATH}${CUDA_EXTRA},test"
->>>>>>> 1ab0a2e (Add multi-cuda wheel build)
+echo "Installing wheel: $PYNVBENCH_WHEEL_PATH with extras: ${CUDA_EXTRA},test"
+python -m pip install "${PYNVBENCH_WHEEL_PATH}[${CUDA_EXTRA},test]"
 
 # Run tests
 cd "/workspace/python/test/"

@@ -43,10 +43,10 @@ fi
 # Map cuda_version to full version and set CUDA extra
 if [[ "$cuda_version" == "12" ]]; then
     cuda_full_version="12.9.1"
-    cuda_extra="[cu12]"
+    cuda_extra="cu12"
 elif [[ "$cuda_version" == "13" ]]; then
     cuda_full_version="13.0.1"
-    cuda_extra="[cu13]"
+    cuda_extra="cu13"
 else
     echo "Error: Unsupported CUDA version: $cuda_version"
     exit 1

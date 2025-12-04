@@ -39,8 +39,9 @@ set(NVBENCH_EXTENSION_NAME "_nvbench${NVBENCH_EXTENSION_SUFFIX}")
 message(STATUS "Building extension: ${NVBENCH_EXTENSION_NAME}")
 
 pybind11_add_module(${NVBENCH_EXTENSION_NAME} MODULE src/py_nvbench.cpp)
+target_compile_definitions(${NVBENCH_EXTENSION_NAME} PRIVATE PYBIND11_MODULE_NAME=${NVBENCH_EXTENSION_NAME})
 target_link_libraries(${NVBENCH_EXTENSION_NAME} PUBLIC nvbench::nvbench)
-target_link_libraries(${NVBENCH_EXTENSION_NAME} PRIVATE CUDA::cudart_static)
+target_link_libraries(${NVBENCH_EXTENSION_NAME} PRIVATE CUDA::cudart_static CUDA::cuda_driver)
 
 set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)

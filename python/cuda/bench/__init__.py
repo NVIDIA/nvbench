@@ -37,13 +37,12 @@ except Exception as e:
 def _get_cuda_major_version():
     """Detect the CUDA runtime major version."""
     try:
-        from cuda import cuda as cuda_bindings
+        import cuda.bindings
 
-        err, version = cuda_bindings.cuRuntimeGetVersion()
-        if err != cuda_bindings.cudaError_t.cudaSuccess:
-            raise RuntimeError(f"Failed to get CUDA runtime version: {err}")
-        # Version is encoded as (major * 1000) + (minor * 10)
-        major = version // 1000
+        # Get CUDA version from cuda-bindings package version
+        # cuda-bindings version is in format like "12.9.1" or "13.0.0"
+        version_str = cuda.bindings.__version__
+        major = int(version_str.split(".")[0])
         return major
     except ImportError:
         raise ImportError(
@@ -77,6 +76,9 @@ NVBenchRuntimeError = _nvbench_module.NVBenchRuntimeError
 State = _nvbench_module.State
 register = _nvbench_module.register
 run_all_benchmarks = _nvbench_module.run_all_benchmarks
+
+# Expose the module as _nvbench for backward compatibility (e.g., for tests)
+_nvbench = _nvbench_module
 
 # Clean up internal symbols
 del (
