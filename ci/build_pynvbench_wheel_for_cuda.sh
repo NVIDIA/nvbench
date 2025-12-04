@@ -56,22 +56,9 @@ export CXX="$(which g++)"
 export CUDACXX="$(which nvcc)"
 export CUDAHOSTCXX="$(which g++)"
 
-# Set CUDA suffix for extension naming
-export PYNVBENCH_CUDA_SUFFIX="_cu${cuda_version}"
-
 # Build the wheel
 python -m pip wheel --no-deps --verbose --wheel-dir dist .
 
-# Rename wheel to include CUDA version suffix
-for wheel in dist/pynvbench-*.whl; do
-    if [[ -f "$wheel" ]]; then
-        base_name=$(basename "$wheel" .whl)
-        new_name="${base_name}.cu${cuda_version}.whl"
-        mv "$wheel" "dist/${new_name}"
-        echo "Renamed wheel to: ${new_name}"
-    fi
-done
-
 # Move wheel to output directory
 mkdir -p /workspace/wheelhouse
-mv dist/pynvbench-*.cu*.whl /workspace/wheelhouse/
+mv dist/pynvbench-*.whl /workspace/wheelhouse/

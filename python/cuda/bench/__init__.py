@@ -52,10 +52,11 @@ def _get_cuda_major_version():
 
 
 _cuda_major = _get_cuda_major_version()
-_extension_name = f"_nvbench_cu{_cuda_major}"
+_extra_name = f"cu{_cuda_major}"
+_module_fullname = f"cuda.bench.{_extra_name}._nvbench_cu{_cuda_major}"
 
 try:
-    _nvbench_module = importlib.import_module(f"cuda.bench.{_extension_name}")
+    _nvbench_module = importlib.import_module(_module_fullname)
 except ImportError as e:
     raise ImportError(
         f"No pynvbench extension found for CUDA {_cuda_major}.x. "
@@ -76,6 +77,8 @@ NVBenchRuntimeError = _nvbench_module.NVBenchRuntimeError
 State = _nvbench_module.State
 register = _nvbench_module.register
 run_all_benchmarks = _nvbench_module.run_all_benchmarks
+test_cpp_exception = _nvbench_module.test_cpp_exception
+test_py_exception = _nvbench_module.test_py_exception
 
 # Expose the module as _nvbench for backward compatibility (e.g., for tests)
 _nvbench = _nvbench_module
@@ -85,6 +88,7 @@ del (
     load_nvidia_dynamic_lib,
     _nvbench_module,
     _cuda_major,
-    _extension_name,
+    _extra_name,
+    _module_fullname,
     _get_cuda_major_version,
 )

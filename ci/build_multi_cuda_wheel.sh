@@ -92,9 +92,9 @@ fi
 # Needed for unpacking and repacking wheels.
 $PYTHON -m pip install --break-system-packages wheel
 
-# Find the built wheels
-cu12_wheel=$(find wheelhouse -name "*cu12*.whl" | head -1)
-cu13_wheel=$(find wheelhouse -name "*cu13*.whl" | head -1)
+# Find the built wheels (they no longer have cu12/cu13 suffix in the name)
+cu12_wheel=$(find wheelhouse -name "pynvbench-*.whl" | head -1)
+cu13_wheel=$(find wheelhouse -name "pynvbench-*.whl" | tail -1)
 
 if [[ -z "$cu12_wheel" ]]; then
   echo "Error: CUDA 12 wheel not found in wheelhouse/"
@@ -104,6 +104,12 @@ fi
 
 if [[ -z "$cu13_wheel" ]]; then
   echo "Error: CUDA 13 wheel not found in wheelhouse/"
+  ls -la wheelhouse/
+  exit 1
+fi
+
+if [[ "$cu12_wheel" == "$cu13_wheel" ]]; then
+  echo "Error: Only one wheel found, expected two (CUDA 12 and CUDA 13)"
   ls -la wheelhouse/
   exit 1
 fi
@@ -123,28 +129,21 @@ cd wheelhouse_merged
 $PYTHON -m wheel unpack "$cu12_wheel"
 base_dir=$(find . -maxdepth 1 -type d -name "pynvbench-*" | head -1)
 
-# Rename libnvbench.so to libnvbench_cu12.so in the base (CUDA 12) wheel
-mv "$base_dir/cuda/bench/libnvbench.so" "$base_dir/cuda/bench/libnvbench_cu12.so"
-
-# Update _nvbench_cu12.so to link to libnvbench_cu12.so instead of libnvbench.so
-patchelf --replace-needed libnvbench.so libnvbench_cu12.so "$base_dir"/cuda/bench/_nvbench_cu12*.so
-
 # Unpack CUDA 13 wheel into a temporary subdirectory
 mkdir cu13_tmp
 cd cu13_tmp
 $PYTHON -m wheel unpack "$cu13_wheel"
 cu13_dir=$(find . -maxdepth 1 -type d -name "pynvbench-*" | head -1)
 
-# Copy the CUDA 13 extension AND library into the base wheel
-cp "$cu13_dir"/cuda/bench/_nvbench_cu13*.so "../$base_dir/cuda/bench/"
-cp "$cu13_dir"/cuda/bench/libnvbench.so "../$base_dir/cuda/bench/libnvbench_cu13.so"
-
-# Update _nvbench_cu13.so to link to libnvbench_cu13.so instead of libnvbench.so
-patchelf --replace-needed libnvbench.so libnvbench_cu13.so "../$base_dir"/cuda/bench/_nvbench_cu13*.so
+# Copy the cu13/ directory from CUDA 13 wheel into the base wheel
+cp -r "$cu13_dir"/cuda/bench/cu13 "../$base_dir/cuda/bench/"
 
 # Go back and clean up
 cd ..
 rm -rf cu13_tmp
+
+# Remove RECORD file to let wheel recreate it
+rm -f "$base_dir"/*.dist-info/RECORD
 
 # Repack the merged wheel
 $PYTHON -m wheel pack "$base_dir"
@@ -152,7 +151,7 @@ $PYTHON -m wheel pack "$base_dir"
 cd ..
 
 # Install auditwheel and repair the merged wheel
-$PYTHON -m pip install --break-system-packages patchelf auditwheel
+$PYTHON -m pip install --break-system-packages auditwheel
 for wheel in wheelhouse_merged/pynvbench-*.whl; do
     echo "Repairing merged wheel: $wheel"
     $PYTHON -m auditwheel repair \

@@ -25,18 +25,12 @@ CPMAddPackage(
 
 CPMAddPackage("gh:pybind/pybind11@3.0.0")
 
-# Determine CUDA major version for extension naming
+# Determine CUDA major version for extension naming and directory structure
 string(REGEX MATCH "^([0-9]+)" CUDA_VERSION_MAJOR "${CUDAToolkit_VERSION}")
+set(CUDA_VERSION_DIR "cu${CUDA_VERSION_MAJOR}")
 
-# Allow override of extension suffix via environment variable (for multi-CUDA builds)
-if(DEFINED ENV{PYNVBENCH_CUDA_SUFFIX})
-  set(NVBENCH_EXTENSION_SUFFIX $ENV{PYNVBENCH_CUDA_SUFFIX})
-else()
-  set(NVBENCH_EXTENSION_SUFFIX "_cu${CUDA_VERSION_MAJOR}")
-endif()
-
-set(NVBENCH_EXTENSION_NAME "_nvbench${NVBENCH_EXTENSION_SUFFIX}")
-message(STATUS "Building extension: ${NVBENCH_EXTENSION_NAME}")
+set(NVBENCH_EXTENSION_NAME "_nvbench_cu${CUDA_VERSION_MAJOR}")
+message(STATUS "Building extension: ${NVBENCH_EXTENSION_NAME} for CUDA ${CUDA_VERSION_MAJOR}, output directory: ${CUDA_VERSION_DIR}")
 
 pybind11_add_module(${NVBENCH_EXTENSION_NAME} MODULE src/py_nvbench.cpp)
 target_compile_definitions(${NVBENCH_EXTENSION_NAME} PRIVATE PYBIND11_MODULE_NAME=${NVBENCH_EXTENSION_NAME})
@@ -47,9 +41,9 @@ set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INSTALL_RPATH "$ORIGI
 set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
 set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-install(TARGETS ${NVBENCH_EXTENSION_NAME} DESTINATION cuda/bench)
+install(TARGETS ${NVBENCH_EXTENSION_NAME} DESTINATION cuda/bench/${CUDA_VERSION_DIR})
 
 # Determine target that nvbench::nvbench is an alias of,
 # necessary because ALIAS targets cannot be installed
 get_target_property(_aliased_target_name nvbench::nvbench ALIASED_TARGET)
-install(IMPORTED_RUNTIME_ARTIFACTS ${_aliased_target_name} DESTINATION cuda/bench)
+install(IMPORTED_RUNTIME_ARTIFACTS ${_aliased_target_name} DESTINATION cuda/bench/${CUDA_VERSION_DIR})
