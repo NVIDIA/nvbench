@@ -33,7 +33,7 @@ readme = { file = "README.md", content-type = "text/markdown" }
 cu12 = ["cuda-bindings>=12.0.0,<13.0.0", "nvidia-cuda-cupti-cu12"]
 
 # CUDA 13.x dependencies
-cu13 = ["cuda-bindings>=13.0.0,<14.0.0", "nvidia-cuda-cupti-cu13"]
+cu13 = ["cuda-bindings>=13.0.0,<14.0.0", "nvidia-cuda-cupti>=13.0"]
 
 # Test dependencies (using CUDA 12 by default)
 test = ["pytest", "cupy-cuda12x", "numba"]
