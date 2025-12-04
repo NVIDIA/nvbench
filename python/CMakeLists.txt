@@ -25,15 +25,28 @@ CPMAddPackage(
 
 CPMAddPackage("gh:pybind/pybind11@3.0.0")
 
-pybind11_add_module(_nvbench MODULE src/py_nvbench.cpp)
-target_link_libraries(_nvbench PUBLIC nvbench::nvbench)
-target_link_libraries(_nvbench PRIVATE CUDA::cudart_static)
+# Determine CUDA major version for extension naming
+string(REGEX MATCH "^([0-9]+)" CUDA_VERSION_MAJOR "${CUDAToolkit_VERSION}")
 
-set_target_properties(_nvbench PROPERTIES INSTALL_RPATH "$ORIGIN")
-set_target_properties(_nvbench PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
-set_target_properties(_nvbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Allow override of extension suffix via environment variable (for multi-CUDA builds)
+if(DEFINED ENV{PYNVBENCH_CUDA_SUFFIX})
+  set(NVBENCH_EXTENSION_SUFFIX $ENV{PYNVBENCH_CUDA_SUFFIX})
+else()
+  set(NVBENCH_EXTENSION_SUFFIX "_cu${CUDA_VERSION_MAJOR}")
+endif()
 
-install(TARGETS _nvbench DESTINATION cuda/bench)
+set(NVBENCH_EXTENSION_NAME "_nvbench${NVBENCH_EXTENSION_SUFFIX}")
+message(STATUS "Building extension: ${NVBENCH_EXTENSION_NAME}")
+
+pybind11_add_module(${NVBENCH_EXTENSION_NAME} MODULE src/py_nvbench.cpp)
+target_link_libraries(${NVBENCH_EXTENSION_NAME} PUBLIC nvbench::nvbench)
+target_link_libraries(${NVBENCH_EXTENSION_NAME} PRIVATE CUDA::cudart_static)
+
+set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+install(TARGETS ${NVBENCH_EXTENSION_NAME} DESTINATION cuda/bench)
 
 # Determine target that nvbench::nvbench is an alias of,
 # necessary because ALIAS targets cannot be installed
