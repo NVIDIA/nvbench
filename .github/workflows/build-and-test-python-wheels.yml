@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.13']
+        python: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
       - name: Checkout repository
@@ -55,8 +55,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cuda: ['13']
-        python: ['3.13']
+        cuda: ['12', '13']
+        python: ['3.10', '3.11', '3.12', '3.13']
 
     steps:
       - name: Checkout repository
