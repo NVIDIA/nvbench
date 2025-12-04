@@ -37,24 +37,6 @@ if [[ -z "${HOST_WORKSPACE:-}" ]]; then
   echo "Setting HOST_WORKSPACE to: $HOST_WORKSPACE"
 fi
 
-if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-  # Prepare mount points etc for getting artifacts in/out of the container.
-  source "$ci_dir/util/artifacts/common.sh"
-  # Note that these mounts use the runner (not the devcontainer) filesystem for
-  # source directories because of docker-out-of-docker quirks.
-  # The workflow-job GH actions make sure that they exist before running any
-  # scripts.
-  action_mounts=$(cat <<EOF
-    --mount type=bind,source=${ARTIFACT_ARCHIVES},target=${ARTIFACT_ARCHIVES} \
-    --mount type=bind,source=${ARTIFACT_UPLOAD_STAGE},target=${ARTIFACT_UPLOAD_STAGE}
-EOF
-)
-
-else
-  # If not running in GitHub Actions, we don't need to set up artifact mounts.
-  action_mounts=""
-fi
-
 # pynvbench must be built in a container that can produce manylinux wheels,
 # and has the CUDA toolkit installed. We use the rapidsai/ci-wheel image for this.
 # We build separate wheels using separate containers for each CUDA version,
@@ -84,11 +66,7 @@ for ctk in 12 13; do
     docker run --rm -i \
         --workdir /workspace/python \
         --mount type=bind,source=${HOST_WORKSPACE},target=/workspace/ \
-        ${action_mounts} \
         --env py_version=${py_version} \
-        --env GITHUB_ACTIONS=${GITHUB_ACTIONS:-} \
-        --env GITHUB_RUN_ID=${GITHUB_RUN_ID:-} \
-        --env JOB_ID=${JOB_ID:-} \
         $image \
         /workspace/ci/build_pynvbench_wheel_for_cuda.sh
     # Prevent GHA runners from exhausting available storage with leftover images:
@@ -137,7 +115,7 @@ echo "Found CUDA 13 wheel: $cu13_wheel"
 cu12_wheel=$(readlink -f "$cu12_wheel")
 cu13_wheel=$(readlink -f "$cu13_wheel")
 
-# Merge the wheels manually (similar to CCCL)
+# Merge the wheels manually
 mkdir -p wheelhouse_merged
 cd wheelhouse_merged
 
@@ -192,8 +170,3 @@ rm -rf wheelhouse_merged wheelhouse_final
 
 echo "Final wheels in wheelhouse:"
 ls -la wheelhouse/
-
-if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-  wheel_artifact_name="$(ci/util/workflow/get_wheel_artifact_name.sh)"
-  ci/util/artifacts/upload.sh $wheel_artifact_name 'wheelhouse/.*'
-fi
