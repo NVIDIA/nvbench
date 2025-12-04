@@ -76,10 +76,10 @@ jobs:
           # Use the same rapidsai/ci-wheel Docker image as build
           if [[ "${{ matrix.cuda }}" == "12" ]]; then
             cuda_full_version="12.9.1"
-            cuda_extra="[cu12]"
+            cuda_extra="cu12"
           else
             cuda_full_version="13.0.1"
-            cuda_extra="[cu13]"
+            cuda_extra="cu13"
           fi
 
           docker run --rm \
