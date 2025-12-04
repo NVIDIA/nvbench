@@ -55,7 +55,7 @@ build-dir = "build/{wheel_tag}"
 
 [tool.scikit-build.cmake]
 version = ">=3.30.4"
-args = ["-DNVBench_ENABLE_NVML=OFF", "-DNVBench_ENABLE_CUPTI=OFF"]
+args = []
 build-type = "Release"
 source-dir = "."
 

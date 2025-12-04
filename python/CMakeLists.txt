@@ -30,19 +30,16 @@ string(REGEX MATCH "^([0-9]+)" CUDA_VERSION_MAJOR "${CUDAToolkit_VERSION}")
 set(CUDA_VERSION_DIR "cu${CUDA_VERSION_MAJOR}")
 message(STATUS "Building extension for CUDA ${CUDA_VERSION_MAJOR}, output directory: cuda/bench/${CUDA_VERSION_DIR}")
 
-# Extension name is always _nvbench (directory provides CUDA version separation)
-set(NVBENCH_EXTENSION_NAME "_nvbench")
+pybind11_add_module(_nvbench MODULE src/py_nvbench.cpp)
+target_compile_definitions(_nvbench PRIVATE PYBIND11_MODULE_NAME=_nvbench)
+target_link_libraries(_nvbench PUBLIC nvbench::nvbench)
+target_link_libraries(_nvbench PRIVATE CUDA::cudart_static CUDA::cuda_driver)
 
-pybind11_add_module(${NVBENCH_EXTENSION_NAME} MODULE src/py_nvbench.cpp)
-target_compile_definitions(${NVBENCH_EXTENSION_NAME} PRIVATE PYBIND11_MODULE_NAME=${NVBENCH_EXTENSION_NAME})
-target_link_libraries(${NVBENCH_EXTENSION_NAME} PUBLIC nvbench::nvbench)
-target_link_libraries(${NVBENCH_EXTENSION_NAME} PRIVATE CUDA::cudart_static CUDA::cuda_driver)
+set_target_properties(_nvbench PROPERTIES INSTALL_RPATH "$ORIGIN")
+set_target_properties(_nvbench PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
+set_target_properties(_nvbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
-set_target_properties(${NVBENCH_EXTENSION_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-install(TARGETS ${NVBENCH_EXTENSION_NAME} DESTINATION cuda/bench/${CUDA_VERSION_DIR})
+install(TARGETS _nvbench DESTINATION cuda/bench/${CUDA_VERSION_DIR})
 
 # Determine target that nvbench::nvbench is an alias of,
 # necessary because ALIAS targets cannot be installed
