@@ -9,7 +9,6 @@ defaults:
     shell: bash --noprofile --norc -euo pipefail {0}
 
 jobs:
-  # Build multi-CUDA wheels (one wheel per Python version, includes both CUDA 12 & 13)
   build-wheels:
     name: Build wheel (Python ${{ matrix.python }})
     runs-on: ubuntu-latest

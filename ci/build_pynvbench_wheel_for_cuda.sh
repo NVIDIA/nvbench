@@ -22,16 +22,16 @@ set -euxo pipefail
 # This script builds a single wheel for the container's CUDA version
 # The /workspace pathnames are hard-wired here.
 
+# Determine CUDA version from nvcc early (needed for dev package installation)
+cuda_version=$(nvcc --version | grep -oP 'release \K[0-9]+\.[0-9]+' | cut -d. -f1)
+echo "Detected CUDA version: ${cuda_version}"
+
 # Install GCC 13 toolset (needed for the build)
 /workspace/ci/util/retry.sh 5 30 dnf -y install gcc-toolset-13-gcc gcc-toolset-13-gcc-c++
 echo -e "#!/bin/bash\nsource /opt/rh/gcc-toolset-13/enable" >/etc/profile.d/enable_devtools.sh
 source /etc/profile.d/enable_devtools.sh
 
-# Check what's available
-which gcc
-gcc --version
-which nvcc
-nvcc --version
+# Note: CUDA dev packages (NVML, CUPTI, CUDART) are already installed in rapidsai/ci-wheel containers
 
 # Set up Python environment
 source /workspace/ci/pyenv_helper.sh
@@ -47,10 +47,6 @@ fi
 
 cd /workspace/python
 
-# Determine CUDA version from nvcc
-cuda_version=$(nvcc --version | grep -oP 'release \K[0-9]+\.[0-9]+' | cut -d. -f1)
-echo "Detected CUDA version: ${cuda_version}"
-
 # Configure compilers
 export CXX="$(which g++)"
 export CUDACXX="$(which nvcc)"
@@ -59,6 +55,17 @@ export CUDAHOSTCXX="$(which g++)"
 # Build the wheel
 python -m pip wheel --no-deps --verbose --wheel-dir dist .
 
+# Temporarily rename wheel to include CUDA version to avoid collision during multi-CUDA build
+# The merge script will combine these into a single wheel
+for wheel in dist/pynvbench-*.whl; do
+    if [[ -f "$wheel" ]]; then
+        base_name=$(basename "$wheel" .whl)
+        new_name="${base_name}.cu${cuda_version}.whl"
+        mv "$wheel" "dist/${new_name}"
+        echo "Renamed wheel to: ${new_name}"
+    fi
+done
+
 # Move wheel to output directory
 mkdir -p /workspace/wheelhouse
-mv dist/pynvbench-*.whl /workspace/wheelhouse/
+mv dist/pynvbench-*.cu*.whl /workspace/wheelhouse/

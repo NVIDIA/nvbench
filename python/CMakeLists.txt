@@ -25,12 +25,13 @@ CPMAddPackage(
 
 CPMAddPackage("gh:pybind/pybind11@3.0.0")
 
-# Determine CUDA major version for extension naming and directory structure
+# Determine CUDA major version for directory structure
 string(REGEX MATCH "^([0-9]+)" CUDA_VERSION_MAJOR "${CUDAToolkit_VERSION}")
 set(CUDA_VERSION_DIR "cu${CUDA_VERSION_MAJOR}")
+message(STATUS "Building extension for CUDA ${CUDA_VERSION_MAJOR}, output directory: cuda/bench/${CUDA_VERSION_DIR}")
 
-set(NVBENCH_EXTENSION_NAME "_nvbench_cu${CUDA_VERSION_MAJOR}")
-message(STATUS "Building extension: ${NVBENCH_EXTENSION_NAME} for CUDA ${CUDA_VERSION_MAJOR}, output directory: ${CUDA_VERSION_DIR}")
+# Extension name is always _nvbench (directory provides CUDA version separation)
+set(NVBENCH_EXTENSION_NAME "_nvbench")
 
 pybind11_add_module(${NVBENCH_EXTENSION_NAME} MODULE src/py_nvbench.cpp)
 target_compile_definitions(${NVBENCH_EXTENSION_NAME} PRIVATE PYBIND11_MODULE_NAME=${NVBENCH_EXTENSION_NAME})

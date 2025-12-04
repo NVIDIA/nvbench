@@ -53,7 +53,7 @@ def _get_cuda_major_version():
 
 _cuda_major = _get_cuda_major_version()
 _extra_name = f"cu{_cuda_major}"
-_module_fullname = f"cuda.bench.{_extra_name}._nvbench_cu{_cuda_major}"
+_module_fullname = f"cuda.bench.{_extra_name}._nvbench"
 
 try:
     _nvbench_module = importlib.import_module(_module_fullname)

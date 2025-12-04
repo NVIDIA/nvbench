@@ -16,6 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Build a multi-CUDA wheel for the given Python version
+# This builds separate wheels for each supported CUDA major version,
+# and then merges them into a single wheel containing extensions
+# for all CUDA versions. At runtime, depending on the installed CUDA version,
+# the correct extension will be chosen.
+
 set -euo pipefail
 
 ci_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -92,9 +98,9 @@ fi
 # Needed for unpacking and repacking wheels.
 $PYTHON -m pip install --break-system-packages wheel
 
-# Find the built wheels (they no longer have cu12/cu13 suffix in the name)
-cu12_wheel=$(find wheelhouse -name "pynvbench-*.whl" | head -1)
-cu13_wheel=$(find wheelhouse -name "pynvbench-*.whl" | tail -1)
+# Find the built wheels (temporarily suffixed with .cu12/.cu13 to avoid collision)
+cu12_wheel=$(find wheelhouse -name "*cu12*.whl" | head -1)
+cu13_wheel=$(find wheelhouse -name "*cu13*.whl" | head -1)
 
 if [[ -z "$cu12_wheel" ]]; then
   echo "Error: CUDA 12 wheel not found in wheelhouse/"
