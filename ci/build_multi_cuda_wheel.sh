@@ -163,6 +163,10 @@ for wheel in wheelhouse_merged/pynvbench-*.whl; do
     $PYTHON -m auditwheel repair \
         --exclude 'libcuda.so.1' \
         --exclude 'libnvidia-ml.so.1' \
+        --exclude 'libcupti.so.12' \
+        --exclude 'libcupti.so.13' \
+        --exclude 'libnvperf_host.so' \
+        --exclude 'libnvperf_target.so' \
         "$wheel" \
         --wheel-dir wheelhouse_final
 done
