@@ -123,14 +123,24 @@ cd wheelhouse_merged
 $PYTHON -m wheel unpack "$cu12_wheel"
 base_dir=$(find . -maxdepth 1 -type d -name "pynvbench-*" | head -1)
 
+# Rename libnvbench.so to libnvbench_cu12.so in the base (CUDA 12) wheel
+mv "$base_dir/cuda/bench/libnvbench.so" "$base_dir/cuda/bench/libnvbench_cu12.so"
+
+# Update _nvbench_cu12.so to link to libnvbench_cu12.so instead of libnvbench.so
+patchelf --replace-needed libnvbench.so libnvbench_cu12.so "$base_dir"/cuda/bench/_nvbench_cu12*.so
+
 # Unpack CUDA 13 wheel into a temporary subdirectory
 mkdir cu13_tmp
 cd cu13_tmp
 $PYTHON -m wheel unpack "$cu13_wheel"
 cu13_dir=$(find . -maxdepth 1 -type d -name "pynvbench-*" | head -1)
 
-# Copy the CUDA 13 extension into the base wheel
+# Copy the CUDA 13 extension AND library into the base wheel
 cp "$cu13_dir"/cuda/bench/_nvbench_cu13*.so "../$base_dir/cuda/bench/"
+cp "$cu13_dir"/cuda/bench/libnvbench.so "../$base_dir/cuda/bench/libnvbench_cu13.so"
+
+# Update _nvbench_cu13.so to link to libnvbench_cu13.so instead of libnvbench.so
+patchelf --replace-needed libnvbench.so libnvbench_cu13.so "../$base_dir"/cuda/bench/_nvbench_cu13*.so
 
 # Go back and clean up
 cd ..

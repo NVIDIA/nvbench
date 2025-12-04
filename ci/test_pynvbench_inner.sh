@@ -40,9 +40,10 @@ fi
 
 # Determine which CUDA extra to install (defaults to cu12 if not specified)
 CUDA_EXTRA="${cuda_extra:-cu${cuda_version}}"
+TEST_EXTRA="test-cu${cuda_version}"
 
-echo "Installing wheel: $PYNVBENCH_WHEEL_PATH with extras: ${CUDA_EXTRA},test"
-python -m pip install "${PYNVBENCH_WHEEL_PATH}[${CUDA_EXTRA},test]"
+echo "Installing wheel: $PYNVBENCH_WHEEL_PATH with extras: ${CUDA_EXTRA},${TEST_EXTRA}"
+python -m pip install "${PYNVBENCH_WHEEL_PATH}[${CUDA_EXTRA},${TEST_EXTRA}]"
 
 # Run tests
 cd "/workspace/python/test/"
