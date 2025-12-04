@@ -8,13 +8,6 @@ cmake-build-*
 *~
 compile_commands.json
 CMakeUserPresets.json
-<<<<<<< HEAD
-
-# Python wheel builds
-wheelhouse/
-=======
-<<<<<<< Updated upstream
-=======
 
 # Python wheel builds
 wheelhouse/
@@ -22,14 +15,9 @@ wheelhouse_merged/
 wheelhouse_final/
 dist/
 dist_*/
->>>>>>> 1ab0a2e (Add multi-cuda wheel build)
 *.whl
 *.egg-info/
 __pycache__/
 *.pyc
 *.pyo
-<<<<<<< HEAD
-=======
 .pytest_cache/
->>>>>>> Stashed changes
->>>>>>> 1ab0a2e (Add multi-cuda wheel build)
