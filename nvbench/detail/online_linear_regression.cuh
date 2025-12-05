@@ -104,7 +104,7 @@ public:
 
   [[nodiscard]] nvbench::float64_t slope() const
   {
-    static constexpr nvbench::float_64_t q_nan =
+    static constexpr nvbench::float64_t q_nan =
       std::numeric_limits<nvbench::float64_t>::quiet_NaN();
 
     if (m_count < 2)
@@ -152,7 +152,7 @@ public:
     const nvbench::float64_t mean_y_v = mean_y();
     const nvbench::float64_t ss_tot   = (m_sum_y2 / n) - mean_y_v * mean_y_v;
 
-    if (ss_tot == 0)
+    if (ss_tot < std::numeric_limits<nvbench::float64_t>::epsilon())
     {
       return 1.0;
     }
@@ -166,12 +166,15 @@ public:
     }
     else
     {
-      const nvbench::float64_t ss_res =
-        (m_sum_y2 / n) - 2.0 * slope_v * (m_sum_xy / n) - 2.0 * intercept_v * (m_sum_y / n) +
-        slope_v * slope_v * (m_sum_x2 / n) + 2.0 * slope_v * intercept_v * (m_sum_x / n) +
-        intercept_v * intercept_v;
+      const nvbench::float64_t mean_xy_v = m_sum_xy / n;
+      const nvbench::float64_t mean_xx_v = m_sum_x2 / n;
+      const nvbench::float64_t mean_x_v  = m_sum_x / n;
+      const nvbench::float64_t ss_tot_m_res =
+        slope_v * ((mean_xy_v - slope_v * mean_xx_v) + (mean_xy_v - intercept_v * mean_x_v)) +
+        intercept_v * (mean_y_v - slope_v * mean_x_v - intercept_v) +
+        mean_y_v * (intercept_v - mean_y_v);
 
-      return std::max(0.0, std::min(1.0, 1.0 - (ss_res / ss_tot)));
+      return std::min(std::max(ss_tot_m_res / ss_tot, 0.0), 1.0);
     }
   }
 
