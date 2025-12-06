@@ -27,6 +27,13 @@
 namespace nvbench
 {
 
+struct stop_runner_loop : std::runtime_error
+{
+  // ask compiler to generate all constructor signatures
+  // that are defined for the base class
+  using std::runtime_error::runtime_error;
+};
+
 // Non-templated code goes here to reduce instantiation costs:
 struct runner_base
 {
@@ -88,7 +95,8 @@ private:
       [&self = *this, &states = m_benchmark.m_states, &type_config_index, &device](
         auto type_config_wrapper) {
         // Get current type_config:
-        using type_config = typename decltype(type_config_wrapper)::type;
+        using type_config   = typename decltype(type_config_wrapper)::type;
+        bool skip_remaining = false;
 
         // Find states with the current device / type_config
         for (nvbench::state &cur_state : states)
@@ -99,12 +107,20 @@ private:
             self.run_state_prologue(cur_state);
             try
             {
-              auto kernel_generator_copy = self.m_kernel_generator;
-              kernel_generator_copy(cur_state, type_config{});
-              if (cur_state.is_skipped())
+              if (!skip_remaining)
+              {
+                auto kernel_generator_copy = self.m_kernel_generator;
+                kernel_generator_copy(cur_state, type_config{});
+              }
+              if (skip_remaining || cur_state.is_skipped())
               {
                 self.print_skip_notification(cur_state);
               }
+            }
+            catch (nvbench::stop_runner_loop &e)
+            {
+              skip_remaining = true;
+              self.handle_sampling_exception(e, cur_state);
             }
             catch (std::exception &e)
             {
