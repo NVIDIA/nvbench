@@ -40,11 +40,13 @@ if [[ -z "$cuda_version" ]]; then
     exit 1
 fi
 
-# Map cuda_version to full version
+# Map cuda_version to full version and set CUDA extra
 if [[ "$cuda_version" == "12" ]]; then
     cuda_full_version="12.9.1"
+    cuda_extra="cu12"
 elif [[ "$cuda_version" == "13" ]]; then
     cuda_full_version="13.0.1"
+    cuda_extra="cu13"
 else
     echo "Error: Unsupported CUDA version: $cuda_version"
     exit 1
@@ -66,9 +68,11 @@ echo "::group::🧪 Testing CUDA ${cuda_version} wheel on ${cuda_image}"
   docker pull $cuda_image
   docker run --rm -i \
       --workdir /workspace \
+      --gpus all \
       --mount type=bind,source=$(pwd),target=/workspace/ \
       --env py_version=${py_version} \
       --env cuda_version=${cuda_version} \
+      --env cuda_extra="${cuda_extra}" \
       $cuda_image \
       /workspace/ci/test_pynvbench_inner.sh
   # Prevent GHA runners from exhausting available storage with leftover images:
