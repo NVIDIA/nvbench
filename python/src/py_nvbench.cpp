@@ -193,20 +193,17 @@ public:
     }
     catch (py::error_already_set &e)
     {
-      std::cout << "Caught error_already_set\n";
       py::raise_from(e, benchmark_exc.ptr(), "Python error raised ");
       throw py::error_already_set();
     }
     catch (const std::exception &e)
     {
       const std::string &exc_message = e.what();
-      std::cout << "Caught std::exception " << exc_message << std::endl;
       py::set_error(benchmark_exc, exc_message.c_str());
       throw py::error_already_set();
     }
     catch (...)
     {
-      std::cout << "Got fall-through exception\n";
       py::set_error(benchmark_exc, "Caught unknown exception in nvbench_main");
       throw py::error_already_set();
     }
