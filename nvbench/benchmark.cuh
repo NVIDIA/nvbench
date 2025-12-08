@@ -81,6 +81,13 @@ private:
     runner.run();
   }
 
+  void do_run_or_skip(bool &skip_remaining) final
+  {
+    nvbench::runner<benchmark> runner{*this, this->m_kernel_generator};
+    runner.generate_states();
+    runner.run_or_skip(skip_remaining);
+  }
+
   kernel_generator m_kernel_generator;
 };
 

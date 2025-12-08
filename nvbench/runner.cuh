@@ -29,8 +29,6 @@ namespace nvbench
 
 struct stop_runner_loop : std::runtime_error
 {
-  // ask compiler to generate all constructor signatures
-  // that are defined for the base class
   using std::runtime_error::runtime_error;
 };
 
@@ -68,21 +66,27 @@ struct runner : public runner_base
 
   void run()
   {
+    [[maybe_unused]] bool skip_remaining = false;
+    run_or_skip(skip_remaining);
+  }
+
+  void run_or_skip(bool &skip_remaining)
+  {
     if (m_benchmark.m_devices.empty())
     {
-      this->run_device(std::nullopt);
+      this->run_device(std::nullopt, skip_remaining);
     }
     else
     {
       for (const auto &device : m_benchmark.m_devices)
       {
-        this->run_device(device);
+        this->run_device(device, skip_remaining);
       }
     }
   }
 
 private:
-  void run_device(const std::optional<nvbench::device_info> &device)
+  void run_device(const std::optional<nvbench::device_info> &device, bool &skip_remaining)
   {
     if (device)
     {
@@ -92,11 +96,10 @@ private:
     // Iterate through type_configs:
     std::size_t type_config_index = 0;
     nvbench::tl::foreach<type_configs>(
-      [&self = *this, &states = m_benchmark.m_states, &type_config_index, &device](
+      [&self = *this, &states = m_benchmark.m_states, &type_config_index, &device, &skip_remaining](
         auto type_config_wrapper) {
         // Get current type_config:
-        using type_config   = typename decltype(type_config_wrapper)::type;
-        bool skip_remaining = false;
+        using type_config = typename decltype(type_config_wrapper)::type;
 
         // Find states with the current device / type_config
         for (nvbench::state &cur_state : states)
