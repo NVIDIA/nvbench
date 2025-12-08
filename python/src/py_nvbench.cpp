@@ -99,7 +99,16 @@ struct benchmark_wrapper_t
     }
     catch (const py::error_already_set &e)
     {
-      throw nvbench::stop_runner_loop(e.what());
+      if (e.matches(PyExc_KeyboardInterrupt))
+      {
+        // interrupt execution of outstanding instances
+        throw nvbench::stop_runner_loop(e.what());
+      }
+      else
+      {
+        // re-raise
+        throw;
+      }
     }
   }
 
