@@ -37,3 +37,54 @@ def test_cpu_only():
     b.set_is_cpu_only(True)
 
     bench.run_all_benchmarks(["-q", "--profile"])
+
+
+def docstring_check(doc_str: str) -> None:
+    assert isinstance(doc_str, str)
+    assert len(doc_str) > 0
+
+
+def obj_has_docstring_check(o: object) -> None:
+    docstring_check(o.__doc__)
+
+
+def test_module_doc():
+    obj_has_docstring_check(bench)
+
+
+def test_register_doc():
+    obj_has_docstring_check(bench.register)
+
+
+def test_run_all_benchmarks_doc():
+    obj_has_docstring_check(bench.run_all_benchmarks)
+
+
+def test_State_doc():
+    cl = bench.State
+    obj_has_docstring_check(cl)
+    obj_has_docstring_check(cl.exec)
+    obj_has_docstring_check(cl.get_int64)
+    obj_has_docstring_check(cl.get_float64)
+    obj_has_docstring_check(cl.get_string)
+    obj_has_docstring_check(cl.skip)
+
+
+def test_Launch_doc():
+    cl = bench.Launch
+    obj_has_docstring_check(cl)
+    obj_has_docstring_check(cl.get_stream)
+
+
+def test_CudaStream_doc():
+    cl = bench.CudaStream
+    obj_has_docstring_check(cl)
+
+
+def test_Benchmark_doc():
+    cl = bench.Benchmark
+    obj_has_docstring_check(cl)
+    obj_has_docstring_check(cl.add_int64_axis)
+    obj_has_docstring_check(cl.add_int64_power_of_two_axis)
+    obj_has_docstring_check(cl.add_float64_axis)
+    obj_has_docstring_check(cl.add_string_axis)
