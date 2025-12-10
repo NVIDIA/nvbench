@@ -145,6 +145,7 @@ struct benchmark_base
   [[nodiscard]] std::vector<nvbench::state> &get_states() { return m_states; }
 
   void run() { this->do_run(); }
+  void run_or_skip(bool &skip_remaining) { this->do_run_or_skip(skip_remaining); }
 
   void set_printer(nvbench::printer_base &printer) { m_printer = std::ref(printer); }
 
@@ -320,6 +321,7 @@ private:
   virtual std::unique_ptr<benchmark_base> do_clone() const            = 0;
   virtual void do_set_type_axes_names(std::vector<std::string> names) = 0;
   virtual void do_run()                                               = 0;
+  virtual void do_run_or_skip(bool &skip_remaining)                   = 0;
 };
 
 } // namespace nvbench
