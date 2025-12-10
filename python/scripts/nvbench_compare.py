@@ -32,7 +32,7 @@ pass_count = 0
 
 def find_matching_bench(needle, haystack):
     for hay in haystack:
-        if hay["name"] == needle["name"] and hay["axes"] == needle["axes"]:
+        if hay["name"] == needle["name"]:
             return hay
     return None
 
