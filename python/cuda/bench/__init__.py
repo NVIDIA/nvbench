@@ -57,3 +57,7 @@ from cuda.bench._nvbench import (  # noqa: E402
 )
 
 del load_nvidia_dynamic_lib
+
+__doc__ = """
+CUDA Kernel Benchmarking Library Python API
+"""

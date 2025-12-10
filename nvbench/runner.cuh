@@ -27,6 +27,11 @@
 namespace nvbench
 {
 
+struct stop_runner_loop : std::runtime_error
+{
+  using std::runtime_error::runtime_error;
+};
+
 // Non-templated code goes here to reduce instantiation costs:
 struct runner_base
 {
@@ -61,21 +66,27 @@ struct runner : public runner_base
 
   void run()
   {
+    [[maybe_unused]] bool skip_remaining = false;
+    run_or_skip(skip_remaining);
+  }
+
+  void run_or_skip(bool &skip_remaining)
+  {
     if (m_benchmark.m_devices.empty())
     {
-      this->run_device(std::nullopt);
+      this->run_device(std::nullopt, skip_remaining);
     }
     else
     {
       for (const auto &device : m_benchmark.m_devices)
       {
-        this->run_device(device);
+        this->run_device(device, skip_remaining);
       }
     }
   }
 
 private:
-  void run_device(const std::optional<nvbench::device_info> &device)
+  void run_device(const std::optional<nvbench::device_info> &device, bool &skip_remaining)
   {
     if (device)
     {
@@ -85,7 +96,7 @@ private:
     // Iterate through type_configs:
     std::size_t type_config_index = 0;
     nvbench::tl::foreach<type_configs>(
-      [&self = *this, &states = m_benchmark.m_states, &type_config_index, &device](
+      [&self = *this, &states = m_benchmark.m_states, &type_config_index, &device, &skip_remaining](
         auto type_config_wrapper) {
         // Get current type_config:
         using type_config = typename decltype(type_config_wrapper)::type;
@@ -99,12 +110,20 @@ private:
             self.run_state_prologue(cur_state);
             try
             {
-              auto kernel_generator_copy = self.m_kernel_generator;
-              kernel_generator_copy(cur_state, type_config{});
-              if (cur_state.is_skipped())
+              if (!skip_remaining)
+              {
+                auto kernel_generator_copy = self.m_kernel_generator;
+                kernel_generator_copy(cur_state, type_config{});
+              }
+              if (skip_remaining || cur_state.is_skipped())
               {
                 self.print_skip_notification(cur_state);
               }
+            }
+            catch (nvbench::stop_runner_loop &e)
+            {
+              skip_remaining = true;
+              self.handle_sampling_exception(e, cur_state);
             }
             catch (std::exception &e)
             {
