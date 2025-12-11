@@ -11,8 +11,13 @@ CMakeUserPresets.json
 
 # Python wheel builds
 wheelhouse/
+wheelhouse_merged/
+wheelhouse_final/
+dist/
+dist_*/
 *.whl
 *.egg-info/
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
