@@ -23,15 +23,17 @@ CPMAddPackage(
    FIND_PACKAGE_ARGS CONFIG REQUIRED
 )
 
-CPMAddPackage("gh:pybind/pybind11@3.0.0")
+CPMAddPackage("gh:pybind/pybind11@3.0.1")
 
-pybind11_add_module(_nvbench MODULE src/py_nvbench.cpp)
+add_library(_nvbench MODULE src/py_nvbench.cpp)
+target_include_directories(_nvbench PRIVATE ${Python_INCLUDE_DIRS})
 target_link_libraries(_nvbench PUBLIC nvbench::nvbench)
-target_link_libraries(_nvbench PRIVATE CUDA::cudart_static)
+target_link_libraries(_nvbench PRIVATE CUDA::cudart_static pybind11::headers)
 
 set_target_properties(_nvbench PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(_nvbench PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
 set_target_properties(_nvbench PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(_nvbench PROPERTIES PREFIX "" SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 install(TARGETS _nvbench DESTINATION cuda/bench)
 
