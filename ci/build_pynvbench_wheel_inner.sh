@@ -30,8 +30,29 @@ fi
 cd /workspace/python
 
 # Determine CUDA version from nvcc
-cuda_major=$(nvcc --version | grep -oP 'release \K[0-9]+\.[0-9]+' | cut -d. -f1)
-echo "Detected CUDA major version: ${cuda_major}"
+cuda_version_full=$(nvcc --version | grep -oP 'release \K[0-9]+\.[0-9]+')
+cuda_major=$(echo "${cuda_version_full}" | cut -d. -f1)
+echo "Detected CUDA version: ${cuda_version_full}"
+
+# Select CUDA architectures for multi-arch cubins + PTX fallback (if not set)
+if [[ -z "${CUDAARCHS:-}" ]]; then
+  version_ge() {
+    [[ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" == "$2" ]]
+  }
+
+  if version_ge "${cuda_version_full}" "13.0"; then
+    CUDAARCHS="75-real;80-real;86-real;90a-real;100f-real;120a-real;120-virtual"
+  elif version_ge "${cuda_version_full}" "12.9"; then
+    CUDAARCHS="70-real;75-real;80-real;86-real;90a-real;100f-real;120a-real;120-virtual"
+  else
+    CUDAARCHS="70-real;75-real;80-real;86-real;90a-real;90-virtual"
+    if version_ge "${cuda_version_full}" "12.8"; then
+      CUDAARCHS="70-real;75-real;80-real;86-real;90a-real;100-real;120a-real;120-virtual"
+    fi
+  fi
+fi
+export CUDAARCHS
+echo "Using CUDAARCHS: ${CUDAARCHS}"
 
 # Configure compilers:
 export CXX="$(which g++)"
