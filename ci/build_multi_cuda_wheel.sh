@@ -54,12 +54,13 @@ readonly devcontainer_version=25.12
 readonly devcontainer_distro=rockylinux8
 
 if [[ "$(uname -m)" == "aarch64" ]]; then
-  readonly cuda12_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda12_version}-${devcontainer_distro}-py${py_version}-arm64
-  readonly cuda13_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda13_version}-${devcontainer_distro}-py${py_version}-arm64
+  readonly host_arch_suffix="-arm64"
 else
-  readonly cuda12_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda12_version}-${devcontainer_distro}-py${py_version}
-  readonly cuda13_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda13_version}-${devcontainer_distro}-py${py_version}
+  readonly host_arch_suffix=""
 fi
+
+readonly cuda12_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda12_version}-${devcontainer_distro}-py${py_version}${host_arch_suffix}
+readonly cuda13_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda13_version}-${devcontainer_distro}-py${py_version}${host_arch_suffix}
 
 mkdir -p wheelhouse
 
