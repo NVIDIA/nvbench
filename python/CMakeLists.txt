@@ -26,9 +26,8 @@ CPMAddPackage(
 CPMAddPackage("gh:pybind/pybind11@3.0.1")
 
 # Determine CUDA major version for directory structure
-string(REGEX MATCH "^([0-9]+)" CUDA_VERSION_MAJOR "${CUDAToolkit_VERSION}")
-set(CUDA_VERSION_DIR "cu${CUDA_VERSION_MAJOR}")
-message(STATUS "Building extension for CUDA ${CUDA_VERSION_MAJOR}, output directory: cuda/bench/${CUDA_VERSION_DIR}")
+set(CUDA_VERSION_DIR "cu${CUDAToolkit_VERSION_MAJOR}")
+message(STATUS "Building extension for CUDA ${CUDAToolkit_VERSION_MAJOR}, output directory: cuda/bench/${CUDA_VERSION_DIR}")
 
 add_library(_nvbench MODULE src/py_nvbench.cpp)
 target_include_directories(_nvbench PRIVATE ${Python_INCLUDE_DIRS})
