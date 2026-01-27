@@ -23,6 +23,9 @@
 #include <nvbench/internal/nvml.cuh>
 
 #include <cuda_runtime_api.h>
+#ifdef NVBENCH_HAS_CUPTI
+#include <cuda/__driver/driver_api.h>
+#endif
 
 #define UNUSED(x) (void)(x)
 
@@ -165,9 +168,7 @@ catch (nvml::call_failed &e)
     NVBENCH_THROW(std::runtime_error, "{}", "get_context is called for inactive device");
   }
 
-  CUcontext cu_context;
-  NVBENCH_DRIVER_API_CALL(cuCtxGetCurrent(&cu_context));
-  return cu_context;
+  return cuda::__driver::__ctxGetCurrent();
 }
 #endif
 

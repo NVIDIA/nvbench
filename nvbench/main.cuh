@@ -25,6 +25,10 @@
 #include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 
+#ifdef NVBENCH_HAS_CUPTI
+#include <cuda/__driver/driver_api.h>
+#endif
+
 #include <cstdlib>
 #include <iostream>
 
@@ -175,7 +179,8 @@ inline void main_initialize(int, char **)
 {
   // Initialize CUDA driver API if needed:
 #ifdef NVBENCH_HAS_CUPTI
-  NVBENCH_DRIVER_API_CALL(cuInit(0));
+  static auto __get_proc_addr_fn      = ::cuda::__driver::__getProcAddressFn();
+  [[maybe_unused]] static auto __init = ::cuda::__driver::__init(__get_proc_addr_fn);
 #endif
 
   // Initialize the benchmarks *after* setting up the CUDA environment:
