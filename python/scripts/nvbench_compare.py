@@ -8,7 +8,11 @@ import sys
 import jsondiff
 import tabulate
 from colorama import Fore
-from nvbench_json import reader
+
+try:
+    from nvbench_json import reader
+except ImportError:
+    from scripts.nvbench_json import reader
 
 
 # Parse version string into tuple, "x.y.z" -> (x, y, z)

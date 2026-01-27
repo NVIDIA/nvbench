@@ -153,7 +153,7 @@ namespace nvbench
 json_printer::version_t json_printer::get_json_file_version()
 {
   // This version number should stay in sync with `file_version` in
-  // scripts/nvbench_json/version.py.
+  // python/scripts/nvbench_json/version.py.
   //
   // Use semantic versioning:
   // Major version: backwards incompatible changes
