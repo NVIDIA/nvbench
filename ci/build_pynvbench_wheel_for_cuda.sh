@@ -23,8 +23,8 @@ set -euxo pipefail
 # The /workspace pathnames are hard-wired here.
 
 # Determine CUDA version from nvcc early (needed for dev package installation)
-cuda_version=$(nvcc --version | grep -oP 'release \K[0-9]+\.[0-9]+' | cut -d. -f1)
-echo "Detected CUDA version: ${cuda_version}"
+cuda_version=$(nvcc --version | grep -oP 'release \K[0-9]+\.[0-9]+')
+cuda_version_major=$(echo "${cuda_version}" | cut -d. -f1)
 
 # Select CUDA architectures for multi-arch cubins + PTX fallback (if not set)
 if [[ -z "${CUDAARCHS:-}" ]]; then
@@ -80,7 +80,7 @@ python -m pip wheel --no-deps --verbose --wheel-dir dist .
 for wheel in dist/pynvbench-*.whl; do
     if [[ -f "$wheel" ]]; then
         base_name=$(basename "$wheel" .whl)
-        new_name="${base_name}.cu${cuda_version}.whl"
+        new_name="${base_name}.cu${cuda_version_major}.whl"
         mv "$wheel" "dist/${new_name}"
         echo "Renamed wheel to: ${new_name}"
     fi
