@@ -25,6 +25,7 @@ set -euxo pipefail
 # Determine CUDA version from nvcc early (needed for dev package installation)
 cuda_version=$(nvcc --version | grep -oP 'release \K[0-9]+\.[0-9]+')
 cuda_version_major=$(echo "${cuda_version}" | cut -d. -f1)
+echo "Detected CUDA version: ${cuda_version}"
 
 # Select CUDA architectures for multi-arch cubins + PTX fallback (if not set)
 if [[ -z "${CUDAARCHS:-}" ]]; then
