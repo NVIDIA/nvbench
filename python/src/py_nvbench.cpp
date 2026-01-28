@@ -272,7 +272,11 @@ std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry{};
 // If you modify these bindings, please be sure to update the
 // corresponding type hints in ``../cuda/nvbench/__init__.pyi``
 
-PYBIND11_MODULE(_nvbench, m)
+#ifndef PYBIND11_MODULE_NAME
+#define PYBIND11_MODULE_NAME _nvbench
+#endif
+
+PYBIND11_MODULE(PYBIND11_MODULE_NAME, m)
 {
   // == STEP 1
   // Set environment variable CUDA_MODULE_LOADING=EAGER
