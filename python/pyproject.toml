@@ -43,6 +43,20 @@ test-cu13 = ["pynvbench[cu13]", "pytest", "cupy-cuda13x", "numba"]
 
 # Generic test dependencies (defaults to CUDA 12)
 test = ["pytest", "cupy-cuda12x", "numba"]
+tools = [
+  "colorama",
+  "jsondiff",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "seaborn",
+  "tabulate",
+]
+
+[project.scripts]
+nvbench-compare = "scripts.nvbench_compare:main"
+nvbench-histogram = "scripts.nvbench_histogram:main"
+nvbench-walltime = "scripts.nvbench_walltime:main"
 
 [project.urls]
 Homepage = "https://github.com/NVIDIA/nvbench"
@@ -75,3 +89,4 @@ fallback_version = "0.0.0"
 [tool.scikit-build.wheel.packages]
 "cuda" = "cuda"
 "cuda/bench" = "cuda/bench"
+"scripts" = "scripts"
