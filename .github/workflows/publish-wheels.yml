@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.wheel-dst }}
-      url: https://${{ (inputs.wheel-dst == 'testpypi' && 'test.') || '' }}pypi.org/p/cuda-bench/
+      url: https://${{ (inputs.wheel-dst == 'testpypi' && 'test.') || '' }}pypi.org/p/${{ inputs.component }}/
     permissions:
       id-token: write
       contents: read
