@@ -37,7 +37,7 @@ jobs:
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-pynvbench-py${{ matrix.python }}
+          name: wheel-cuda_bench-py${{ matrix.python }}
           path: wheelhouse/*.whl
           retention-days: 7
           if-no-files-found: error
@@ -67,7 +67,7 @@ jobs:
       - name: Download wheel artifact
         uses: actions/download-artifact@v4
         with:
-          name: wheel-pynvbench-py${{ matrix.python }}
+          name: wheel-cuda_bench-py${{ matrix.python }}
           path: wheelhouse
 
       - name: Test wheel
@@ -89,7 +89,7 @@ jobs:
             --env cuda_version=${{ matrix.cuda }} \
             --env cuda_extra="${cuda_extra}" \
             rapidsai/ci-wheel:25.12-cuda${cuda_full_version}-rockylinux8-py${{ matrix.python }} \
-            /workspace/ci/test_pynvbench_inner.sh
+            /workspace/ci/test_cuda_bench_inner.sh
 
   verify-workflow:
     name: Verify all builds and tests succeeded
