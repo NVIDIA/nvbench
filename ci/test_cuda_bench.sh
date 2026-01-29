@@ -74,7 +74,7 @@ echo "::group::🧪 Testing CUDA ${cuda_version} wheel on ${cuda_image}"
       --env cuda_version=${cuda_version} \
       --env cuda_extra="${cuda_extra}" \
       $cuda_image \
-      /workspace/ci/test_pynvbench_inner.sh
+      /workspace/ci/test_cuda_bench_inner.sh
   # Prevent GHA runners from exhausting available storage with leftover images:
   if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
     docker rmi -f $cuda_image

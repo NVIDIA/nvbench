@@ -78,7 +78,7 @@ python -m pip wheel --no-deps --verbose --wheel-dir dist .
 
 # Temporarily rename wheel to include CUDA version to avoid collision during multi-CUDA build
 # The merge script will combine these into a single wheel
-for wheel in dist/pynvbench-*.whl; do
+for wheel in dist/cuda_bench-*.whl; do
     if [[ -f "$wheel" ]]; then
         base_name=$(basename "$wheel" .whl)
         new_name="${base_name}.cu${cuda_version_major}.whl"
@@ -89,4 +89,4 @@ done
 
 # Move wheel to output directory
 mkdir -p /workspace/wheelhouse
-mv dist/pynvbench-*.cu*.whl /workspace/wheelhouse/
+mv dist/cuda_bench-*.cu*.whl /workspace/wheelhouse/

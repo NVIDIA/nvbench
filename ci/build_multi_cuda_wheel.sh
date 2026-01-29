@@ -43,7 +43,7 @@ if [[ -z "${HOST_WORKSPACE:-}" ]]; then
   echo "Setting HOST_WORKSPACE to: $HOST_WORKSPACE"
 fi
 
-# pynvbench must be built in a container that can produce manylinux wheels,
+# cuda-bench must be built in a container that can produce manylinux wheels,
 # and has the CUDA toolkit installed. We use the rapidsai/ci-wheel image for this.
 # We build separate wheels using separate containers for each CUDA version,
 # then merge them into a single wheel.
@@ -75,7 +75,7 @@ for ctk in 12 13; do
         --mount type=bind,source=${HOST_WORKSPACE},target=/workspace/ \
         --env py_version=${py_version} \
         $image \
-        /workspace/ci/build_pynvbench_wheel_for_cuda.sh
+        /workspace/ci/build_cuda_bench_wheel_for_cuda.sh
     # Prevent GHA runners from exhausting available storage with leftover images:
     if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
       docker rmi -f $image
@@ -134,13 +134,13 @@ cd wheelhouse_merged
 
 # Unpack CUDA 12 wheel (this will be our base)
 $PYTHON -m wheel unpack "$cu12_wheel"
-base_dir=$(find . -maxdepth 1 -type d -name "pynvbench-*" | head -1)
+base_dir=$(find . -maxdepth 1 -type d -name "cuda_bench-*" | head -1)
 
 # Unpack CUDA 13 wheel into a temporary subdirectory
 mkdir cu13_tmp
 cd cu13_tmp
 $PYTHON -m wheel unpack "$cu13_wheel"
-cu13_dir=$(find . -maxdepth 1 -type d -name "pynvbench-*" | head -1)
+cu13_dir=$(find . -maxdepth 1 -type d -name "cuda_bench-*" | head -1)
 
 # Copy the cu13/ directory from CUDA 13 wheel into the base wheel
 cp -r "$cu13_dir"/cuda/bench/cu13 "../$base_dir/cuda/bench/"
@@ -159,7 +159,7 @@ cd ..
 
 # Install auditwheel and repair the merged wheel
 $PYTHON -m pip install --break-system-packages auditwheel
-for wheel in wheelhouse_merged/pynvbench-*.whl; do
+for wheel in wheelhouse_merged/cuda_bench-*.whl; do
     echo "Repairing merged wheel: $wheel"
     $PYTHON -m auditwheel repair \
         --exclude 'libcuda.so.1' \
@@ -177,12 +177,12 @@ rm -rf wheelhouse/*  # Clean existing wheelhouse
 mkdir -p wheelhouse
 
 # Move only the final repaired merged wheel
-if ls wheelhouse_final/pynvbench-*.whl 1> /dev/null 2>&1; then
-    mv wheelhouse_final/pynvbench-*.whl wheelhouse/
+if ls wheelhouse_final/cuda_bench-*.whl 1> /dev/null 2>&1; then
+    mv wheelhouse_final/cuda_bench-*.whl wheelhouse/
     echo "Final merged wheel moved to wheelhouse"
 else
     echo "No final repaired wheel found, moving unrepaired merged wheel"
-    mv wheelhouse_merged/pynvbench-*.whl wheelhouse/
+    mv wheelhouse_merged/cuda_bench-*.whl wheelhouse/
 fi
 
 # Clean up temporary directories

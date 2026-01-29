@@ -23,11 +23,11 @@ from cuda.pathfinder import (  # type: ignore[import-not-found]
 )
 
 try:
-    __version__ = importlib.metadata.version("pynvbench")
+    __version__ = importlib.metadata.version("cuda-bench")
 except Exception as e:
     __version__ = "0.0.0dev"
     warnings.warn(
-        "Could not retrieve version of pynvbench package dynamically from its metadata. "
+        "Could not retrieve version of cuda-bench package dynamically from its metadata. "
         f"Exception {e} was raised. "
         f"Version is set to fall-back value '{__version__}' instead."
     )
@@ -47,7 +47,7 @@ def _get_cuda_major_version():
     except ImportError:
         raise ImportError(
             "cuda-bindings is required for runtime CUDA version detection. "
-            "Install with: pip install pynvbench[cu12] or pip install pynvbench[cu13]"
+            "Install with: pip install cuda-bench[cu12] or pip install cuda-bench[cu13]"
         )
 
 
@@ -59,7 +59,7 @@ try:
     _nvbench_module = importlib.import_module(_module_fullname)
 except ImportError as e:
     raise ImportError(
-        f"No pynvbench extension found for CUDA {_cuda_major}.x. "
+        f"No cuda-bench extension found for CUDA {_cuda_major}.x. "
         f"This wheel may not include support for your CUDA version. "
         f"Supported CUDA versions: 12, 13. "
         f"Original error: {e}"
