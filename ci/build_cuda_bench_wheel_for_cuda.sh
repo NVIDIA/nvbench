@@ -34,13 +34,13 @@ if [[ -z "${CUDAARCHS:-}" ]]; then
   }
 
   if version_ge "${cuda_version}" "13.0"; then
-    CUDAARCHS="75-real;80-real;86-real;90a-real;100f-real;120a-real;120-virtual"
+    CUDAARCHS="75-real;80-real;86-real;89-real;90a-real;100f-real;120a-real;120-virtual"
   elif version_ge "${cuda_version}" "12.9"; then
-    CUDAARCHS="70-real;75-real;80-real;86-real;90a-real;100f-real;120a-real;120-virtual"
+    CUDAARCHS="70-real;75-real;80-real;86-real;89-real;90a-real;100f-real;120a-real;120-virtual"
   else
-    CUDAARCHS="70-real;75-real;80-real;86-real;90a-real;90-virtual"
+    CUDAARCHS="70-real;75-real;80-real;86-real;89-real;90a-real;90-virtual"
     if version_ge "${cuda_version}" "12.8"; then
-      CUDAARCHS="70-real;75-real;80-real;86-real;90a-real;100-real;120a-real;120-virtual"
+      CUDAARCHS="70-real;75-real;80-real;86-real;89-real;90a-real;100-real;120a-real;120-virtual"
     fi
   fi
 fi
