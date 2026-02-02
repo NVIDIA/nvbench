@@ -550,13 +550,11 @@ PYBIND11_MODULE(PYBIND11_MODULE_NAME, m)
   //        nvbench::state::collect_stores_efficiency
   //        nvbench::state::collect_loads_efficiency
   //        nvbench::state::collect_dram_throughput
-  //        nvbench::state::collect_cupti_metrics
   //        nvbench::state::is_l1_hit_rate_collected
   //        nvbench::state::is_l2_hit_rate_collected
   //        nvbench::state::is_stores_efficiency_collected
   //        nvbench::state::is_loads_efficiency_collected
   //        nvbench::state::is_dram_throughput_collected
-  //        nvbench::state::is_cupti_required
   //        nvbench::state::add_summary
   //        nvbench::state::get_summary
   //        nvbench::state::get_summaries
@@ -677,10 +675,6 @@ PYBIND11_MODULE(PYBIND11_MODULE_NAME, m)
   pystate_cls.def("set_blocking_kernel_timeout",
                   &nvbench::state::set_blocking_kernel_timeout,
                   py::arg("duration"));
-
-  pystate_cls.def("collect_cupti_metrics", &nvbench::state::collect_cupti_metrics);
-
-  pystate_cls.def("is_cupti_required", &nvbench::state::is_cupti_required);
 
   pystate_cls.def(
     "exec",

@@ -240,12 +240,6 @@ class State:
     def set_blocking_kernel_timeout(self, duration: SupportsFloat) -> None:
         "Set time-out value for execution of blocking kernel, in seconds"
         ...
-    def collect_cupti_metrics(self) -> None:
-        "Request NVBench to record CUPTI metrics while running benchmark for this configuration"
-        ...
-    def is_cupti_required(self) -> bool:
-        "True if (some) CUPTI metrics are being collected"
-        ...
     def exec(
         self,
         fn: Callable[[Launch], None],

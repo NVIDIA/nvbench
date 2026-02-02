@@ -21,19 +21,15 @@ classifiers = [
   "Operating System :: POSIX :: Linux",
 ]
 requires-python = ">=3.10"
-dependencies = [
-  # pathfinder for finding CUDA libraries
-  "cuda-pathfinder",
-]
 dynamic = ["version"]
 readme = { file = "README.md", content-type = "text/markdown" }
 
 [project.optional-dependencies]
 # CUDA 12.x dependencies
-cu12 = ["cuda-bindings>=12.0.0,<13.0.0", "nvidia-cuda-cupti-cu12"]
+cu12 = ["cuda-bindings>=12.0.0,<13.0.0"]
 
 # CUDA 13.x dependencies
-cu13 = ["cuda-bindings>=13.0.0,<14.0.0", "nvidia-cuda-cupti>=13.0"]
+cu13 = ["cuda-bindings>=13.0.0,<14.0.0"]
 
 # Test dependencies for CUDA 12
 test-cu12 = ["cuda-bench[cu12]", "pytest", "cupy-cuda12x", "numba"]
