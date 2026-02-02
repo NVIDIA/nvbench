@@ -306,6 +306,8 @@ private:
         std::optional<nvbench::device_info> device,
         std::size_t type_config_index);
 
+  bool skip_hot_measurement() { return get_run_once() || get_skip_batched(); }
+
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;

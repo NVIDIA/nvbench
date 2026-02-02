@@ -185,7 +185,7 @@ void state::exec(ExecTags tags, KernelLauncher &&kernel_launcher)
       static_assert(!(tags & no_batch), "Hot measurement doesn't support the `no_batch` exec_tag.");
       static_assert(!(tags & no_gpu), "Hot measurement doesn't support the `no_gpu` exec_tag.");
 
-      if (!this->get_run_once() && !this->get_skip_batched())
+      if (!this->skip_hot_measurement())
       {
         using measure_t = nvbench::detail::measure_hot<KL>;
         measure_t measure{*this, kernel_launcher};
