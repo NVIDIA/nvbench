@@ -77,7 +77,6 @@ _nvbench = _nvbench_module
 
 # Clean up internal symbols
 del (
-    load_nvidia_dynamic_lib,
     _nvbench_module,
     _cuda_major,
     _extra_name,
