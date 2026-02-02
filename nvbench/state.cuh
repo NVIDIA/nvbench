@@ -163,7 +163,7 @@ struct state
 
   /// If true, the batched measurements of benchmark are not run. This is intended for use to
   /// save resources when only non-batched measurements are of interest, although batched
-  /// measurements are meaningful and code to exercise them is compiled. This option has not
+  /// measurements are meaningful and code to exercise them is compiled. This option has no
   /// effect for CPU only benchmarks and for benchmarks tagged with no_batch tag. @{
   [[nodiscard]] bool get_skip_batched() const { return m_skip_batched; }
   void set_skip_batched(bool v) { m_skip_batched = v; }
