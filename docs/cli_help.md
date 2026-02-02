@@ -115,6 +115,12 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--no-batched`
+  * Do not run batched measurements even if enabled.
+  * Intended to shorten run-time when batched measurements are not of interest.
+  * Applied to the most recent `--benchmark`, or all benchrmarks if specified
+    before any `--benchmark` arguments.
+
 ## Stopping Criteria
 
 * `--timeout <seconds>`
