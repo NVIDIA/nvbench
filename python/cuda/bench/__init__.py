@@ -92,3 +92,7 @@ del (
     _module_fullname,
     _get_cuda_major_version,
 )
+
+__doc__ = """
+CUDA Kernel Benchmarking Library Python API
+"""
