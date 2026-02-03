@@ -676,13 +676,11 @@ void def_class_State(py::module_ m)
   //        nvbench::state::collect_stores_efficiency
   //        nvbench::state::collect_loads_efficiency
   //        nvbench::state::collect_dram_throughput
-  //        nvbench::state::collect_cupti_metrics
   //        nvbench::state::is_l1_hit_rate_collected
   //        nvbench::state::is_l2_hit_rate_collected
   //        nvbench::state::is_stores_efficiency_collected
   //        nvbench::state::is_loads_efficiency_collected
   //        nvbench::state::is_dram_throughput_collected
-  //        nvbench::state::is_cupti_required
   //        nvbench::state::add_summary
   //        nvbench::state::get_summary
   //        nvbench::state::get_summaries
@@ -971,20 +969,6 @@ Use argument True to disable use of blocking kernel by NVBench"
                   &nvbench::state::set_blocking_kernel_timeout,
                   method_set_blocking_kernel_timeout_doc,
                   py::arg("duration_seconds"));
-
-  // method State.collect_cupti_metrics
-  static constexpr const char *method_collect_cupti_metrics_doc =
-    R"XXXX(Request NVBench to record CUPTI metrics while running benchmark for this configuration)XXXX";
-  pystate_cls.def("collect_cupti_metrics",
-                  &nvbench::state::collect_cupti_metrics,
-                  method_collect_cupti_metrics_doc);
-
-  // method State.is_cupti_required
-  static constexpr const char *method_is_cupti_required_doc =
-    R"XXXX(True if (some) CUPTI metrics are being collected)XXXX";
-  pystate_cls.def("is_cupti_required",
-                  &nvbench::state::is_cupti_required,
-                  method_is_cupti_required_doc);
 
   // method State.exec
   auto method_exec_impl =

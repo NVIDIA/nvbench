@@ -19,7 +19,9 @@ include(${_cpm_download_location})
 CPMAddPackage(
    NAME nvbench
    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
-   OPTIONS "NVBench_INSTALL_RULES ON"
+   OPTIONS
+     "NVBench_INSTALL_RULES ON"
+     "NVBench_ENABLE_CUPTI OFF"
    FIND_PACKAGE_ARGS CONFIG REQUIRED
 )
 

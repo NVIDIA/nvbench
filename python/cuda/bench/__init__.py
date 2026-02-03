@@ -18,10 +18,6 @@ import importlib
 import importlib.metadata
 import warnings
 
-from cuda.pathfinder import (  # type: ignore[import-not-found]
-    load_nvidia_dynamic_lib,
-)
-
 try:
     __version__ = importlib.metadata.version("cuda-bench")
 except Exception as e:
@@ -65,10 +61,6 @@ except ImportError as e:
         f"Original error: {e}"
     )
 
-# Load required NVIDIA libraries
-for libname in ("cupti", "nvperf_target", "nvperf_host"):
-    load_nvidia_dynamic_lib(libname)
-
 # Import and expose all public symbols from the CUDA-specific extension
 Benchmark = _nvbench_module.Benchmark
 CudaStream = _nvbench_module.CudaStream
@@ -85,7 +77,6 @@ _nvbench = _nvbench_module
 
 # Clean up internal symbols
 del (
-    load_nvidia_dynamic_lib,
     _nvbench_module,
     _cuda_major,
     _extra_name,
