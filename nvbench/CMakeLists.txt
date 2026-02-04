@@ -1,6 +1,7 @@
 set(srcs
   axes_metadata.cxx
   axis_base.cxx
+  iteration_space_base.cxx
   benchmark_base.cxx
   benchmark_manager.cxx
   blocking_kernel.cu
@@ -11,6 +12,7 @@ set(srcs
   device_manager.cu
   float64_axis.cxx
   int64_axis.cxx
+  linear_axis_space.cxx
   markdown_printer.cu
   named_values.cxx
   option_parser.cu
@@ -22,6 +24,8 @@ set(srcs
   string_axis.cxx
   type_axis.cxx
   type_strings.cxx
+  user_axis_space.cxx
+  zip_axis_space.cxx
 
   detail/entropy_criterion.cxx
   detail/measure_cold.cu

@@ -33,6 +33,11 @@ struct string_axis final : public axis_base
       , m_values{}
   {}
 
+  explicit string_axis(std::string name, std::vector<std::string> inputs)
+      : axis_base{std::move(name), axis_type::string}
+      , m_values{std::move(inputs)}
+  {}
+
   ~string_axis() final;
 
   void set_inputs(std::vector<std::string> inputs) { m_values = std::move(inputs); }

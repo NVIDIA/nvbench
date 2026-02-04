@@ -33,6 +33,11 @@ struct float64_axis final : public axis_base
       , m_values{}
   {}
 
+  explicit float64_axis(std::string name, std::vector<nvbench::float64_t> inputs)
+      : axis_base{std::move(name), axis_type::float64}
+      , m_values{std::move(inputs)}
+  {}
+
   ~float64_axis() final;
 
   void set_inputs(std::vector<nvbench::float64_t> inputs) { m_values = std::move(inputs); }
