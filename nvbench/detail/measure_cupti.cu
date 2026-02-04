@@ -61,9 +61,9 @@ struct metric_traits<metric_id::dram_peak_sustained_throughput>
 
   static constexpr double divider = 100.0;
 
-  static bool is_collected(nvbench::state &m_state)
+  static bool get_collected(nvbench::state &m_state)
   {
-    return m_state.is_dram_throughput_collected();
+    return m_state.get_collect_dram_throughput();
   };
 };
 
@@ -82,9 +82,9 @@ struct metric_traits<metric_id::global_load_efficiency>
 
   static constexpr double divider = 100.0;
 
-  static bool is_collected(nvbench::state &m_state)
+  static bool get_collected(nvbench::state &m_state)
   {
-    return m_state.is_loads_efficiency_collected();
+    return m_state.get_collect_loads_efficiency();
   };
 };
 
@@ -103,9 +103,9 @@ struct metric_traits<metric_id::global_store_efficiency>
 
   static constexpr double divider = 100.0;
 
-  static bool is_collected(nvbench::state &m_state)
+  static bool get_collected(nvbench::state &m_state)
   {
-    return m_state.is_stores_efficiency_collected();
+    return m_state.get_collect_stores_efficiency();
   };
 };
 
@@ -118,7 +118,7 @@ struct metric_traits<metric_id::l1_hit_rate>
   static constexpr const char *description = "Hit rate at L1 cache.";
   static constexpr double divider          = 100.0;
 
-  static bool is_collected(nvbench::state &m_state) { return m_state.is_l1_hit_rate_collected(); };
+  static bool get_collected(nvbench::state &m_state) { return m_state.get_collect_l1_hit_rates(); };
 };
 
 template <>
@@ -130,13 +130,13 @@ struct metric_traits<metric_id::l2_hit_rate>
   static constexpr const char *description = "Hit rate at L2 cache.";
   static constexpr double divider          = 100.0;
 
-  static bool is_collected(nvbench::state &m_state) { return m_state.is_l2_hit_rate_collected(); };
+  static bool get_collected(nvbench::state &m_state) { return m_state.get_collect_l2_hit_rates(); };
 };
 
 template <metric_id id = metric_id::dram_peak_sustained_throughput>
 void add_metrics_impl(nvbench::state &state, std::vector<std::string> &metrics)
 {
-  if (metric_traits<id>::is_collected(state))
+  if (metric_traits<id>::get_collected(state))
   {
     metrics.emplace_back(metric_traits<id>::metric_name);
   }
@@ -200,7 +200,7 @@ void gen_summary(std::size_t result_id, nvbench::state &m_state, const std::vect
 {
   using metric = metric_traits<id>;
 
-  if (metric::is_collected(m_state))
+  if (metric::get_collected(m_state))
   {
     auto &summ = m_state.add_summary(fmt::format("nv/cupti/{}", metric::metric_name));
     summ.set_string("name", metric::name);
