@@ -184,18 +184,27 @@ def format_percentage(percentage):
     return "%0.2f%%" % (percentage * 100.0)
 
 
-def format_axis_values(axis_values, axes):
+def format_axis_values(axis_values, axes, axis_filters=None):
     if not axis_values:
         return ""
+    filtered_names = set()
+    if axis_filters:
+        filtered_names = {
+            axis_filter["name"]
+            for axis_filter in axis_filters
+            if len(axis_filter["values"]) == 1
+        }
     parts = []
     for axis_value in axis_values:
         axis_name = axis_value["name"]
+        if axis_name in filtered_names:
+            continue
         formatted = format_axis_value(axis_name, axis_value, axes)
         parts.append("{}={}".format(axis_name, formatted))
     return " ".join(parts)
 
 
-def plot_comparison_entries(entries, title=None):
+def plot_comparison_entries(entries, title=None, dark=False):
     if not entries:
         print("No comparison data to plot.")
         return 1
@@ -211,6 +220,7 @@ def plot_comparison_entries(entries, title=None):
     labels = [entry[0] for entry in entries]
     values = [entry[1] for entry in entries]
     statuses = [entry[2] for entry in entries]
+    bench_names = [entry[3] for entry in entries]
 
     status_colors = {
         "SLOW": "red",
@@ -221,6 +231,15 @@ def plot_comparison_entries(entries, title=None):
 
     fig_height = max(4.0, 0.3 * len(entries) + 1.5)
     fig, ax = plt.subplots(figsize=(10, fig_height))
+    if dark:
+        fig.patch.set_facecolor("black")
+        ax.set_facecolor("black")
+        ax.tick_params(colors="white")
+        ax.xaxis.label.set_color("white")
+        ax.yaxis.label.set_color("white")
+        ax.title.set_color("white")
+        for spine in ax.spines.values():
+            spine.set_color("white")
 
     y_pos = range(len(labels))
     ax.barh(y_pos, values, color=colors)
@@ -229,7 +248,11 @@ def plot_comparison_entries(entries, title=None):
     ax.invert_yaxis()
     ax.set_ylim(len(labels) - 0.5, -0.5)
 
-    ax.axvline(0, color="gray", linewidth=1, alpha=0.6)
+    separator_color = "white" if dark else "gray"
+    ax.axvline(0, color=separator_color, linewidth=1, alpha=0.6)
+    for index in range(1, len(bench_names)):
+        if bench_names[index] != bench_names[index - 1]:
+            ax.axhline(index - 0.5, color=separator_color, linewidth=0.6, alpha=0.4)
     ax.xaxis.set_major_formatter(PercentFormatter(1.0))
 
     if title:
@@ -261,6 +284,7 @@ def compare_benches(
     threshold,
     plot_along,
     plot,
+    dark,
     axis_filters,
     benchmark_filters,
 ):
@@ -455,7 +479,7 @@ def compare_benches(
 
                     rows.append(row)
                     if plot:
-                        axis_label = format_axis_values(axis_values, axes)
+                        axis_label = format_axis_values(axis_values, axes, axis_filters)
                         if axis_label:
                             label = "{} | {}".format(cmp_bench["name"], axis_label)
                         else:
@@ -465,7 +489,9 @@ def compare_benches(
                         )
                         if cmp_device:
                             comparison_device_names.add(cmp_device["name"])
-                        comparison_entries.append((label, frac_diff, status_label))
+                        comparison_entries.append(
+                            (label, frac_diff, status_label, cmp_bench["name"])
+                        )
 
             if len(rows) == 0:
                 continue
@@ -535,7 +561,7 @@ def compare_benches(
             )
             if axis_label:
                 title = "{} ({})".format(title, axis_label)
-        plot_comparison_entries(comparison_entries, title=title)
+        plot_comparison_entries(comparison_entries, title=title, dark=dark)
 
 
 def main():
@@ -564,6 +590,11 @@ def main():
         default=False,
         help="plot comparison summary",
         action="store_true",
+    )
+    parser.add_argument(
+        "--dark",
+        action="store_true",
+        help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
         "-a",
@@ -640,6 +671,7 @@ def main():
             args.threshold,
             args.plot_along,
             args.plot,
+            args.dark,
             axis_filters,
             args.benchmark,
         )
