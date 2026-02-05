@@ -239,8 +239,8 @@ def plot_entries(entries, title=None, output=None, dark=False):
     colors = [bench_colors[bench] for bench in bench_names]
 
     fig_height = max(4.0, 0.3 * len(entries) + 1.5)
-    style = "dark_background" if dark else None
-    with plt.style.context(style) if style else plt.style.context("default"):
+    style = "dark_background" if dark else "default"
+    with plt.style.context(style):
         fig, ax = plt.subplots(figsize=(10, fig_height))
 
         y_pos = range(len(labels))
