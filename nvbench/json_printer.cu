@@ -106,7 +106,11 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
   } // end foreach value name
 }
 
-template <std::size_t buffer_nbytes>
+// choose buffer to be block size of modern SSD
+// see: https://github.com/NVIDIA/nvbench/issues/255
+static constexpr std::size_t preferred_buffer_nbytes = 4096;
+
+template <std::size_t buffer_nbytes = preferred_buffer_nbytes>
 void write_out_values(std::ofstream &out, const std::vector<nvbench::float64_t> &data)
 {
   static constexpr std::size_t value_nbytes = sizeof(nvbench::float32_t);
@@ -206,10 +210,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
       out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
       out.open(result_path, std::ios::binary | std::ios::out);
 
-      // choose buffer to be block size of modern SSD
-      // see: https://github.com/NVIDIA/nvbench/issues/255
-      constexpr std::size_t buffer_nbytes = 4096;
-      write_out_values<buffer_nbytes>(out, data);
+      write_out_values(out, data);
     }
     catch (std::exception &e)
     {
@@ -269,24 +270,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
       out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
       out.open(result_path, std::ios::binary | std::ios::out);
 
-      // FIXME: SLOW -- Writing the binary file, 4 bytes at a time...
-      // There are a lot of optimizations that could be done here if this ends
-      // up being a noticeable bottleneck.
-      for (auto value64 : data)
-      {
-        const auto value32 = static_cast<nvbench::float32_t>(value64);
-        char buffer[4];
-        std::memcpy(buffer, &value32, 4);
-        // the c++17 implementation of is_little_endian isn't constexpr, but
-        // all supported compilers optimize this branch as if it were.
-        if (!is_little_endian())
-        {
-          using std::swap;
-          swap(buffer[0], buffer[3]);
-          swap(buffer[1], buffer[2]);
-        }
-        out.write(buffer, 4);
-      }
+      write_out_values(out, data);
     }
     catch (std::exception &e)
     {
