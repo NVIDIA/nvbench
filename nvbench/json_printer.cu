@@ -38,6 +38,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -110,27 +111,45 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
 // see: https://github.com/NVIDIA/nvbench/issues/255
 static constexpr std::size_t preferred_buffer_nbytes = 4096;
 
-template <std::size_t buffer_nbytes = preferred_buffer_nbytes>
-void write_out_values(std::ofstream &out, const std::vector<nvbench::float64_t> &data)
+template <std::size_t N, std::size_t... Is>
+void swap_bytes_impl(char *p, std::index_sequence<Is...>)
 {
-  static constexpr std::size_t value_nbytes = sizeof(nvbench::float32_t);
+  ((std::swap(p[Is], p[N - 1 - Is])), ...);
+}
+
+template <std::size_t WordSize>
+void big_endian_to_little_endian(char *word)
+{
+  if constexpr (WordSize > 1)
+  {
+    static_assert((WordSize & (WordSize - 1)) == 0, "WordSize must be a power of two");
+    swap_bytes_impl<WordSize>(word, std::make_index_sequence<WordSize / 2>{});
+  }
+}
+
+template <typename StorageT, std::size_t buffer_nbytes = preferred_buffer_nbytes>
+void write_out_values_as(std::ofstream &out, const std::vector<nvbench::float64_t> &data)
+{
+  static_assert(std::is_floating_point_v<StorageT>);
+  static_assert(std::is_convertible_v<nvbench::float64_t, StorageT>);
+
+  static constexpr std::size_t value_nbytes = sizeof(StorageT);
   static_assert(buffer_nbytes % value_nbytes == 0);
 
-  alignas(alignof(nvbench::float32_t)) char buffer[buffer_nbytes];
+  alignas(alignof(StorageT)) char buffer[buffer_nbytes];
   std::size_t bytes_in_buffer = 0;
 
   for (auto value64 : data)
   {
-    const auto value32   = static_cast<nvbench::float32_t>(value64);
+    const auto value     = static_cast<StorageT>(value64);
     auto value_subbuffer = &buffer[bytes_in_buffer];
-    std::memcpy(value_subbuffer, &value32, value_nbytes);
+    std::memcpy(value_subbuffer, &value, value_nbytes);
 
     // the c++17 implementation of is_little_endian isn't constexpr, but
     // all supported compilers optimize this branch as if it were.
     if (!is_little_endian())
     {
-      std::swap(value_subbuffer[0], value_subbuffer[3]);
-      std::swap(value_subbuffer[1], value_subbuffer[2]);
+      big_endian_to_little_endian<value_nbytes>(value_subbuffer);
     }
     bytes_in_buffer += value_nbytes;
 
@@ -147,6 +166,20 @@ void write_out_values(std::ofstream &out, const std::vector<nvbench::float64_t> 
     out.write(buffer, static_cast<std::streamsize>(bytes_in_buffer));
     bytes_in_buffer = 0;
   }
+}
+
+// save data using statically downcasting to float32 format
+template <std::size_t buffer_nbytes = preferred_buffer_nbytes>
+void write_out_values_as_float32(std::ofstream &out, const std::vector<nvbench::float64_t> &data)
+{
+  write_out_values_as<nvbench::float32_t, buffer_nbytes>(out, data);
+}
+
+// save data using float64 format
+template <std::size_t buffer_nbytes = preferred_buffer_nbytes>
+void write_out_values_as_float64(std::ofstream &out, const std::vector<nvbench::float64_t> &data)
+{
+  write_out_values_as<nvbench::float64_t, buffer_nbytes>(out, data);
 }
 
 } // end namespace
@@ -210,7 +243,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
       out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
       out.open(result_path, std::ios::binary | std::ios::out);
 
-      write_out_values(out, data);
+      write_out_values_as_float32(out, data);
     }
     catch (std::exception &e)
     {
@@ -270,7 +303,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
       out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
       out.open(result_path, std::ios::binary | std::ios::out);
 
-      write_out_values(out, data);
+      write_out_values_as_float32(out, data);
     }
     catch (std::exception &e)
     {
