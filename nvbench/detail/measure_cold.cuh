@@ -140,6 +140,13 @@ struct measure_cold_base::kernel_launch_timer
       , m_check_throttling{measure.m_check_throttling}
   {}
 
+  explicit kernel_launch_timer(measure_cold_base &measure, bool disable_blocking_kernel)
+      : m_measure{measure}
+      , m_disable_blocking_kernel{disable_blocking_kernel}
+      , m_run_once{measure.m_run_once}
+      , m_check_throttling{measure.m_check_throttling}
+  {}
+
   explicit kernel_launch_timer(measure_cold_base &measure,
                                bool disable_blocking_kernel,
                                bool run_once,
@@ -234,7 +241,7 @@ private:
     // disable use of blocking kernel for warm-up run
     // see https://github.com/NVIDIA/nvbench/issues/240
     constexpr bool disable_blocking_kernel = true;
-    kernel_launch_timer timer(*this, disable_blocking_kernel, m_run_once, m_check_throttling);
+    kernel_launch_timer timer(*this, disable_blocking_kernel);
 
     this->launch_kernel(timer);
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -245,7 +252,7 @@ private:
     // do not use blocking kernel if benchmark is only run once, e.g., when profiling
     // ref: https://github.com/NVIDIA/nvbench/issue/242
     const bool disable_blocking_kernel = m_run_once || m_disable_blocking_kernel;
-    kernel_launch_timer timer(*this, disable_blocking_kernel, m_run_once, m_check_throttling);
+    kernel_launch_timer timer(*this, disable_blocking_kernel);
     do
     {
       this->launch_kernel(timer);

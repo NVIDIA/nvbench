@@ -44,7 +44,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
         exec_state.get_stopping_criterion())}
     , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel()}
     , m_run_once{exec_state.get_run_once()}
-    , m_check_throttling(!exec_state.get_run_once() && exec_state.get_throttle_threshold() > 0.f)
+    , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
