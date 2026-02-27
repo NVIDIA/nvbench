@@ -53,8 +53,10 @@ measure_cold_base::measure_cold_base(state &exec_state)
 {
   if (m_min_samples > 0)
   {
-    m_cuda_times.reserve(static_cast<std::size_t>(m_min_samples));
-    m_cpu_times.reserve(static_cast<std::size_t>(m_min_samples));
+    const auto reserve_size = static_cast<std::size_t>(m_min_samples);
+    m_sm_clock_rates.reserve(reserve_size);
+    m_cuda_times.reserve(reserve_size);
+    m_cpu_times.reserve(reserve_size);
   }
 }
 
