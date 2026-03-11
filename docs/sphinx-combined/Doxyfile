@@ -1,0 +1,43 @@
+PROJECT_NAME           = "NVBench"
+PROJECT_BRIEF          = "C++ NVBench Library"
+OUTPUT_DIRECTORY       = _doxygen
+GENERATE_XML           = YES
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+WARN_LOGFILE           = _doxygen/warnings.log
+INPUT                  = ../../nvbench
+EXCLUDE                = ../../nvbench/cupti_profiler.cxx
+EXCLUDE_SYMBOLS        = type_strings \
+                         nvbench::detail \
+                         nvbench::internal \
+                         nvbench::tl \
+                         UNUSED \
+                         M_PI \
+                         NVBENCH_UNIQUE_IDENTIFIER_IMPL1 \
+                         NVBENCH_UNIQUE_IDENTIFIER_IMPL2 \
+                         main
+FILE_PATTERNS          = *.cuh *.cxx *.cu *.h *.hpp
+EXTENSION_MAPPING      = cuh=C++ cu=C++
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+JAVADOC_AUTOBRIEF      = YES
+MULTILINE_CPP_IS_BRIEF = YES
+STRIP_FROM_PATH        = ../../
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+GENERATE_TAGFILE       =
+XML_PROGRAMLISTING    = NO
+PREDEFINED             = __device__= \
+                         __host__= \
+                         __global__= \
+                         __forceinline__= \
+                         __shared__= \
+                         __align__(x)= \
+                         __launch_bounds__(x)= \
+                         NVBENCH_HAS_CUDA=1
