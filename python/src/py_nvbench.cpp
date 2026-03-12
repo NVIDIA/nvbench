@@ -369,7 +369,7 @@ static void def_class_Benchmark(py::module_ m)
     ----
         The class is not user-constructible.
 
-        Use `~register` function to create Benchmark and register
+        Use `register` function to create Benchmark and register
         it with NVBench.
 )XXXX";
   auto py_benchmark_cls = py::class_<nvbench::benchmark_base>(m, "Benchmark", class_Benchmark_doc);
@@ -736,7 +736,7 @@ Get device_id of the device from this configuration
     return std::ref(state.get_cuda_stream());
   };
   static constexpr const char *method_get_stream_doc = R"XXXX(
-Get `~CudaStream` object from this configuration"
+Get `CudaStream` object from this configuration
 )XXXX";
   pystate_cls.def("get_stream",
                   method_get_stream_impl,
@@ -1017,7 +1017,7 @@ Use argument True to disable use of blocking kernel by NVBench"
     Execute callable running the benchmark.
 
     The callable may be executed multiple times. The callable
-    will be passed `~Launch` object argument.
+    will be passed `Launch` object argument.
 
     Parameters
     ----------
