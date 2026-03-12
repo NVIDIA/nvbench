@@ -75,6 +75,15 @@ _test_py_exception = _nvbench_module._test_py_exception
 # Expose the module as _nvbench for backward compatibility (e.g., for tests)
 _nvbench = _nvbench_module
 
+# Set module of exposed objects
+Benchmark.__module__ = __name__
+CudaStream.__module__ = __name__
+Launch.__module__ = __name__
+NVBenchRuntimeError.__module__ = __name__
+State.__module__ = __name__
+register.__module__ = __name__
+run_all_benchmarks.__module__ = __name__
+
 # Clean up internal symbols
 del (
     _nvbench_module,
