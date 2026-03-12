@@ -8,6 +8,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
+    "myst_parser",
 ]
 
 templates_path = ["_templates"]
@@ -15,8 +16,6 @@ exclude_patterns = ["_build", "_doxygen"]
 
 autosummary_generate = True
 autodoc_default_options = {"members": True, "undoc-members": True}
-
-napoleon_custom_sections = ["Note", "Parameters"]
 
 release = "0.2.0"
 

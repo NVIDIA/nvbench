@@ -18,7 +18,9 @@ EXCLUDE_SYMBOLS        = type_strings \
                          M_PI \
                          NVBENCH_UNIQUE_IDENTIFIER_IMPL1 \
                          NVBENCH_UNIQUE_IDENTIFIER_IMPL2 \
-                         main
+                         main \
+                         NVBENCH_STATE_EXEC_GUARD \
+                         wrapped_type
 FILE_PATTERNS          = *.cuh *.cxx *.cu *.h *.hpp
 EXTENSION_MAPPING      = cuh=C++ cu=C++
 RECURSIVE              = YES
