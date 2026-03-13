@@ -1,7 +1,7 @@
-NVBench API
-===========
+NVBench: CUDA Kernel Benchmarking Library
+=========================================
 
-Combined C++ and Python API documentation.
+The library presently supports kernel benchmarking in C++ and in Python.
 
 .. toctree::
    :maxdepth: 2
