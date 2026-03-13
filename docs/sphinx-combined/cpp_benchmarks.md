@@ -74,6 +74,7 @@ NVBENCH_BENCH(my_benchmark);
 
 A full example can be found in [examples/stream.cu][CppExample_Stream].
 
+(parameter-axes)=
 ## Parameter Axes
 
 Some kernels will be used with a variety of options, input data types/sizes, and
@@ -166,6 +167,7 @@ NVBENCH_BENCH(benchmark).add_string_axis("RNG Distribution", {"Uniform", "Gaussi
 A common use for string axes is to encode enum values, as shown in
 [examples/enums.cu][CppExample_Enums].
 
+(type-axes)=
 ### Type Axes
 
 Another common situation involves benchmarking a templated kernel with multiple
@@ -244,6 +246,7 @@ times. Keep the rapid growth of these combinations in mind when choosing the
 number of values in an axis. See the section about combinatorial explosion for
 more examples and information.
 
+(throughput-measurements)=
 ## Throughput Measurements
 
 In additional to raw timing information, NVBench can track a kernel's

@@ -21,14 +21,18 @@ def benchmark_impl(state: State) -> None:
     data = generate(n, state.get_stream())
 
     # body that is being timed. Must execute
-    # on the stream handed over by NVBench
-    launchable_fn : Callable[[Launch], None] =
+    # on the stream handed over by NVBench.
+    # Typically launches a kernel of interest
+    launch_fn : Callable[[Launch], None] =
        lambda launch: impl(data, launch.get_stream())
 
-    state.exec(launchable_fn)
+    state.exec(launch_fn)
 
 
 bench = register(benchmark_impl)
+# provide kernel a name
+bench.set_name("my_package_kernel")
+# specify default values of parameter to run benchmark with
 bench.add_int64_axis("Elements", [1000, 10000, 100000])
 
 

@@ -1,6 +1,6 @@
 import os
 
-project = "NVBench API"
+project = "NVBench: CUDA Kernel Benchmarking Library"
 author = "NVIDIA Corporation"
 
 extensions = [
