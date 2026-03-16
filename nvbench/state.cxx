@@ -25,14 +25,25 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <functional>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
 namespace nvbench
 {
 
+struct state::bench_ref_impl
+{
+  explicit bench_ref_impl(const benchmark_base &bench)
+      : m_benchmark{bench}
+  {}
+
+  std::reference_wrapper<const benchmark_base> m_benchmark;
+};
+
 state::state(const benchmark_base &bench)
-    : m_benchmark{bench}
+    : m_benchmark_wrapper{std::make_unique<bench_ref_impl>(bench)}
     , m_is_cpu_only(bench.get_is_cpu_only())
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
@@ -50,7 +61,7 @@ state::state(const benchmark_base &bench,
              nvbench::named_values values,
              std::optional<nvbench::device_info> device,
              std::size_t type_config_index)
-    : m_benchmark{bench}
+    : m_benchmark_wrapper{std::make_unique<bench_ref_impl>(bench)}
     , m_axis_values{std::move(values)}
     , m_device{std::move(device)}
     , m_type_config_index{type_config_index}
@@ -67,6 +78,18 @@ state::state(const benchmark_base &bench,
     , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
     , m_cuda_stream{std::nullopt}
 {}
+
+// Destructor and move-constructor, move-assignment must be defined in C++ file
+// where benchmark_base type definition is known to be complete. See #235
+state::state(state &&)            = default;
+state &state::operator=(state &&) = default;
+
+state::~state() = default;
+
+const nvbench::benchmark_base &state::get_benchmark() const
+{
+  return m_benchmark_wrapper->m_benchmark.get();
+}
 
 nvbench::int64_t state::get_int64(const std::string &axis_name) const
 {
@@ -205,7 +228,7 @@ std::string state::get_axis_values_as_string(bool color) const
     append_key_value("Device", m_device->get_id());
   }
 
-  const axes_metadata &axes = m_benchmark.get().get_axes();
+  const axes_metadata &axes = m_benchmark_wrapper->m_benchmark.get().get_axes();
   for (const auto &name : m_axis_values.get_names())
   {
     const auto axis_type = m_axis_values.get_type(name);
@@ -242,7 +265,9 @@ std::string state::get_short_description(bool color) const
   };
 
   return fmt::format("{} [{}]",
-                     fmt::format(style(fmt::emphasis::bold), "{}", m_benchmark.get().get_name()),
+                     fmt::format(style(fmt::emphasis::bold),
+                                 "{}",
+                                 m_benchmark_wrapper->m_benchmark.get().get_name()),
                      this->get_axis_values_as_string(color));
 }
 
