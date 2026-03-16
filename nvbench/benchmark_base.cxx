@@ -68,8 +68,7 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_axes    = m_axes;
   result->m_devices = m_devices;
 
-  result->m_printer_wrapper =
-    decltype(m_printer_wrapper)(new printer_optional_ref_impl_t{m_printer_wrapper->optional_ref});
+  result->m_printer_wrapper.reset(new printer_optional_ref_impl_t{m_printer_wrapper->optional_ref});
   result->m_printer_wrapper->optional_ref = m_printer_wrapper->optional_ref;
 
   result->m_is_cpu_only             = m_is_cpu_only;
