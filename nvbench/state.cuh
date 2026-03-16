@@ -26,7 +26,6 @@
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -60,13 +59,9 @@ struct state
 {
   // move-only
   state(const state &)            = delete;
+  state(state &&)                 = default;
   state &operator=(const state &) = delete;
-  state(state &&);
-  state &operator=(state &&);
-
-  // Destructor must be defined in C++ where complete definitions of
-  // all types for member variables are available. See #235
-  ~state();
+  state &operator=(state &&)      = default;
 
   /// If a stream exists, return that. Otherwise, create a new stream using the current
   /// device (or the current device if none is set), save it, and return it.
@@ -312,11 +307,7 @@ private:
 
   [[nodiscard]] bool skip_hot_measurement() const { return get_run_once() || get_skip_batched(); }
 
-  // PImpl to structure holding reference to benchmark, needed to
-  // work around -Wsfinae-incomplete.
-  // See https://github.com/NVIDIA/nvbench/issues/235
-  struct bench_ref_impl;
-  std::unique_ptr<bench_ref_impl> m_benchmark_wrapper;
+  const nvbench::benchmark_base *m_benchmark_ptr;
 
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;
