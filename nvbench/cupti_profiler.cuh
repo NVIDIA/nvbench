@@ -21,7 +21,7 @@
 #include <nvbench/config.cuh>
 #include <nvbench/device_info.cuh>
 
-#include <optional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -66,12 +66,11 @@ class cupti_profiler
 
   // Counter data
   std::vector<std::string> m_metric_names;
-  std::vector<std::uint8_t> m_data_image_prefix;
   std::vector<std::uint8_t> m_config_image;
   std::vector<std::uint8_t> m_data_image;
-  std::vector<std::uint8_t> m_data_scratch_buffer;
   std::vector<std::uint8_t> m_availability_image;
   nvbench::device_info m_device;
+  bool m_all_passes_submitted = false;
 
   // CUPTI runs a series of replay passes, where each pass contains a sequence
   // of ranges. Every metric enabled in the configuration is collected
@@ -80,6 +79,12 @@ class cupti_profiler
   // kernel automatically. In the user range mode, ranges are defined manually.
   // We define a single user range for the whole measurement.
   static const int m_num_ranges = 1;
+
+  struct host_impl;
+  struct profiler_init_guard;
+
+  std::unique_ptr<host_impl> m_host;
+  std::unique_ptr<profiler_init_guard> m_profiler_guard;
 
 public:
   // Move only
@@ -112,14 +117,28 @@ public:
   /// Returns counters for metrics requested in the constructor
   [[nodiscard]] std::vector<double> get_counter_values();
 
+  /// Explicitly deinitialize CUPTI profiler state, throws if deinitialization encountered error
+  void finalize_profiler();
+
 private:
   void initialize_profiler();
   void initialize_chip_name();
   void initialize_availability_image();
-  static void initialize_nvpw();
   void initialize_config_image();
-  void initialize_counter_data_prefix_image();
   void initialize_counter_data_image();
+
+  void initialize_profiler_host();
+  void deinitialize_profiler_host();
+  void initialize_config_image_host();
+
+  void ensure_host();
+
+  void enable_range_profiler();
+  void disable_range_profiler();
+  void set_range_profiler_config();
+  void start_range_profiler();
+  void stop_range_profiler();
+  void decode_counter_data();
 };
 #endif
 
