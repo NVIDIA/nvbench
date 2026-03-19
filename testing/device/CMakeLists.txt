@@ -1,7 +1,7 @@
 # Test that we're converging to an accurate mean + stdev without timing out:
 set(test_name nvbench.test.device.noisy_bench)
 add_executable(${test_name} noisy_bench.cu)
-target_link_libraries(${test_name} PRIVATE nvbench::main fmt)
+target_link_libraries(${test_name} PRIVATE nvbench::main fmt::fmt)
 nvbench_config_target(${test_name})
 add_dependencies(nvbench.test.all ${test_name})
 
