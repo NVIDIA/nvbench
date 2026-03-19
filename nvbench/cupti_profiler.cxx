@@ -29,6 +29,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 
 namespace nvbench::detail
 {
@@ -58,6 +59,35 @@ void cupti_call(const CUptiResult status)
 void cupti_host_call(const CUptiResult status)
 {
   cupti_call_impl(status, "CUPTI Host API call returned error: ");
+}
+
+template <typename T>
+auto set_allow_device_level_counters(T &params, int)
+  -> decltype(std::declval<T &>().bAllowDeviceLevelCounters, void())
+{
+  params.bAllowDeviceLevelCounters = true;
+}
+
+template <typename T>
+void set_allow_device_level_counters(T &, long)
+{}
+
+template <typename T>
+auto is_context_scope(const T &params, int)
+  -> decltype(std::declval<const T &>().metricCollectionScope, bool())
+{
+#if defined(CUPTI_METRIC_COLLECTION_SCOPE_CONTEXT)
+  return params.metricCollectionScope == CUPTI_METRIC_COLLECTION_SCOPE_CONTEXT;
+#else
+  (void)params;
+  return true;
+#endif
+}
+
+template <typename T>
+bool is_context_scope(const T &, long)
+{
+  return true;
 }
 
 } // namespace
@@ -198,9 +228,9 @@ void cupti_profiler::initialize_availability_image()
 {
   CUpti_Profiler_GetCounterAvailability_Params params{};
 
-  params.structSize                = CUpti_Profiler_GetCounterAvailability_Params_STRUCT_SIZE;
-  params.ctx                       = m_device.get_context();
-  params.bAllowDeviceLevelCounters = true;
+  params.structSize = CUpti_Profiler_GetCounterAvailability_Params_STRUCT_SIZE;
+  params.ctx        = m_device.get_context();
+  set_allow_device_level_counters(params, 0);
 
   cupti_call(cuptiProfilerGetCounterAvailability(&params));
 
@@ -330,7 +360,7 @@ void append_metric_names(CUpti_Profiler_Host_Object *host_object,
       continue;
     }
 
-    if (props_params.metricCollectionScope != CUPTI_METRIC_COLLECTION_SCOPE_CONTEXT)
+    if (!is_context_scope(props_params, 0))
     {
       continue;
     }
