@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 NVIDIA Corporation
+ *  Copyright 2026 NVIDIA Corporation
  *
  *  Licensed under the Apache License, Version 2.0 with the LLVM exception
  *  (the "License"); you may not use this file except in compliance with
@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-#include <nvbench/cupti_profiler.cuh>
+#include <nvbench/cupti_profiler_host.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 

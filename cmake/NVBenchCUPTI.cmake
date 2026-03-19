@@ -37,3 +37,14 @@ nvbench_add_cupti_dep(cupti)
 target_include_directories(nvbench::cupti INTERFACE
   "${nvbench_cupti_root}/include"
 )
+
+if (NOT EXISTS "${nvbench_cupti_root}/include/cupti_profiler_host.h")
+  # Profile Host API does not exist yet, need NVPERF libraries
+  # for NVPW_* API used in nvbench::cupti_profiler
+  nvbench_add_cupti_dep(nvperf_target)
+  nvbench_add_cupti_dep(nvperf_host)
+  target_link_libraries(nvbench::cupti INTERFACE
+    nvbench::nvperf_target
+    nvbench::nvperf_host
+  )
+endif()
