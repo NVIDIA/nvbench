@@ -81,7 +81,7 @@ class cupti_profiler
   static const int m_num_ranges = 1;
 
   struct host_impl;
-  struct profiler_init_guard;
+  class profiler_init_guard;
 
   std::unique_ptr<host_impl> m_host;
   std::unique_ptr<profiler_init_guard> m_profiler_guard;
