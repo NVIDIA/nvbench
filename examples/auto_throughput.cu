@@ -79,4 +79,5 @@ void throughput_bench(nvbench::state &state, nvbench::type_list<nvbench::enum_ty
 using items_per_thread = nvbench::enum_type_list<1, 2>;
 
 NVBENCH_BENCH_TYPES(throughput_bench, NVBENCH_TYPE_AXES(items_per_thread))
+  .set_type_axes_names({"ItemsPerThread"})
   .add_int64_axis("Stride", nvbench::range(1, 4, 3));
