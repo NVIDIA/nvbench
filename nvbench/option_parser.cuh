@@ -90,6 +90,7 @@ private:
   void set_stopping_criterion(const std::string &criterion);
 
   void enable_profile();
+  void disable_batched();
 
   void add_benchmark(const std::string &name);
   void replay_global_args();

@@ -1,0 +1,112 @@
+name: Build and Test Python Wheels
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+  build-wheels:
+    name: Build wheel (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.11', '3.12', '3.13']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build multi-CUDA wheel
+        run: |
+          bash ci/build_multi_cuda_wheel.sh -py-version ${{ matrix.python }}
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-cuda_bench-py${{ matrix.python }}
+          path: wheelhouse/*.whl
+          retention-days: 7
+          if-no-files-found: error
+
+  # Test wheels on all CUDA/Python combinations
+  # Each wheel contains extensions for both CUDA 12 & 13, runtime detection picks the right one
+  test-wheels:
+    name: Test wheel (CUDA ${{ matrix.cuda }}, Python ${{ matrix.python }})
+    needs: build-wheels
+    runs-on: linux-amd64-gpu-l4-latest-1
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        cuda: ['12', '13']
+        python: ['3.10', '3.11', '3.12', '3.13']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-cuda_bench-py${{ matrix.python }}
+          path: wheelhouse
+
+      - name: Test wheel
+        run: |
+          # Use the same rapidsai/ci-wheel Docker image as build
+          if [[ "${{ matrix.cuda }}" == "12" ]]; then
+            cuda_full_version="12.9.1"
+            cuda_extra="cu12"
+          else
+            cuda_full_version="13.0.1"
+            cuda_extra="cu13"
+          fi
+
+          docker run --rm \
+            --workdir /workspace \
+            --gpus all \
+            --mount type=bind,source=$(pwd),target=/workspace/ \
+            --env py_version=${{ matrix.python }} \
+            --env cuda_version=${{ matrix.cuda }} \
+            --env cuda_extra="${cuda_extra}" \
+            rapidsai/ci-wheel:25.12-cuda${cuda_full_version}-rockylinux8-py${{ matrix.python }} \
+            /workspace/ci/test_cuda_bench_inner.sh
+
+  verify-workflow:
+    name: Verify all builds and tests succeeded
+    if: ${{ always() }}
+    needs:
+      - build-wheels
+      - test-wheels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check build results
+        run: |
+          if [[ "${{ needs.build-wheels.result }}" != "success" ]]; then
+            echo "Wheel builds failed!"
+            exit 1
+          fi
+          if [[ "${{ needs.test-wheels.result }}" != "success" ]]; then
+            echo "Wheel tests failed!"
+            exit 1
+          fi
+          echo "All wheels built and tested successfully!"

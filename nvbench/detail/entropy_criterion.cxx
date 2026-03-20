@@ -28,7 +28,6 @@ entropy_criterion::entropy_criterion()
     : stopping_criterion_base{"entropy", {{"max-angle", 0.048}, {"min-r2", 0.36}}}
 {
   m_freq_tracker.reserve(m_entropy_tracker.capacity() * 2);
-  m_probabilities.reserve(m_entropy_tracker.capacity() * 2);
 }
 
 void entropy_criterion::do_initialize()
@@ -37,37 +36,44 @@ void entropy_criterion::do_initialize()
   m_total_cuda_time = 0.0;
   m_entropy_tracker.clear();
   m_freq_tracker.clear();
+
+  m_sum_count_log_counter = 0.0;
+  m_regression.clear();
+}
+
+void entropy_criterion::update_entropy_sum(nvbench::float64_t old_count,
+                                           nvbench::float64_t new_count)
+{
+  if (old_count > 0)
+  {
+    auto diff = new_count - old_count;
+    m_sum_count_log_counter += new_count * std::log2(1 + diff / old_count) +
+                               diff * std::log2(old_count);
+  }
+  else
+  {
+    m_sum_count_log_counter += new_count * std::log2(new_count);
+  }
 }
 
 nvbench::float64_t entropy_criterion::compute_entropy()
 {
-  const std::size_t n = m_freq_tracker.size();
-  if (n == 0)
+  if (m_total_samples == 0)
   {
     return 0.0;
   }
 
-  m_probabilities.resize(n);
-  for (std::size_t i = 0; i < n; i++)
-  {
-    m_probabilities[i] = static_cast<nvbench::float64_t>(m_freq_tracker[i].second) /
-                         static_cast<nvbench::float64_t>(m_total_samples);
-  }
+  const auto n                     = static_cast<nvbench::float64_t>(m_total_samples);
+  const nvbench::float64_t entropy = std::log2(n) - m_sum_count_log_counter / n;
 
-  nvbench::float64_t entropy{};
-  for (nvbench::float64_t p : m_probabilities)
-  {
-    entropy -= p * std::log2(p);
-  }
-
-  return entropy;
+  return std::copysign(std::max(0.0, entropy), 1.0);
 }
 
 void entropy_criterion::do_add_measurement(nvbench::float64_t measurement)
 {
   m_total_samples++;
   m_total_cuda_time += measurement;
-
+  nvbench::int64_t old_count = 0;
   {
     auto key                = measurement;
     constexpr bool bin_keys = false;
@@ -88,15 +94,34 @@ void entropy_criterion::do_add_measurement(nvbench::float64_t measurement)
 
     if (it != m_freq_tracker.end() && it->first == key)
     {
+      old_count = it->second;
       it->second += 1;
     }
     else
     {
+      old_count = 0;
       m_freq_tracker.insert(it, std::make_pair(key, nvbench::int64_t{1}));
     }
   }
 
-  m_entropy_tracker.push_back(compute_entropy());
+  update_entropy_sum(static_cast<nvbench::float64_t>(old_count),
+                     static_cast<nvbench::float64_t>(old_count + 1));
+  const nvbench::float64_t entropy = compute_entropy();
+  const nvbench::float64_t n       = static_cast<nvbench::float64_t>(m_entropy_tracker.size());
+
+  if (m_entropy_tracker.size() == m_entropy_tracker.capacity())
+  {
+    const nvbench::float64_t old_entropy = *m_entropy_tracker.cbegin();
+
+    m_regression.slide_window(old_entropy, entropy);
+  }
+  else
+  {
+    const nvbench::float64_t new_x = n;
+    m_regression.update({new_x, entropy});
+  }
+
+  m_entropy_tracker.push_back(entropy);
 }
 
 bool entropy_criterion::do_is_finished()
@@ -106,25 +131,30 @@ bool entropy_criterion::do_is_finished()
     return false;
   }
 
-  // Even number of samples is used to reduce the overhead and not required to compute entropy.
-  // This makes `is_finished()` about 20% faster than corresponding stdrel method.
   if (m_total_samples % 2 != 0)
   {
     return false;
   }
 
-  auto begin = m_entropy_tracker.cbegin();
-  auto end   = m_entropy_tracker.cend();
-  auto mean  = statistics::compute_mean(begin, end);
+  const nvbench::float64_t slope = m_regression.slope();
 
-  const auto [slope, intercept] = statistics::compute_linear_regression(begin, end, mean);
+  if (!std::isfinite(slope))
+  {
+    return false;
+  }
 
   if (statistics::slope2deg(slope) > m_params.get_float64("max-angle"))
   {
     return false;
   }
 
-  const auto r2 = statistics::compute_r2(begin, end, mean, slope, intercept);
+  const nvbench::float64_t r2 = m_regression.r_squared();
+
+  if (!std::isfinite(r2))
+  {
+    return false;
+  }
+
   if (r2 < m_params.get_float64("min-r2"))
   {
     return false;

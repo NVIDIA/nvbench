@@ -145,6 +145,7 @@ struct benchmark_base
   [[nodiscard]] std::vector<nvbench::state> &get_states() { return m_states; }
 
   void run() { this->do_run(); }
+  void run_or_skip(bool &skip_remaining) { this->do_run_or_skip(skip_remaining); }
 
   void set_printer(nvbench::printer_base &printer) { m_printer = std::ref(printer); }
 
@@ -178,6 +179,18 @@ struct benchmark_base
   benchmark_base &set_run_once(bool v)
   {
     m_run_once = v;
+    return *this;
+  }
+  /// @}
+
+  /// If true, the batched measurements for benchmark are not run. This is intended for use to
+  /// save resources when only non-batched measurements are of interest, although batched
+  /// measurements are meaningful and code to exercise them is compiled. This option has no
+  /// effect for CPU only benchmarks and for benchmarks tagged with no_batch tag. @{
+  [[nodiscard]] bool get_skip_batched() const { return m_skip_batched; }
+  benchmark_base &set_skip_batched(bool v)
+  {
+    m_skip_batched = v;
     return *this;
   }
   /// @}
@@ -303,6 +316,7 @@ protected:
   bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
+  bool m_skip_batched{false};
 
   nvbench::int64_t m_min_samples{10};
 
@@ -320,6 +334,7 @@ private:
   virtual std::unique_ptr<benchmark_base> do_clone() const            = 0;
   virtual void do_set_type_axes_names(std::vector<std::string> names) = 0;
   virtual void do_run()                                               = 0;
+  virtual void do_run_or_skip(bool &skip_remaining)                   = 0;
 };
 
 } // namespace nvbench

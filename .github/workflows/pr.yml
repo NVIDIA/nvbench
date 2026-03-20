@@ -76,6 +76,13 @@ jobs:
       per_cuda_compiler_matrix: ${{ toJSON(fromJSON(needs.compute-matrix.outputs.PER_CUDA_COMPILER_MATRIX)[ matrix.cuda_host_combination ]) }}
       devcontainer_version: ${{ needs.compute-matrix.outputs.DEVCONTAINER_VERSION }}
 
+  python-wheels:
+    name: Python Wheels
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/build-and-test-python-wheels.yml
+
   verify-devcontainers:
     name: Verify Dev Containers
     if: ${{ !contains(github.event.head_commit.message, '[skip-vdc]') }}
@@ -96,6 +103,7 @@ jobs:
     if: ${{ always() }} # need to use always() instead of !cancelled() because skipped jobs count as success
     needs:
       - nvbench
+      - python-wheels
       - verify-devcontainers
     steps:
       - name: Check status of all precursor jobs

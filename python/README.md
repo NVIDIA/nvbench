@@ -1,8 +1,18 @@
 # CUDA Kernel Benchmarking Package
 
-This package provides Python API to CUDA Kernel Benchmarking Library `NVBench`.
+This package provides a Python API to the CUDA Kernel Benchmarking
+Library `NVBench`.
 
-## Building
+## Installation
+
+Install from PyPi
+
+```bash
+pip install cuda-bench[cu13]  # For CUDA 13.x
+pip install cuda-bench[cu12]  # For CUDA 12.x
+```
+
+## Building from source
 
 ### Ensure recent version of CMake
 
@@ -21,7 +31,7 @@ are set. For example, assuming CUDA toolkit is installed system-wide, and assumi
 ```bash
 export CUDACXX=/usr/local/cuda/bin/nvcc
 export CUDAARCHS=86
-``
+```
 
 ### Build Python project
 

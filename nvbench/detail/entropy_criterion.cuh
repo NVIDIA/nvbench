@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <nvbench/detail/online_linear_regression.cuh>
 #include <nvbench/detail/ring_buffer.cuh>
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
@@ -33,14 +34,15 @@ class entropy_criterion final : public stopping_criterion_base
   nvbench::int64_t m_total_samples{};
   nvbench::float64_t m_total_cuda_time{};
   std::vector<std::pair<nvbench::float64_t, nvbench::int64_t>> m_freq_tracker;
+  nvbench::float64_t m_sum_count_log_counter{};
 
   // TODO The window size should be user-configurable
   nvbench::detail::ring_buffer<nvbench::float64_t> m_entropy_tracker{299};
 
-  // Used to avoid re-allocating temporary memory
-  std::vector<nvbench::float64_t> m_probabilities;
+  online_linear_regression m_regression;
 
   nvbench::float64_t compute_entropy();
+  void update_entropy_sum(nvbench::float64_t old_count, nvbench::float64_t new_count);
 
 public:
   entropy_criterion();

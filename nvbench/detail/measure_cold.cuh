@@ -32,6 +32,7 @@
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
+#include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
 
 #include <utility>
@@ -76,34 +77,35 @@ protected:
   {
     NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
   }
-
+  __forceinline__ void profiler_start() const { NVBENCH_CUDA_CALL(cudaProfilerStart()); }
+  __forceinline__ void profiler_stop() const { NVBENCH_CUDA_CALL(cudaProfilerStop()); }
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
 
   nvbench::state &m_state;
 
   nvbench::launch m_launch;
-  nvbench::cuda_timer m_cuda_timer;
-  nvbench::cpu_timer m_cpu_timer;
-  nvbench::cpu_timer m_walltime_timer;
-  nvbench::detail::l2flush m_l2flush;
-  nvbench::blocking_kernel m_blocker;
+  nvbench::cuda_timer m_cuda_timer{};
+  nvbench::cpu_timer m_cpu_timer{};
+  nvbench::cpu_timer m_walltime_timer{};
+  nvbench::detail::l2flush m_l2flush{};
+  nvbench::blocking_kernel m_blocker{};
 
-  nvbench::criterion_params m_criterion_params;
+  nvbench::criterion_params m_criterion_params{};
   nvbench::stopping_criterion_base &m_stopping_criterion;
-  nvbench::detail::gpu_frequency m_gpu_frequency;
+  nvbench::detail::gpu_frequency m_gpu_frequency{};
 
   bool m_disable_blocking_kernel{false};
   bool m_run_once{false};
-  bool m_check_throttling;
+  bool m_check_throttling{true};
 
   nvbench::int64_t m_min_samples{};
 
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
 
-  nvbench::float32_t m_throttle_threshold;      // [% of default SM clock rate]
-  nvbench::float32_t m_throttle_recovery_delay; // [seconds]
+  nvbench::float32_t m_throttle_threshold{};      // [% of default SM clock rate]
+  nvbench::float32_t m_throttle_recovery_delay{}; // [seconds]
 
   // Dynamically increased when repeated throttling occurs
   // without successfully recording a sample.
@@ -121,11 +123,12 @@ protected:
   nvbench::float64_t m_total_cpu_time{};
 
   nvbench::float64_t m_sm_clock_rate_accumulator{};
+  std::vector<nvbench::float64_t> m_sm_clock_rates{};
 
-  std::vector<nvbench::float64_t> m_cuda_times;
-  std::vector<nvbench::float64_t> m_cpu_times;
+  std::vector<nvbench::float64_t> m_cuda_times{};
+  std::vector<nvbench::float64_t> m_cpu_times{};
 
-  bool m_max_time_exceeded{};
+  bool m_max_time_exceeded{false};
 };
 
 struct measure_cold_base::kernel_launch_timer
@@ -133,49 +136,75 @@ struct measure_cold_base::kernel_launch_timer
   kernel_launch_timer(measure_cold_base &measure)
       : m_measure{measure}
       , m_disable_blocking_kernel{measure.m_disable_blocking_kernel}
+      , m_run_once{measure.m_run_once}
+      , m_check_throttling{measure.m_check_throttling}
   {}
 
   explicit kernel_launch_timer(measure_cold_base &measure, bool disable_blocking_kernel)
       : m_measure{measure}
       , m_disable_blocking_kernel{disable_blocking_kernel}
+      , m_run_once{measure.m_run_once}
+      , m_check_throttling{measure.m_check_throttling}
+  {}
+
+  explicit kernel_launch_timer(measure_cold_base &measure,
+                               bool disable_blocking_kernel,
+                               bool run_once,
+                               bool check_throttling)
+      : m_measure{measure}
+      , m_disable_blocking_kernel{disable_blocking_kernel}
+      , m_run_once{run_once}
+      , m_check_throttling{check_throttling}
   {}
 
   __forceinline__ void start()
   {
     m_measure.flush_device_l2();
     m_measure.sync_stream();
+
+    // start CPU timer irrespective of use of blocking kernel
+    // Ref: https://github.com/NVIDIA/nvbench/issues/249
+    m_measure.m_cpu_timer.start();
+
     if (!m_disable_blocking_kernel)
     {
       m_measure.block_stream();
     }
-    if (m_measure.m_check_throttling)
+    if (m_check_throttling)
     {
       m_measure.gpu_frequency_start();
     }
+    if (m_run_once)
+    {
+      m_measure.profiler_start();
+    }
     m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
-    // start CPU timer irrespective of use of blocking kernel
-    // Ref: https://github.com/NVIDIA/nvbench/issues/249
-    m_measure.m_cpu_timer.start();
   }
 
   __forceinline__ void stop()
   {
     m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
+    if (m_check_throttling)
+    {
+      m_measure.gpu_frequency_stop();
+    }
     if (!m_disable_blocking_kernel)
     {
       m_measure.unblock_stream();
     }
-    if (m_measure.m_check_throttling)
-    {
-      m_measure.gpu_frequency_stop();
-    }
     m_measure.sync_stream();
+    if (m_run_once)
+    {
+      m_measure.profiler_stop();
+    }
     m_measure.m_cpu_timer.stop();
   }
 
 private:
   measure_cold_base &m_measure;
   bool m_disable_blocking_kernel;
+  bool m_run_once;
+  bool m_check_throttling;
 };
 
 template <typename KernelLauncher>

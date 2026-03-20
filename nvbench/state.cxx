@@ -57,6 +57,7 @@ state::state(const benchmark_base &bench,
     , m_is_cpu_only(bench.get_is_cpu_only())
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
+    , m_skip_batched{bench.get_skip_batched()}
     , m_criterion_params{bench.get_criterion_params()}
     , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
