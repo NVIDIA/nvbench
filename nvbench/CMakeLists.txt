@@ -95,6 +95,7 @@ target_link_libraries(nvbench
     nvbench_json
 )
 
+
 # ##################################################################################################
 # * conda environment -----------------------------------------------------------------------------
 rapids_cmake_support_conda_env(conda_env MODIFY_PREFIX_PATH)
@@ -124,6 +125,8 @@ add_library(nvbench.main OBJECT main.cu)
 nvbench_config_target(nvbench.main)
 # Propagate `nvbench` to consumers but keep NVBench's own build warning-visible.
 target_link_libraries(nvbench.main INTERFACE nvbench)
+# Ensure CUDA/CUPTI/NVML include dirs are visible for nvbench.main's build.
+target_link_libraries(nvbench.main PRIVATE ${ctk_libraries})
 # Add NVBench's headers privately so the object library itself sees warnings.
 target_include_directories(nvbench.main
   PRIVATE
