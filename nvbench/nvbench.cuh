@@ -18,11 +18,20 @@
 
 #pragma once
 
+#include <nvbench/config.cuh>
+
+#if defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_GCC)
+#pragma GCC system_header
+#elif defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_CLANG)
+#pragma clang system_header
+#elif defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_MSVC)
+#pragma system_header
+#endif
+
 #include <nvbench/benchmark.cuh>
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/benchmark_manager.cuh>
 #include <nvbench/callable.cuh>
-#include <nvbench/config.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/create.cuh>
 #include <nvbench/criterion_manager.cuh>

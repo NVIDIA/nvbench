@@ -36,3 +36,16 @@
 #elif NVBENCH_CPLUSPLUS > 202002L // unknown, but is higher than C++20.
 #define NVBENCH_CPP_DIALECT 2023
 #endif
+
+
+// Enable implicit system header behavior when NVBENCH_IMPLICIT_SYSTEM_HEADER
+// is defined by the build system or user.
+#if !defined(NVBENCH_NO_IMPLICIT_SYSTEM_HEADER)
+#  if defined(__clang__)
+#    define NVBENCH_IMPLICIT_SYSTEM_HEADER_CLANG
+#  elif defined(_MSC_VER)
+#    define NVBENCH_IMPLICIT_SYSTEM_HEADER_MSVC
+#  elif defined(__GNUC__)
+#    define NVBENCH_IMPLICIT_SYSTEM_HEADER_GCC
+#  endif
+#endif

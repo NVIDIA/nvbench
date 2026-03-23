@@ -77,10 +77,22 @@ nvbench_write_config_header(config.cuh.in
 # nvbench (nvbench::nvbench)
 add_library(nvbench ${srcs})
 nvbench_config_target(nvbench)
-target_include_directories(nvbench PUBLIC
-  "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
-  "$<BUILD_INTERFACE:${NVBench_BINARY_DIR}>"
-  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+# Internal NVBench builds should not suppress warnings from NVBench headers.
+target_compile_definitions(nvbench PRIVATE NVBENCH_NO_IMPLICIT_SYSTEM_HEADER)
+# Internal NVBench builds should see warnings from NVBench headers,
+# so add include paths privately first (uses `-I`).
+target_include_directories(nvbench
+  PRIVATE
+    "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
+    "$<BUILD_INTERFACE:${NVBench_BINARY_DIR}>"
+)
+# Consumers should treat NVBench headers as system headers to silence
+# NVBench's own warnings, hence we re-add the paths as `SYSTEM INTERFACE`.
+target_include_directories(nvbench
+  SYSTEM INTERFACE
+    "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
+    "$<BUILD_INTERFACE:${NVBench_BINARY_DIR}>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
 target_link_libraries(nvbench
   PUBLIC
@@ -89,6 +101,7 @@ target_link_libraries(nvbench
     fmt::fmt
     nvbench_json
 )
+
 
 # ##################################################################################################
 # * conda environment -----------------------------------------------------------------------------
@@ -117,7 +130,18 @@ add_dependencies(nvbench.all nvbench)
 # nvbench.main (nvbench::main)
 add_library(nvbench.main OBJECT main.cu)
 nvbench_config_target(nvbench.main)
-target_link_libraries(nvbench.main PUBLIC nvbench)
+# Internal NVBench builds should not suppress warnings from NVBench headers.
+target_compile_definitions(nvbench.main PRIVATE NVBENCH_NO_IMPLICIT_SYSTEM_HEADER)
+# Propagate `nvbench` to consumers but keep NVBench's own build warning-visible.
+target_link_libraries(nvbench.main INTERFACE nvbench)
+# Ensure CUDA/CUPTI/NVML include dirs are visible for nvbench.main's build.
+target_link_libraries(nvbench.main PRIVATE ${ctk_libraries})
+# Add NVBench's headers privately so the object library itself sees warnings.
+target_include_directories(nvbench.main
+  PRIVATE
+    "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
+    "$<BUILD_INTERFACE:${NVBench_BINARY_DIR}>"
+)
 set_target_properties(nvbench.main PROPERTIES EXPORT_NAME main)
 add_dependencies(nvbench.all nvbench.main)
 
