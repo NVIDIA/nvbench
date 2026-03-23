@@ -77,6 +77,8 @@ nvbench_write_config_header(config.cuh.in
 # nvbench (nvbench::nvbench)
 add_library(nvbench ${srcs})
 nvbench_config_target(nvbench)
+# Internal NVBench builds should not suppress warnings from NVBench headers.
+target_compile_definitions(nvbench PRIVATE NVBENCH_NO_IMPLICIT_SYSTEM_HEADER)
 # Internal NVBench builds should see warnings from NVBench headers,
 # so add include paths privately first (uses `-I`).
 target_include_directories(nvbench
@@ -128,6 +130,8 @@ add_dependencies(nvbench.all nvbench)
 # nvbench.main (nvbench::main)
 add_library(nvbench.main OBJECT main.cu)
 nvbench_config_target(nvbench.main)
+# Internal NVBench builds should not suppress warnings from NVBench headers.
+target_compile_definitions(nvbench.main PRIVATE NVBENCH_NO_IMPLICIT_SYSTEM_HEADER)
 # Propagate `nvbench` to consumers but keep NVBench's own build warning-visible.
 target_link_libraries(nvbench.main INTERFACE nvbench)
 # Ensure CUDA/CUPTI/NVML include dirs are visible for nvbench.main's build.

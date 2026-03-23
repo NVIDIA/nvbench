@@ -18,6 +18,16 @@
 
 #pragma once
 
+#include <nvbench/config.cuh>
+
+#if defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_GCC)
+#pragma GCC system_header
+#elif defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_CLANG)
+#pragma clang system_header
+#elif defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_MSVC)
+#pragma system_header
+#endif
+
 #include <nvbench/cuda_stream.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
