@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-#include <nvbench/cupti_profiler.cuh>
+#include <nvbench/cupti_profiler_nvpw.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 
