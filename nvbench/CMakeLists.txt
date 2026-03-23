@@ -36,7 +36,12 @@ set(srcs
 )
 
 if (NVBench_ENABLE_CUPTI)
-  list(APPEND srcs detail/measure_cupti.cu cupti_profiler.cxx)
+  list(APPEND srcs detail/measure_cupti.cu)
+  if (EXISTS "${nvbench_cupti_root}/include/cupti_profiler_host.h")
+    list(APPEND srcs cupti_profiler_host.cxx)
+  else()
+    list(APPEND srcs cupti_profiler_nvpw.cxx)
+  endif()
 endif()
 
 # CUDA 11.0 can't compile json_printer without crashing
