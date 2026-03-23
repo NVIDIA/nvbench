@@ -3,36 +3,61 @@ requires = ["scikit-build-core>=0.10", "setuptools_scm"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "pynvbench"
+name = "cuda-bench"
 description = "CUDA Kernel Benchmarking Package"
 authors = [{ name = "NVIDIA Corporation" }]
+license = { text = "Apache-2.0 WITH LLVM-exception" }
 classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
   "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Environment :: GPU :: NVIDIA CUDA",
   "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
 ]
-requires-python = ">=3.9"
-dependencies = [
-  # pathfinder
-  "cuda-pathfinder",
-
-  # Library expects to find shared libraries
-  # libcupti, libnvperf_target, libnvperf_host
-  # pathfinder is used to find it in the Python layout
-  "nvidia-cuda-cupti-cu12",
-
-  # The shared library
-  # libnvidia-ml must be installed system-wide
-  # (Debian package provider: libnvidia-compute)
-]
+requires-python = ">=3.10"
 dynamic = ["version"]
 readme = { file = "README.md", content-type = "text/markdown" }
 
 [project.optional-dependencies]
+# CUDA 12.x dependencies
+cu12 = ["cuda-bindings>=12.0.0,<13.0.0"]
+
+# CUDA 13.x dependencies
+cu13 = ["cuda-bindings>=13.0.0,<14.0.0"]
+
+# Test dependencies for CUDA 12
+test-cu12 = ["cuda-bench[cu12]", "pytest", "cupy-cuda12x", "numba"]
+
+# Test dependencies for CUDA 13
+test-cu13 = ["cuda-bench[cu13]", "pytest", "cupy-cuda13x", "numba"]
+
+# Generic test dependencies (defaults to CUDA 12)
 test = ["pytest", "cupy-cuda12x", "numba"]
+tools = [
+  "colorama",
+  "jsondiff",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "seaborn",
+  "tabulate",
+]
+
+[project.scripts]
+nvbench-compare = "scripts.nvbench_compare:main"
+nvbench-histogram = "scripts.nvbench_histogram:main"
+nvbench-walltime = "scripts.nvbench_walltime:main"
 
 [project.urls]
-Homepage = "https://developer.nvidia.com/"
+Homepage = "https://github.com/NVIDIA/nvbench"
+Repository = "https://github.com/NVIDIA/nvbench"
+Issues = "https://github.com/NVIDIA/nvbench/issues"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
@@ -53,7 +78,11 @@ provider = "scikit_build_core.metadata.setuptools_scm"
 
 [tool.setuptools_scm]
 root = ".."
+git_describe_command = ["git", "describe", "--tags", "--match", "python-*"]
+tag_regex = "^python-(?P<version>.*)$"
+fallback_version = "0.0.0"
 
 [tool.scikit-build.wheel.packages]
 "cuda" = "cuda"
 "cuda/bench" = "cuda/bench"
+"scripts" = "scripts"

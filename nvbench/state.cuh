@@ -161,6 +161,14 @@ struct state
   void set_run_once(bool v) { m_run_once = v; }
   /// @}
 
+  /// If true, the batched measurements of benchmark are not run. This is intended for use to
+  /// save resources when only non-batched measurements are of interest, although batched
+  /// measurements are meaningful and code to exercise them is compiled. This option has no
+  /// effect for CPU only benchmarks and for benchmarks tagged with no_batch tag. @{
+  [[nodiscard]] bool get_skip_batched() const { return m_skip_batched; }
+  void set_skip_batched(bool v) { m_skip_batched = v; }
+  /// @}
+
   /// If true, the benchmark does not use the blocking_kernel. This is intended
   /// for use with external profiling tools. @{
   [[nodiscard]] bool get_disable_blocking_kernel() const { return m_disable_blocking_kernel; }
@@ -298,6 +306,8 @@ private:
         std::optional<nvbench::device_info> device,
         std::size_t type_config_index);
 
+  [[nodiscard]] bool skip_hot_measurement() const { return get_run_once() || get_skip_batched(); }
+
   std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;
@@ -306,6 +316,7 @@ private:
   bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
+  bool m_skip_batched{false};
 
   nvbench::criterion_params m_criterion_params;
   std::string m_stopping_criterion;

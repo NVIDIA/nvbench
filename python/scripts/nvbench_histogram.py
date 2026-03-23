@@ -8,7 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from nvbench_json import reader
+
+try:
+    from nvbench_json import reader
+except ImportError:
+    from scripts.nvbench_json import reader
 
 
 def parse_files():

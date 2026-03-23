@@ -73,6 +73,7 @@ protected:
 
   bool m_enable_binary_output{false};
   std::size_t m_num_jsonbin_files{};
+  std::size_t m_num_jsonbin_freq_files{};
 
   std::vector<std::string> m_argv;
 };

@@ -51,7 +51,6 @@ def throughput_bench(state: bench.State) -> None:
     out_arr = cuda.device_array(elements * ipt, dtype=np.int32, stream=alloc_stream)
 
     state.add_element_count(elements, column_name="Elements")
-    state.collect_cupti_metrics()
 
     threads_per_block = 256
     blocks_in_grid = (elements + threads_per_block - 1) // threads_per_block

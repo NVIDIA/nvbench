@@ -44,7 +44,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
         exec_state.get_stopping_criterion())}
     , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel()}
     , m_run_once{exec_state.get_run_once()}
-    , m_check_throttling(!exec_state.get_run_once() && exec_state.get_throttle_threshold() > 0.f)
+    , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
@@ -53,8 +53,10 @@ measure_cold_base::measure_cold_base(state &exec_state)
 {
   if (m_min_samples > 0)
   {
-    m_cuda_times.reserve(static_cast<std::size_t>(m_min_samples));
-    m_cpu_times.reserve(static_cast<std::size_t>(m_min_samples));
+    const auto reserve_size = static_cast<std::size_t>(m_min_samples);
+    m_sm_clock_rates.reserve(reserve_size);
+    m_cuda_times.reserve(reserve_size);
+    m_cpu_times.reserve(reserve_size);
   }
 }
 
@@ -86,6 +88,7 @@ void measure_cold_base::initialize()
   m_dynamic_throttle_recovery_delay = m_throttle_recovery_delay;
   m_throttle_discard_count          = 0;
 
+  m_sm_clock_rates.clear();
   m_cuda_times.clear();
   m_cpu_times.clear();
 
@@ -140,6 +143,7 @@ void measure_cold_base::record_measurements()
     }
     m_throttle_discard_count = 0;
 
+    m_sm_clock_rates.push_back(current_clock_rate);
     m_sm_clock_rate_accumulator += current_clock_rate;
   }
 
@@ -445,6 +449,7 @@ void measure_cold_base::generate_summaries()
                             m_total_samples));
 
     printer.process_bulk_data(m_state, "nv/cold/sample_times", "sample_times", m_cuda_times);
+    printer.process_bulk_data(m_state, "nv/cold/sample_freqs", "sample_freqs", m_sm_clock_rates);
   }
 }
 
