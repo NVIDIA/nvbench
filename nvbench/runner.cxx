@@ -46,10 +46,9 @@ void runner_base::handle_sampling_exception(const std::exception &e, state &exec
   {
     const auto reason = fmt::format("Unexpected error: {}", e.what());
 
-    if (auto printer_opt_ptr = exec_state.get_benchmark().get_printer();
-        printer_opt_ptr.has_value())
+    if (auto printer_ptr = exec_state.get_benchmark().get_printer())
     {
-      auto &printer = *(printer_opt_ptr.value());
+      auto &printer = *printer_ptr;
       printer.log(nvbench::log_level::fail, reason);
     }
 
@@ -60,9 +59,9 @@ void runner_base::handle_sampling_exception(const std::exception &e, state &exec
 void runner_base::run_state_prologue(nvbench::state &exec_state) const
 {
   // Log if a printer exists:
-  if (auto printer_opt_ptr = exec_state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
+  if (auto printer_ptr = exec_state.get_benchmark().get_printer())
   {
-    auto &printer = *(printer_opt_ptr.value());
+    auto &printer = *printer_ptr;
     printer.log_run_state(exec_state);
   }
 }
@@ -70,18 +69,18 @@ void runner_base::run_state_prologue(nvbench::state &exec_state) const
 void runner_base::run_state_epilogue(state &exec_state) const
 {
   // Notify the printer that the state has completed::
-  if (auto printer_opt_ptr = exec_state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
+  if (auto printer_ptr = exec_state.get_benchmark().get_printer())
   {
-    auto &printer = *(printer_opt_ptr.value());
+    auto &printer = *printer_ptr;
     printer.add_completed_state();
   }
 }
 
 void runner_base::print_skip_notification(state &exec_state) const
 {
-  if (auto printer_opt_ptr = exec_state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
+  if (auto printer_ptr = exec_state.get_benchmark().get_printer())
   {
-    auto &printer = *(printer_opt_ptr.value());
+    auto &printer = *printer_ptr;
     printer.log(nvbench::log_level::skip, exec_state.get_skip_reason());
   }
 }

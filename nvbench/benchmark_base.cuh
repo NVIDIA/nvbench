@@ -34,7 +34,6 @@
 #include <nvbench/stopping_criterion.cuh>
 
 #include <memory>
-#include <optional>
 #include <vector>
 
 namespace nvbench
@@ -55,14 +54,10 @@ struct runner;
  */
 struct benchmark_base
 {
-  template <typename T>
-  using optional_ptr = std::optional<T *>;
-
   template <typename TypeAxes>
   explicit benchmark_base(TypeAxes type_axes)
       : m_axes(type_axes)
   {
-    this->init_printer_ptr();
     this->set_stopping_criterion(nvbench::detail::default_stopping_criterion());
   }
 
@@ -157,10 +152,10 @@ struct benchmark_base
   void run() { this->do_run(); }
   void run_or_skip(bool &skip_remaining) { this->do_run_or_skip(skip_remaining); }
 
-  void set_printer(nvbench::printer_base &printer);
-  void clear_printer();
+  void set_printer(nvbench::printer_base &printer) { m_printer_ptr = &printer; }
+  void clear_printer() { m_printer_ptr = nullptr; }
 
-  [[nodiscard]] optional_ptr<nvbench::printer_base> get_printer() const;
+  [[nodiscard]] nvbench::printer_base *get_printer() const { return m_printer_ptr; }
 
   /// Execute at least this many trials per measurement. @{
   [[nodiscard]] nvbench::int64_t get_min_samples() const { return m_min_samples; }
@@ -337,16 +332,7 @@ protected:
   std::string m_stopping_criterion{};
 
 private:
-  struct printer_optional_ptr_impl_t;
-
-  struct printer_optional_ptr_deleter_t
-  {
-    void operator()(printer_optional_ptr_impl_t *) const noexcept;
-  };
-
-  std::unique_ptr<printer_optional_ptr_impl_t, printer_optional_ptr_deleter_t> m_printer_wrapper;
-
-  void init_printer_ptr();
+  nvbench::printer_base *m_printer_ptr{};
 
   // route these through virtuals so the templated subclass can inject type info
   virtual std::unique_ptr<benchmark_base> do_clone() const            = 0;

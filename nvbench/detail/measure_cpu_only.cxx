@@ -204,9 +204,9 @@ void measure_cpu_only_base::generate_summaries()
   }
 
   // Log if a printer exists:
-  if (auto printer_opt_ptr = m_state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
+  if (auto printer_ptr = m_state.get_benchmark().get_printer())
   {
-    auto &printer = *(printer_opt_ptr.value());
+    auto &printer = *printer_ptr;
 
     if (m_max_time_exceeded)
     {
