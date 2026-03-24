@@ -245,7 +245,7 @@ struct state
    */
   [[nodiscard]] std::string get_axis_values_as_string(bool color = false) const;
 
-  [[nodiscard]] const benchmark_base &get_benchmark() const;
+  [[nodiscard]] const benchmark_base &get_benchmark() const { return *m_benchmark_ptr; };
 
   void collect_l1_hit_rates() { m_collect_l1_hit_rates = true; }
   void collect_l2_hit_rates() { m_collect_l2_hit_rates = true; }

@@ -68,8 +68,6 @@ state::state(const benchmark_base &bench,
     , m_cuda_stream{std::nullopt}
 {}
 
-const nvbench::benchmark_base &state::get_benchmark() const { return *m_benchmark_ptr; }
-
 nvbench::int64_t state::get_int64(const std::string &axis_name) const
 {
   return m_axis_values.get_int64(axis_name);
