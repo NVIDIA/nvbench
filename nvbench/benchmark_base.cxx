@@ -30,19 +30,6 @@ namespace nvbench
 
 benchmark_base::~benchmark_base() = default;
 
-/*
-void benchmark_base::set_printer(nvbench::printer_base &printer)
-{
-  m_printer_ptr = &printer;
-}
-
-void benchmark_base::clear_printer() { m_printer_ptr = nullptr; }
-
-nvbench::printer_base* benchmark_base::get_printer() const
-{
-  return m_printer_ptr;
-}
-*/
 std::unique_ptr<benchmark_base> benchmark_base::clone() const
 {
   auto result = this->do_clone();
