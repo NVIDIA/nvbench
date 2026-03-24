@@ -29,34 +29,34 @@
 namespace nvbench
 {
 
-struct benchmark_base::printer_optional_ref_impl_t
+struct benchmark_base::printer_optional_ptr_impl_t
 {
-  benchmark_base::optional_ref<printer_base> optional_ref;
+  benchmark_base::optional_ptr<printer_base> optional_ptr;
 };
 
 benchmark_base::~benchmark_base() = default;
 
-void benchmark_base::printer_optional_ref_deleter_t::operator()(
-  printer_optional_ref_impl_t *p) const noexcept
+void benchmark_base::printer_optional_ptr_deleter_t::operator()(
+  printer_optional_ptr_impl_t *p) const noexcept
 {
   delete p;
 }
 
-void benchmark_base::init_printer_ref()
+void benchmark_base::init_printer_ptr()
 {
-  m_printer_wrapper.reset(new printer_optional_ref_impl_t{});
+  m_printer_wrapper.reset(new printer_optional_ptr_impl_t{});
 }
 
 void benchmark_base::set_printer(nvbench::printer_base &printer)
 {
-  m_printer_wrapper->optional_ref = std::ref(printer);
+  m_printer_wrapper->optional_ptr = &printer;
 }
 
-void benchmark_base::clear_printer() { m_printer_wrapper->optional_ref = std::nullopt; }
+void benchmark_base::clear_printer() { m_printer_wrapper->optional_ptr = std::nullopt; }
 
-benchmark_base::optional_ref<nvbench::printer_base> benchmark_base::get_printer() const
+benchmark_base::optional_ptr<nvbench::printer_base> benchmark_base::get_printer() const
 {
-  return m_printer_wrapper->optional_ref;
+  return m_printer_wrapper->optional_ptr;
 }
 
 std::unique_ptr<benchmark_base> benchmark_base::clone() const
@@ -68,8 +68,8 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_axes    = m_axes;
   result->m_devices = m_devices;
 
-  result->m_printer_wrapper.reset(new printer_optional_ref_impl_t{m_printer_wrapper->optional_ref});
-  result->m_printer_wrapper->optional_ref = m_printer_wrapper->optional_ref;
+  result->m_printer_wrapper.reset(new printer_optional_ptr_impl_t{m_printer_wrapper->optional_ptr});
+  result->m_printer_wrapper->optional_ptr = m_printer_wrapper->optional_ptr;
 
   result->m_is_cpu_only             = m_is_cpu_only;
   result->m_run_once                = m_run_once;

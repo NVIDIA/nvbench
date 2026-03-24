@@ -247,9 +247,9 @@ void json_printer::do_process_bulk_data_float64(state &state,
     }
     catch (std::exception &e)
     {
-      if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+      if (auto printer_opt_ptr = state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
       {
-        auto &printer = printer_opt_ref.value().get();
+        auto &printer = *(printer_opt_ptr.value());
         printer.log(
           nvbench::log_level::warn,
           fmt::format("Error writing {} ({}) to {}: {}", tag, hint, result_path.string(), e.what()));
@@ -267,9 +267,9 @@ void json_printer::do_process_bulk_data_float64(state &state,
     summ.set_string("hide", "Not needed in table.");
 
     timer.stop();
-    if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+    if (auto printer_opt_ptr = state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
     {
-      auto &printer = printer_opt_ref.value().get();
+      auto &printer = *(printer_opt_ptr.value());
       printer.log(
         nvbench::log_level::info,
         fmt::format("Wrote '{}' in {:>6.3f}ms", result_path.string(), timer.get_duration() * 1000));
@@ -307,9 +307,9 @@ void json_printer::do_process_bulk_data_float64(state &state,
     }
     catch (std::exception &e)
     {
-      if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+      if (auto printer_opt_ptr = state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
       {
-        auto &printer = printer_opt_ref.value().get();
+        auto &printer = *(printer_opt_ptr.value());
         printer.log(
           nvbench::log_level::warn,
           fmt::format("Error writing {} ({}) to {}: {}", tag, hint, result_path.string(), e.what()));
@@ -327,9 +327,9 @@ void json_printer::do_process_bulk_data_float64(state &state,
     summ.set_string("hide", "Not needed in table.");
 
     timer.stop();
-    if (auto printer_opt_ref = state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+    if (auto printer_opt_ptr = state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
     {
-      auto &printer = printer_opt_ref.value().get();
+      auto &printer = *(printer_opt_ptr.value());
       printer.log(
         nvbench::log_level::info,
         fmt::format("Wrote '{}' in {:>6.3f}ms", result_path.string(), timer.get_duration() * 1000));

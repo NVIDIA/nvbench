@@ -171,9 +171,9 @@ try
 // clang-format on
 catch (const std::exception &ex)
 {
-  if (auto printer_opt_ref = exec_state.get_benchmark().get_printer(); printer_opt_ref)
+  if (auto printer_opt_ptr = exec_state.get_benchmark().get_printer(); printer_opt_ptr)
   {
-    auto &printer = printer_opt_ref.value().get();
+    auto &printer = *(printer_opt_ptr.value());
     printer.log(nvbench::log_level::warn,
                 fmt::format("CUPTI failed to construct profiler: {}", ex.what()));
   }
@@ -247,9 +247,9 @@ try
   }
 
   // Log if a printer exists:
-  if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref.has_value())
+  if (auto printer_opt_ptr = m_state.get_benchmark().get_printer(); printer_opt_ptr.has_value())
   {
-    auto &printer = printer_opt_ref.value().get();
+    auto &printer = *(printer_opt_ptr.value());
     printer.log(nvbench::log_level::pass,
                 fmt::format("CUPTI: {:0.2f}s total wall, {}x",
                             m_walltime_timer.get_duration(),
@@ -258,9 +258,9 @@ try
 }
 catch (const std::exception &ex)
 {
-  if (auto printer_opt_ref = m_state.get_benchmark().get_printer(); printer_opt_ref)
+  if (auto printer_opt_ptr = m_state.get_benchmark().get_printer(); printer_opt_ptr)
   {
-    auto &printer = printer_opt_ref.value().get();
+    auto &printer = *(printer_opt_ptr.value());
     printer.log(nvbench::log_level::warn,
                 fmt::format("CUPTI failed to generate the summary: {}", ex.what()));
   }
