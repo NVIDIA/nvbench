@@ -18,6 +18,16 @@
 
 #pragma once
 
+#include <nvbench/config.cuh>
+
+#if defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_GCC)
+#pragma GCC system_header
+#elif defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_CLANG)
+#pragma clang system_header
+#elif defined(NVBENCH_IMPLICIT_SYSTEM_HEADER_MSVC)
+#pragma system_header
+#endif
+
 #include <nvbench/detail/type_list_impl.cuh>
 
 #include <tuple>
