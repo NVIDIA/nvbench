@@ -710,7 +710,7 @@ Returns True if configuration has a device
 
   // method State.has_printers
   auto method_has_printers_impl = [](const nvbench::state &state) -> bool {
-    return state.get_benchmark().get_printer().has_value();
+    return state.get_benchmark().get_printer() != nullptr;
   };
   static constexpr const char *method_has_printers_doc = R"XXXX(
 Returns True if configuration has a printer"
