@@ -33,7 +33,8 @@ jobs:
         with:
           miniforge-version: "latest"
           channels: conda-forge
-          auto-activate-base: false
+          conda-remove-defaults: true
+          auto-activate: false
 
       - name: Create docs environment
         run: conda create -n nvbench-docs --yes python pip doxygen cuda-nvcc_linux-64 gcc_linux-64 gxx_linux-64 cuda-nvml-dev cuda-profiler-api cmake ninja
