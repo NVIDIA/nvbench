@@ -33,9 +33,7 @@
 #include <nvbench/state.cuh>
 #include <nvbench/stopping_criterion.cuh>
 
-#include <functional> // reference_wrapper, ref
 #include <memory>
-#include <optional>
 #include <vector>
 
 namespace nvbench
@@ -56,9 +54,6 @@ struct runner;
  */
 struct benchmark_base
 {
-  template <typename T>
-  using optional_ref = std::optional<std::reference_wrapper<T>>;
-
   template <typename TypeAxes>
   explicit benchmark_base(TypeAxes type_axes)
       : m_axes(type_axes)
@@ -157,11 +152,10 @@ struct benchmark_base
   void run() { this->do_run(); }
   void run_or_skip(bool &skip_remaining) { this->do_run_or_skip(skip_remaining); }
 
-  void set_printer(nvbench::printer_base &printer) { m_printer = std::ref(printer); }
+  void set_printer(nvbench::printer_base &printer) { m_printer_ptr = &printer; }
+  void clear_printer() { m_printer_ptr = nullptr; }
 
-  void clear_printer() { m_printer = std::nullopt; }
-
-  [[nodiscard]] optional_ref<nvbench::printer_base> get_printer() const { return m_printer; }
+  [[nodiscard]] nvbench::printer_base *get_printer() const { return m_printer_ptr; }
 
   /// Execute at least this many trials per measurement. @{
   [[nodiscard]] nvbench::int64_t get_min_samples() const { return m_min_samples; }
@@ -321,8 +315,6 @@ protected:
   std::vector<nvbench::device_info> m_devices;
   std::vector<nvbench::state> m_states;
 
-  optional_ref<nvbench::printer_base> m_printer;
-
   bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
@@ -340,6 +332,8 @@ protected:
   std::string m_stopping_criterion{};
 
 private:
+  nvbench::printer_base *m_printer_ptr{};
+
   // route these through virtuals so the templated subclass can inject type info
   virtual std::unique_ptr<benchmark_base> do_clone() const            = 0;
   virtual void do_set_type_axes_names(std::vector<std::string> names) = 0;

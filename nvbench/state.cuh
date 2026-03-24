@@ -36,7 +36,6 @@
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
-#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -246,7 +245,7 @@ struct state
    */
   [[nodiscard]] std::string get_axis_values_as_string(bool color = false) const;
 
-  [[nodiscard]] const benchmark_base &get_benchmark() const { return m_benchmark; }
+  [[nodiscard]] const benchmark_base &get_benchmark() const { return *m_benchmark_ptr; };
 
   void collect_l1_hit_rates() { m_collect_l1_hit_rates = true; }
   void collect_l2_hit_rates() { m_collect_l2_hit_rates = true; }
@@ -318,7 +317,8 @@ private:
 
   [[nodiscard]] bool skip_hot_measurement() const { return get_run_once() || get_skip_batched(); }
 
-  std::reference_wrapper<const nvbench::benchmark_base> m_benchmark;
+  const nvbench::benchmark_base *m_benchmark_ptr;
+
   nvbench::named_values m_axis_values;
   std::optional<nvbench::device_info> m_device;
   std::size_t m_type_config_index{};

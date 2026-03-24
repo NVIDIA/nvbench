@@ -32,7 +32,7 @@ namespace nvbench
 {
 
 state::state(const benchmark_base &bench)
-    : m_benchmark{bench}
+    : m_benchmark_ptr{&bench}
     , m_is_cpu_only(bench.get_is_cpu_only())
     , m_run_once{bench.get_run_once()}
     , m_disable_blocking_kernel{bench.get_disable_blocking_kernel()}
@@ -50,7 +50,7 @@ state::state(const benchmark_base &bench,
              nvbench::named_values values,
              std::optional<nvbench::device_info> device,
              std::size_t type_config_index)
-    : m_benchmark{bench}
+    : m_benchmark_ptr{&bench}
     , m_axis_values{std::move(values)}
     , m_device{std::move(device)}
     , m_type_config_index{type_config_index}
@@ -205,7 +205,7 @@ std::string state::get_axis_values_as_string(bool color) const
     append_key_value("Device", m_device->get_id());
   }
 
-  const axes_metadata &axes = m_benchmark.get().get_axes();
+  const axes_metadata &axes = m_benchmark_ptr->get_axes();
   for (const auto &name : m_axis_values.get_names())
   {
     const auto axis_type = m_axis_values.get_type(name);
@@ -242,7 +242,7 @@ std::string state::get_short_description(bool color) const
   };
 
   return fmt::format("{} [{}]",
-                     fmt::format(style(fmt::emphasis::bold), "{}", m_benchmark.get().get_name()),
+                     fmt::format(style(fmt::emphasis::bold), "{}", m_benchmark_ptr->get_name()),
                      this->get_axis_values_as_string(color));
 }
 
