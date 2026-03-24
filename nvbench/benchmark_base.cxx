@@ -19,11 +19,9 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/transform_reduce.cuh>
-#include <nvbench/printer_base.cuh>
 
 #include <algorithm>
 #include <cstdint>
-#include <memory>
 
 namespace nvbench
 {
