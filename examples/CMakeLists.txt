@@ -10,6 +10,7 @@ set(example_srcs
   stream.cu
   summaries.cu
   throughput.cu
+  custom_iteration_spaces.cu
 )
 
 # Metatarget for all examples:
