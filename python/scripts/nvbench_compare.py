@@ -328,6 +328,8 @@ def compare_benches(
         headers.append("Status")
         colalign.append("center")
 
+        added_batch_headers = False
+
         for cmp_device_id in cmp_device_ids:
             rows = []
             plot_data = {"cmp": {}, "ref": {}, "cmp_noise": {}, "ref_noise": {}}
@@ -372,6 +374,12 @@ def compare_benches(
                 ref_noise_summary = lookup_summary(
                     ref_summaries, "nv/cold/time/gpu/stdev/relative"
                 )
+                cmp_batch_summary = lookup_summary(
+                    cmp_summaries, "nv/batch/time/gpu/mean"
+                )
+                ref_batch_summary = lookup_summary(
+                    ref_summaries, "nv/batch/time/gpu/mean"
+                )
 
                 # TODO: Use other timings, too. Maybe multiple rows, with a
                 # "Timing" column + values "CPU/GPU/Batch"?
@@ -385,6 +393,20 @@ def compare_benches(
                 ):
                     continue
 
+                has_batch_data = cmp_batch_summary and ref_batch_summary
+                if has_batch_data and not added_batch_headers:
+                    headers.append("B Ref Time")
+                    colalign.append("right")
+                    headers.append("B Cmp Time")
+                    colalign.append("right")
+                    headers.append("B Diff")
+                    colalign.append("right")
+                    headers.append("B %Diff")
+                    colalign.append("right")
+                    headers.append("B Status")
+                    colalign.append("center")
+                    added_batch_headers = True
+
                 def extract_value(summary):
                     summary_data = summary["data"]
                     value_data = next(
@@ -397,6 +419,9 @@ def compare_benches(
                 ref_time = extract_value(ref_time_summary)
                 cmp_noise = extract_value(cmp_noise_summary)
                 ref_noise = extract_value(ref_noise_summary)
+                if has_batch_data:
+                    cmp_batch_time = extract_value(cmp_batch_summary)
+                    ref_batch_time = extract_value(ref_batch_summary)
 
                 # Convert string encoding to expected numerics:
                 cmp_time = float(cmp_time)
@@ -404,6 +429,12 @@ def compare_benches(
 
                 diff = cmp_time - ref_time
                 frac_diff = diff / ref_time
+
+                if has_batch_data:
+                    cmp_batch_time = float(cmp_batch_time)
+                    ref_batch_time = float(ref_batch_time)
+                    diff_batch = cmp_batch_time - ref_batch_time
+                    frac_diff_batch = diff_batch / ref_batch_time
 
                 if ref_noise and cmp_noise:
                     ref_noise = float(ref_noise)
@@ -466,6 +497,19 @@ def compare_benches(
                     status_label = "SLOW"
                     status = Fore.RED + status_label + Fore.RESET
 
+                if has_batch_data:
+                    if (
+                        abs(frac_diff_batch) <= 0.01
+                    ):  # TODO(bgruber): what value to use here?
+                        pass_count += 1
+                        batch_status = Fore.BLUE + "SAME" + Fore.RESET
+                    elif diff_batch < 0:
+                        failure_count += 1
+                        batch_status = Fore.GREEN + "FAST" + Fore.RESET
+                    else:
+                        failure_count += 1
+                        batch_status = Fore.RED + "SLOW" + Fore.RESET
+
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
                     row.append(format_percentage(ref_noise))
@@ -474,6 +518,13 @@ def compare_benches(
                     row.append(format_duration(diff))
                     row.append(format_percentage(frac_diff))
                     row.append(status)
+
+                    if has_batch_data:
+                        row.append(format_duration(ref_batch_time))
+                        row.append(format_duration(cmp_batch_time))
+                        row.append(format_duration(diff_batch))
+                        row.append(format_percentage(frac_diff_batch))
+                        row.append(batch_status)
 
                     rows.append(row)
                     if plot:
