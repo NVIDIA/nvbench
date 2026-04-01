@@ -20,21 +20,16 @@ import cuda.bench as bench
 import cupy as cp
 
 
-def as_cp_ExternalStream(
-    cs: bench.CudaStream, dev_id: int | None = -1
-) -> cp.cuda.ExternalStream:
-    h = cs.addressof()
-    return cp.cuda.ExternalStream(h, dev_id)
+def as_cp_ExternalStream(cs: bench.CudaStream):
+    return cp.cuda.Stream.from_external(cs)
 
 
 def cupy_extract_by_mask(state: bench.State):
     n_cols = state.get_int64("numCols")
     n_rows = state.get_int64("numRows")
 
-    dev_id = state.get_device()
-    cp_s = as_cp_ExternalStream(state.get_stream(), dev_id)
+    cp_s = as_cp_ExternalStream(state.get_stream())
 
-    state.collect_cupti_metrics()
     state.add_element_count(n_rows * n_cols, "# Elements")
     int32_dt = cp.dtype(cp.int32)
     bool_dt = cp.dtype(cp.bool_)
@@ -49,7 +44,7 @@ def cupy_extract_by_mask(state: bench.State):
         _ = X[mask]
 
     def launcher(launch: bench.Launch):
-        with as_cp_ExternalStream(launch.get_stream(), dev_id):
+        with as_cp_ExternalStream(launch.get_stream()):
             _ = X[mask]
 
     state.exec(launcher, sync=True)
