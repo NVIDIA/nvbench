@@ -285,6 +285,7 @@ def compare_benches(
     dark,
     axis_filters,
     benchmark_filters,
+    markdown=False,
 ):
     if plot_along:
         import matplotlib.pyplot as plt
@@ -452,19 +453,31 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    status = Fore.YELLOW + status_label + Fore.RESET
+                    if markdown:
+                        status = f"\U0001f7e1 {status_label}"
+                    else:
+                        status = f"{Fore.YELLOW}{status_label}{Fore.RESET}"
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    status = Fore.BLUE + status_label + Fore.RESET
+                    if markdown:
+                        status = f"\U0001f535 {status_label}"
+                    else:
+                        status = f"{Fore.BLUE}{status_label}{Fore.RESET}"
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    status = Fore.GREEN + status_label + Fore.RESET
+                    if markdown:
+                        status = f"\U0001f7e2 {status_label}"
+                    else:
+                        status = f"{Fore.GREEN}{status_label}{Fore.RESET}"
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    status = Fore.RED + status_label + Fore.RESET
+                    if markdown:
+                        status = f"\U0001f534 {status_label}"
+                    else:
+                        status = f"{Fore.RED}{status_label}{Fore.RESET}"
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
@@ -595,6 +608,13 @@ def main():
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
+        "--markdown",
+        dest="markdown",
+        default=False,
+        action="store_true",
+        help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
+    )
+    parser.add_argument(
         "-a",
         "--axis",
         action="append",
@@ -650,11 +670,14 @@ def main():
         all_cmp_devices = cmp_root["devices"]
 
         if ref_root["devices"] != cmp_root["devices"]:
-            print(
-                (Fore.YELLOW if args.ignore_devices else Fore.RED)
-                + "Device sections do not match:"
-                + Fore.RESET
-            )
+            if args.markdown:
+                print("Device sections do not match:")
+            else:
+                print(
+                    (Fore.YELLOW if args.ignore_devices else Fore.RED)
+                    + "Device sections do not match:"
+                    + Fore.RESET
+                )
             print(
                 jsondiff.diff(
                     ref_root["devices"], cmp_root["devices"], syntax="symmetric"
@@ -672,6 +695,7 @@ def main():
             args.dark,
             axis_filters,
             args.benchmark,
+            markdown=args.markdown,
         )
 
     print("# Summary\n")
