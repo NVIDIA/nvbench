@@ -17,7 +17,7 @@
 import sys
 
 import cuda.bench as bench
-import cuda.cccl.cooperative.experimental as coop
+import cuda.coop as coop
 import numba
 import numpy as np
 from numba import cuda
