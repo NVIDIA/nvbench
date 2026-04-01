@@ -285,7 +285,7 @@ def compare_benches(
     dark,
     axis_filters,
     benchmark_filters,
-    markdown=False,
+    no_color,
 ):
     if plot_along:
         import matplotlib.pyplot as plt
@@ -453,28 +453,28 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    if markdown:
+                    if no_color:
                         status = f"\U0001f7e1 {status_label}"
                     else:
                         status = f"{Fore.YELLOW}{status_label}{Fore.RESET}"
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    if markdown:
+                    if no_color:
                         status = f"\U0001f535 {status_label}"
                     else:
                         status = f"{Fore.BLUE}{status_label}{Fore.RESET}"
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    if markdown:
+                    if no_color:
                         status = f"\U0001f7e2 {status_label}"
                     else:
                         status = f"{Fore.GREEN}{status_label}{Fore.RESET}"
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    if markdown:
+                    if no_color:
                         status = f"\U0001f534 {status_label}"
                     else:
                         status = f"{Fore.RED}{status_label}{Fore.RESET}"
@@ -608,9 +608,8 @@ def main():
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
-        "--markdown",
-        dest="markdown",
-        default=False,
+        "--no-color",
+        dest="no_color",
         action="store_true",
         help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
     )
@@ -670,7 +669,7 @@ def main():
         all_cmp_devices = cmp_root["devices"]
 
         if ref_root["devices"] != cmp_root["devices"]:
-            if args.markdown:
+            if args.no_color:
                 print("Device sections do not match:")
             else:
                 print(
@@ -695,7 +694,7 @@ def main():
             args.dark,
             axis_filters,
             args.benchmark,
-            markdown=args.markdown,
+            args.no_color,
         )
 
     print("# Summary\n")
