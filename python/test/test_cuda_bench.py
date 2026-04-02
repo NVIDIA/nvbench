@@ -6,12 +6,12 @@ import pytest
 
 def test_cpp_exception():
     with pytest.raises(RuntimeError, match="Test"):
-        bench._nvbench.test_cpp_exception()
+        bench._nvbench._test_cpp_exception()
 
 
 def test_py_exception():
     with pytest.raises(bench.NVBenchRuntimeError, match="Test"):
-        bench._nvbench.test_py_exception()
+        bench._nvbench._test_py_exception()
 
 
 @pytest.mark.parametrize(
