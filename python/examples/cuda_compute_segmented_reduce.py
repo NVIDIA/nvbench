@@ -17,36 +17,20 @@
 import sys
 
 import cuda.bench as bench
-import cuda.cccl.parallel.experimental.algorithms as algorithms
-import cuda.cccl.parallel.experimental.iterators as iterators
-import cuda.core.experimental as core
+import cuda.compute.algorithms as algorithms
+import cuda.compute.iterators as iterators
+import cuda.core as core
 import cupy as cp
 import numpy as np
-
-
-class CCCLStream:
-    "Class to work around https://github.com/NVIDIA/cccl/issues/5144"
-
-    def __init__(self, ptr):
-        self._ptr = ptr
-
-    def __cuda_stream__(self):
-        return (0, self._ptr)
+from cuda.compute import OpKind
 
 
 def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
     return core.Stream.from_handle(cs.addressof())
 
 
-def as_cccl_Stream(cs: bench.CudaStream) -> CCCLStream:
-    return CCCLStream(cs.addressof())
-
-
-def as_cp_ExternalStream(
-    cs: bench.CudaStream, dev_id: int | None = -1
-) -> cp.cuda.ExternalStream:
-    h = cs.addressof()
-    return cp.cuda.ExternalStream(h, dev_id)
+def as_cp_ExternalStream(cs: bench.CudaStream) -> cp.cuda.ExternalStream:
+    return cp.cuda.Stream.from_external(cs)
 
 
 def segmented_reduce(state: bench.State):
@@ -56,13 +40,8 @@ def segmented_reduce(state: bench.State):
     n_rows = n_elems // n_cols
 
     state.add_summary("numRows", n_rows)
-    state.collect_cupti_metrics()
 
-    dev_id = state.get_device()
-    cp_stream = as_cp_ExternalStream(state.get_stream(), dev_id)
-
-    def add_op(a, b):
-        return a + b
+    cp_stream = as_cp_ExternalStream(state.get_stream())
 
     def make_scaler(step):
         def scale(row_id):
@@ -85,15 +64,24 @@ def segmented_reduce(state: bench.State):
         d_input = mat
         d_output = cp.empty(n_rows, dtype=d_input.dtype)
 
-    alg = algorithms.segmented_reduce(
+    add_op = OpKind.PLUS
+
+    alg = algorithms.make_segmented_reduce(
         d_input, d_output, start_offsets, end_offsets, add_op, h_init
     )
 
-    cccl_stream = as_cccl_Stream(state.get_stream())
-
+    cccl_stream = state.get_stream()
     # query size of temporary storage and allocate
     temp_nbytes = alg(
-        None, d_input, d_output, n_rows, start_offsets, end_offsets, h_init, cccl_stream
+        None,
+        d_input,
+        d_output,
+        add_op,
+        n_rows,
+        start_offsets,
+        end_offsets,
+        h_init,
+        cccl_stream,
     )
     h_init = np.zeros(tuple(), dtype=np.int32)
 
@@ -101,11 +89,12 @@ def segmented_reduce(state: bench.State):
         temp_storage = cp.empty(temp_nbytes, dtype=cp.uint8)
 
     def launcher(launch: bench.Launch):
-        s = as_cccl_Stream(launch.get_stream())
+        s = launch.get_stream()
         alg(
             temp_storage,
             d_input,
             d_output,
+            add_op,
             n_rows,
             start_offsets,
             end_offsets,

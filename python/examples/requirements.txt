@@ -1,8 +1,9 @@
 numpy
 numba
-cupy
-nvidia-cutlass
-cuda-cccl
-cuda-core
 cuda-bindings
+cuda-core
 numba-cuda
+cuda-cccl
+cupy
+nvidia-cute-dsl[cu13]
+torch[cu13]

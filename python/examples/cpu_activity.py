@@ -19,7 +19,7 @@ import time
 
 import cuda.bench as bench
 import cuda.cccl.headers as headers
-import cuda.core.experimental as core
+import cuda.core as core
 
 host_sleep_duration = 0.1
 
