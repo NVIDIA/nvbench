@@ -44,8 +44,8 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
   // Compute convergence statistics using CUDA timings:
   const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
   const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
-                                                                          m_cuda_times.cend(),
-                                                                          mean_cuda_time);
+                                                                              m_cuda_times.cend(),
+                                                                              mean_cuda_time);
   const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
   if (std::isfinite(cuda_rel_stdev))
   {
