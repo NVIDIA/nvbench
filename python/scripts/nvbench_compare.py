@@ -310,7 +310,7 @@ def compare_benches(
         import matplotlib.pyplot as plt
         import seaborn as sns
 
-        sns.set()
+        sns.set_theme()
 
     comparison_entries = []
     comparison_device_names = set()
