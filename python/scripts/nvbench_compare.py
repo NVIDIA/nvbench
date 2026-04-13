@@ -4,6 +4,7 @@ import argparse
 import math
 import os
 import sys
+from enum import StrEnum
 
 import jsondiff
 import tabulate
@@ -28,6 +29,24 @@ config_count = 0
 unknown_count = 0
 failure_count = 0
 pass_count = 0
+
+
+class Emoji(StrEnum):
+    YELLOW = "\U0001f7e1"
+    BLUE = "\U0001f535"
+    GREEN = "\U0001f7e2"
+    RED = "\U0001f534"
+    NONE = ""
+
+
+def colorize(msg: str, fore: Fore, emoji: Emoji, no_color: bool) -> str:
+    if no_color:
+        prefix = ""
+        if emoji_s := str(emoji):
+            prefix = f"{emoji_s} "
+        return f"{prefix}{msg}"
+    else:
+        return f"{fore}{msg}{Fore.RESET}"
 
 
 def find_matching_bench(needle, haystack):
@@ -453,31 +472,19 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    if no_color:
-                        status = f"\U0001f7e1 {status_label}"
-                    else:
-                        status = f"{Fore.YELLOW}{status_label}{Fore.RESET}"
+                    status = colorize(status_label, Fore.YELLOW, Emoji.YELLOW, no_color)
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    if no_color:
-                        status = f"\U0001f535 {status_label}"
-                    else:
-                        status = f"{Fore.BLUE}{status_label}{Fore.RESET}"
+                    status = colorize(status_label, Fore.BLUE, Emoji.BLUE, no_color)
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    if no_color:
-                        status = f"\U0001f7e2 {status_label}"
-                    else:
-                        status = f"{Fore.GREEN}{status_label}{Fore.RESET}"
+                    status = colorize(status_label, Fore.GREEN, Emoji.GREEN, no_color)
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    if no_color:
-                        status = f"\U0001f534 {status_label}"
-                    else:
-                        status = f"{Fore.RED}{status_label}{Fore.RESET}"
+                    status = colorize(status_label, Fore.RED, Emoji.RED, no_color)
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
@@ -669,14 +676,11 @@ def main():
         all_cmp_devices = cmp_root["devices"]
 
         if ref_root["devices"] != cmp_root["devices"]:
-            if args.no_color:
-                print("Device sections do not match:")
-            else:
-                print(
-                    (Fore.YELLOW if args.ignore_devices else Fore.RED)
-                    + "Device sections do not match:"
-                    + Fore.RESET
-                )
+            warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
+            msg_text = "Device sections do not match"
+            print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
+            print(": ", end="")
+
             print(
                 jsondiff.diff(
                     ref_root["devices"], cmp_root["devices"], syntax="symmetric"
