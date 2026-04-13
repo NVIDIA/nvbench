@@ -321,7 +321,7 @@ def compare_benches(
         if benchmark_filters and cmp_bench["name"] not in benchmark_filters:
             continue
 
-        print("# %s\n" % (cmp_bench["name"]))
+        print("# {}\n".format(cmp_bench["name"]))
 
         cmp_device_ids = cmp_bench["devices"]
         axes = cmp_bench["axes"]
