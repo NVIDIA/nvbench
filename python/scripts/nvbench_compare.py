@@ -108,12 +108,12 @@ def parse_axis_filters(axis_args):
     filters = []
     for axis_arg in axis_args:
         if "=" not in axis_arg:
-            raise ValueError("Axis filter must be NAME=VALUE: {}".format(axis_arg))
+            raise ValueError(f"Axis filter must be NAME=VALUE: {axis_arg}")
         name, value = axis_arg.split("=", 1)
         name = name.strip()
         value = value.strip()
         if not name or not value:
-            raise ValueError("Axis filter must be NAME=VALUE: {}".format(axis_arg))
+            raise ValueError(f"Axis filter must be NAME=VALUE: {axis_arg}")
 
         values = []
         if value.startswith("[") and value.endswith("]"):
@@ -128,22 +128,18 @@ def parse_axis_filters(axis_args):
         if name.endswith("[pow2]"):
             name = name[: -len("[pow2]")].strip()
             if not name:
-                raise ValueError(
-                    "Axis filter missing name before [pow2]: {}".format(axis_arg)
-                )
+                raise ValueError(f"Axis filter missing name before [pow2]: {axis_arg}")
             try:
                 exponents = [int(v) for v in values]
             except ValueError as exc:
                 raise ValueError(
-                    "Axis filter [pow2] value must be integer: {}".format(axis_arg)
+                    f"Axis filter [pow2] value must be integer: {axis_arg}"
                 ) from exc
             values = [str(2**exponent) for exponent in exponents]
-            display_values = ["2^{}".format(exponent) for exponent in exponents]
+            display_values = [f"2^{exponent}" for exponent in exponents]
 
         if not values:
-            raise ValueError(
-                "Axis filter must specify at least one value: {}".format(axis_arg)
-            )
+            raise ValueError(f"Axis filter must specify at least one value: {axis_arg}")
 
         display = make_display(name, display_values)
         filters.append(
@@ -289,7 +285,7 @@ def plot_comparison_entries(entries, title=None, dark=False):
     if not os.environ.get("DISPLAY"):
         output = "nvbench_compare.png"
         fig.savefig(output, dpi=150)
-        print("Saved comparison plot to {}".format(output))
+        print(f"Saved comparison plot to {output}")
     else:
         plt.show()
     return 0
@@ -321,7 +317,7 @@ def compare_benches(
         if benchmark_filters and cmp_bench["name"] not in benchmark_filters:
             continue
 
-        print("# {}\n".format(cmp_bench["name"]))
+        print(f"""# {cmp_bench["name"]}\n""")
 
         cmp_device_ids = cmp_bench["devices"]
         axes = cmp_bench["axes"]
@@ -441,15 +437,11 @@ def compare_benches(
                 if plot_along:
                     axis_name = []
                     axis_value = "--"
-                    for aid in range(len(axis_values)):
-                        if axis_values[aid]["name"] != plot_along:
-                            axis_name.append(
-                                "{} = {}".format(
-                                    axis_values[aid]["name"], axis_values[aid]["value"]
-                                )
-                            )
+                    for av in axis_values:
+                        if av["name"] != plot_along:
+                            axis_name.append(f"""{av["name"]} = {av["value"]}""")
                         else:
-                            axis_value = float(axis_values[aid]["value"])
+                            axis_value = float(av["value"])
                     axis_name = ", ".join(axis_name)
 
                     if axis_name not in plot_data["cmp"]:
@@ -499,7 +491,7 @@ def compare_benches(
                     if plot:
                         axis_label = format_axis_values(axis_values, axes, axis_filters)
                         if axis_label:
-                            label = "{} | {}".format(cmp_bench["name"], axis_label)
+                            label = f"""{cmp_bench["name"]} | {axis_label}"""
                         else:
                             label = cmp_bench["name"]
                         cmp_device = find_device_by_id(
@@ -570,7 +562,7 @@ def compare_benches(
     if plot:
         title = "%SOL Bandwidth change"
         if len(comparison_device_names) == 1:
-            title = "{} - {}".format(title, next(iter(comparison_device_names)))
+            title = f"{title} - {next(iter(comparison_device_names))}"
         if axis_filters:
             axis_label = ", ".join(
                 axis_filter["display"]
@@ -578,7 +570,7 @@ def compare_benches(
                 if len(axis_filter["values"]) == 1
             )
             if axis_label:
-                title = "{} ({})".format(title, axis_label)
+                title = f"{title} ({axis_label})"
         plot_comparison_entries(comparison_entries, title=title, dark=dark)
 
 
