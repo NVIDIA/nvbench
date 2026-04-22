@@ -69,11 +69,20 @@ NVBenchRuntimeError = _nvbench_module.NVBenchRuntimeError
 State = _nvbench_module.State
 register = _nvbench_module.register
 run_all_benchmarks = _nvbench_module.run_all_benchmarks
-test_cpp_exception = _nvbench_module.test_cpp_exception
-test_py_exception = _nvbench_module.test_py_exception
+_test_cpp_exception = _nvbench_module._test_cpp_exception
+_test_py_exception = _nvbench_module._test_py_exception
 
 # Expose the module as _nvbench for backward compatibility (e.g., for tests)
 _nvbench = _nvbench_module
+
+# Set module of exposed objects
+Benchmark.__module__ = __name__
+CudaStream.__module__ = __name__
+Launch.__module__ = __name__
+NVBenchRuntimeError.__module__ = __name__
+State.__module__ = __name__
+register.__module__ = __name__
+run_all_benchmarks.__module__ = __name__
 
 # Clean up internal symbols
 del (
