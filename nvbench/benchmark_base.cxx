@@ -75,22 +75,22 @@ benchmark_base &benchmark_base::add_device(int device_id)
 
 std::size_t benchmark_base::get_config_count() const
 {
-  const std::size_t per_device_count = nvbench::detail::transform_reduce(
-    m_axes.get_axes().cbegin(),
-    m_axes.get_axes().cend(),
+  const auto &axes = m_axes.get_axes();
+  const std::size_t value_count =
+    nvbench::detail::transform_reduce(m_axes.get_value_iteration_spaces().cbegin(),
+                                      m_axes.get_value_iteration_spaces().cend(),
+                                      std::size_t{1},
+                                      std::multiplies<>{},
+                                      [&axes](const auto &space) { return space->get_size(axes); });
+
+  const std::size_t type_count = nvbench::detail::transform_reduce(
+    m_axes.get_type_iteration_spaces().cbegin(),
+    m_axes.get_type_iteration_spaces().cend(),
     std::size_t{1},
     std::multiplies<>{},
-    [](const auto &axis_ptr) {
-      if (const auto *type_axis_ptr = dynamic_cast<const nvbench::type_axis *>(axis_ptr.get());
-          type_axis_ptr != nullptr)
-      {
-        return type_axis_ptr->get_active_count();
-      }
-      return axis_ptr->get_size();
-    });
+    [&axes](const auto &space) { return space->get_active_count(axes); });
 
-  // Devices will be empty for cpu-only benchmarks.
-  return per_device_count * std::max(std::size_t(1), m_devices.size());
+  return (value_count * type_count) * std::max(std::size_t(1), m_devices.size());
 }
 
 benchmark_base &benchmark_base::set_stopping_criterion(std::string criterion)
