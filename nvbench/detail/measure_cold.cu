@@ -175,7 +175,7 @@ bool measure_cold_base::is_finished()
   }
 
   // Check that we've gathered enough samples:
-  if (m_total_samples > m_min_samples)
+  if (m_total_samples >= m_min_samples)
   {
     if (m_stopping_criterion.is_finished())
     {

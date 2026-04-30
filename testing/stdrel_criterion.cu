@@ -78,8 +78,24 @@ void test_stdrel()
   ASSERT(!criterion.is_finished());
 }
 
+void test_stdrel_needs_enough_samples()
+{
+  nvbench::criterion_params params;
+  params.set_float64("min-time", 0.0);
+
+  nvbench::detail::stdrel_criterion criterion;
+  criterion.initialize(params);
+
+  for (int i = 0; i < 4; ++i)
+  {
+    criterion.add_measurement(42.0);
+  }
+  ASSERT(!criterion.is_finished());
+}
+
 int main()
 {
   test_const();
   test_stdrel();
+  test_stdrel_needs_enough_samples();
 }
