@@ -93,6 +93,13 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--warmup-runs <count>`
+  * Execute `<count>` warmup runs before collecting cold measurement samples.
+  * The minimum is 1 warmup run.
+  * Default is 1 warmup run.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
 * `--throttle-threshold <value>`
   * Set the GPU throttle threshold as percentage of the device's default clock rate.
   * Default is 75.

@@ -39,6 +39,7 @@ state::state(const benchmark_base &bench)
     , m_criterion_params{bench.get_criterion_params()}
     , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
+    , m_warmup_runs{bench.get_warmup_runs()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}
@@ -61,6 +62,7 @@ state::state(const benchmark_base &bench,
     , m_criterion_params{bench.get_criterion_params()}
     , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
+    , m_warmup_runs{bench.get_warmup_runs()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}

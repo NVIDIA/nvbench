@@ -110,6 +110,7 @@ protected:
   bool m_check_throttling{true};
 
   nvbench::int64_t m_min_samples{};
+  nvbench::int64_t m_warmup_runs{1};
 
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
@@ -239,8 +240,8 @@ struct measure_cold : public measure_cold_base
   }
 
 private:
-  // Run the kernel once, measuring the GPU time. If under skip_time, skip the
-  // measurement.
+  // Run the kernel m_warmup_runs times, measuring the GPU time of the last run.
+  // If under skip_time, skip the measurement.
   void run_warmup()
   {
     if (m_run_once)
@@ -253,7 +254,10 @@ private:
     constexpr bool disable_blocking_kernel = true;
     kernel_launch_timer timer(*this, disable_blocking_kernel);
 
-    this->launch_kernel(timer);
+    for (nvbench::int64_t warmup_run = 0; warmup_run < m_warmup_runs; ++warmup_run)
+    {
+      this->launch_kernel(timer);
+    }
     this->check_skip_time(m_cuda_timer.get_duration());
   }
 
