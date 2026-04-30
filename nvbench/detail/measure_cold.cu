@@ -46,6 +46,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_run_once{exec_state.get_run_once()}
     , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
+    , m_warmup_runs{exec_state.get_warmup_runs()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
     , m_throttle_threshold(exec_state.get_throttle_threshold())
@@ -174,7 +175,7 @@ bool measure_cold_base::is_finished()
   }
 
   // Check that we've gathered enough samples:
-  if (m_total_samples > m_min_samples)
+  if (m_total_samples >= m_min_samples)
   {
     if (m_stopping_criterion.is_finished())
     {

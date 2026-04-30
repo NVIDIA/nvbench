@@ -1155,6 +1155,36 @@ void test_min_samples()
   ASSERT(states[0].get_min_samples() == 12345);
 }
 
+void test_warmup_runs()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--warmup-runs", "12345"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_warmup_runs() == 12345);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--warmup-runs", "0"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_warmup_runs() == 1);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--warmup-runs", "-12345"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_warmup_runs() == 1);
+  }
+}
+
 void test_skip_time()
 {
   nvbench::option_parser parser;
@@ -1276,6 +1306,45 @@ void test_stopping_criterion()
 
     ASSERT(criterion_params.get_float64("max-angle") == 0.42);
     ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Sample-count criterion default params
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "sample-count",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "sample-count");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("target-samples"));
+    ASSERT(criterion_params.get_int64("target-samples") == 100);
+  }
+  { // Sample-count criterion params are independent from min_samples
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--min-samples",
+      "7",
+      "--stopping-criterion",
+      "sample-count",
+      "--target-samples",
+      "123",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_min_samples() == 7);
+    ASSERT(states[0].get_stopping_criterion() == "sample-count");
+
+    const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
+    ASSERT(criterion_params.has_value("target-samples"));
+    ASSERT(criterion_params.get_int64("target-samples") == 123);
   }
   { // Unknown stopping criterion should throw
     bool exception_thrown = false;
@@ -1466,6 +1535,7 @@ try
   test_axis_before_benchmark();
 
   test_min_samples();
+  test_warmup_runs();
   test_skip_time();
   test_timeout();
 

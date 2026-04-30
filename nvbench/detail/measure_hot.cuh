@@ -186,7 +186,7 @@ private:
         (m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples)));
 
       if (m_total_cuda_time > m_min_time && // min time okay
-          m_total_samples > m_min_samples)  // min samples okay
+          m_total_samples >= m_min_samples) // min samples okay
       {
         break; // Stop iterating
       }

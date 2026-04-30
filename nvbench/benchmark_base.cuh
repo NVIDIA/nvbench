@@ -166,6 +166,15 @@ struct benchmark_base
   }
   /// @}
 
+  /// Execute this many warmup runs before collecting cold measurement samples. @{
+  [[nodiscard]] nvbench::int64_t get_warmup_runs() const { return m_warmup_runs; }
+  benchmark_base &set_warmup_runs(nvbench::int64_t warmup_runs)
+  {
+    m_warmup_runs = warmup_runs > nvbench::int64_t{0} ? warmup_runs : nvbench::int64_t{1};
+    return *this;
+  }
+  /// @}
+
   /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
   /// @{
   [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
@@ -321,6 +330,7 @@ protected:
   bool m_skip_batched{false};
 
   nvbench::int64_t m_min_samples{10};
+  nvbench::int64_t m_warmup_runs{1};
 
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};

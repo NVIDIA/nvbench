@@ -93,6 +93,13 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--warmup-runs <count>`
+  * Execute `<count>` warmup runs before collecting cold measurement samples.
+  * The minimum is 1 warmup run.
+  * Default is 1 warmup run.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
 * `--throttle-threshold <value>`
   * Set the GPU throttle threshold as percentage of the device's default clock rate.
   * Default is 75.
@@ -150,6 +157,7 @@
     * "stdrel": (default) Converges to a minimal relative standard deviation,
        stdev / mean
     * "entropy": Converges based on the cumulative entropy of all samples.
+    * "sample-count": Stops after a target number of samples.
   * Each stopping criterion may provide additional parameters to customize
     behavior, as detailed below:
 
@@ -183,5 +191,15 @@
     entropy.
   * Larger values give more accurate results.
   * Default is 0.36.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+### "sample-count" Stopping Criterion Parameters
+
+* `--target-samples <count>`
+  * Stop after at least `<count>` samples are collected.
+  * Default is 100 samples.
+  * The total number of collected samples is
+    `max(--min-samples, --target-samples)`.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.

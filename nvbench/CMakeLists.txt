@@ -27,6 +27,7 @@ set(srcs
   detail/measure_cold.cu
   detail/measure_cpu_only.cxx
   detail/measure_hot.cu
+  detail/sample_count_criterion.cxx
   detail/state_generator.cxx
   detail/stdrel_criterion.cxx
   detail/gpu_frequency.cxx

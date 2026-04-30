@@ -44,6 +44,7 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_disable_blocking_kernel = m_disable_blocking_kernel;
 
   result->m_min_samples = m_min_samples;
+  result->m_warmup_runs = m_warmup_runs;
 
   result->m_skip_time = m_skip_time;
   result->m_timeout   = m_timeout;

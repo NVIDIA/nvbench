@@ -152,6 +152,14 @@ struct state
   void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
   /// @}
 
+  /// Execute this many warmup runs before collecting cold measurement samples. @{
+  [[nodiscard]] nvbench::int64_t get_warmup_runs() const { return m_warmup_runs; }
+  void set_warmup_runs(nvbench::int64_t warmup_runs)
+  {
+    m_warmup_runs = warmup_runs > nvbench::int64_t{0} ? warmup_runs : nvbench::int64_t{1};
+  }
+  /// @}
+
   [[nodiscard]] const nvbench::criterion_params &get_criterion_params() const
   {
     return m_criterion_params;
@@ -332,6 +340,7 @@ private:
   std::string m_stopping_criterion;
 
   nvbench::int64_t m_min_samples;
+  nvbench::int64_t m_warmup_runs;
 
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;

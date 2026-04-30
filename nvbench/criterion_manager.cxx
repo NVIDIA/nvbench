@@ -33,6 +33,7 @@ criterion_manager::criterion_manager()
 {
   m_map.emplace("stdrel", std::make_unique<nvbench::detail::stdrel_criterion>());
   m_map.emplace("entropy", std::make_unique<nvbench::detail::entropy_criterion>());
+  m_map.emplace("sample-count", std::make_unique<nvbench::detail::sample_count_criterion>());
 }
 
 criterion_manager &criterion_manager::get()

@@ -25,6 +25,8 @@ void test_standard_criteria_exist()
 {
   ASSERT(nvbench::criterion_manager::get().get_criterion("stdrel").get_name() == "stdrel");
   ASSERT(nvbench::criterion_manager::get().get_criterion("entropy").get_name() == "entropy");
+  ASSERT(nvbench::criterion_manager::get().get_criterion("sample-count").get_name() ==
+         "sample-count");
 }
 
 class custom_criterion : public nvbench::stopping_criterion_base
