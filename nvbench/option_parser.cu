@@ -526,7 +526,7 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_axis(first[1]);
       first += 2;
     }
-    else if (arg == "--min-samples")
+    else if (arg == "--min-samples" || arg == "--warmup-runs")
     {
       check_params(1);
       this->update_int64_prop(first[0], first[1]);
@@ -989,6 +989,10 @@ try
   if (prop_arg == "--min-samples")
   {
     bench.set_min_samples(value);
+  }
+  else if (prop_arg == "--warmup-runs")
+  {
+    bench.set_warmup_runs(value);
   }
   else
   {
