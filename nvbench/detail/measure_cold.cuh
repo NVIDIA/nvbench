@@ -249,6 +249,11 @@ private:
       return;
     }
 
+    // Ensure blocking kernel is loaded during the warmup
+    // Ref: https://github.com/NVIDIA/nvbench/issues/339
+    this->block_stream();
+    this->unblock_stream();
+
     // disable use of blocking kernel for warm-up run
     // see https://github.com/NVIDIA/nvbench/issues/240
     constexpr bool disable_blocking_kernel = true;
