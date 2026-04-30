@@ -29,6 +29,7 @@
 #endif
 
 #include <nvbench/detail/entropy_criterion.cuh>
+#include <nvbench/detail/sample_count_criterion.cuh>
 #include <nvbench/detail/stdrel_criterion.cuh>
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>

@@ -60,6 +60,11 @@ bool stdrel_criterion::do_is_finished()
     return false;
   }
 
+  if (m_noise_tracker.empty())
+  {
+    return false;
+  }
+
   // Noise has dropped below threshold
   if (m_noise_tracker.back() < m_params.get_float64("max-noise"))
   {

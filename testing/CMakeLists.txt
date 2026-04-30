@@ -20,6 +20,7 @@ set(test_srcs
   reset_error.cu
   ring_buffer.cu
   runner.cu
+  sample_count_criterion.cu
   state.cu
   statistics.cu
   state_generator.cu
