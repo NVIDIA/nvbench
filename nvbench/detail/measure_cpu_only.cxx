@@ -173,6 +173,56 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_float64("value", cpu_noise);
   }
 
+  const auto [cpu_first_quartile, cpu_median, cpu_third_quartile] =
+    nvbench::detail::statistics::compute_percentiles(m_cpu_times.cbegin(),
+                                                     m_cpu_times.cend(),
+                                                     {25, 50, 75});
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/q1");
+    summ.set_string("name", "Q1");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "First quartile of CPU times of isolated kernel executions");
+    summ.set_float64("value", cpu_first_quartile);
+    summ.set_string("hide", "Hidden by default.");
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/median");
+    summ.set_string("name", "Median");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Median of CPU times of isolated kernel executions");
+    summ.set_float64("value", cpu_median);
+    summ.set_string("hide", "Hidden by default.");
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/q3");
+    summ.set_string("name", "Q3");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Third quartile of CPU times of isolated kernel executions");
+    summ.set_string("hide", "Hidden by default.");
+    summ.set_float64("value", cpu_third_quartile);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/absolute");
+    summ.set_string("name", "IR");
+    summ.set_string("hint", "duration");
+    summ.set_string("description",
+                    "Interquartile range of CPU times of isolated kernel executions");
+    summ.set_string("hide", "Hidden by default.");
+    const auto cpu_ir = cpu_third_quartile - cpu_first_quartile;
+    summ.set_float64("value", cpu_ir);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
+    summ.set_string("name", "IR");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description",
+                    "Relative interquartile range of CPU times of isolated kernel executions");
+    summ.set_string("hide", "Hidden by default.");
+    const auto cpu_ir           = cpu_third_quartile - cpu_first_quartile;
+    const auto cpu_robust_noise = cpu_ir / cpu_median;
+    summ.set_float64("value", cpu_robust_noise);
+  }
+
   if (const auto items = m_state.get_element_count(); items != 0)
   {
     auto &summ = m_state.add_summary("nv/cpu_only/bw/item_rate");

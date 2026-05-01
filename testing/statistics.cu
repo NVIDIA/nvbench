@@ -20,6 +20,7 @@
 #include <nvbench/types.cuh>
 
 #include <algorithm>
+#include <array>
 #include <vector>
 
 #include "test_asserts.cuh"
@@ -50,6 +51,50 @@ void test_std()
     statistics::standard_deviation(std::begin(data), std::end(data), mean);
   const nvbench::float64_t expected = 1.581;
   ASSERT(std::abs(actual - expected) < 0.001);
+}
+
+void test_percentiles()
+{
+  {
+    const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
+    const auto actual = statistics::compute_percentiles(data.cbegin(),
+                                                        data.cend(),
+                                                        std::array<int, 5>{0, 25, 50, 75, 100});
+    const std::array<nvbench::float64_t, 5> expected{10.0, 20.0, 30.0, 30.0, 40.0};
+    ASSERT(actual == expected);
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data{42.0};
+    const auto actual =
+      statistics::compute_percentiles(data.cbegin(), data.cend(), std::array<int, 3>{25, 50, 75});
+    const std::array<nvbench::float64_t, 3> expected{42.0, 42.0, 42.0};
+    ASSERT(actual == expected);
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
+    const auto actual = statistics::compute_percentiles(data.cbegin(), data.cend(), {25, 50, 75});
+    const std::array<nvbench::float64_t, 3> expected{20.0, 30.0, 30.0};
+    ASSERT(actual == expected);
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data{10.0, 20.0, 30.0, 40.0};
+    const auto actual =
+      statistics::compute_percentiles(data.cbegin(), data.cend(), std::array<int, 2>{-25, 125});
+    const std::array<nvbench::float64_t, 2> expected{10.0, 40.0};
+    ASSERT(actual == expected);
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data;
+    const auto actual =
+      statistics::compute_percentiles(data.cbegin(), data.cend(), std::array<int, 3>{25, 50, 75});
+    ASSERT(!std::isfinite(actual[0]));
+    ASSERT(!std::isfinite(actual[1]));
+    ASSERT(!std::isfinite(actual[2]));
+  }
 }
 
 void test_lin_regression()
@@ -126,6 +171,7 @@ int main()
 {
   test_mean();
   test_std();
+  test_percentiles();
   test_lin_regression();
   test_r2();
   test_slope_conversion();

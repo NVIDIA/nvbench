@@ -31,12 +31,15 @@
 #include <nvbench/detail/transform_reduce.cuh>
 #include <nvbench/types.cuh>
 
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <functional>
 #include <iterator>
 #include <limits>
 #include <numeric>
 #include <type_traits>
+#include <vector>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -91,6 +94,56 @@ nvbench::float64_t compute_mean(It first, It last)
   }
 
   return std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(num);
+}
+
+/**
+ * Computes exact percentile values using rank round(p / 100 * (S - 1)).
+ *
+ * The input range is copied before sorting, so const iterators are supported.
+ * If the input has fewer than 1 sample, all percentiles are returned as infinity.
+ */
+template <typename Iter,
+          std::size_t N,
+          typename ValueType = typename std::iterator_traits<Iter>::value_type>
+std::array<ValueType, N> compute_percentiles(Iter first, Iter last, std::array<int, N> percentiles)
+{
+  std::array<ValueType, N> result{};
+
+  const auto num = std::distance(first, last);
+  if (num < 1)
+  {
+    result.fill(std::numeric_limits<ValueType>::quiet_NaN());
+    return result;
+  }
+
+  std::vector<ValueType> sorted(first, last);
+  std::sort(sorted.begin(), sorted.end());
+
+  const auto max_rank = static_cast<nvbench::float64_t>(sorted.size() - 1);
+  for (std::size_t i = 0; i < N; ++i)
+  {
+    const auto clamped_percentile = std::clamp(percentiles[i], 0, 100);
+
+    const auto quantile = static_cast<nvbench::float64_t>(clamped_percentile) / 100.0;
+    const auto rank     = static_cast<std::size_t>(std::round(quantile * max_rank));
+
+    result[i] = sorted[rank];
+  }
+
+  return result;
+}
+
+/**
+ * Overload that supports calls like `compute_percentiles(first, last, {25, 50, 75})`.
+ */
+template <typename Iter,
+          std::size_t N,
+          typename ValueType = typename std::iterator_traits<Iter>::value_type>
+std::array<ValueType, N> compute_percentiles(Iter first, Iter last, const int (&percentiles)[N])
+{
+  std::array<int, N> percentile_array{};
+  std::copy(std::begin(percentiles), std::end(percentiles), percentile_array.begin());
+  return compute_percentiles(first, last, percentile_array);
 }
 
 /**

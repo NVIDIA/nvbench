@@ -42,14 +42,15 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
   m_cuda_times.push_back(measurement);
 
   // Compute convergence statistics using CUDA timings:
-  const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
-                                                                              m_cuda_times.cend(),
-                                                                              mean_cuda_time);
-  const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
-  if (std::isfinite(cuda_rel_stdev))
+  const auto [cuda_first_quartile, cuda_median, cuda_third_quartile] =
+    nvbench::detail::statistics::compute_percentiles(m_cuda_times.cbegin(),
+                                                     m_cuda_times.cend(),
+                                                     {25, 50, 75});
+  const auto cuda_noise = (cuda_third_quartile - cuda_first_quartile) / cuda_median;
+
+  if (std::isfinite(cuda_noise))
   {
-    m_noise_tracker.push_back(cuda_rel_stdev);
+    m_noise_tracker.push_back(cuda_noise);
   }
 }
 
@@ -71,7 +72,7 @@ bool stdrel_criterion::do_is_finished()
     return true;
   }
 
-  // Check if the noise (cuda rel stdev) has converged by inspecting a
+  // Check if the noise has converged by inspecting a
   // trailing window of recorded noise measurements.
   // This helps identify benchmarks that are inherently noisy and would
   // never converge to the target stdev threshold. This check ensures that the

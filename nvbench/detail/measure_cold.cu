@@ -207,6 +207,7 @@ void measure_cold_base::generate_summaries()
     summ.set_int64("value", m_total_samples);
   }
 
+  // cpu time statistics
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/min");
     summ.set_string("name", "Min CPU Time");
@@ -238,6 +239,7 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description",
                     "Mean isolated kernel execution time "
                     "(measured on host CPU)");
+    summ.set_string("hide", "Hidden by default.");
     summ.set_float64("value", cpu_mean);
   }
 
@@ -248,7 +250,7 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/absolute");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "duration");
-    summ.set_string("description", "Standard deviation of isolated CPU times");
+    summ.set_string("description", "Standard deviation of isolated kernel execution CPU times");
     summ.set_float64("value", cpu_stdev);
     summ.set_string("hide", "Hidden by default.");
   }
@@ -258,10 +260,60 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("description", "Relative standard deviation of isolated CPU times");
+    summ.set_string("description",
+                    "Relative standard deviation of isolated kernel execution CPU times");
+    summ.set_string("hide", "Hidden by default.");
     summ.set_float64("value", cpu_noise);
   }
 
+  const auto [cpu_time_first_quartile, cpu_time_median, cpu_time_third_quartile] =
+    nvbench::detail::statistics::compute_percentiles(m_cpu_times.cbegin(),
+                                                     m_cpu_times.cend(),
+                                                     {25, 50, 75});
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/q1");
+    summ.set_string("name", "Q1");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "First quartile of isolated kernel execution CPU times");
+    summ.set_float64("value", cpu_time_first_quartile);
+    summ.set_string("hide", "Hidden by default.");
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/median");
+    summ.set_string("name", "CPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Median of isolated kernel execution CPU times");
+    summ.set_float64("value", cpu_time_median);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/q3");
+    summ.set_string("name", "Q3");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Third quartile of isolated kernel execution CPU times");
+    summ.set_string("hide", "Hidden by default.");
+    summ.set_float64("value", cpu_time_third_quartile);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/ir/absolute");
+    summ.set_string("name", "IR");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Interquartile range of isolated kernel execution CPU times");
+    summ.set_string("hide", "Hidden by default.");
+    const auto cpu_time_ir = cpu_time_third_quartile - cpu_time_first_quartile;
+    summ.set_float64("value", cpu_time_ir);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/ir/relative");
+    summ.set_string("name", "Noise");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description",
+                    "Relative interquartile range of isolated kernel execution CPU times");
+    const auto cpu_time_ir      = cpu_time_third_quartile - cpu_time_first_quartile;
+    const auto cpu_robust_noise = cpu_time_ir / cpu_time_median;
+    summ.set_float64("value", cpu_robust_noise);
+  }
+
+  // gpu time statistics
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/min");
     summ.set_string("name", "Min GPU Time");
@@ -292,6 +344,7 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description",
                     "Mean isolated kernel execution time "
                     "(measured with CUDA events)");
+    summ.set_string("hide", "Hidden by default.");
     summ.set_float64("value", cuda_mean);
   }
 
@@ -302,7 +355,7 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/absolute");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "duration");
-    summ.set_string("description", "Standard deviation of isolated GPU times");
+    summ.set_string("description", "Standard deviation of isolated kernel execution GPU times");
     summ.set_float64("value", cuda_stdev);
     summ.set_string("hide", "Hidden by default.");
   }
@@ -312,8 +365,57 @@ void measure_cold_base::generate_summaries()
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
-    summ.set_string("description", "Relative standard deviation of isolated GPU times");
+    summ.set_string("description",
+                    "Relative standard deviation of isolated kernel execution GPU times");
+    summ.set_string("hide", "Hidden by default.");
     summ.set_float64("value", cuda_noise);
+  }
+
+  const auto [cuda_time_first_quartile, cuda_time_median, cuda_time_third_quartile] =
+    nvbench::detail::statistics::compute_percentiles(m_cuda_times.cbegin(),
+                                                     m_cuda_times.cend(),
+                                                     {25, 50, 75});
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/q1");
+    summ.set_string("name", "Q1");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "First quartile of isolated kernel execution GPU times");
+    summ.set_float64("value", cuda_time_first_quartile);
+    summ.set_string("hide", "Hidden by default.");
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/median");
+    summ.set_string("name", "GPU Time");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Median of isolated kernel execution GPU times");
+    summ.set_float64("value", cuda_time_median);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/q3");
+    summ.set_string("name", "Q3");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Third quartile of isolated kernel execution GPU times");
+    summ.set_string("hide", "Hidden by default.");
+    summ.set_float64("value", cuda_time_third_quartile);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/ir/absolute");
+    summ.set_string("name", "IR");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Interquartile range of isolated kernel execution GPU times");
+    summ.set_string("hide", "Hidden by default.");
+    const auto cuda_time_ir = cuda_time_third_quartile - cuda_time_first_quartile;
+    summ.set_float64("value", cuda_time_ir);
+  }
+  {
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/ir/relative");
+    summ.set_string("name", "Noise");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description",
+                    "Relative interquartile range of isolated kernel execution GPU times");
+    const auto cuda_time_ir      = cuda_time_third_quartile - cuda_time_first_quartile;
+    const auto cuda_robust_noise = cuda_time_ir / cuda_time_median;
+    summ.set_float64("value", cuda_robust_noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
