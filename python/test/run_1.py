@@ -1,3 +1,19 @@
+# Copyright 2026 NVIDIA Corporation
+#
+#  Licensed under the Apache License, Version 2.0 with the LLVM exception
+#  (the "License"); you may not use this file except in compliance with
+#  the License.
+#
+#  You may obtain a copy of the License at
+#
+#      http://llvm.org/foundation/relicensing/LICENSE.txt
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import sys
 
 import cuda.bench as bench
@@ -26,6 +42,9 @@ def add_two(state: bench.State):
     N = state.get_int64("elements")
     a = cuda.to_device(np.random.random(N))
     c = cuda.device_array_like(a)
+
+    colorized_av = state.get_axis_values_as_string(color=True)
+    assert isinstance(colorized_av, str)
 
     assert "elements" in state.get_axis_values()
     assert "elements=" in state.get_axis_values_as_string()
@@ -100,9 +119,10 @@ def add_three(state: bench.State):
 
 def register_benchmarks():
     (
-        bench.register(add_two).add_int64_axis(
-            "elements", [2**pow2 - 1 for pow2 in range(20, 23)]
-        )
+        bench.register(add_two)
+        .add_int64_axis("elements", [2**pow2 - 1 for pow2 in range(20, 23)])
+        .set_stopping_criterion("entropy")
+        .set_criterion_param_float64("min-r2", 0.85)
     )
     (
         bench.register(add_float)
