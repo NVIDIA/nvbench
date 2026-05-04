@@ -385,16 +385,16 @@ def compare_benches(
                     return next(filter(lambda s: s["tag"] == tag, summaries), None)
 
                 cmp_time_summary = lookup_summary(
-                    cmp_summaries, "nv/cold/time/gpu/mean"
+                    cmp_summaries, "nv/cold/time/gpu/median"
                 )
                 ref_time_summary = lookup_summary(
-                    ref_summaries, "nv/cold/time/gpu/mean"
+                    ref_summaries, "nv/cold/time/gpu/median"
                 )
                 cmp_noise_summary = lookup_summary(
-                    cmp_summaries, "nv/cold/time/gpu/stdev/relative"
+                    cmp_summaries, "nv/cold/time/gpu/ir/relative"
                 )
                 ref_noise_summary = lookup_summary(
-                    ref_summaries, "nv/cold/time/gpu/stdev/relative"
+                    ref_summaries, "nv/cold/time/gpu/ir/relative"
                 )
 
                 # TODO: Use other timings, too. Maybe multiple rows, with a
