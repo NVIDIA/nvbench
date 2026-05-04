@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -602,6 +602,9 @@ class SGemm:
         return
 
 
+@bench.register()
+@bench.axis.int64("R", [16, 64, 256])
+@bench.axis.int64("N", [256, 512, 1024, 2048])
 def cutlass_gemm(state: bench.State) -> None:
     n = state.get_int64("N")
     r = state.get_int64("R")
@@ -659,9 +662,5 @@ def patch_cute_dsl():
 if __name__ == "__main__":
     # see https://github.com/NVIDIA/cutlass/issues/3142
     patch_cute_dsl()
-
-    gemm_b = bench.register(cutlass_gemm)
-    gemm_b.add_int64_axis("R", [16, 64, 256])
-    gemm_b.add_int64_axis("N", [256, 512, 1024, 2048])
 
     bench.run_all_benchmarks(sys.argv)

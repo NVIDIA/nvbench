@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -24,6 +24,8 @@ import cuda.core as core
 host_sleep_duration = 0.1
 
 
+@bench.register()
+@bench.option.is_cpu_only()
 def cpu_only_sleep_bench(state: bench.State) -> None:
     def launcher(launch: bench.Launch):
         time.sleep(host_sleep_duration)
@@ -66,6 +68,8 @@ __global__ void sleep_kernel(double seconds) {
     return mod.get_kernel("sleep_kernel")
 
 
+@bench.register()
+@bench.axis.string("Sync", ["Do not sync", "Do sync"])
 def mixed_sleep_bench(state: bench.State) -> None:
     sync = state.get_string("Sync")
     sync_flag = sync == "Do sync"
@@ -85,13 +89,4 @@ def mixed_sleep_bench(state: bench.State) -> None:
 
 
 if __name__ == "__main__":
-    # time function only doing work (sleeping) on the host
-    # using CPU timer only
-    b = bench.register(cpu_only_sleep_bench)
-    b.set_is_cpu_only(True)
-
-    # time the function that does work on both GPU and CPU
-    b2 = bench.register(mixed_sleep_bench)
-    b2.add_string_axis("Sync", ["Do not sync", "Do sync"])
-
     bench.run_all_benchmarks(sys.argv)

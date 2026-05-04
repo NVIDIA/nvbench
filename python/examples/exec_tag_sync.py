@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -57,6 +57,7 @@ __global__ void fill_kernel(T *buf, T v, ::cuda::std::size_t n)
     return mod.get_kernel(instance_name)
 
 
+@bench.register()
 def synchronizing_bench(state: bench.State):
     n_values = 64 * 1024 * 1024
     n_bytes = n_values * ctypes.sizeof(ctypes.c_int32(0))
@@ -81,5 +82,4 @@ def synchronizing_bench(state: bench.State):
 
 
 if __name__ == "__main__":
-    bench.register(synchronizing_bench)
     bench.run_all_benchmarks(sys.argv)

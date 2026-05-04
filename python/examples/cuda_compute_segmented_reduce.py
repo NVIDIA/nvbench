@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -33,6 +33,9 @@ def as_cp_ExternalStream(cs: bench.CudaStream) -> cp.cuda.ExternalStream:
     return cp.cuda.Stream.from_external(cs)
 
 
+@bench.register()
+@bench.axis.int64("numElems", [2**20, 2**22, 2**24])
+@bench.axis.int64("numCols", [1024, 2048, 4096, 8192])
 def segmented_reduce(state: bench.State):
     "Benchmark segmented_reduce example"
     n_elems = state.get_int64("numElems")
@@ -111,8 +114,4 @@ def segmented_reduce(state: bench.State):
 
 
 if __name__ == "__main__":
-    b = bench.register(segmented_reduce)
-    b.add_int64_axis("numElems", [2**20, 2**22, 2**24])
-    b.add_int64_axis("numCols", [1024, 2048, 4096, 8192])
-
     bench.run_all_benchmarks(sys.argv)

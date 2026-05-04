@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -39,6 +39,9 @@ def make_throughput_kernel(items_per_thread: int) -> cuda.dispatcher.CUDADispatc
     return kernel
 
 
+@bench.register()
+@bench.axis.int64("Stride", [1, 2, 4])
+@bench.axis.int64("ItemsPerThread", [1, 2, 3, 4])
 def throughput_bench(state: bench.State) -> None:
     stride = state.get_int64("Stride")
     ipt = state.get_int64("ItemsPerThread")
@@ -69,8 +72,4 @@ def throughput_bench(state: bench.State) -> None:
 
 
 if __name__ == "__main__":
-    b = bench.register(throughput_bench)
-    b.add_int64_axis("Stride", [1, 2, 4])
-    b.add_int64_axis("ItemsPerThread", [1, 2, 3, 4])
-
     bench.run_all_benchmarks(sys.argv)

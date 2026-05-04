@@ -1,3 +1,19 @@
+# Copyright 2026 NVIDIA Corporation
+#
+#  Licensed under the Apache License, Version 2.0 with the LLVM exception
+#  (the "License"); you may not use this file except in compliance with
+#  the License.
+#
+#  You may obtain a copy of the License at
+#
+#      http://llvm.org/foundation/relicensing/LICENSE.txt
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import sys
 
 import cuda.bench as bench
@@ -12,9 +28,9 @@ def as_torch_cuda_Stream(
     )
 
 
+@bench.register()
+@bench.option.throttle_threshold(0.25)
 def torch_bench(state: bench.State) -> None:
-    state.set_throttle_threshold(0.25)
-
     dev_id = state.get_device()
     tc_s = as_torch_cuda_Stream(state.get_stream(), dev_id)
 
@@ -53,6 +69,4 @@ def torch_bench(state: bench.State) -> None:
 
 
 if __name__ == "__main__":
-    bench.register(torch_bench)
-
     bench.run_all_benchmarks(sys.argv)

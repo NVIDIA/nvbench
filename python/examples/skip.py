@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -57,6 +57,9 @@ __global__ void sleep_kernel(double seconds) {
     return mod.get_kernel("sleep_kernel")
 
 
+@bench.register()
+@bench.axis.float64("Duration", [1e-4 + k * 0.25e-3 for k in range(5)])
+@bench.axis.string("Kramble", ["Foo", "Bar", "Baz"])
 def runtime_skip(state: bench.State):
     duration = state.get_float64("Duration")
     kramble = state.get_string("Kramble")
@@ -82,8 +85,4 @@ def runtime_skip(state: bench.State):
 
 
 if __name__ == "__main__":
-    b = bench.register(runtime_skip)
-    b.add_float64_axis("Duration", [1e-4 + k * 0.25e-3 for k in range(5)])
-    b.add_string_axis("Kramble", ["Foo", "Bar", "Baz"])
-
     bench.run_all_benchmarks(sys.argv)
