@@ -1,5 +1,5 @@
 /*
- *  Copyright 2025 NVIDIA Corporation
+ *  Copyright 2025-2026 NVIDIA Corporation
  *
  *  Licensed under the Apache License, Version 2.0 with the LLVM exception
  *  (the "License"); you may not use this file except in compliance with
@@ -1097,7 +1097,9 @@ Get string of space-separated name=value pairs for this configuration
 )XXXX";
   pystate_cls.def("get_axis_values_as_string",
                   &nvbench::state::get_axis_values_as_string,
-                  method_get_axis_values_as_string_doc);
+                  method_get_axis_values_as_string_doc,
+                  py::kw_only{},
+                  py::arg("color") = false);
 
   // method State.get_axis_values
   static constexpr const char *method_get_axis_values_doc = R"XXXX(
