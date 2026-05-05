@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-// Provided as a CMake OBJECT library named nvbench::main so users don't have
+// Provided as a CMake static library named nvbench::main so users don't have
 // to add `NVBENCH_MAIN` to every benchmark executable.
 
 #include <nvbench/main.cuh>

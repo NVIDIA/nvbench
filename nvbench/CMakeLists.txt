@@ -128,21 +128,24 @@ target_compile_features(nvbench PUBLIC cuda_std_17 PRIVATE cxx_std_17)
 add_dependencies(nvbench.all nvbench)
 
 # nvbench.main (nvbench::main)
-add_library(nvbench.main OBJECT main.cu)
+add_library(nvbench.main STATIC main.cu)
 nvbench_config_target(nvbench.main)
 # Internal NVBench builds should not suppress warnings from NVBench headers.
 target_compile_definitions(nvbench.main PRIVATE NVBENCH_NO_IMPLICIT_SYSTEM_HEADER)
 # Propagate `nvbench` to consumers but keep NVBench's own build warning-visible.
-target_link_libraries(nvbench.main INTERFACE nvbench)
+target_link_libraries(nvbench.main PUBLIC nvbench)
 # Ensure CUDA/CUPTI/NVML include dirs are visible for nvbench.main's build.
 target_link_libraries(nvbench.main PRIVATE ${ctk_libraries})
-# Add NVBench's headers privately so the object library itself sees warnings.
+# Add NVBench's headers privately so the main library itself sees warnings.
 target_include_directories(nvbench.main
   PRIVATE
     "$<BUILD_INTERFACE:${NVBench_SOURCE_DIR}>"
     "$<BUILD_INTERFACE:${NVBench_BINARY_DIR}>"
 )
-set_target_properties(nvbench.main PROPERTIES EXPORT_NAME main)
+set_target_properties(nvbench.main PROPERTIES
+  EXPORT_NAME main
+  OUTPUT_NAME nvbench_main
+)
 add_dependencies(nvbench.all nvbench.main)
 
 # Support add_subdirectory:
