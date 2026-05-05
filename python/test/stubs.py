@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -20,7 +20,7 @@ from typing import Dict, Optional, Tuple
 
 import cuda.bench as bench
 import cuda.cccl.headers as headers
-import cuda.core.experimental as core
+import cuda.core as core
 
 
 def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
