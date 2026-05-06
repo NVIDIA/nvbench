@@ -58,7 +58,9 @@ def multi_block_bench(state: bench.State):
         return
 
     ring = BitsetRing()
-    block_reduce = coop.block.reduce(numba.uint64, threads_per_block, BitsetRing.add)
+    block_reduce = coop.block.make_reduce(
+        numba.uint64, threads_per_block, BitsetRing.add
+    )
 
     @cuda.jit(link=block_reduce.files)
     def kernel(inp_arr, out_arr):
