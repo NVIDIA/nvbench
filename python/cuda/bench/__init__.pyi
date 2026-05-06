@@ -25,6 +25,7 @@
 # stubs in generated out/cuda/nvbench/_nvbench.pyi
 # with definitions given here.
 
+from array import array
 from collections.abc import Callable, Sequence
 from typing import Optional, Self, SupportsFloat, SupportsInt, Union
 
@@ -116,3 +117,27 @@ def register(fn: Callable[[State], None]) -> Benchmark: ...
 def run_all_benchmarks(argv: Sequence[str]) -> None: ...
 
 class NVBenchRuntimeError(RuntimeError): ...
+
+class SubBenchState:
+    samples: array
+    bw: float | None
+    point: dict[str, str]
+    def name(self) -> str: ...
+    def center(self, estimator: Callable[[array], SupportsFloat]) -> SupportsFloat: ...
+
+class SubBenchResult:
+    states: list[SubBenchState]
+    def centers(
+        self, estimator: Callable[[array], SupportsFloat]
+    ) -> dict[str, SupportsFloat]: ...
+
+class BenchResult:
+    code: int
+    elapsed: float
+    subbenches: dict[str, SubBenchResult]
+    def __init__(
+        self, json_fn: str, *, code: int = 0, elapsed: float = 0.0
+    ) -> None: ...
+    def centers(
+        self, estimator: Callable[[array], SupportsFloat]
+    ) -> dict[str, dict[str, SupportsFloat]]: ...

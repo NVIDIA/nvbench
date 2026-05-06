@@ -47,4 +47,4 @@ python -m pip install "${CUDA_BENCH_WHEEL_PATH}[${TEST_EXTRA}]"
 
 # Run tests
 cd "/workspace/python/test/"
-python -m pytest -v test_cuda_bench.py
+python -m pytest -v test_cuda_bench.py test_bench_result.py
