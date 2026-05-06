@@ -67,21 +67,26 @@ def segmented_reduce(state: bench.State):
     add_op = OpKind.PLUS
 
     alg = algorithms.make_segmented_reduce(
-        d_input, d_output, start_offsets, end_offsets, add_op, h_init
+        d_in=d_input,
+        d_out=d_output,
+        start_offsets_in=start_offsets,
+        end_offsets_in=end_offsets,
+        op=add_op,
+        h_init=h_init,
     )
 
     cccl_stream = state.get_stream()
     # query size of temporary storage and allocate
     temp_nbytes = alg(
-        None,
-        d_input,
-        d_output,
-        add_op,
-        n_rows,
-        start_offsets,
-        end_offsets,
-        h_init,
-        cccl_stream,
+        temp_storage=None,
+        d_in=d_input,
+        d_out=d_output,
+        op=add_op,
+        num_segments=n_rows,
+        start_offsets_in=start_offsets,
+        end_offsets_in=end_offsets,
+        h_init=h_init,
+        stream=cccl_stream,
     )
     h_init = np.zeros(tuple(), dtype=np.int32)
 
@@ -91,15 +96,15 @@ def segmented_reduce(state: bench.State):
     def launcher(launch: bench.Launch):
         s = launch.get_stream()
         alg(
-            temp_storage,
-            d_input,
-            d_output,
-            add_op,
-            n_rows,
-            start_offsets,
-            end_offsets,
-            h_init,
-            s,
+            temp_storage=temp_storage,
+            d_in=d_input,
+            d_out=d_output,
+            op=add_op,
+            num_segments=n_rows,
+            start_offsets_in=start_offsets,
+            end_offsets_in=end_offsets,
+            h_init=h_init,
+            stream=s,
         )
 
     state.exec(launcher)
