@@ -23,14 +23,20 @@ function(nvbench_add_cupti_dep dep_name)
   add_library(nvbench::${dep_name_lower} SHARED IMPORTED)
 
   find_library(NVBench_${dep_name_upper}_LIBRARY ${dep_name_lower} REQUIRED
-    DOC "The full path to lib${dep_name_lower}.so from the CUDA Toolkit."
+    DOC "The import library for ${dep_name_lower} from the CUDA Toolkit."
     HINTS "${nvbench_cupti_root}/lib64"
   )
   mark_as_advanced(NVBench_${dep_name_upper}_LIBRARY)
 
-  set_target_properties(nvbench::${dep_name_lower} PROPERTIES
-    IMPORTED_LOCATION "${NVBench_${dep_name_upper}_LIBRARY}"
-  )
+  if (WIN32)
+    set_target_properties(nvbench::${dep_name_lower} PROPERTIES
+      IMPORTED_IMPLIB "${NVBench_${dep_name_upper}_LIBRARY}"
+    )
+  else()
+    set_target_properties(nvbench::${dep_name_lower} PROPERTIES
+      IMPORTED_LOCATION "${NVBench_${dep_name_upper}_LIBRARY}"
+    )
+  endif()
 endfunction()
 
 nvbench_add_cupti_dep(cupti)

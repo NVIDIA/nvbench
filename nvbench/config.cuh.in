@@ -24,7 +24,11 @@
 // Defined if NVBench has been built with CUPTI support.
 #cmakedefine NVBENCH_HAS_CUPTI
 
+#if defined(_MSVC_LANG)
+#define NVBENCH_CPLUSPLUS _MSVC_LANG
+#else
 #define NVBENCH_CPLUSPLUS __cplusplus
+#endif
 
 // Detect current dialect:
 #if NVBENCH_CPLUSPLUS < 201703L

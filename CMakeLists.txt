@@ -39,6 +39,9 @@ if (${CUDAToolkit_VERSION} VERSION_LESS 11.3)
 endif()
 
 option(BUILD_SHARED_LIBS "Build NVBench as a shared library" ON)
+if (WIN32 AND BUILD_SHARED_LIBS)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 option(NVBench_ENABLE_NVML "Build with NVML support from the Cuda Toolkit." ON)
 option(NVBench_ENABLE_CUPTI "Build NVBench with CUPTI." ${cupti_default})

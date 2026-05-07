@@ -91,11 +91,25 @@ endif()
 if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
   # fmtlib uses llvm's _BitInt internally, which is not available when compiling through nvcc:
   target_compile_definitions(nvbench.build_interface INTERFACE "FMT_USE_BITINT=0")
+  if (MSVC)
+    # cudafe cannot evaluate fmtlib's UTF-8 literal check even when /utf-8 is passed to the host compiler:
+    target_compile_definitions(nvbench.build_interface INTERFACE
+      $<$<COMPILE_LANGUAGE:CUDA>:FMT_UNICODE=0>
+    )
+  endif()
 endif()
 
 target_compile_options(nvbench.build_interface INTERFACE
   $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--display_error_number>
   $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Wno-deprecated-gpu-targets>
+  $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<CXX_COMPILER_ID:MSVC>>:-Xcompiler=/utf-8>
+  # Suppress cudafe diagnostics triggered by fmtlib headers when compiled through MSVC+nvcc:
+  #   27: character value is out of range (char32_t sentinel values in lookup tables)
+  #  128: loop is not reachable (dead code in constexpr string comparison)
+  # 2417: constexpr constructor calls non-constexpr function (bigint default ctor)
+  $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<CXX_COMPILER_ID:MSVC>>:-Xcudafe=--diag_suppress=27>
+  $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<CXX_COMPILER_ID:MSVC>>:-Xcudafe=--diag_suppress=128>
+  $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<CXX_COMPILER_ID:MSVC>>:-Xcudafe=--diag_suppress=2417>
 )
 if (NVBench_ENABLE_WERROR)
   target_compile_options(nvbench.build_interface INTERFACE
@@ -115,8 +129,8 @@ function(nvbench_config_target target_name)
   # the library path, other times they're in a subdirectory that isn't added to
   # the library path...
   # To simplify installed nvbench usage, add the CUPTI libraries path to the
-  # installed nvbench rpath:
-  if (NVBench_ENABLE_CUPTI AND nvbench_cupti_root)
+  # installed nvbench rpath (Unix only; Windows uses PATH for DLL lookup):
+  if (NVBench_ENABLE_CUPTI AND nvbench_cupti_root AND NOT WIN32)
     set_target_properties(${target_name} PROPERTIES
       INSTALL_RPATH "${nvbench_cupti_root}/lib64"
     )

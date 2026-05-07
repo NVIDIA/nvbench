@@ -12,6 +12,7 @@ CUDA_COMPILER=${CUDACXX:-nvcc} # $CUDACXX if set, otherwise `nvcc`
 CUDA_ARCHS= # Empty, use presets by default.
 GLOBAL_CMAKE_OPTIONS=()
 DISABLE_CUB_BENCHMARKS= # Enable to force-disable building CUB benchmarks.
+HOST_OS="linux" # "linux" or "windows"
 
 # Check if the correct number of arguments has been provided
 function usage {
@@ -21,6 +22,7 @@ function usage {
     echo
     echo "Options:"
     echo "  -v/--verbose: enable shell echo for debugging"
+    echo "  -os: Target OS, \"linux\" or \"windows\" (Defaults to linux)"
     echo "  -cuda: CUDA compiler (Defaults to \$CUDACXX if set, otherwise nvcc)"
     echo "  -cxx: Host compiler (Defaults to \$CXX if set, otherwise g++)"
     echo "  -std: CUDA/C++ standard (Defaults to 17)"
@@ -32,6 +34,7 @@ function usage {
     echo "  $ PARALLEL_LEVEL=8 $0 -cxx g++-9"
     echo "  $ $0 -cxx clang++-8"
     echo "  $ $0 -cxx g++-8 -std 20 -arch 80-real -v -cuda /usr/local/bin/nvcc"
+    echo "  $ $0 -os windows -cxx cl.exe -arch native"
     echo "  $ $0 -cmake-options \"-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-Wfatal-errors\""
     exit 1
 }
@@ -44,6 +47,7 @@ args=("$@")
 while [ "${#args[@]}" -ne 0 ]; do
     case "${args[0]}" in
     -v | --verbose) VERBOSE=1; args=("${args[@]:1}");;
+    -os)   HOST_OS="${args[1]}";       args=("${args[@]:2}");;
     -cxx)  HOST_COMPILER="${args[1]}"; args=("${args[@]:2}");;
     -std)  CXX_STANDARD="${args[1]}";  args=("${args[@]:2}");;
     -cuda) CUDA_COMPILER="${args[1]}"; args=("${args[@]:2}");;
@@ -66,8 +70,8 @@ while [ "${#args[@]}" -ne 0 ]; do
 done
 
 # Convert to full paths:
-HOST_COMPILER=$(which ${HOST_COMPILER})
-CUDA_COMPILER=$(which ${CUDA_COMPILER})
+HOST_COMPILER=$(which "${HOST_COMPILER}")
+CUDA_COMPILER=$(which "${CUDA_COMPILER}")
 
 if [[ -n "${CUDA_ARCHS}" ]]; then
     GLOBAL_CMAKE_OPTIONS+=("-DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCHS}")
@@ -91,11 +95,15 @@ BUILD_DIR="../build/${CCCL_BUILD_INFIX}"
 
 # The most recent build will always be symlinked to cccl/build/latest
 mkdir -p $BUILD_DIR
-rm -f ../build/latest
-ln -sf $BUILD_DIR ../build/latest
-
-# Now that BUILD_DIR exists, use readlink to canonicalize the path:
-BUILD_DIR=$(readlink -f "${BUILD_DIR}")
+if [[ "${HOST_OS}" == "windows" ]]; then
+  # Git Bash on Windows cannot create directory symlinks without elevated privileges
+  BUILD_DIR=$(cd "${BUILD_DIR}" && pwd)
+else
+  rm -f ../build/latest
+  ln -sf $BUILD_DIR ../build/latest
+  # Now that BUILD_DIR exists, use readlink to canonicalize the path:
+  BUILD_DIR=$(readlink -f "${BUILD_DIR}")
+fi
 
 # Prepare environment for CMake:
 export CMAKE_BUILD_PARALLEL_LEVEL="${PARALLEL_LEVEL}"
