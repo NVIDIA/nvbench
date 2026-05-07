@@ -153,10 +153,22 @@ struct state
   /// @}
 
   /// Execute this many warmup runs before collecting cold measurement samples. @{
-  [[nodiscard]] nvbench::int64_t get_warmup_runs() const { return m_warmup_runs; }
-  void set_warmup_runs(nvbench::int64_t warmup_runs)
+  [[nodiscard]] nvbench::int64_t get_cold_warmup_runs() const { return m_cold_warmup_runs; }
+  void set_cold_warmup_runs(nvbench::int64_t cold_warmup_runs)
   {
-    m_warmup_runs = warmup_runs > nvbench::int64_t{0} ? warmup_runs : nvbench::int64_t{1};
+    m_cold_warmup_runs = cold_warmup_runs > nvbench::int64_t{0} ? cold_warmup_runs
+                                                                : nvbench::int64_t{1};
+  }
+  /// @}
+
+  /// Stop cold warmups after this many seconds of walltime. Negative values disable the limit. @{
+  [[nodiscard]] nvbench::float64_t get_cold_max_warmup_walltime() const
+  {
+    return m_cold_max_warmup_walltime;
+  }
+  void set_cold_max_warmup_walltime(nvbench::float64_t cold_max_warmup_walltime)
+  {
+    m_cold_max_warmup_walltime = cold_max_warmup_walltime;
   }
   /// @}
 
@@ -340,8 +352,9 @@ private:
   std::string m_stopping_criterion;
 
   nvbench::int64_t m_min_samples;
-  nvbench::int64_t m_warmup_runs;
+  nvbench::int64_t m_cold_warmup_runs;
 
+  nvbench::float64_t m_cold_max_warmup_walltime;
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
 

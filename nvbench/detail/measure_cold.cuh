@@ -110,8 +110,9 @@ protected:
   bool m_check_throttling{true};
 
   nvbench::int64_t m_min_samples{};
-  nvbench::int64_t m_warmup_runs{1};
+  nvbench::int64_t m_cold_warmup_runs{1};
 
+  nvbench::float64_t m_cold_max_warmup_walltime{};
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
 
@@ -240,7 +241,7 @@ struct measure_cold : public measure_cold_base
   }
 
 private:
-  // Run the kernel m_warmup_runs times, measuring the GPU time of the last run.
+  // Run the kernel m_cold_warmup_runs times, measuring the GPU time of the last run.
   // If under skip_time, skip the measurement.
   void run_warmup()
   {
@@ -258,10 +259,19 @@ private:
     // see https://github.com/NVIDIA/nvbench/issues/240
     constexpr bool disable_blocking_kernel = true;
     kernel_launch_timer timer(*this, disable_blocking_kernel);
+    nvbench::cpu_timer warmup_walltime_timer;
 
-    for (nvbench::int64_t warmup_run = 0; warmup_run < m_warmup_runs; ++warmup_run)
+    warmup_walltime_timer.start();
+    for (nvbench::int64_t warmup_run = 0; warmup_run < m_cold_warmup_runs; ++warmup_run)
     {
       this->launch_kernel(timer);
+      warmup_walltime_timer.stop();
+
+      if (m_cold_max_warmup_walltime > 0. &&
+          warmup_walltime_timer.get_duration() > m_cold_max_warmup_walltime)
+      {
+        break;
+      }
     }
     this->check_skip_time(m_cuda_timer.get_duration());
   }
