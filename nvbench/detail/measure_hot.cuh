@@ -73,6 +73,41 @@ protected:
   void block_stream();
 
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
+  __forceinline__ void unblock_stream_noexcept() noexcept { m_blocker.unblock_noexcept(); }
+
+  __forceinline__ void sync_stream_noexcept() const noexcept
+  {
+    (void)cudaStreamSynchronize(m_launch.get_stream());
+  }
+
+  struct block_stream_guard
+  {
+    explicit block_stream_guard(measure_hot_base &measure)
+        : m_measure{measure}
+    {
+      m_measure.block_stream();
+      m_active = true;
+    }
+
+    ~block_stream_guard() noexcept
+    {
+      if (m_active)
+      {
+        m_measure.unblock_stream_noexcept();
+        m_measure.sync_stream_noexcept();
+      }
+    }
+
+    void unblock()
+    {
+      m_measure.unblock_stream();
+      m_active = false;
+    }
+
+  private:
+    measure_hot_base &m_measure;
+    bool m_active{false};
+  };
 
   nvbench::state &m_state;
 
@@ -147,7 +182,7 @@ private:
         const auto blocked_launches   = std::min(batch_size, nvbench::int64_t{2});
         const auto unblocked_launches = batch_size - blocked_launches;
 
-        this->block_stream();
+        block_stream_guard block_guard{*this};
         m_cuda_timer.start(m_launch.get_stream());
 
         for (nvbench::int64_t i = 0; i < blocked_launches; ++i)
@@ -157,7 +192,7 @@ private:
           this->launch_kernel();
         }
 
-        this->unblock_stream(); // Start executing earlier launches
+        block_guard.unblock(); // Start executing earlier launches
 
         for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
         {
