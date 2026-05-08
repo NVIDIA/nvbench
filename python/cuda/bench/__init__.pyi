@@ -26,8 +26,21 @@
 # with definitions given here.
 
 from array import array
-from collections.abc import Callable, Sequence
-from typing import Optional, Self, SupportsFloat, SupportsInt, Union
+from collections.abc import Callable, Iterator, Sequence
+from typing import (
+    Any,
+    Optional,
+    Self,
+    SupportsFloat,
+    SupportsInt,
+    TypeVar,
+    Union,
+    overload,
+)
+
+ResultT = TypeVar("ResultT")
+_SummaryValue = int | float | str
+_SummaryData = _SummaryValue | dict[str, _SummaryValue]
 
 class CudaStream:
     def __cuda_stream__(self) -> tuple[int, int]: ...
@@ -119,25 +132,47 @@ def run_all_benchmarks(argv: Sequence[str]) -> None: ...
 class NVBenchRuntimeError(RuntimeError): ...
 
 class SubBenchState:
-    samples: array
+    state_name: str
+    summaries: dict[str, _SummaryData]
+    samples: array | None
+    frequencies: array | None
     bw: float | None
     point: dict[str, str]
     def name(self) -> str: ...
-    def center(self, estimator: Callable[[array], SupportsFloat]) -> SupportsFloat: ...
+    def center(self, estimator: Callable[[array], ResultT]) -> ResultT | None: ...
+    def center_with_frequencies(
+        self, estimator: Callable[[array, array], ResultT]
+    ) -> ResultT | None: ...
 
 class SubBenchResult:
     states: list[SubBenchState]
+    def __len__(self) -> int: ...
+    @overload
+    def __getitem__(self, state_index: int) -> SubBenchState: ...
+    @overload
+    def __getitem__(self, state_index: slice) -> list[SubBenchState]: ...
+    def __iter__(self) -> Iterator[SubBenchState]: ...
     def centers(
-        self, estimator: Callable[[array], SupportsFloat]
-    ) -> dict[str, SupportsFloat]: ...
+        self, estimator: Callable[[array], ResultT]
+    ) -> dict[str, ResultT | None]: ...
+    def centers_with_frequencies(
+        self, estimator: Callable[[array, array], ResultT]
+    ) -> dict[str, ResultT | None]: ...
 
 class BenchResult:
-    code: int
-    elapsed: float
+    metadata: Any
     subbenches: dict[str, SubBenchResult]
     def __init__(
-        self, json_fn: str, *, code: int = 0, elapsed: float = 0.0
+        self,
+        json_fn: str | None = None,
+        *,
+        metadata: Any = None,
+        parse: bool = True,
     ) -> None: ...
+    def __getitem__(self, subbench_name: str) -> SubBenchResult: ...
     def centers(
-        self, estimator: Callable[[array], SupportsFloat]
-    ) -> dict[str, dict[str, SupportsFloat]]: ...
+        self, estimator: Callable[[array], ResultT]
+    ) -> dict[str, dict[str, ResultT | None]]: ...
+    def centers_with_frequencies(
+        self, estimator: Callable[[array, array], ResultT]
+    ) -> dict[str, dict[str, ResultT | None]]: ...
