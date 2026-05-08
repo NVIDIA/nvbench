@@ -105,6 +105,13 @@ def test_bench_result_reads_jsonbin_relative_to_json_path(tmp_path):
     assert default_result.metadata is None
     assert result.metadata is metadata
     subbench = result["copy"]
+    assert len(result) == 1
+    assert list(result) == ["copy"]
+    assert list(result.keys()) == ["copy"]
+    assert list(result.values()) == [subbench]
+    assert list(result.items()) == [("copy", subbench)]
+    assert "copy" in result
+    assert "missing" not in result
     state = subbench[0]
     assert len(subbench) == 1
     assert subbench[-1] is state

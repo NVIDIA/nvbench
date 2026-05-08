@@ -18,7 +18,7 @@ import array
 import json
 import os
 import sys
-from collections.abc import Iterator
+from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from typing import Any, Callable, TypeVar
 
 __all__ = ["BenchResult", "SubBenchResult", "SubBenchState"]
@@ -309,8 +309,26 @@ class BenchResult:
     def __repr__(self) -> str:
         return str(self.__dict__)
 
+    def __len__(self) -> int:
+        return len(self.subbenches)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.subbenches)
+
+    def __contains__(self, subbench_name: object) -> bool:
+        return subbench_name in self.subbenches
+
     def __getitem__(self, subbench_name: str) -> SubBenchResult:
         return self.subbenches[subbench_name]
+
+    def keys(self) -> KeysView[str]:
+        return self.subbenches.keys()
+
+    def values(self) -> ValuesView[SubBenchResult]:
+        return self.subbenches.values()
+
+    def items(self) -> ItemsView[str, SubBenchResult]:
+        return self.subbenches.items()
 
     def centers(
         self, estimator: Callable[[array.array], ResultT]

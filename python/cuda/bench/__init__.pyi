@@ -26,7 +26,14 @@
 # with definitions given here.
 
 from array import array
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import (
+    Callable,
+    ItemsView,
+    Iterator,
+    KeysView,
+    Sequence,
+    ValuesView,
+)
 from typing import (
     Any,
     Optional,
@@ -169,7 +176,13 @@ class BenchResult:
         metadata: Any = None,
         parse: bool = True,
     ) -> None: ...
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __contains__(self, subbench_name: object) -> bool: ...
     def __getitem__(self, subbench_name: str) -> SubBenchResult: ...
+    def keys(self) -> KeysView[str]: ...
+    def values(self) -> ValuesView[SubBenchResult]: ...
+    def items(self) -> ItemsView[str, SubBenchResult]: ...
     def centers(
         self, estimator: Callable[[array], ResultT]
     ) -> dict[str, dict[str, ResultT | None]]: ...
