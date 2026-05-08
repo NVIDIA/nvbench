@@ -89,8 +89,14 @@ protected:
   }
   __forceinline__ void profiler_start() const { NVBENCH_CUDA_CALL(cudaProfilerStart()); }
   __forceinline__ void profiler_stop() const { NVBENCH_CUDA_CALL(cudaProfilerStop()); }
+  __forceinline__ void profiler_stop_noexcept() const noexcept { (void)cudaProfilerStop(); }
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
+  __forceinline__ void unblock_stream_noexcept() noexcept { m_blocker.unblock_noexcept(); }
+  __forceinline__ void sync_stream_noexcept() const noexcept
+  {
+    (void)cudaStreamSynchronize(m_launch.get_stream());
+  }
 
   nvbench::state &m_state;
 
@@ -167,54 +173,121 @@ struct measure_cold_base::kernel_launch_timer
       , m_check_throttling{check_throttling}
   {}
 
+  ~kernel_launch_timer() noexcept { this->cleanup_noexcept(); }
+
   __forceinline__ void start()
   {
-    m_measure.flush_device_l2();
-    m_measure.sync_stream();
+    try
+    {
+      m_measure.flush_device_l2();
+      m_measure.sync_stream();
 
-    // start CPU timer irrespective of use of blocking kernel
-    // Ref: https://github.com/NVIDIA/nvbench/issues/249
-    m_measure.m_cpu_timer.start();
+      // start CPU timer irrespective of use of blocking kernel
+      // Ref: https://github.com/NVIDIA/nvbench/issues/249
+      m_measure.m_cpu_timer.start();
+      m_cpu_timer_started = true;
 
-    if (!m_disable_blocking_kernel)
-    {
-      m_measure.block_stream();
+      if (!m_disable_blocking_kernel)
+      {
+        m_measure.block_stream();
+        m_stream_blocked = true;
+      }
+      if (m_check_throttling)
+      {
+        m_measure.gpu_frequency_start();
+        m_gpu_frequency_started = true;
+      }
+      if (m_run_once)
+      {
+        m_measure.profiler_start();
+        m_profiler_started = true;
+      }
+      m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
+      m_cuda_timer_started = true;
     }
-    if (m_check_throttling)
+    catch (...)
     {
-      m_measure.gpu_frequency_start();
+      this->cleanup_noexcept();
+      throw;
     }
-    if (m_run_once)
-    {
-      m_measure.profiler_start();
-    }
-    m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
   }
 
   __forceinline__ void stop()
   {
-    m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
-    if (m_check_throttling)
+    try
     {
-      m_measure.gpu_frequency_stop();
+      if (m_cuda_timer_started)
+      {
+        m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
+        m_cuda_timer_started = false;
+      }
+      if (m_gpu_frequency_started)
+      {
+        m_measure.gpu_frequency_stop();
+        m_gpu_frequency_started = false;
+      }
+      if (m_stream_blocked)
+      {
+        m_measure.unblock_stream();
+        m_stream_blocked = false;
+      }
+      m_measure.sync_stream();
+      if (m_profiler_started)
+      {
+        m_measure.profiler_stop();
+        m_profiler_started = false;
+      }
+      if (m_cpu_timer_started)
+      {
+        m_measure.m_cpu_timer.stop();
+        m_cpu_timer_started = false;
+      }
     }
-    if (!m_disable_blocking_kernel)
+    catch (...)
     {
-      m_measure.unblock_stream();
+      this->cleanup_noexcept();
+      throw;
     }
-    m_measure.sync_stream();
-    if (m_run_once)
-    {
-      m_measure.profiler_stop();
-    }
-    m_measure.m_cpu_timer.stop();
   }
 
 private:
+  void cleanup_noexcept() noexcept
+  {
+    const bool needs_sync = m_stream_blocked || m_cuda_timer_started || m_gpu_frequency_started;
+
+    if (m_stream_blocked)
+    {
+      m_measure.unblock_stream_noexcept();
+      m_stream_blocked = false;
+    }
+    if (needs_sync)
+    {
+      m_measure.sync_stream_noexcept();
+    }
+    if (m_profiler_started)
+    {
+      m_measure.profiler_stop_noexcept();
+      m_profiler_started = false;
+    }
+    if (m_cpu_timer_started)
+    {
+      m_measure.m_cpu_timer.stop();
+      m_cpu_timer_started = false;
+    }
+
+    m_cuda_timer_started    = false;
+    m_gpu_frequency_started = false;
+  }
+
   measure_cold_base &m_measure;
   bool m_disable_blocking_kernel;
   bool m_run_once;
   bool m_check_throttling;
+  bool m_cpu_timer_started{false};
+  bool m_stream_blocked{false};
+  bool m_gpu_frequency_started{false};
+  bool m_profiler_started{false};
+  bool m_cuda_timer_started{false};
 };
 
 template <typename KernelLauncher>
