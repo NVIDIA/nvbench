@@ -22,6 +22,8 @@
 
 #include <fmt/format.h>
 
+#include <iostream>
+
 #include "test_asserts.cuh"
 
 //==============================================================================
@@ -94,6 +96,7 @@ namespace
   ASSERT(bench != nullptr);
 
   bench->run();
+  std::cout << bench->get_config_count() << std::endl;
 
   return bench->get_states();
 }
