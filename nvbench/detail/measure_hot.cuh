@@ -75,10 +75,12 @@ protected:
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
   __forceinline__ void unblock_stream_noexcept() noexcept { m_blocker.unblock_noexcept(); }
 
-  __forceinline__ void sync_stream_noexcept() const noexcept
+  __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
   {
-    (void)cudaStreamSynchronize(m_launch.get_stream());
+    return cudaStreamSynchronize(m_launch.get_stream());
   }
+
+  __forceinline__ void sync_stream() const { NVBENCH_CUDA_CALL(this->sync_stream_noexcept()); }
 
   struct block_stream_guard
   {
@@ -94,7 +96,7 @@ protected:
       if (m_active)
       {
         m_measure.unblock_stream_noexcept();
-        m_measure.sync_stream_noexcept();
+        (void)m_measure.sync_stream_noexcept();
       }
     }
 
@@ -238,11 +240,6 @@ private:
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
-
-  __forceinline__ void sync_stream() const
-  {
-    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
-  }
 
   KernelLauncher &m_kernel_launcher;
 };

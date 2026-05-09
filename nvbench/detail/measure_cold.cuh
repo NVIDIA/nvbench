@@ -83,20 +83,17 @@ protected:
 
   __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
 
-  __forceinline__ void sync_stream() const
+  __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
   {
-    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
+    return cudaStreamSynchronize(m_launch.get_stream());
   }
+  __forceinline__ void sync_stream() const { NVBENCH_CUDA_CALL(this->sync_stream_noexcept()); }
   __forceinline__ void profiler_start() const { NVBENCH_CUDA_CALL(cudaProfilerStart()); }
-  __forceinline__ void profiler_stop() const { NVBENCH_CUDA_CALL(cudaProfilerStop()); }
-  __forceinline__ void profiler_stop_noexcept() const noexcept { (void)cudaProfilerStop(); }
+  __forceinline__ cudaError_t profiler_stop_noexcept() const noexcept { return cudaProfilerStop(); }
+  __forceinline__ void profiler_stop() const { NVBENCH_CUDA_CALL(this->profiler_stop_noexcept()); }
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
   __forceinline__ void unblock_stream_noexcept() noexcept { m_blocker.unblock_noexcept(); }
-  __forceinline__ void sync_stream_noexcept() const noexcept
-  {
-    (void)cudaStreamSynchronize(m_launch.get_stream());
-  }
 
   nvbench::state &m_state;
 
@@ -262,11 +259,11 @@ private:
     }
     if (needs_sync)
     {
-      m_measure.sync_stream_noexcept();
+      (void)m_measure.sync_stream_noexcept();
     }
     if (m_profiler_started)
     {
-      m_measure.profiler_stop_noexcept();
+      (void)m_measure.profiler_stop_noexcept();
       m_profiler_started = false;
     }
     if (m_cpu_timer_started)
