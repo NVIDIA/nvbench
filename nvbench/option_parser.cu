@@ -48,8 +48,19 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <vector>
+
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+static_assert(false, "No <filesystem> or <experimental/filesystem> found.");
+#endif
 
 namespace
 {
@@ -114,6 +125,33 @@ catch (const std::exception &)
 }
 
 void parse(std::string_view input, std::string &val) { val = input; }
+
+void create_output_parent_directories(const std::string &spec)
+{
+  const fs::path output_path{spec};
+  const fs::path parent_path = output_path.parent_path();
+  if (parent_path.empty())
+  {
+    return;
+  }
+
+  std::error_code ec;
+  fs::create_directories(parent_path, ec);
+  if (ec)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Failed to create output directory `{}`: {}",
+                  parent_path.string(),
+                  ec.message());
+  }
+
+  if (!fs::is_directory(parent_path, ec) || ec)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Output path parent `{}` is not a directory.",
+                  parent_path.string());
+  }
+}
 
 // Parses a list of values "<val1>, <val2>, <val3>, ..." into a vector:
 template <typename T>
@@ -622,6 +660,8 @@ std::ostream &option_parser::printer_spec_to_ostream(const std::string &spec)
   }
   else // spec is a filename:
   {
+    ::create_output_parent_directories(spec);
+
     auto file_stream = std::make_unique<std::ofstream>();
     // Throw if file can't open
     file_stream->exceptions(file_stream->exceptions() | std::ios::failbit);
