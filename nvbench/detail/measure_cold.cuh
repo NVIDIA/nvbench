@@ -146,6 +146,36 @@ protected:
 
 struct measure_cold_base::kernel_launch_timer
 {
+private:
+  __forceinline__ void cleanup_noexcept() noexcept;
+
+  struct cleanup_guard
+  {
+    explicit cleanup_guard(kernel_launch_timer &timer)
+        : m_timer{timer}
+    {}
+
+    cleanup_guard(const cleanup_guard &)            = delete;
+    cleanup_guard(cleanup_guard &&)                 = delete;
+    cleanup_guard &operator=(const cleanup_guard &) = delete;
+    cleanup_guard &operator=(cleanup_guard &&)      = delete;
+
+    ~cleanup_guard() noexcept
+    {
+      if (m_active)
+      {
+        m_timer.cleanup_noexcept();
+      }
+    }
+
+    void release() noexcept { m_active = false; }
+
+  private:
+    kernel_launch_timer &m_timer;
+    bool m_active{true};
+  };
+
+public:
   kernel_launch_timer(measure_cold_base &measure)
       : m_measure{measure}
       , m_disable_blocking_kernel{measure.m_disable_blocking_kernel}
@@ -174,96 +204,60 @@ struct measure_cold_base::kernel_launch_timer
 
   __forceinline__ void start()
   {
-    try
-    {
-      m_measure.flush_device_l2();
-      m_measure.sync_stream();
+    cleanup_guard cleanup{*this};
 
-      // start CPU timer irrespective of use of blocking kernel
-      // Ref: https://github.com/NVIDIA/nvbench/issues/249
-      m_measure.m_cpu_timer.start();
-      m_cpu_timer_started = true;
+    m_measure.flush_device_l2();
+    m_measure.sync_stream();
 
-      if (!m_disable_blocking_kernel)
-      {
-        m_measure.block_stream();
-        m_stream_blocked = true;
-      }
-      if (m_check_throttling)
-      {
-        m_measure.gpu_frequency_start();
-        m_gpu_frequency_started = true;
-      }
-      if (m_run_once)
-      {
-        m_measure.profiler_start();
-        m_profiler_started = true;
-      }
-      m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
-      m_cuda_timer_started = true;
-    }
-    catch (...)
+    // start CPU timer irrespective of use of blocking kernel
+    // Ref: https://github.com/NVIDIA/nvbench/issues/249
+    m_measure.m_cpu_timer.start();
+    m_cpu_timer_started = true;
+
+    if (!m_disable_blocking_kernel)
     {
-      this->cleanup_noexcept();
-      throw;
+      m_measure.block_stream();
+      m_stream_blocked = true;
     }
+    if (m_check_throttling)
+    {
+      m_measure.gpu_frequency_start();
+      m_gpu_frequency_started = true;
+    }
+    if (m_run_once)
+    {
+      m_measure.profiler_start();
+      m_profiler_started = true;
+    }
+    m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
+    m_cuda_timer_started = true;
+
+    cleanup.release();
   }
 
   __forceinline__ void stop()
   {
-    try
-    {
-      if (m_cuda_timer_started)
-      {
-        m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
-        m_cuda_timer_started = false;
-      }
-      if (m_gpu_frequency_started)
-      {
-        m_measure.gpu_frequency_stop();
-        m_gpu_frequency_started = false;
-      }
-      if (m_stream_blocked)
-      {
-        m_measure.unblock_stream();
-        m_stream_blocked = false;
-      }
-      m_measure.sync_stream();
-      if (m_profiler_started)
-      {
-        m_measure.profiler_stop();
-        m_profiler_started = false;
-      }
-      if (m_cpu_timer_started)
-      {
-        m_measure.m_cpu_timer.stop();
-        m_cpu_timer_started = false;
-      }
-    }
-    catch (...)
-    {
-      this->cleanup_noexcept();
-      throw;
-    }
-  }
+    cleanup_guard cleanup{*this};
 
-private:
-  void cleanup_noexcept() noexcept
-  {
-    const bool needs_sync = m_stream_blocked || m_cuda_timer_started || m_gpu_frequency_started;
-
+    if (m_cuda_timer_started)
+    {
+      m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
+      m_cuda_timer_started = false;
+    }
+    if (m_gpu_frequency_started)
+    {
+      m_measure.gpu_frequency_stop();
+      m_gpu_frequency_started = false;
+    }
     if (m_stream_blocked)
     {
-      m_measure.unblock_stream_noexcept();
+      m_measure.unblock_stream();
       m_stream_blocked = false;
     }
-    if (needs_sync)
-    {
-      (void)m_measure.sync_stream_noexcept();
-    }
+    m_measure.sync_stream();
     if (m_profiler_started)
     {
-      (void)m_measure.profiler_stop_noexcept();
+      m_measure.profiler_stop();
       m_profiler_started = false;
     }
     if (m_cpu_timer_started)
@@ -272,10 +266,10 @@ private:
       m_cpu_timer_started = false;
     }
 
-    m_cuda_timer_started    = false;
-    m_gpu_frequency_started = false;
+    cleanup.release();
   }
 
+private:
   measure_cold_base &m_measure;
   bool m_disable_blocking_kernel;
   bool m_run_once;
@@ -286,6 +280,34 @@ private:
   bool m_profiler_started{false};
   bool m_cuda_timer_started{false};
 };
+
+__forceinline__ void measure_cold_base::kernel_launch_timer::cleanup_noexcept() noexcept
+{
+  const bool needs_sync = m_stream_blocked || m_cuda_timer_started || m_gpu_frequency_started;
+
+  if (m_stream_blocked)
+  {
+    m_measure.unblock_stream_noexcept();
+    m_stream_blocked = false;
+  }
+  if (needs_sync)
+  {
+    (void)m_measure.sync_stream_noexcept();
+  }
+  if (m_profiler_started)
+  {
+    (void)m_measure.profiler_stop_noexcept();
+    m_profiler_started = false;
+  }
+  if (m_cpu_timer_started)
+  {
+    m_measure.m_cpu_timer.stop();
+    m_cpu_timer_started = false;
+  }
+
+  m_cuda_timer_started    = false;
+  m_gpu_frequency_started = false;
+}
 
 template <typename KernelLauncher>
 struct measure_cold : public measure_cold_base
