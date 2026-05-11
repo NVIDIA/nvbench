@@ -18,7 +18,7 @@ import importlib
 import importlib.metadata
 import warnings
 
-from ._bench_result import BenchResult, SubBenchResult, SubBenchState
+from ._bench_result import BenchmarkResult, SubBenchResult, SubBenchState
 
 try:
     __version__ = importlib.metadata.version("cuda-bench")
@@ -31,7 +31,7 @@ except Exception as e:
     )
 
 
-BenchResult.__module__ = __name__
+BenchmarkResult.__module__ = __name__
 SubBenchResult.__module__ = __name__
 SubBenchState.__module__ = __name__
 
@@ -51,7 +51,7 @@ _NVBENCH_TEST_EXPORTS = (
 )
 
 __all__ = [
-    "BenchResult",
+    "BenchmarkResult",
     "SubBenchResult",
     "SubBenchState",
     *_NVBENCH_EXPORTS,

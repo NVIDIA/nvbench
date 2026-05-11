@@ -34,6 +34,7 @@ from collections.abc import (
     Sequence,
     ValuesView,
 )
+from os import PathLike
 from typing import (
     Any,
     Optional,
@@ -166,16 +167,21 @@ class SubBenchResult:
         self, estimator: Callable[[array, array], ResultT]
     ) -> dict[str, ResultT | None]: ...
 
-class BenchResult:
+class BenchmarkResult:
     metadata: Any
     subbenches: dict[str, SubBenchResult]
     def __init__(
         self,
-        json_fn: str | None = None,
         *,
+        json_path: str | PathLike[str],
         metadata: Any = None,
-        parse: bool = True,
     ) -> None: ...
+    @classmethod
+    def empty(cls, *, metadata: Any = None) -> Self: ...
+    @classmethod
+    def from_json(
+        cls, json_path: str | PathLike[str], *, metadata: Any = None
+    ) -> Self: ...
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[str]: ...
     def __contains__(self, subbench_name: object) -> bool: ...

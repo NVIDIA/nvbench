@@ -21,14 +21,15 @@ import sys
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from typing import Any, Callable, TypeVar
 
-__all__ = ["BenchResult", "SubBenchResult", "SubBenchState"]
+__all__ = ["BenchmarkResult", "SubBenchResult", "SubBenchState"]
 
 ResultT = TypeVar("ResultT")
+BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
 _SummaryValue = int | float | str
 _SummaryData = _SummaryValue | dict[str, _SummaryValue]
 
 
-def read_json(filename: str) -> dict:
+def read_json(filename: str | os.PathLike[str]) -> dict:
     with open(filename, "r", encoding="utf-8") as f:
         file_root = json.load(f)
     return file_root
@@ -287,24 +288,41 @@ class SubBenchResult:
         return result
 
 
-class BenchResult:
+class BenchmarkResult:
     """Parsed result data from an NVBench JSON output file."""
 
     def __init__(
         self,
-        json_fn: str | None = None,
         *,
+        json_path: str | os.PathLike[str],
         metadata: Any = None,
-        parse: bool = True,
     ):
         self.metadata = metadata
         self.subbenches: dict[str, SubBenchResult] = {}
+        self._parse_json(json_path)
 
-        if json_fn and parse:
-            json_dir = os.path.dirname(os.path.abspath(json_fn))
-            for bench in read_json(json_fn)["benchmarks"]:
-                bench_name: str = bench["name"]
-                self.subbenches[bench_name] = SubBenchResult(bench, json_dir)
+    @classmethod
+    def empty(cls: type[BenchmarkResultT], *, metadata: Any = None) -> BenchmarkResultT:
+        result = cls.__new__(cls)
+        result.metadata = metadata
+        result.subbenches = {}
+        return result
+
+    @classmethod
+    def from_json(
+        cls: type[BenchmarkResultT],
+        json_path: str | os.PathLike[str],
+        *,
+        metadata: Any = None,
+    ) -> BenchmarkResultT:
+        return cls(json_path=json_path, metadata=metadata)
+
+    def _parse_json(self, json_path: str | os.PathLike[str]) -> None:
+        json_path = os.fspath(json_path)
+        json_dir = os.path.dirname(os.path.abspath(json_path))
+        for bench in read_json(json_path)["benchmarks"]:
+            bench_name: str = bench["name"]
+            self.subbenches[bench_name] = SubBenchResult(bench, json_dir)
 
     def __repr__(self) -> str:
         return str(self.__dict__)
