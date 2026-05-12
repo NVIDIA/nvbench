@@ -1,18 +1,5 @@
-# Copyright 2026 NVIDIA Corporation
-#
-#  Licensed under the Apache License, Version 2.0 with the LLVM exception
-#  (the "License"); you may not use this file except in compliance with
-#  the License.
-#
-#  You may obtain a copy of the License at
-#
-#      http://llvm.org/foundation/relicensing/LICENSE.txt
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 from __future__ import annotations
 
@@ -52,18 +39,44 @@ def read_json(filename: str | os.PathLike[str]) -> dict:
     return file_root
 
 
+def extract_summary_data_value(summary: dict, name: str, expected_type: str) -> Any:
+    summary_tag = summary.get("tag", "<unknown>")
+    for value_data in summary.get("data", []):
+        if value_data.get("name") != name:
+            continue
+
+        value_type = value_data.get("type")
+        if value_type != expected_type:
+            raise ValueError(
+                f"summary {summary_tag!r} field {name!r} has type "
+                f"{value_type!r}; expected {expected_type!r}"
+            )
+        if "value" not in value_data:
+            raise ValueError(f"summary {summary_tag!r} field {name!r} is missing value")
+        return value_data["value"]
+
+    raise ValueError(f"summary {summary_tag!r} is missing field {name!r}")
+
+
 def extract_filename(summary: dict) -> str:
-    summary_data = summary["data"]
-    value_data = next(filter(lambda v: v["name"] == "filename", summary_data))
-    assert value_data["type"] == "string"
-    return value_data["value"]
+    value = extract_summary_data_value(summary, "filename", "string")
+    if not isinstance(value, str):
+        raise ValueError(
+            f"summary {summary.get('tag', '<unknown>')!r} field 'filename' "
+            "value must be a string"
+        )
+    return value
 
 
 def extract_size(summary: dict) -> int:
-    summary_data = summary["data"]
-    value_data = next(filter(lambda v: v["name"] == "size", summary_data))
-    assert value_data["type"] == "int64"
-    return int(value_data["value"])
+    value = extract_summary_data_value(summary, "size", "int64")
+    try:
+        return int(value)
+    except (TypeError, ValueError) as e:
+        raise ValueError(
+            f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
+            f"value {value!r} is not an int64"
+        ) from e
 
 
 def parse_summary_value(value_data: dict) -> _SummaryValue:

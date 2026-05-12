@@ -1,18 +1,5 @@
-# Copyright 2026 NVIDIA Corporation
-#
-#  Licensed under the Apache License, Version 2.0 with the LLVM exception
-#  (the "License"); you may not use this file except in compliance with
-#  the License.
-#
-#  You may obtain a copy of the License at
-#
-#      http://llvm.org/foundation/relicensing/LICENSE.txt
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import json
 import struct
@@ -512,6 +499,44 @@ def test_benchmark_result_uses_empty_summaries_when_field_is_missing():
     assert state.samples is None
     assert state.frequencies is None
     assert state.bw is None
+
+
+@pytest.mark.parametrize(
+    "field_name,bad_type,expected_type",
+    [
+        ("filename", "int64", "string"),
+        ("size", "string", "int64"),
+    ],
+)
+def test_benchmark_result_validates_binary_summary_field_types(
+    field_name, bad_type, expected_type
+):
+    summary = sample_times_summary("result.json-bin/0.bin", 3)
+    for value_data in summary["data"]:
+        if value_data["name"] == field_name:
+            value_data["type"] = bad_type
+            if field_name == "filename":
+                value_data["value"] = "123"
+
+    with pytest.raises(
+        ValueError,
+        match=rf"field '{field_name}' has type '{bad_type}'; expected '{expected_type}'",
+    ):
+        results.SubBenchmarkResult(
+            {
+                "name": "copy",
+                "axes": [],
+                "states": [
+                    {
+                        "name": "Device=0",
+                        "axis_values": [],
+                        "summaries": [summary],
+                        "is_skipped": False,
+                    }
+                ],
+            },
+            "",
+        )
 
 
 def test_benchmark_result_uses_none_for_unavailable_samples(tmp_path):
