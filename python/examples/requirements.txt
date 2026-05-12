@@ -6,4 +6,5 @@ numba-cuda
 cuda-cccl
 cupy
 nvidia-cute-dsl[cu13]
+tabulate
 torch[cu13]
