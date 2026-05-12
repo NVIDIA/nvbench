@@ -135,22 +135,7 @@ void create_output_parent_directories(const std::string &spec)
     return;
   }
 
-  std::error_code ec;
-  fs::create_directories(parent_path, ec);
-  if (ec)
-  {
-    NVBENCH_THROW(std::runtime_error,
-                  "Failed to create output directory `{}`: {}",
-                  parent_path.string(),
-                  ec.message());
-  }
-
-  if (!fs::is_directory(parent_path, ec) || ec)
-  {
-    NVBENCH_THROW(std::runtime_error,
-                  "Output path parent `{}` is not a directory.",
-                  parent_path.string());
-  }
+  fs::create_directories(parent_path);
 }
 
 // Parses a list of values "<val1>, <val2>, <val3>, ..." into a vector:
