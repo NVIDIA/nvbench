@@ -23,7 +23,78 @@ import cuda.bench.results as results
 import pytest
 
 
-def test_benchmark_result_reads_jsonbin_relative_to_json_path(tmp_path):
+def write_json(path, data):
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+
+def block_size_axis(*values):
+    return {
+        "name": "BlockSize",
+        "type": "int64",
+        "flags": "pow2",
+        "values": [
+            {
+                "input_string": str(value),
+                "description": f"2^{value} = {2**value}",
+                "value": 2**value,
+            }
+            for value in values
+        ],
+    }
+
+
+def sample_file_summary(tag, filename, size):
+    return {
+        "tag": tag,
+        "data": [
+            {
+                "name": "filename",
+                "type": "string",
+                "value": filename,
+            },
+            {
+                "name": "size",
+                "type": "int64",
+                "value": str(size),
+            },
+        ],
+    }
+
+
+def sample_times_summary(filename, size):
+    return sample_file_summary(
+        "nv/json/bin:nv/cold/sample_times",
+        filename,
+        size,
+    )
+
+
+def sample_frequencies_summary(filename, size):
+    return sample_file_summary(
+        "nv/json/freqs-bin:nv/cold/sample_freqs",
+        filename,
+        size,
+    )
+
+
+def bwutil_summary(value):
+    return {
+        "tag": "nv/cold/bw/global/utilization",
+        "name": "BWUtil",
+        "hint": "percentage",
+        "description": "Global memory utilization",
+        "data": [
+            {
+                "name": "value",
+                "type": "float64",
+                "value": str(value),
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def sample_result_path(tmp_path):
     bin_dir = tmp_path / "result.json-bin"
     bin_dir.mkdir()
     (bin_dir / "0.bin").write_bytes(struct.pack("<3f", 1.0, 2.0, 4.0))
@@ -32,118 +103,106 @@ def test_benchmark_result_reads_jsonbin_relative_to_json_path(tmp_path):
     (freq_bin_dir / "0.bin").write_bytes(struct.pack("<3f", 100.0, 200.0, 400.0))
 
     json_fn = tmp_path / "result.json"
-    json_fn.write_text(
-        json.dumps(
-            {
-                "benchmarks": [
-                    {
-                        "name": "copy",
-                        "axes": [
-                            {
-                                "name": "BlockSize",
-                                "type": "int64",
-                                "flags": "pow2",
-                                "values": [
-                                    {
-                                        "input_string": "8",
-                                        "description": "2^8 = 256",
-                                        "value": 256,
-                                    }
-                                ],
-                            }
-                        ],
-                        "states": [
-                            {
-                                "name": "Device=0 BlockSize=2^8",
-                                "axis_values": [
-                                    {
-                                        "name": "BlockSize",
-                                        "type": "int64",
-                                        "value": "256",
-                                    }
-                                ],
-                                "summaries": [
-                                    {
-                                        "tag": "nv/json/bin:nv/cold/sample_times",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "result.json-bin/0.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "3",
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        "tag": "nv/cold/bw/global/utilization",
-                                        "name": "BWUtil",
-                                        "hint": "percentage",
-                                        "description": "Global memory utilization",
-                                        "data": [
-                                            {
-                                                "name": "value",
-                                                "type": "float64",
-                                                "value": "0.75",
-                                            }
-                                        ],
-                                    },
-                                    {
-                                        "tag": "nv/json/freqs-bin:nv/cold/sample_freqs",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "result.json-freqs-bin/0.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "3",
-                                            },
-                                        ],
-                                    },
-                                ],
-                                "is_skipped": False,
-                            }
-                        ],
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        json_fn,
+        {
+            "benchmarks": [
+                {
+                    "name": "copy",
+                    "axes": [block_size_axis(8)],
+                    "states": [
+                        {
+                            "name": "Device=0 BlockSize=2^8",
+                            "axis_values": [
+                                {
+                                    "name": "BlockSize",
+                                    "type": "int64",
+                                    "value": "256",
+                                }
+                            ],
+                            "summaries": [
+                                sample_times_summary("result.json-bin/0.bin", 3),
+                                bwutil_summary(0.75),
+                                sample_frequencies_summary(
+                                    "result.json-freqs-bin/0.bin",
+                                    3,
+                                ),
+                            ],
+                            "is_skipped": False,
+                        }
+                    ],
+                }
+            ]
+        },
     )
+    return json_fn
 
-    metadata = {"returncode": 0, "elapsed_seconds": 0.25}
-    default_result = results.BenchmarkResult.from_json(json_fn)
-    result = results.BenchmarkResult.from_json(json_fn, metadata=metadata)
 
+@pytest.fixture
+def sample_result(sample_result_path):
+    return results.BenchmarkResult.from_json(sample_result_path)
+
+
+@pytest.fixture
+def sample_subbenchmark(sample_result):
+    return sample_result["copy"]
+
+
+@pytest.fixture
+def sample_state(sample_subbenchmark):
+    return sample_subbenchmark[0]
+
+
+def test_result_classes_are_exposed_from_results_namespace():
     assert results.BenchmarkResult.__module__ == results.__name__
     assert results.BenchmarkResultSummary.__module__ == results.__name__
     assert not hasattr(cuda.bench, "BenchmarkResult")
+
+
+def test_from_json_preserves_optional_metadata(sample_result_path):
+    metadata = {"returncode": 0, "elapsed_seconds": 0.25}
+
+    default_result = results.BenchmarkResult.from_json(sample_result_path)
+    result = results.BenchmarkResult.from_json(sample_result_path, metadata=metadata)
+
     assert default_result.metadata is None
     assert result.metadata is metadata
-    subbench = result["copy"]
-    assert len(result) == 1
-    assert list(result) == ["copy"]
-    assert list(result.keys()) == ["copy"]
-    assert list(result.values()) == [subbench]
-    assert list(result.items()) == [("copy", subbench)]
-    assert "copy" in result
-    assert "missing" not in result
-    state = subbench[0]
-    assert len(subbench) == 1
-    assert subbench[-1] is state
-    assert subbench[:] == subbench.states
-    assert list(subbench) == subbench.states
+
+
+def test_benchmark_result_implements_mapping_protocol(sample_result):
+    subbenchmark = sample_result["copy"]
+
+    assert len(sample_result) == 1
+    assert list(sample_result) == ["copy"]
+    assert list(sample_result.keys()) == ["copy"]
+    assert list(sample_result.values()) == [subbenchmark]
+    assert list(sample_result.items()) == [("copy", subbenchmark)]
+    assert "copy" in sample_result
+    assert "missing" not in sample_result
+    assert subbenchmark is sample_result.subbenches["copy"]
+    with pytest.raises(KeyError):
+        sample_result["missing"]
+
+
+def test_subbenchmark_result_implements_sequence_protocol(sample_subbenchmark):
+    state = sample_subbenchmark[0]
+
+    assert len(sample_subbenchmark) == 1
+    assert sample_subbenchmark[-1] is state
+    assert sample_subbenchmark[:] == sample_subbenchmark.states
+    assert list(sample_subbenchmark) == sample_subbenchmark.states
     with pytest.raises(IndexError):
-        subbench[1]
-    assert state.name() == "BlockSize[pow2]=8"
-    assert state.bw == 0.75
-    bw_summary = state.summaries["nv/cold/bw/global/utilization"]
+        sample_subbenchmark[1]
+
+
+def test_state_parses_axis_name_and_bandwidth(sample_state):
+    assert sample_state.name() == "BlockSize[pow2]=8"
+    assert sample_state.bw == 0.75
+
+
+def test_state_stores_rich_summary_metadata(sample_state):
+    bw_summary = sample_state.summaries["nv/cold/bw/global/utilization"]
+
     assert bw_summary.tag == "nv/cold/bw/global/utilization"
     assert bw_summary.name == "BWUtil"
     assert bw_summary.hint == "percentage"
@@ -151,36 +210,42 @@ def test_benchmark_result_reads_jsonbin_relative_to_json_path(tmp_path):
     assert bw_summary.description == "Global memory utilization"
     assert bw_summary.value == pytest.approx(0.75)
     assert bw_summary["value"] == pytest.approx(0.75)
-    assert state.summaries["nv/json/bin:nv/cold/sample_times"].data == {
+    assert sample_state.summaries["nv/json/bin:nv/cold/sample_times"].data == {
         "filename": "result.json-bin/0.bin",
         "size": 3,
     }
-    assert state.summaries["nv/json/freqs-bin:nv/cold/sample_freqs"].data == {
+    assert sample_state.summaries["nv/json/freqs-bin:nv/cold/sample_freqs"].data == {
         "filename": "result.json-freqs-bin/0.bin",
         "size": 3,
     }
-    assert state.samples is not None
-    assert list(state.samples) == pytest.approx([1.0, 2.0, 4.0])
-    assert state.frequencies is not None
-    assert list(state.frequencies) == pytest.approx([100.0, 200.0, 400.0])
-    centers = result.centers(lambda samples: sum(samples) / len(samples))
-    assert set(centers) == {"copy"}
-    assert set(centers["copy"]) == {"BlockSize[pow2]=8"}
-    assert centers["copy"]["BlockSize[pow2]=8"] == pytest.approx(7.0 / 3.0)
 
+
+def test_state_loads_samples_and_frequencies(sample_state):
+    assert sample_state.samples is not None
+    assert list(sample_state.samples) == pytest.approx([1.0, 2.0, 4.0])
+    assert sample_state.frequencies is not None
+    assert list(sample_state.frequencies) == pytest.approx([100.0, 200.0, 400.0])
+
+
+def test_centers_apply_estimators_to_samples(sample_result):
+    centers = sample_result.centers(lambda samples: sum(samples) / len(samples))
+
+    assert centers == {"copy": {"BlockSize[pow2]=8": pytest.approx(7.0 / 3.0)}}
+
+
+def test_centers_with_frequencies_apply_estimators(sample_result, sample_subbenchmark):
     def weighted_mean(samples, frequencies):
         return sum(
             sample * frequency for sample, frequency in zip(samples, frequencies)
         ) / sum(frequencies)
 
-    weighted_centers = result.centers_with_frequencies(weighted_mean)
-    assert set(weighted_centers) == {"copy"}
-    assert set(weighted_centers["copy"]) == {"BlockSize[pow2]=8"}
-    assert weighted_centers["copy"]["BlockSize[pow2]=8"] == pytest.approx(3.0)
-    assert subbench is result.subbenches["copy"]
-    assert subbench.centers_with_frequencies(weighted_mean) == weighted_centers["copy"]
-    with pytest.raises(KeyError):
-        result["missing"]
+    weighted_centers = sample_result.centers_with_frequencies(weighted_mean)
+
+    assert weighted_centers == {"copy": {"BlockSize[pow2]=8": pytest.approx(3.0)}}
+    assert (
+        sample_subbenchmark.centers_with_frequencies(weighted_mean)
+        == weighted_centers["copy"]
+    )
 
 
 def test_benchmark_result_constructor_is_private():
@@ -227,57 +292,33 @@ def test_benchmark_result_accepts_no_axis_benchmark_with_recorded_binary_path(
     (freq_bin_dir / "0.bin").write_bytes(struct.pack("<2f", 100.0, 400.0))
 
     json_fn = data_dir / "axes_run1.json"
-    json_fn.write_text(
-        json.dumps(
-            {
-                "benchmarks": [
-                    {
-                        "name": "simple",
-                        "axes": None,
-                        "states": [
-                            {
-                                "name": "Device=0",
-                                "axis_values": None,
-                                "summaries": [
-                                    {
-                                        "tag": "nv/json/bin:nv/cold/sample_times",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "temp_data/axes_run1.json-bin/0.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "2",
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        "tag": "nv/json/freqs-bin:nv/cold/sample_freqs",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "temp_data/axes_run1.json-freqs-bin/0.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "2",
-                                            },
-                                        ],
-                                    },
-                                ],
-                                "is_skipped": False,
-                            }
-                        ],
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        json_fn,
+        {
+            "benchmarks": [
+                {
+                    "name": "simple",
+                    "axes": None,
+                    "states": [
+                        {
+                            "name": "Device=0",
+                            "axis_values": None,
+                            "summaries": [
+                                sample_times_summary(
+                                    "temp_data/axes_run1.json-bin/0.bin",
+                                    2,
+                                ),
+                                sample_frequencies_summary(
+                                    "temp_data/axes_run1.json-freqs-bin/0.bin",
+                                    2,
+                                ),
+                            ],
+                            "is_skipped": False,
+                        }
+                    ],
+                }
+            ]
+        },
     )
 
     monkeypatch.chdir(tmp_path)
@@ -338,25 +379,7 @@ def test_benchmark_result_ignores_skipped_state_with_no_summaries():
     result = results.SubBenchmarkResult(
         {
             "name": "copy_sweep_grid_shape",
-            "axes": [
-                {
-                    "name": "BlockSize",
-                    "type": "int64",
-                    "flags": "pow2",
-                    "values": [
-                        {
-                            "input_string": "6",
-                            "description": "2^6 = 64",
-                            "value": 64,
-                        },
-                        {
-                            "input_string": "8",
-                            "description": "2^8 = 256",
-                            "value": 256,
-                        },
-                    ],
-                }
-            ],
+            "axes": [block_size_axis(6, 8)],
             "states": [
                 {
                     "name": "Device=0 BlockSize=2^8",
@@ -393,93 +416,51 @@ def test_benchmark_result_ignores_skipped_state_with_no_summaries():
 
 def test_benchmark_result_uses_none_for_unavailable_samples(tmp_path):
     json_fn = tmp_path / "result.json"
-    json_fn.write_text(
-        json.dumps(
-            {
-                "benchmarks": [
-                    {
-                        "name": "copy",
-                        "axes": [
-                            {
-                                "name": "BlockSize",
-                                "type": "int64",
-                                "flags": "pow2",
-                                "values": [
-                                    {
-                                        "input_string": "8",
-                                        "description": "2^8 = 256",
-                                        "value": 256,
-                                    },
-                                    {
-                                        "input_string": "9",
-                                        "description": "2^9 = 512",
-                                        "value": 512,
-                                    },
-                                ],
-                            }
-                        ],
-                        "states": [
-                            {
-                                "name": "Device=0 BlockSize=2^8",
-                                "axis_values": [
-                                    {
-                                        "name": "BlockSize",
-                                        "type": "int64",
-                                        "value": "256",
-                                    }
-                                ],
-                                "summaries": [],
-                                "is_skipped": False,
-                            },
-                            {
-                                "name": "Device=0 BlockSize=2^9",
-                                "axis_values": [
-                                    {
-                                        "name": "BlockSize",
-                                        "type": "int64",
-                                        "value": "512",
-                                    }
-                                ],
-                                "summaries": [
-                                    {
-                                        "tag": "nv/json/bin:nv/cold/sample_times",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "result.json-bin/missing.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "3",
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        "tag": "nv/json/freqs-bin:nv/cold/sample_freqs",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "result.json-freqs-bin/missing.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "3",
-                                            },
-                                        ],
-                                    },
-                                ],
-                                "is_skipped": False,
-                            },
-                        ],
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        json_fn,
+        {
+            "benchmarks": [
+                {
+                    "name": "copy",
+                    "axes": [block_size_axis(8, 9)],
+                    "states": [
+                        {
+                            "name": "Device=0 BlockSize=2^8",
+                            "axis_values": [
+                                {
+                                    "name": "BlockSize",
+                                    "type": "int64",
+                                    "value": "256",
+                                }
+                            ],
+                            "summaries": [],
+                            "is_skipped": False,
+                        },
+                        {
+                            "name": "Device=0 BlockSize=2^9",
+                            "axis_values": [
+                                {
+                                    "name": "BlockSize",
+                                    "type": "int64",
+                                    "value": "512",
+                                }
+                            ],
+                            "summaries": [
+                                sample_times_summary(
+                                    "result.json-bin/missing.bin",
+                                    3,
+                                ),
+                                sample_frequencies_summary(
+                                    "result.json-freqs-bin/missing.bin",
+                                    3,
+                                ),
+                            ],
+                            "is_skipped": False,
+                        },
+                    ],
+                }
+            ]
+        },
     )
 
     result = results.BenchmarkResult.from_json(json_fn)
@@ -514,76 +495,36 @@ def test_benchmark_result_rejects_mismatched_sample_and_frequency_counts(tmp_pat
     (freq_bin_dir / "0.bin").write_bytes(struct.pack("<2f", 100.0, 200.0))
 
     json_fn = tmp_path / "result.json"
-    json_fn.write_text(
-        json.dumps(
-            {
-                "benchmarks": [
-                    {
-                        "name": "copy",
-                        "axes": [
-                            {
-                                "name": "BlockSize",
-                                "type": "int64",
-                                "flags": "pow2",
-                                "values": [
-                                    {
-                                        "input_string": "8",
-                                        "description": "2^8 = 256",
-                                        "value": 256,
-                                    }
-                                ],
-                            }
-                        ],
-                        "states": [
-                            {
-                                "name": "Device=0 BlockSize=2^8",
-                                "axis_values": [
-                                    {
-                                        "name": "BlockSize",
-                                        "type": "int64",
-                                        "value": "256",
-                                    }
-                                ],
-                                "summaries": [
-                                    {
-                                        "tag": "nv/json/bin:nv/cold/sample_times",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "result.json-bin/0.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "3",
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        "tag": "nv/json/freqs-bin:nv/cold/sample_freqs",
-                                        "data": [
-                                            {
-                                                "name": "filename",
-                                                "type": "string",
-                                                "value": "result.json-freqs-bin/0.bin",
-                                            },
-                                            {
-                                                "name": "size",
-                                                "type": "int64",
-                                                "value": "2",
-                                            },
-                                        ],
-                                    },
-                                ],
-                                "is_skipped": False,
-                            }
-                        ],
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        json_fn,
+        {
+            "benchmarks": [
+                {
+                    "name": "copy",
+                    "axes": [block_size_axis(8)],
+                    "states": [
+                        {
+                            "name": "Device=0 BlockSize=2^8",
+                            "axis_values": [
+                                {
+                                    "name": "BlockSize",
+                                    "type": "int64",
+                                    "value": "256",
+                                }
+                            ],
+                            "summaries": [
+                                sample_times_summary("result.json-bin/0.bin", 3),
+                                sample_frequencies_summary(
+                                    "result.json-freqs-bin/0.bin",
+                                    2,
+                                ),
+                            ],
+                            "is_skipped": False,
+                        }
+                    ],
+                }
+            ]
+        },
     )
 
     with pytest.raises(ValueError, match="sample count .* frequency count"):
