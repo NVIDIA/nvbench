@@ -14,19 +14,36 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 import array
 import json
 import os
 import sys
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
+from dataclasses import dataclass
 from typing import Any, Callable, TypeVar
 
-__all__ = ["BenchmarkResult", "SubBenchResult", "SubBenchState"]
+__all__ = [
+    "BenchmarkResult",
+    "BenchmarkResultDevice",
+    "BenchmarkResultSummary",
+    "SubBenchmarkResult",
+    "SubBenchmarkState",
+]
 
 ResultT = TypeVar("ResultT")
 BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
 _SummaryValue = int | float | str
-_SummaryData = _SummaryValue | dict[str, _SummaryValue]
+
+
+@dataclass(frozen=True)
+class BenchmarkResultDevice:
+    """Device metadata parsed from an NVBench JSON result file."""
+
+    id: int
+    name: str
+    data: dict[str, Any]
 
 
 def read_json(filename: str | os.PathLike[str]) -> dict:
@@ -49,13 +66,6 @@ def extract_size(summary: dict) -> int:
     return int(value_data["value"])
 
 
-def extract_bw(summary: dict) -> float:
-    summary_data = summary["data"]
-    value_data = next(filter(lambda v: v["name"] == "value", summary_data))
-    assert value_data["type"] == "float64"
-    return float(value_data["value"])
-
-
 def parse_summary_value(value_data: dict) -> _SummaryValue:
     value_type = value_data["type"]
     value = value_data["value"]
@@ -68,19 +78,48 @@ def parse_summary_value(value_data: dict) -> _SummaryValue:
     raise ValueError(f"unsupported summary value type: {value_type}")
 
 
-def parse_summary_data(summary: dict) -> _SummaryData:
-    summary_values = {
+@dataclass(frozen=True)
+class BenchmarkResultSummary:
+    """Summary record parsed from one NVBench benchmark state."""
+
+    tag: str
+    name: str | None
+    hint: str | None
+    hide: str | None
+    description: str | None
+    data: dict[str, _SummaryValue]
+
+    @property
+    def value(self) -> _SummaryValue | None:
+        return self.data.get("value")
+
+    def __getitem__(self, key: str) -> _SummaryValue:
+        return self.data[key]
+
+    def get(
+        self, key: str, default: _SummaryValue | None = None
+    ) -> _SummaryValue | None:
+        return self.data.get(key, default)
+
+
+def parse_summary(summary: dict) -> BenchmarkResultSummary:
+    data = {
         value_data["name"]: parse_summary_value(value_data)
-        for value_data in summary["data"]
+        for value_data in summary.get("data", [])
     }
-    if len(summary_values) == 1 and "value" in summary_values:
-        return summary_values["value"]
-    return summary_values
+    return BenchmarkResultSummary(
+        tag=summary["tag"],
+        name=summary.get("name"),
+        hint=summary.get("hint"),
+        hide=summary.get("hide"),
+        description=summary.get("description"),
+        data=data,
+    )
 
 
-def parse_summaries(state: dict) -> dict[str, _SummaryData]:
+def parse_summaries(state: dict) -> dict[str, BenchmarkResultSummary]:
     return {
-        summary["tag"]: parse_summary_data(summary) for summary in state["summaries"]
+        summary["tag"]: parse_summary(summary) for summary in state["summaries"] or []
     }
 
 
@@ -169,17 +208,12 @@ def parse_frequencies(state: dict, json_dir: str) -> array.array | None:
     return parse_float32_binary(frequency_count, frequencies_filename, json_dir)
 
 
-def parse_bw(state: dict) -> float | None:
-    bwutil = next(
-        filter(
-            lambda s: s["tag"] == "nv/cold/bw/global/utilization", state["summaries"]
-        ),
-        None,
-    )
-    if not bwutil:
+def parse_bw(summaries: dict[str, BenchmarkResultSummary]) -> float | None:
+    bwutil = summaries.get("nv/cold/bw/global/utilization")
+    if bwutil is None or bwutil.value is None:
         return None
 
-    return extract_bw(bwutil)
+    return float(bwutil.value)
 
 
 def get_axis_name(axis: dict) -> str:
@@ -189,9 +223,16 @@ def get_axis_name(axis: dict) -> str:
     return name
 
 
-class SubBenchState:
+class SubBenchmarkState:
+    """Result data for one executed state of an NVBench benchmark."""
+
     def __init__(self, state: dict, axes_names: dict, axes_values: dict, json_dir: str):
         self.state_name = state["name"]
+        self.device = state.get("device")
+        self.type_config_index = state.get("type_config_index")
+        self.axis_values = state.get("axis_values") or []
+        self.is_skipped = state.get("is_skipped", False)
+        self.skip_reason = state.get("skip_reason")
         self.summaries = parse_summaries(state)
         self.samples = parse_samples(state, json_dir)
         self.frequencies = parse_frequencies(state, json_dir)
@@ -204,10 +245,10 @@ class SubBenchState:
                 f"sample count ({len(self.samples)}) does not match "
                 f"frequency count ({len(self.frequencies)})"
             )
-        self.bw = parse_bw(state)
+        self.bw = parse_bw(self.summaries)
 
         self.point = {}
-        for axis in state["axis_values"] or []:
+        for axis in self.axis_values:
             axis_name = axis["name"]
             name = axes_names[axis_name]
             value = axes_values[axis_name][axis["value"]]
@@ -234,11 +275,17 @@ class SubBenchState:
         return estimator(self.samples, self.frequencies)
 
 
-class SubBenchResult:
+class SubBenchmarkResult:
+    """Result data for one NVBench benchmark and its executed states."""
+
     def __init__(self, bench: dict, json_dir: str):
+        self.name = bench["name"]
+        self.devices = bench.get("devices") or []
+        self.axes = bench.get("axes") or []
+
         axes_names = {}
         axes_values = {}
-        for axis in bench["axes"] or []:
+        for axis in self.axes:
             short_name = axis["name"]
             full_name = get_axis_name(axis)
             this_axis_values = {}
@@ -252,9 +299,9 @@ class SubBenchResult:
 
         self.states = []
         for state in bench["states"]:
-            if not state["is_skipped"]:
+            if not state.get("is_skipped", False):
                 self.states.append(
-                    SubBenchState(state, axes_names, axes_values, json_dir)
+                    SubBenchmarkState(state, axes_names, axes_values, json_dir)
                 )
 
     def __repr__(self) -> str:
@@ -265,10 +312,10 @@ class SubBenchResult:
 
     def __getitem__(
         self, state_index: int | slice
-    ) -> SubBenchState | list[SubBenchState]:
+    ) -> SubBenchmarkState | list[SubBenchmarkState]:
         return self.states[state_index]
 
-    def __iter__(self) -> Iterator[SubBenchState]:
+    def __iter__(self) -> Iterator[SubBenchmarkState]:
         return iter(self.states)
 
     def centers(
@@ -289,23 +336,39 @@ class SubBenchResult:
 
 
 class BenchmarkResult:
-    """Parsed result data from an NVBench JSON output file."""
+    """Container for benchmark result data parsed from NVBench JSON output.
+
+    Instances are created with :meth:`from_json` or :meth:`empty`. Direct
+    construction is intentionally disabled to keep creation paths explicit.
+    """
+
+    _construction_token = object()
 
     def __init__(
         self,
-        *,
-        json_path: str | os.PathLike[str],
-        metadata: Any = None,
+        token=None,
     ):
-        self.metadata = metadata
-        self.subbenches: dict[str, SubBenchResult] = {}
-        self._parse_json(json_path)
+        """Initialize an instance created by a BenchmarkResult class method.
+
+        Users should call :meth:`from_json` or :meth:`empty` instead. The token
+        argument is an implementation detail used to prevent direct
+        construction.
+        """
+        if token is not self._construction_token:
+            raise TypeError(
+                "BenchmarkResult cannot be constructed directly; "
+                "use BenchmarkResult.from_json() or BenchmarkResult.empty()"
+            )
+
+        self.metadata: Any = None
+        self.devices: dict[int, BenchmarkResultDevice] = {}
+        self.subbenches: dict[str, SubBenchmarkResult] = {}
 
     @classmethod
     def empty(cls: type[BenchmarkResultT], *, metadata: Any = None) -> BenchmarkResultT:
-        result = cls.__new__(cls)
+        """Create an empty result container with optional user metadata."""
+        result = cls(cls._construction_token)
         result.metadata = metadata
-        result.subbenches = {}
         return result
 
     @classmethod
@@ -315,14 +378,27 @@ class BenchmarkResult:
         *,
         metadata: Any = None,
     ) -> BenchmarkResultT:
-        return cls(json_path=json_path, metadata=metadata)
+        """Read benchmark result data from an NVBench JSON output file."""
+        result = cls.empty(metadata=metadata)
+        result._parse_json(json_path)
+        return result
 
     def _parse_json(self, json_path: str | os.PathLike[str]) -> None:
+        """Populate this instance from an NVBench JSON output file."""
         json_path = os.fspath(json_path)
         json_dir = os.path.dirname(os.path.abspath(json_path))
-        for bench in read_json(json_path)["benchmarks"]:
+        result_json = read_json(json_path)
+        self.devices = {
+            int(device["id"]): BenchmarkResultDevice(
+                id=int(device["id"]),
+                name=device["name"],
+                data=device,
+            )
+            for device in result_json.get("devices", [])
+        }
+        for bench in result_json["benchmarks"]:
             bench_name: str = bench["name"]
-            self.subbenches[bench_name] = SubBenchResult(bench, json_dir)
+            self.subbenches[bench_name] = SubBenchmarkResult(bench, json_dir)
 
     def __repr__(self) -> str:
         return str(self.__dict__)
@@ -336,16 +412,16 @@ class BenchmarkResult:
     def __contains__(self, subbench_name: object) -> bool:
         return subbench_name in self.subbenches
 
-    def __getitem__(self, subbench_name: str) -> SubBenchResult:
+    def __getitem__(self, subbench_name: str) -> SubBenchmarkResult:
         return self.subbenches[subbench_name]
 
     def keys(self) -> KeysView[str]:
         return self.subbenches.keys()
 
-    def values(self) -> ValuesView[SubBenchResult]:
+    def values(self) -> ValuesView[SubBenchmarkResult]:
         return self.subbenches.values()
 
-    def items(self) -> ItemsView[str, SubBenchResult]:
+    def items(self) -> ItemsView[str, SubBenchmarkResult]:
         return self.subbenches.items()
 
     def centers(

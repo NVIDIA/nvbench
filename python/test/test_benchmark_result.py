@@ -1,8 +1,25 @@
+# Copyright 2026 NVIDIA Corporation
+#
+#  Licensed under the Apache License, Version 2.0 with the LLVM exception
+#  (the "License"); you may not use this file except in compliance with
+#  the License.
+#
+#  You may obtain a copy of the License at
+#
+#      http://llvm.org/foundation/relicensing/LICENSE.txt
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import json
 import struct
 from dataclasses import dataclass
 
-import cuda.bench as bench
+import cuda.bench
+import cuda.bench.results as results
 import pytest
 
 
@@ -63,6 +80,9 @@ def test_benchmark_result_reads_jsonbin_relative_to_json_path(tmp_path):
                                     },
                                     {
                                         "tag": "nv/cold/bw/global/utilization",
+                                        "name": "BWUtil",
+                                        "hint": "percentage",
+                                        "description": "Global memory utilization",
                                         "data": [
                                             {
                                                 "name": "value",
@@ -98,10 +118,12 @@ def test_benchmark_result_reads_jsonbin_relative_to_json_path(tmp_path):
     )
 
     metadata = {"returncode": 0, "elapsed_seconds": 0.25}
-    default_result = bench.BenchmarkResult.from_json(json_fn)
-    result = bench.BenchmarkResult(json_path=json_fn, metadata=metadata)
+    default_result = results.BenchmarkResult.from_json(json_fn)
+    result = results.BenchmarkResult.from_json(json_fn, metadata=metadata)
 
-    assert bench.BenchmarkResult.__module__ == bench.__name__
+    assert results.BenchmarkResult.__module__ == results.__name__
+    assert results.BenchmarkResultSummary.__module__ == results.__name__
+    assert not hasattr(cuda.bench, "BenchmarkResult")
     assert default_result.metadata is None
     assert result.metadata is metadata
     subbench = result["copy"]
@@ -121,12 +143,19 @@ def test_benchmark_result_reads_jsonbin_relative_to_json_path(tmp_path):
         subbench[1]
     assert state.name() == "BlockSize[pow2]=8"
     assert state.bw == 0.75
-    assert state.summaries["nv/cold/bw/global/utilization"] == pytest.approx(0.75)
-    assert state.summaries["nv/json/bin:nv/cold/sample_times"] == {
+    bw_summary = state.summaries["nv/cold/bw/global/utilization"]
+    assert bw_summary.tag == "nv/cold/bw/global/utilization"
+    assert bw_summary.name == "BWUtil"
+    assert bw_summary.hint == "percentage"
+    assert bw_summary.hide is None
+    assert bw_summary.description == "Global memory utilization"
+    assert bw_summary.value == pytest.approx(0.75)
+    assert bw_summary["value"] == pytest.approx(0.75)
+    assert state.summaries["nv/json/bin:nv/cold/sample_times"].data == {
         "filename": "result.json-bin/0.bin",
         "size": 3,
     }
-    assert state.summaries["nv/json/freqs-bin:nv/cold/sample_freqs"] == {
+    assert state.summaries["nv/json/freqs-bin:nv/cold/sample_freqs"].data == {
         "filename": "result.json-freqs-bin/0.bin",
         "size": 3,
     }
@@ -154,13 +183,15 @@ def test_benchmark_result_reads_jsonbin_relative_to_json_path(tmp_path):
         result["missing"]
 
 
-def test_benchmark_result_json_path_is_required_keyword():
+def test_benchmark_result_constructor_is_private():
+    with pytest.raises(TypeError, match="from_json\\(\\).*empty\\(\\)"):
+        results.BenchmarkResult()
+    with pytest.raises(TypeError, match="from_json\\(\\).*empty\\(\\)"):
+        results.BenchmarkResult("result.json")
     with pytest.raises(TypeError):
-        bench.BenchmarkResult("result.json")
+        results.BenchmarkResult(metadata=None)
     with pytest.raises(TypeError):
-        bench.BenchmarkResult(metadata=None)
-    with pytest.raises(TypeError):
-        bench.BenchmarkResult(json_path="result.json", parse=False)
+        results.BenchmarkResult(json_path="result.json", parse=False)
 
 
 def test_benchmark_result_empty_does_not_read_json(tmp_path):
@@ -172,15 +203,15 @@ def test_benchmark_result_empty_does_not_read_json(tmp_path):
     metadata = RunMetadata(returncode=1, elapsed_seconds=0.25)
     missing_json = tmp_path / "missing.json"
 
-    result = bench.BenchmarkResult.empty(metadata=metadata)
+    result = results.BenchmarkResult.empty(metadata=metadata)
 
     assert result.metadata is metadata
     assert result.subbenches == {}
 
     with pytest.raises(FileNotFoundError):
-        bench.BenchmarkResult(json_path=missing_json, metadata=metadata)
+        results.BenchmarkResult.from_json(missing_json, metadata=metadata)
     with pytest.raises(FileNotFoundError):
-        bench.BenchmarkResult.from_json(json_path=missing_json, metadata=metadata)
+        results.BenchmarkResult.from_json(json_path=missing_json, metadata=metadata)
 
 
 def test_benchmark_result_accepts_no_axis_benchmark_with_recorded_binary_path(
@@ -251,7 +282,7 @@ def test_benchmark_result_accepts_no_axis_benchmark_with_recorded_binary_path(
 
     monkeypatch.chdir(tmp_path)
 
-    result = bench.BenchmarkResult(json_path="temp_data/axes_run1.json")
+    result = results.BenchmarkResult.from_json("temp_data/axes_run1.json")
 
     state = result.subbenches["simple"].states[0]
     assert state.name() == "Device=0"
@@ -263,7 +294,7 @@ def test_benchmark_result_accepts_no_axis_benchmark_with_recorded_binary_path(
 
 
 def test_benchmark_result_accepts_axis_value_input_string():
-    result = bench.SubBenchResult(
+    result = results.SubBenchmarkResult(
         {
             "name": "single_float64_axis",
             "axes": [
@@ -304,7 +335,7 @@ def test_benchmark_result_accepts_axis_value_input_string():
 
 
 def test_benchmark_result_ignores_skipped_state_with_no_summaries():
-    result = bench.SubBenchResult(
+    result = results.SubBenchmarkResult(
         {
             "name": "copy_sweep_grid_shape",
             "axes": [
@@ -451,7 +482,7 @@ def test_benchmark_result_uses_none_for_unavailable_samples(tmp_path):
         encoding="utf-8",
     )
 
-    result = bench.BenchmarkResult(json_path=json_fn)
+    result = results.BenchmarkResult.from_json(json_fn)
 
     states = result.subbenches["copy"].states
     assert states[0].samples is None
@@ -556,4 +587,4 @@ def test_benchmark_result_rejects_mismatched_sample_and_frequency_counts(tmp_pat
     )
 
     with pytest.raises(ValueError, match="sample count .* frequency count"):
-        bench.BenchmarkResult(json_path=json_fn)
+        results.BenchmarkResult.from_json(json_fn)

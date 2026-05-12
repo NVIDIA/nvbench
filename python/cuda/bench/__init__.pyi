@@ -25,30 +25,17 @@
 # stubs in generated out/cuda/nvbench/_nvbench.pyi
 # with definitions given here.
 
-from array import array
 from collections.abc import (
     Callable,
-    ItemsView,
-    Iterator,
-    KeysView,
     Sequence,
-    ValuesView,
 )
-from os import PathLike
 from typing import (
-    Any,
     Optional,
     Self,
     SupportsFloat,
     SupportsInt,
-    TypeVar,
     Union,
-    overload,
 )
-
-ResultT = TypeVar("ResultT")
-_SummaryValue = int | float | str
-_SummaryData = _SummaryValue | dict[str, _SummaryValue]
 
 class CudaStream:
     def __cuda_stream__(self) -> tuple[int, int]: ...
@@ -138,60 +125,3 @@ def register(fn: Callable[[State], None]) -> Benchmark: ...
 def run_all_benchmarks(argv: Sequence[str]) -> None: ...
 
 class NVBenchRuntimeError(RuntimeError): ...
-
-class SubBenchState:
-    state_name: str
-    summaries: dict[str, _SummaryData]
-    samples: array | None
-    frequencies: array | None
-    bw: float | None
-    point: dict[str, str]
-    def name(self) -> str: ...
-    def center(self, estimator: Callable[[array], ResultT]) -> ResultT | None: ...
-    def center_with_frequencies(
-        self, estimator: Callable[[array, array], ResultT]
-    ) -> ResultT | None: ...
-
-class SubBenchResult:
-    states: list[SubBenchState]
-    def __len__(self) -> int: ...
-    @overload
-    def __getitem__(self, state_index: int) -> SubBenchState: ...
-    @overload
-    def __getitem__(self, state_index: slice) -> list[SubBenchState]: ...
-    def __iter__(self) -> Iterator[SubBenchState]: ...
-    def centers(
-        self, estimator: Callable[[array], ResultT]
-    ) -> dict[str, ResultT | None]: ...
-    def centers_with_frequencies(
-        self, estimator: Callable[[array, array], ResultT]
-    ) -> dict[str, ResultT | None]: ...
-
-class BenchmarkResult:
-    metadata: Any
-    subbenches: dict[str, SubBenchResult]
-    def __init__(
-        self,
-        *,
-        json_path: str | PathLike[str],
-        metadata: Any = None,
-    ) -> None: ...
-    @classmethod
-    def empty(cls, *, metadata: Any = None) -> Self: ...
-    @classmethod
-    def from_json(
-        cls, json_path: str | PathLike[str], *, metadata: Any = None
-    ) -> Self: ...
-    def __len__(self) -> int: ...
-    def __iter__(self) -> Iterator[str]: ...
-    def __contains__(self, subbench_name: object) -> bool: ...
-    def __getitem__(self, subbench_name: str) -> SubBenchResult: ...
-    def keys(self) -> KeysView[str]: ...
-    def values(self) -> ValuesView[SubBenchResult]: ...
-    def items(self) -> ItemsView[str, SubBenchResult]: ...
-    def centers(
-        self, estimator: Callable[[array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]: ...
-    def centers_with_frequencies(
-        self, estimator: Callable[[array, array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]: ...
