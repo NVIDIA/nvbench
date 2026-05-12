@@ -196,6 +196,11 @@ def test_json_summary_formats_axis_values_like_markdown_printer():
             "type": "float64",
             "flags": "",
         },
+        "Nullable": {
+            "name": "Nullable",
+            "type": "int64",
+            "flags": "",
+        },
     }
 
     assert nvbench_json_summary.format_axis_value(
@@ -208,6 +213,62 @@ def test_json_summary_formats_axis_values_like_markdown_printer():
         {"name": "Duration", "type": "float64", "value": "0.123456789"},
         axes_by_name,
     ) == ("Duration", "0.12346")
+    assert nvbench_json_summary.format_axis_value(
+        {"name": "Nullable", "type": "int64", "value": None}, axes_by_name
+    ) == ("Nullable", "")
+
+
+def test_json_summary_formats_state_with_null_axis_values(tmp_path):
+    json_path = tmp_path / "result.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "devices": [
+                    {
+                        "id": 0,
+                        "name": "Test GPU",
+                    }
+                ],
+                "benchmarks": [
+                    {
+                        "name": "no_axes",
+                        "devices": [0],
+                        "axes": None,
+                        "states": [
+                            {
+                                "name": "Device=0",
+                                "device": 0,
+                                "axis_values": None,
+                                "summaries": [
+                                    {
+                                        "tag": "nv/cold/time/gpu/sample_size",
+                                        "name": "Samples",
+                                        "hint": "sample_size",
+                                        "data": [
+                                            {
+                                                "name": "value",
+                                                "type": "int64",
+                                                "value": "7",
+                                            }
+                                        ],
+                                    }
+                                ],
+                                "is_skipped": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = nvbench_json_summary.BenchmarkResult.from_json(json_path)
+    report = nvbench_json_summary.format_result(result)
+
+    assert "## no_axes" in report
+    assert "| Samples |" in report
+    assert "|      7x |" in report
 
 
 def test_json_summary_cli_writes_output_file(tmp_path):

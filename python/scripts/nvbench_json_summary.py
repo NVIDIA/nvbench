@@ -180,6 +180,9 @@ def format_axis_value(
     name = axis_value["name"]
     axis = axes_by_name.get(name, {})
     value = axis_value["value"]
+    if value is None:
+        return name, ""
+
     if axis.get("type") == "int64" and axis.get("flags") == "pow2":
         int_value = int(value)
         exponent = int_value.bit_length() - 1
