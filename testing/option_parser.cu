@@ -1204,6 +1204,36 @@ void test_min_samples()
   ASSERT(states[0].get_min_samples() == 12345);
 }
 
+void test_cold_warmup_runs()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--cold-warmup-runs", "12345"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_cold_warmup_runs() == 12345);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--cold-warmup-runs", "0"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_cold_warmup_runs() == 1);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--cold-warmup-runs", "-12345"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_cold_warmup_runs() == 1);
+  }
+}
+
 void test_skip_time()
 {
   nvbench::option_parser parser;
@@ -1212,6 +1242,16 @@ void test_skip_time()
 
   ASSERT(states.size() == 1);
   ASSERT(std::abs(states[0].get_skip_time() - 12345e2) < 1.);
+}
+
+void test_cold_max_warmup_walltime()
+{
+  nvbench::option_parser parser;
+  parser.parse({"--benchmark", "DummyBench", "--cold-max-warmup-walltime", "12345e2"});
+  const auto &states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(std::abs(states[0].get_cold_max_warmup_walltime() - 12345e2) < 1.);
 }
 
 void test_timeout()
@@ -1531,7 +1571,9 @@ try
   test_axis_before_benchmark();
 
   test_min_samples();
+  test_cold_warmup_runs();
   test_skip_time();
+  test_cold_max_warmup_walltime();
   test_timeout();
   test_output_parent_directories_created();
 

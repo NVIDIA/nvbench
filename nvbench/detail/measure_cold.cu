@@ -46,6 +46,8 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_run_once{exec_state.get_run_once()}
     , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
+    , m_cold_warmup_runs{exec_state.get_cold_warmup_runs()}
+    , m_cold_max_warmup_walltime{exec_state.get_cold_max_warmup_walltime()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
     , m_throttle_threshold(exec_state.get_throttle_threshold())

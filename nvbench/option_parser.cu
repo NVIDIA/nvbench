@@ -549,14 +549,14 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_axis(first[1]);
       first += 2;
     }
-    else if (arg == "--min-samples")
+    else if (arg == "--min-samples" || arg == "--cold-warmup-runs")
     {
       check_params(1);
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--throttle-threshold" ||
-             arg == "--throttle-recovery-delay")
+    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--cold-max-warmup-walltime" ||
+             arg == "--throttle-threshold" || arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -1015,6 +1015,10 @@ try
   {
     bench.set_min_samples(value);
   }
+  else if (prop_arg == "--cold-warmup-runs")
+  {
+    bench.set_cold_warmup_runs(value);
+  }
   else
   {
     NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
@@ -1127,6 +1131,10 @@ try
   else if (prop_arg == "--timeout")
   {
     bench.set_timeout(value);
+  }
+  else if (prop_arg == "--cold-max-warmup-walltime")
+  {
+    bench.set_cold_max_warmup_walltime(value);
   }
   else if (prop_arg == "--throttle-threshold")
   {
