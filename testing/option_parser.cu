@@ -22,6 +22,21 @@
 
 #include <fmt/format.h>
 
+#include <chrono>
+#include <iostream>
+#include <stdexcept>
+#include <system_error>
+
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#error "No <filesystem> or <experimental/filesystem> found."
+#endif
+
 #include "test_asserts.cuh"
 
 //==============================================================================
@@ -48,6 +63,40 @@ NVBENCH_BENCH_TYPES(TestBench, NVBENCH_TYPE_AXES(Ts, Us))
 
 namespace
 {
+
+struct temp_tree
+{
+  explicit temp_tree(fs::path root)
+      : root_path{std::move(root)}
+  {
+    std::error_code ec;
+    fs::remove_all(root_path, ec);
+    if (ec)
+    {
+      throw std::runtime_error{fmt::format("Failed to remove temporary directory `{}`: {}",
+                                           root_path.string(),
+                                           ec.message())};
+    }
+  }
+
+  ~temp_tree()
+  {
+    std::error_code ec;
+    fs::remove_all(root_path, ec);
+    if (ec)
+    {
+      std::cerr << "Failed to remove temporary directory `" << root_path.string()
+                << "`: " << ec.message() << "\n";
+    }
+  }
+
+  temp_tree(const temp_tree &)            = delete;
+  temp_tree(temp_tree &&)                 = delete;
+  temp_tree &operator=(const temp_tree &) = delete;
+  temp_tree &operator=(temp_tree &&)      = delete;
+
+  fs::path root_path;
+};
 
 [[nodiscard]] std::string states_to_string(const std::vector<nvbench::state> &states)
 {
@@ -1155,6 +1204,36 @@ void test_min_samples()
   ASSERT(states[0].get_min_samples() == 12345);
 }
 
+void test_cold_warmup_runs()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--cold-warmup-runs", "12345"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_cold_warmup_runs() == 12345);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--cold-warmup-runs", "0"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_cold_warmup_runs() == 1);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--cold-warmup-runs", "-12345"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_cold_warmup_runs() == 1);
+  }
+}
+
 void test_skip_time()
 {
   nvbench::option_parser parser;
@@ -1165,6 +1244,16 @@ void test_skip_time()
   ASSERT(std::abs(states[0].get_skip_time() - 12345e2) < 1.);
 }
 
+void test_cold_max_warmup_walltime()
+{
+  nvbench::option_parser parser;
+  parser.parse({"--benchmark", "DummyBench", "--cold-max-warmup-walltime", "12345e2"});
+  const auto &states = parser_to_states(parser);
+
+  ASSERT(states.size() == 1);
+  ASSERT(std::abs(states[0].get_cold_max_warmup_walltime() - 12345e2) < 1.);
+}
+
 void test_timeout()
 {
   nvbench::option_parser parser;
@@ -1173,6 +1262,22 @@ void test_timeout()
 
   ASSERT(states.size() == 1);
   ASSERT(std::abs(states[0].get_timeout() - 12345e2) < 1.);
+}
+
+void test_output_parent_directories_created()
+{
+  const auto unique_suffix = std::chrono::steady_clock::now().time_since_epoch().count();
+  const temp_tree temp{fs::temp_directory_path() /
+                       fmt::format("nvbench_option_parser_test_{}", unique_suffix)};
+  const auto output_path = temp.root_path / "nested" / "results.json";
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--json", output_path.string()});
+  }
+
+  ASSERT(fs::is_directory(output_path.parent_path()));
+  ASSERT(fs::exists(output_path));
 }
 
 void test_stopping_criterion()
@@ -1466,8 +1571,11 @@ try
   test_axis_before_benchmark();
 
   test_min_samples();
+  test_cold_warmup_runs();
   test_skip_time();
+  test_cold_max_warmup_walltime();
   test_timeout();
+  test_output_parent_directories_created();
 
   test_stopping_criterion();
 

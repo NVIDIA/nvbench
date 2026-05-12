@@ -166,6 +166,28 @@ struct benchmark_base
   }
   /// @}
 
+  /// Execute this many warmup runs before collecting cold measurement samples. @{
+  [[nodiscard]] nvbench::int64_t get_cold_warmup_runs() const { return m_cold_warmup_runs; }
+  benchmark_base &set_cold_warmup_runs(nvbench::int64_t cold_warmup_runs)
+  {
+    m_cold_warmup_runs = cold_warmup_runs > nvbench::int64_t{0} ? cold_warmup_runs
+                                                                : nvbench::int64_t{1};
+    return *this;
+  }
+  /// @}
+
+  /// Stop cold warmups after this many seconds of walltime. Negative values disable the limit. @{
+  [[nodiscard]] nvbench::float64_t get_cold_max_warmup_walltime() const
+  {
+    return m_cold_max_warmup_walltime;
+  }
+  benchmark_base &set_cold_max_warmup_walltime(nvbench::float64_t cold_max_warmup_walltime)
+  {
+    m_cold_max_warmup_walltime = cold_max_warmup_walltime;
+    return *this;
+  }
+  /// @}
+
   /// If true, the benchmark measurements only record CPU time and assume no GPU work is performed.
   /// @{
   [[nodiscard]] bool get_is_cpu_only() const { return m_is_cpu_only; }
@@ -321,7 +343,9 @@ protected:
   bool m_skip_batched{false};
 
   nvbench::int64_t m_min_samples{10};
+  nvbench::int64_t m_cold_warmup_runs{1};
 
+  nvbench::float64_t m_cold_max_warmup_walltime{-1.};
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};
 

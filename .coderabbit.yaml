@@ -1,0 +1,137 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+language: en-US
+tone_instructions: |
+  Be direct, technical, brief. No praise, emojis, headings, or collapsible menus.
+  Start each comment with one prefix:
+  - suggestion: optional improvement;
+  - important: must-fix/high-impact risk;
+  - critical: blocking correctness/security/data-loss.
+
+reviews:
+  profile: chill
+
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  poem: false
+  in_progress_fortune: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  collapse_walkthrough: true
+
+  # Reduce noisy status/details sections.
+  request_changes_workflow: false
+  review_status: false
+  review_details: false
+  enable_prompt_for_ai_agents: false
+
+  auto_review:
+    enabled: false
+    drafts: false
+    base_branches:
+      - "^main$"
+      - "^branch/[0-9]+\\.[0-9]+\\.x$"
+    ignore_usernames: ["copy-pr-bot", "dependabot[bot]", "github-actions[bot]", "nv-automation-bot"]
+
+  tools:
+    gitleaks:
+      enabled: true
+    markdownlint:
+      enabled: true
+    shellcheck:
+      enabled: true
+
+  # Keep Autofix available, but disable the other finishing touch actions.
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    title:
+      mode: "off"
+    description:
+      mode: "off"
+    issue_assessment:
+      mode: "off"
+    custom_checks: []
+
+  path_instructions:
+    - path: "nvbench/**/*"
+      instructions: |
+        Focus on benchmark correctness, CUDA stream/event ordering, synchronization behavior, error handling,
+        resource ownership, exception safety, public API compatibility, measurement semantics, statistical
+        summaries, and test coverage. Prefer comments that catch correctness, API, compile-time, runtime, or
+        measurement-regression risks.
+
+    - path: "python/**/*"
+      instructions: |
+        Focus on Python API stability, pybind11/C++ exception boundaries, GIL behavior, CUDA interoperability,
+        object lifetime, package metadata, type stubs, JSON/result parsing compatibility, and tests. Avoid
+        style-only comments already covered by Ruff, clang-format, or pre-commit.
+
+    - path: "testing/**/*"
+      instructions: |
+        Focus on whether tests cover observable behavior, remain deterministic, handle GPU availability and CUDA
+        version differences correctly, avoid excessive runtime, and exercise install/export/package boundaries
+        where relevant.
+
+    - path: "examples/**/*"
+      instructions: |
+        Check that examples are minimal, buildable, technically correct, use NVBench APIs idiomatically, avoid
+        excessive benchmark runtime, and demonstrate behavior that is useful to users.
+
+    - path: "docs/**/*"
+      instructions: |
+        For documentation changes, focus on technical accuracy, buildable examples, CLI/API consistency,
+        version compatibility, and whether behavior changes have matching documentation updates.
+
+    - path: "ci/**/*"
+      instructions: |
+        For CI and build scripts, focus on matrix correctness, targeted build/test behavior, cache/artifact
+        handling, environment setup, GPU availability assumptions, clear failures, and avoiding unnecessary
+        expensive jobs.
+
+    - path: ".github/**/*"
+      instructions: |
+        For GitHub workflows and repository automation, focus on permissions, event triggers, matrix generation,
+        status/check behavior, security boundaries, and avoiding unnecessary CI fanout.
+
+    - path: "cmake/**/*"
+      instructions: |
+        Focus on package exports, install-tree and build-tree compatibility, target usage requirements, static
+        and shared library behavior, CUDA architecture handling, and compatibility across supported CMake/CUDA
+        versions.
+
+    - path: "**/CMakeLists.txt"
+      instructions: |
+        Focus on target dependencies, exported usage requirements, option behavior, install rules, tests,
+        examples, Python package integration, and compatibility across supported CMake/CUDA versions.
+
+    - path: "CMakePresets.json"
+      instructions: |
+        Focus on preset inheritance, CI parity, cache variable correctness, CUDA compiler/toolchain assumptions,
+        and whether presets remain useful for local and automated builds.
+
+knowledge_base:
+  opt_out: false
+  code_guidelines:
+    filePatterns:
+      - ".clang-format"
+      - ".pre-commit-config.yaml"
+      - "README.md"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "pyproject.toml"
+      - "python/README.md"
+      - "python/pyproject.toml"
+      - "docs/benchmarks.md"
+      - "docs/cli_help.md"
+      - "docs/cli_help_axis.md"

@@ -48,8 +48,19 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <vector>
+
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#error "No <filesystem> or <experimental/filesystem> found."
+#endif
 
 namespace
 {
@@ -114,6 +125,18 @@ catch (const std::exception &)
 }
 
 void parse(std::string_view input, std::string &val) { val = input; }
+
+void create_output_parent_directories(const std::string &spec)
+{
+  const fs::path output_path{spec};
+  const fs::path parent_path = output_path.parent_path();
+  if (parent_path.empty())
+  {
+    return;
+  }
+
+  fs::create_directories(parent_path);
+}
 
 // Parses a list of values "<val1>, <val2>, <val3>, ..." into a vector:
 template <typename T>
@@ -526,14 +549,14 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_axis(first[1]);
       first += 2;
     }
-    else if (arg == "--min-samples")
+    else if (arg == "--min-samples" || arg == "--cold-warmup-runs")
     {
       check_params(1);
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--throttle-threshold" ||
-             arg == "--throttle-recovery-delay")
+    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--cold-max-warmup-walltime" ||
+             arg == "--throttle-threshold" || arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -622,6 +645,8 @@ std::ostream &option_parser::printer_spec_to_ostream(const std::string &spec)
   }
   else // spec is a filename:
   {
+    ::create_output_parent_directories(spec);
+
     auto file_stream = std::make_unique<std::ofstream>();
     // Throw if file can't open
     file_stream->exceptions(file_stream->exceptions() | std::ios::failbit);
@@ -990,6 +1015,10 @@ try
   {
     bench.set_min_samples(value);
   }
+  else if (prop_arg == "--cold-warmup-runs")
+  {
+    bench.set_cold_warmup_runs(value);
+  }
   else
   {
     NVBENCH_THROW(std::runtime_error, "Unrecognized property: `{}`", prop_arg);
@@ -1102,6 +1131,10 @@ try
   else if (prop_arg == "--timeout")
   {
     bench.set_timeout(value);
+  }
+  else if (prop_arg == "--cold-max-warmup-walltime")
+  {
+    bench.set_cold_max_warmup_walltime(value);
   }
   else if (prop_arg == "--throttle-threshold")
   {
