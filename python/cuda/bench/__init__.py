@@ -44,9 +44,7 @@ _NVBENCH_TEST_EXPORTS = (
     "_test_py_exception",
 )
 
-__all__ = [
-    *_NVBENCH_EXPORTS,
-]
+__all__ = list(_NVBENCH_EXPORTS)
 
 _nvbench_module = None
 
