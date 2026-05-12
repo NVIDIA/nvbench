@@ -117,14 +117,18 @@ def parse_summary(summary: dict) -> BenchmarkResultSummary:
     )
 
 
+def get_state_summaries(state: dict) -> list[dict]:
+    return state.get("summaries") or []
+
+
 def parse_summaries(state: dict) -> dict[str, BenchmarkResultSummary]:
     return {
-        summary["tag"]: parse_summary(summary) for summary in state["summaries"] or []
+        summary["tag"]: parse_summary(summary) for summary in get_state_summaries(state)
     }
 
 
 def parse_binary_meta(state: dict, tag: str) -> tuple[int | None, str | None]:
-    summaries = state["summaries"]
+    summaries = get_state_summaries(state)
     if not summaries:
         return None, None
 
@@ -251,7 +255,17 @@ class SubBenchmarkState:
         for axis in self.axis_values:
             axis_name = axis["name"]
             name = axes_names[axis_name]
-            value = axes_values[axis_name][axis["value"]]
+            axis_value_map = axes_values[axis_name]
+            if "value" in axis:
+                key = str(axis["value"])
+                value = axis_value_map.get(key, key)
+            else:
+                input_string = axis.get("input_string")
+                value = (
+                    axis_value_map.get(input_string, input_string)
+                    if input_string is not None
+                    else ""
+                )
             self.point[name] = value
 
     def __repr__(self) -> str:

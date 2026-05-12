@@ -210,7 +210,7 @@ def add_state_row(
         table.add_cell(row, f"axis:{header}", header, value)
 
     for summary in state.summaries.values():
-        if summary.hide is not None:
+        if summary.hide:
             continue
         header = summary.name if summary.name is not None else summary.tag
         table.add_cell(row, summary.tag, header, format_summary(summary))

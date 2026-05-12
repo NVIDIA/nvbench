@@ -375,6 +375,76 @@ def test_benchmark_result_accepts_axis_value_input_string():
     assert state.point == {"Duration": "0"}
 
 
+def test_benchmark_result_normalizes_axis_value_lookup_key():
+    result = results.SubBenchmarkResult(
+        {
+            "name": "num_blocks",
+            "axes": [
+                {
+                    "name": "NumBlocks",
+                    "type": "int64",
+                    "flags": "",
+                    "values": [
+                        {
+                            "input_string": "64",
+                            "description": "",
+                            "value": 64,
+                        },
+                        {
+                            "input_string": "default",
+                            "description": "",
+                            "value": None,
+                        },
+                    ],
+                }
+            ],
+            "states": [
+                {
+                    "name": "Device=0 NumBlocks=64",
+                    "axis_values": [
+                        {
+                            "name": "NumBlocks",
+                            "type": "int64",
+                            "value": 64,
+                        }
+                    ],
+                    "summaries": [],
+                    "is_skipped": False,
+                },
+                {
+                    "name": "Device=0 NumBlocks=default",
+                    "axis_values": [
+                        {
+                            "name": "NumBlocks",
+                            "type": "int64",
+                            "value": None,
+                        }
+                    ],
+                    "summaries": [],
+                    "is_skipped": False,
+                },
+                {
+                    "name": "Device=0 NumBlocks=64",
+                    "axis_values": [
+                        {
+                            "name": "NumBlocks",
+                            "type": "int64",
+                            "input_string": "64",
+                        }
+                    ],
+                    "summaries": [],
+                    "is_skipped": False,
+                },
+            ],
+        },
+        "",
+    )
+
+    assert result.states[0].point == {"NumBlocks": "64"}
+    assert result.states[1].point == {"NumBlocks": "default"}
+    assert result.states[2].point == {"NumBlocks": "64"}
+
+
 def test_benchmark_result_ignores_skipped_state_with_no_summaries():
     result = results.SubBenchmarkResult(
         {
@@ -412,6 +482,36 @@ def test_benchmark_result_ignores_skipped_state_with_no_summaries():
 
     assert len(result.states) == 1
     assert result.states[0].name() == "BlockSize[pow2]=6"
+
+
+def test_benchmark_result_uses_empty_summaries_when_field_is_missing():
+    result = results.SubBenchmarkResult(
+        {
+            "name": "copy_sweep_grid_shape",
+            "axes": [block_size_axis(8)],
+            "states": [
+                {
+                    "name": "Device=0 BlockSize=2^8",
+                    "axis_values": [
+                        {
+                            "name": "BlockSize",
+                            "type": "int64",
+                            "value": "256",
+                        }
+                    ],
+                    "is_skipped": False,
+                },
+            ],
+        },
+        "",
+    )
+
+    state = result.states[0]
+    assert state.name() == "BlockSize[pow2]=8"
+    assert state.summaries == {}
+    assert state.samples is None
+    assert state.frequencies is None
+    assert state.bw is None
 
 
 def test_benchmark_result_uses_none_for_unavailable_samples(tmp_path):

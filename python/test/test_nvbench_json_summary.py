@@ -127,6 +127,7 @@ def write_result_json(path):
                                         "tag": "nv/cold/bw/global/utilization",
                                         "name": "BWUtil",
                                         "hint": "percentage",
+                                        "hide": False,
                                         "data": [
                                             {
                                                 "name": "value",
