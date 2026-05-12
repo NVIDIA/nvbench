@@ -49,7 +49,7 @@ namespace fs = std::filesystem;
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 #else
-static_assert(false, "No <filesystem> or <experimental/filesystem> found.");
+#error "No <filesystem> or <experimental/filesystem> found."
 #endif
 
 #if NVBENCH_CPP_DIALECT >= 2020
