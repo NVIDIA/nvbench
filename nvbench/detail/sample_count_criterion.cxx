@@ -18,6 +18,8 @@
 
 #include <nvbench/detail/sample_count_criterion.cuh>
 
+#include <stdexcept>
+
 namespace nvbench::detail
 {
 
@@ -25,7 +27,16 @@ sample_count_criterion::sample_count_criterion()
     : stopping_criterion_base{"sample-count", {{"target-samples", nvbench::int64_t{100}}}}
 {}
 
-void sample_count_criterion::do_initialize() { m_total_samples = 0; }
+void sample_count_criterion::do_initialize()
+{
+  m_total_samples           = 0;
+  const auto target_samples = m_params.get_int64("target-samples");
+  if (target_samples <= 0)
+  {
+    throw std::invalid_argument{"sample-count stopping criterion requires target-samples to be "
+                                "greater than zero"};
+  }
+}
 
 void sample_count_criterion::do_add_measurement(nvbench::float64_t) { ++m_total_samples; }
 

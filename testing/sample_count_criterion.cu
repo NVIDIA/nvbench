@@ -54,8 +54,36 @@ void test_custom_target_samples()
   ASSERT(criterion.is_finished());
 }
 
+void test_target_samples_one()
+{
+  nvbench::criterion_params params;
+  params.set_int64("target-samples", 1);
+
+  nvbench::detail::sample_count_criterion criterion;
+  criterion.initialize(params);
+
+  ASSERT(!criterion.is_finished());
+
+  criterion.add_measurement(1.0);
+  ASSERT(criterion.is_finished());
+}
+
+void test_non_positive_target_samples()
+{
+  for (const auto target_samples : {0, -1})
+  {
+    nvbench::criterion_params params;
+    params.set_int64("target-samples", target_samples);
+
+    nvbench::detail::sample_count_criterion criterion;
+    ASSERT_THROWS_ANY(criterion.initialize(params));
+  }
+}
+
 int main()
 {
   test_default_target_samples();
   test_custom_target_samples();
+  test_target_samples_one();
+  test_non_positive_target_samples();
 }
