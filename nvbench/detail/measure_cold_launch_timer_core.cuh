@@ -18,9 +18,9 @@ namespace nvbench::detail
 
 struct measure_cold_launch_timer_config
 {
-  bool disable_blocking_kernel{false};
-  bool run_once{false};
-  bool check_throttling{true};
+  bool disable_blocking_kernel = false;
+  bool run_once                = false;
+  bool check_throttling        = true;
 };
 
 template <typename Measure>
@@ -170,14 +170,14 @@ public:
 
 private:
   Measure &m_measure;
-  bool m_disable_blocking_kernel;
-  bool m_run_once;
-  bool m_check_throttling;
-  bool m_cpu_timer_started{false};
-  bool m_stream_unblock_armed{false};
-  bool m_gpu_frequency_cleanup_armed{false};
-  bool m_profiler_started{false};
-  bool m_cuda_timer_started{false};
+  bool m_disable_blocking_kernel     = false;
+  bool m_run_once                    = false;
+  bool m_check_throttling            = true;
+  bool m_cpu_timer_started           = false;
+  bool m_stream_unblock_armed        = false;
+  bool m_gpu_frequency_cleanup_armed = false;
+  bool m_profiler_started            = false;
+  bool m_cuda_timer_started          = false;
 };
 
 } // namespace nvbench::detail
