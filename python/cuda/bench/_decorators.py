@@ -289,6 +289,28 @@ class _OptionDecorators:
             lambda benchmark: benchmark.set_min_samples(count)
         )
 
+    def cold_warmup_runs(self, count: int) -> Callable[[_F], _F]:
+        """Set the number of cold measurement warmup runs."""
+        return self.set_cold_warmup_runs(count)
+
+    def set_cold_warmup_runs(self, count: int) -> Callable[[_F], _F]:
+        """Set the number of cold measurement warmup runs."""
+        return _append_benchmark_action(
+            lambda benchmark: benchmark.set_cold_warmup_runs(count)
+        )
+
+    def cold_max_warmup_walltime(self, duration_seconds: float) -> Callable[[_F], _F]:
+        """Set the maximum walltime spent on cold measurement warmup runs."""
+        return self.set_cold_max_warmup_walltime(duration_seconds)
+
+    def set_cold_max_warmup_walltime(
+        self, duration_seconds: float
+    ) -> Callable[[_F], _F]:
+        """Set the maximum walltime spent on cold measurement warmup runs."""
+        return _append_benchmark_action(
+            lambda benchmark: benchmark.set_cold_max_warmup_walltime(duration_seconds)
+        )
+
     def is_cpu_only(self, value: bool = True) -> Callable[[_F], _F]:
         """Set whether the benchmark only performs CPU work."""
         return self.set_is_cpu_only(value)

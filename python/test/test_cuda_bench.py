@@ -132,6 +132,10 @@ def test_decorator_docstrings():
     obj_has_docstring_check(bench.option.set_criterion_param_string)
     obj_has_docstring_check(bench.option.min_samples)
     obj_has_docstring_check(bench.option.set_min_samples)
+    obj_has_docstring_check(bench.option.cold_warmup_runs)
+    obj_has_docstring_check(bench.option.set_cold_warmup_runs)
+    obj_has_docstring_check(bench.option.cold_max_warmup_walltime)
+    obj_has_docstring_check(bench.option.set_cold_max_warmup_walltime)
     obj_has_docstring_check(bench.option.is_cpu_only)
     obj_has_docstring_check(bench.option.set_is_cpu_only)
 
@@ -149,6 +153,14 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
             self.calls.append(("min_samples", count))
             return self
 
+        def set_cold_warmup_runs(self, count):
+            self.calls.append(("cold_warmup_runs", count))
+            return self
+
+        def set_cold_max_warmup_walltime(self, duration_seconds):
+            self.calls.append(("cold_max_warmup_walltime", duration_seconds))
+            return self
+
     fake_benchmark = FakeBenchmark()
     registered_functions = []
 
@@ -161,6 +173,8 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
     @bench.register()
     @bench.axis.int64("Elements", [1, 2, 3])
     @bench.option.min_samples(11)
+    @bench.option.cold_warmup_runs(7)
+    @bench.option.cold_max_warmup_walltime(0.25)
     def decorated(state: bench.State):
         pass
 
@@ -168,6 +182,8 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
     assert fake_benchmark.calls == [
         ("int64", "Elements", [1, 2, 3]),
         ("min_samples", 11),
+        ("cold_warmup_runs", 7),
+        ("cold_max_warmup_walltime", 0.25),
     ]
     assert callable(decorated)
 
@@ -241,6 +257,10 @@ def test_State_doc():
     obj_has_docstring_check(cl.get_int64)
     obj_has_docstring_check(cl.get_float64)
     obj_has_docstring_check(cl.get_string)
+    obj_has_docstring_check(cl.get_cold_warmup_runs)
+    obj_has_docstring_check(cl.set_cold_warmup_runs)
+    obj_has_docstring_check(cl.get_cold_max_warmup_walltime)
+    obj_has_docstring_check(cl.set_cold_max_warmup_walltime)
     obj_has_docstring_check(cl.skip)
 
 
@@ -269,3 +289,5 @@ def test_Benchmark_doc():
     obj_has_docstring_check(cl.add_int64_power_of_two_axis)
     obj_has_docstring_check(cl.add_float64_axis)
     obj_has_docstring_check(cl.add_string_axis)
+    obj_has_docstring_check(cl.set_cold_warmup_runs)
+    obj_has_docstring_check(cl.set_cold_max_warmup_walltime)
