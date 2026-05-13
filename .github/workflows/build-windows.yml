@@ -1,0 +1,170 @@
+name: build windows
+
+defaults:
+  run:
+    shell: powershell
+
+on:
+  workflow_call:
+    inputs:
+      cuda:
+        type: string
+        required: false
+        default: "13.0"
+      host:
+        type: string
+        required: false
+        default: "cl14.44"
+      devcontainer_version:
+        type: string
+        required: false
+        default: "25.12"
+      image:
+        type: string
+        required: false
+        default: ""
+      runner:
+        type: string
+        required: false
+        default: "windows-amd64-cpu16"
+      std:
+        type: string
+        required: false
+        default: "17"
+      arch:
+        type: string
+        required: false
+        default: ""
+  workflow_dispatch:
+    inputs:
+      cuda:
+        description: "CUDA Toolkit version"
+        type: string
+        required: false
+        default: "13.0"
+      host:
+        description: "Host compiler tag"
+        type: string
+        required: false
+        default: "cl14.44"
+      devcontainer_version:
+        description: "RAPIDS devcontainer version"
+        type: string
+        required: false
+        default: "25.12"
+      image:
+        description: "Windows devcontainer image override"
+        type: string
+        required: false
+        default: ""
+      runner:
+        description: "Windows runner"
+        type: string
+        required: false
+        default: "windows-amd64-cpu16"
+      std:
+        description: "C++/CUDA standard"
+        type: choice
+        options: ["17", "20"]
+        required: false
+        default: "17"
+      arch:
+        description: "CMAKE_CUDA_ARCHITECTURES override"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build Windows CUDA${{ inputs.cuda }} ${{ inputs.host }} C++${{ inputs.std }}
+    runs-on: ${{ github.repository == 'NVIDIA/nvbench' && inputs.runner || 'windows-latest' }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      WINDOWS_CI_IMAGE: ${{ inputs.image != '' && inputs.image || format('rapidsai/devcontainers:{0}-cuda{1}-{2}', inputs.devcontainer_version, inputs.cuda, inputs.host) }}
+      SCCACHE_BUCKET: rapids-sccache-devs
+      SCCACHE_REGION: us-east-2
+      SCCACHE_IDLE_TIMEOUT: "0"
+      SCCACHE_S3_USE_SSL: "true"
+      SCCACHE_S3_NO_CREDENTIALS: "false"
+      SCCACHE_S3_USE_PREPROCESSOR_CACHE_MODE: "true"
+      SCCACHE_S3_PREPROCESSOR_CACHE_KEY_PREFIX: nvbench-preprocessor-cache
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Add NVCC problem matcher
+        run: |
+          echo "::add-matcher::.github/problem-matchers/problem-matcher.json"
+
+      - name: Get AWS credentials for sccache bucket
+        if: ${{ github.repository == 'NVIDIA/nvbench' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::279114543810:role/gha-oidc-NVIDIA
+          aws-region: us-east-2
+          role-duration-seconds: 43200
+
+      - name: Fetch Windows devcontainer image
+        run: |
+          docker pull "$env:WINDOWS_CI_IMAGE"
+
+      - name: Build NVBench
+        env:
+          NVBENCH_WINDOWS_STD: ${{ inputs.std }}
+          NVBENCH_WINDOWS_ARCH: ${{ inputs.arch }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $hostRepo = "${{ github.workspace }}".Replace('\', '/')
+          $containerRepo = "C:/nvbench"
+          $script = Join-Path $env:RUNNER_TEMP "nvbench-windows-ci.ps1"
+
+          @"
+          `$ErrorActionPreference = 'Stop'
+          git config --global --add safe.directory '$containerRepo'
+          & '$containerRepo/ci/windows/build_nvbench.ps1' -std '$env:NVBENCH_WINDOWS_STD' -arch '$env:NVBENCH_WINDOWS_ARCH'
+          exit `$LASTEXITCODE
+          "@ | Set-Content -Path $script -Encoding UTF8
+
+          $containerScript = "$containerRepo/nvbench-windows-ci.ps1"
+          Copy-Item $script "${{ github.workspace }}\nvbench-windows-ci.ps1"
+
+          $dockerArgs = @(
+            "run", "--rm",
+            "--mount", "type=bind,source=$hostRepo,target=$containerRepo",
+            "--workdir", $containerRepo,
+            "--isolation=process",
+            "--env", "AWS_ACCESS_KEY_ID=$env:AWS_ACCESS_KEY_ID",
+            "--env", "AWS_SECRET_ACCESS_KEY=$env:AWS_SECRET_ACCESS_KEY",
+            "--env", "AWS_SESSION_TOKEN=$env:AWS_SESSION_TOKEN",
+            "--env", "CI=true",
+            "--env", "GITHUB_ACTIONS=$env:GITHUB_ACTIONS",
+            "--env", "GITHUB_REF_NAME=$env:GITHUB_REF_NAME",
+            "--env", "GITHUB_REPOSITORY=$env:GITHUB_REPOSITORY",
+            "--env", "GITHUB_RUN_ID=$env:GITHUB_RUN_ID",
+            "--env", "GITHUB_SHA=$env:GITHUB_SHA",
+            "--env", "SCCACHE_BUCKET=$env:SCCACHE_BUCKET",
+            "--env", "SCCACHE_IDLE_TIMEOUT=$env:SCCACHE_IDLE_TIMEOUT",
+            "--env", "SCCACHE_REGION=$env:SCCACHE_REGION",
+            "--env", "SCCACHE_S3_NO_CREDENTIALS=$env:SCCACHE_S3_NO_CREDENTIALS",
+            "--env", "SCCACHE_S3_PREPROCESSOR_CACHE_KEY_PREFIX=$env:SCCACHE_S3_PREPROCESSOR_CACHE_KEY_PREFIX",
+            "--env", "SCCACHE_S3_USE_PREPROCESSOR_CACHE_MODE=$env:SCCACHE_S3_USE_PREPROCESSOR_CACHE_MODE",
+            "--env", "SCCACHE_S3_USE_SSL=$env:SCCACHE_S3_USE_SSL",
+            "$env:WINDOWS_CI_IMAGE",
+            "powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass",
+            "-File", $containerScript
+          )
+
+          docker @dockerArgs
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }

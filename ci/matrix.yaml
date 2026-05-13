@@ -24,6 +24,9 @@ llvm18: &llvm18 { name: 'llvm', version: '18', exe: 'clang++' }
 llvm19: &llvm19 { name: 'llvm', version: '19', exe: 'clang++' }
 llvm20: &llvm20 { name: 'llvm', version: '20', exe: 'clang++' }
 
+# MSVC compiler configurations
+msvc2022: &msvc2022 { name: 'cl', version: '14.44', exe: 'cl' }
+
 # Each environment below will generate a unique build/test job
 # See the "compute-matrix" job in the workflow for how this is parsed and used
 # cuda: The CUDA Toolkit version
@@ -68,6 +71,8 @@ pull_request:
     - {cuda: *cuda_curr_max, compiler: *llvm18, cpu: 'amd64'}
     - {cuda: *cuda_curr_max, compiler: *llvm19, cpu: 'amd64'}
     - {cuda: *cuda_curr_max, compiler: *llvm20, cpu: 'amd64'}
+  windows:
+    - {cuda: *cuda_curr_max, compiler: *msvc2022, cpu: 'amd64', std: '17'}
 
 # Python wheel builds
 python_wheels:
