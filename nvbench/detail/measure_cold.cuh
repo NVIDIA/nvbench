@@ -193,7 +193,7 @@ struct measure_cold_base::kernel_launch_timer
 
   __forceinline__ void cpu_timer_stop() noexcept { m_measure.m_cpu_timer.stop(); }
 
-  __forceinline__ void cpu_timer_stop_noexcept() noexcept { m_measure.m_cpu_timer.stop(); }
+  __forceinline__ void cpu_timer_stop_noexcept() noexcept { this->cpu_timer_stop(); }
 
   __forceinline__ void block_stream() { m_measure.block_stream(); }
 
