@@ -167,6 +167,19 @@ def test_json_summary_formats_nvbench_style_markdown(tmp_path):
     assert "Min GPU Time" not in report
 
 
+def test_json_summary_formats_null_summary_value_as_blank():
+    summary = nvbench_json_summary.BenchmarkResultSummary(
+        tag="nv/cold/time/gpu/stdev/relative",
+        name="Noise",
+        hint="percentage",
+        hide=None,
+        description=None,
+        data={"value": None},
+    )
+
+    assert nvbench_json_summary.format_summary(summary) == ""
+
+
 def test_json_summary_formats_axis_values_like_markdown_printer():
     axes_by_name = {
         "BlockSize": {
@@ -257,6 +270,99 @@ def test_json_summary_formats_state_with_null_axis_values(tmp_path):
     assert "## no_axes" in report
     assert "| Samples |" in report
     assert "|      7x |" in report
+
+
+def test_json_summary_omits_skipped_states(tmp_path):
+    json_path = tmp_path / "result.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "devices": [
+                    {
+                        "id": 0,
+                        "name": "Test GPU",
+                    }
+                ],
+                "benchmarks": [
+                    {
+                        "name": "copy",
+                        "devices": [0],
+                        "axes": [
+                            {
+                                "name": "BlockSize",
+                                "type": "int64",
+                                "flags": "pow2",
+                                "values": [
+                                    {
+                                        "input_string": "8",
+                                        "description": "2^8 = 256",
+                                        "value": 256,
+                                    },
+                                    {
+                                        "input_string": "9",
+                                        "description": "2^9 = 512",
+                                        "value": 512,
+                                    },
+                                ],
+                            }
+                        ],
+                        "states": [
+                            {
+                                "name": "Device=0 BlockSize=2^8",
+                                "device": 0,
+                                "axis_values": [
+                                    {
+                                        "name": "BlockSize",
+                                        "type": "int64",
+                                        "value": "256",
+                                    }
+                                ],
+                                "summaries": None,
+                                "is_skipped": True,
+                                "skip_reason": "Deadlock detected",
+                            },
+                            {
+                                "name": "Device=0 BlockSize=2^9",
+                                "device": 0,
+                                "axis_values": [
+                                    {
+                                        "name": "BlockSize",
+                                        "type": "int64",
+                                        "value": "512",
+                                    }
+                                ],
+                                "summaries": [
+                                    {
+                                        "tag": "nv/cold/time/gpu/sample_size",
+                                        "name": "Samples",
+                                        "hint": "sample_size",
+                                        "data": [
+                                            {
+                                                "name": "value",
+                                                "type": "int64",
+                                                "value": "3",
+                                            }
+                                        ],
+                                    }
+                                ],
+                                "is_skipped": False,
+                            },
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = nvbench_json_summary.BenchmarkResult.from_json(json_path)
+    report = nvbench_json_summary.format_result(result)
+
+    assert "Skip Reason" not in report
+    assert "Deadlock detected" not in report
+    assert "2^8 = 256" not in report
+    assert "2^9 = 512" in report
+    assert "3x" in report
 
 
 def test_json_summary_cli_writes_output_file(tmp_path):

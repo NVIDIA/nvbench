@@ -8,7 +8,7 @@ from typing import Any, TypeVar, overload
 
 ResultT = TypeVar("ResultT")
 BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
-_SummaryValue = int | float | str
+_SummaryValue = int | float | str | None
 
 class BenchmarkResultDevice:
     id: int

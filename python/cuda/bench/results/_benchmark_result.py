@@ -21,7 +21,7 @@ __all__ = [
 
 ResultT = TypeVar("ResultT")
 BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
-_SummaryValue = int | float | str
+_SummaryValue = int | float | str | None
 
 
 @dataclass(frozen=True)
@@ -79,16 +79,49 @@ def extract_size(summary: dict) -> int:
         ) from e
 
 
-def parse_summary_value(value_data: dict) -> _SummaryValue:
-    value_type = value_data["type"]
+def parse_summary_value(
+    value_data: dict,
+    *,
+    summary_tag: str,
+    field_name: str,
+) -> _SummaryValue:
+    value_type = value_data.get("type")
+    if "value" not in value_data:
+        raise ValueError(
+            f"summary {summary_tag!r} field {field_name!r} is missing value"
+        )
+
     value = value_data["value"]
+    if value is None:
+        return None
+
     if value_type == "int64":
-        return int(value)
+        try:
+            return int(value)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"summary {summary_tag!r} field {field_name!r} value {value!r} "
+                "is not an int64"
+            ) from e
     if value_type == "float64":
-        return float(value)
+        try:
+            return float(value)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"summary {summary_tag!r} field {field_name!r} value {value!r} "
+                "is not a float64"
+            ) from e
     if value_type == "string":
+        if not isinstance(value, str):
+            raise ValueError(
+                f"summary {summary_tag!r} field {field_name!r} value {value!r} "
+                "is not a string"
+            )
         return value
-    raise ValueError(f"unsupported summary value type: {value_type}")
+    raise ValueError(
+        f"summary {summary_tag!r} field {field_name!r} has unsupported "
+        f"value type {value_type!r}"
+    )
 
 
 @dataclass(frozen=True)
@@ -116,12 +149,22 @@ class BenchmarkResultSummary:
 
 
 def parse_summary(summary: dict) -> BenchmarkResultSummary:
-    data = {
-        value_data["name"]: parse_summary_value(value_data)
-        for value_data in summary.get("data", [])
-    }
+    summary_tag = summary["tag"]
+    data = {}
+    for value_data in summary.get("data", []):
+        field_name = value_data.get("name")
+        if not isinstance(field_name, str):
+            raise ValueError(
+                f"summary {summary_tag!r} has a data entry with a missing "
+                "or non-string name"
+            )
+        data[field_name] = parse_summary_value(
+            value_data,
+            summary_tag=summary_tag,
+            field_name=field_name,
+        )
     return BenchmarkResultSummary(
-        tag=summary["tag"],
+        tag=summary_tag,
         name=summary.get("name"),
         hint=summary.get("hint"),
         hide=summary.get("hide"),
@@ -324,12 +367,10 @@ class SubBenchmarkResult:
             axes_names[short_name] = full_name
             axes_values[short_name] = this_axis_values
 
-        self.states = []
-        for state in bench["states"]:
-            if not state.get("is_skipped", False):
-                self.states.append(
-                    SubBenchmarkState(state, axes_names, axes_values, json_dir)
-                )
+        self.states = [
+            SubBenchmarkState(state, axes_names, axes_values, json_dir)
+            for state in bench["states"]
+        ]
 
     def __repr__(self) -> str:
         return str(self.__dict__)

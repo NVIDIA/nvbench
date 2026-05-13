@@ -143,6 +143,8 @@ def format_percentage(summary: BenchmarkResultSummary) -> str:
 
 
 def format_summary(summary: BenchmarkResultSummary) -> str:
+    if summary.value is None:
+        return ""
     if summary.hint == "duration":
         return format_duration(summary)
     if summary.hint == "item_rate":
@@ -215,6 +217,8 @@ def format_benchmark(result: BenchmarkResult, bench: SubBenchmarkResult) -> str:
         table = MarkdownTable()
         row = 0
         for state in bench.states:
+            if state.is_skipped:
+                continue
             if device_id is not None and state.device != device_id:
                 continue
             add_state_row(table, row, state, bench)

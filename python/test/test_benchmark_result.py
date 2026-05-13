@@ -207,6 +207,94 @@ def test_state_stores_rich_summary_metadata(sample_state):
     }
 
 
+def test_state_preserves_null_summary_values(tmp_path):
+    json_fn = tmp_path / "result.json"
+    write_json(
+        json_fn,
+        {
+            "benchmarks": [
+                {
+                    "name": "copy",
+                    "axes": [],
+                    "states": [
+                        {
+                            "name": "Device=0",
+                            "axis_values": [],
+                            "summaries": [
+                                {
+                                    "tag": "nv/cold/time/gpu/stdev/relative",
+                                    "name": "Noise",
+                                    "hint": "percentage",
+                                    "data": [
+                                        {
+                                            "name": "value",
+                                            "type": "float64",
+                                            "value": None,
+                                        }
+                                    ],
+                                }
+                            ],
+                            "is_skipped": False,
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+
+    summary = results.BenchmarkResult.from_json(json_fn)["copy"][0].summaries[
+        "nv/cold/time/gpu/stdev/relative"
+    ]
+
+    assert summary.value is None
+    assert summary["value"] is None
+
+
+def test_state_reports_malformed_numeric_summary_values(tmp_path):
+    json_fn = tmp_path / "result.json"
+    write_json(
+        json_fn,
+        {
+            "benchmarks": [
+                {
+                    "name": "copy",
+                    "axes": [],
+                    "states": [
+                        {
+                            "name": "Device=0",
+                            "axis_values": [],
+                            "summaries": [
+                                {
+                                    "tag": "nv/cold/time/gpu/mean",
+                                    "name": "GPU Time",
+                                    "hint": "duration",
+                                    "data": [
+                                        {
+                                            "name": "value",
+                                            "type": "float64",
+                                            "value": "not-a-number",
+                                        }
+                                    ],
+                                }
+                            ],
+                            "is_skipped": False,
+                        }
+                    ],
+                }
+            ]
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "summary 'nv/cold/time/gpu/mean' field 'value' "
+            "value 'not-a-number' is not a float64"
+        ),
+    ):
+        results.BenchmarkResult.from_json(json_fn)
+
+
 def test_state_loads_samples_and_frequencies(sample_state):
     assert sample_state.samples is not None
     assert list(sample_state.samples) == pytest.approx([1.0, 2.0, 4.0])
@@ -432,7 +520,7 @@ def test_benchmark_result_normalizes_axis_value_lookup_key():
     assert result.states[2].point == {"NumBlocks": "64"}
 
 
-def test_benchmark_result_ignores_skipped_state_with_no_summaries():
+def test_benchmark_result_preserves_skipped_state_with_no_summaries():
     result = results.SubBenchmarkResult(
         {
             "name": "copy_sweep_grid_shape",
@@ -467,8 +555,14 @@ def test_benchmark_result_ignores_skipped_state_with_no_summaries():
         "",
     )
 
-    assert len(result.states) == 1
-    assert result.states[0].name() == "BlockSize[pow2]=6"
+    assert len(result.states) == 2
+    assert result.states[0].name() == "BlockSize[pow2]=8"
+    assert result.states[0].is_skipped is True
+    assert result.states[0].summaries == {}
+    assert result.states[0].samples is None
+    assert result.states[0].frequencies is None
+    assert result.states[1].name() == "BlockSize[pow2]=6"
+    assert result.states[1].is_skipped is False
 
 
 def test_benchmark_result_uses_empty_summaries_when_field_is_missing():
