@@ -216,13 +216,17 @@ public:
 
     if (!m_disable_blocking_kernel)
     {
+      // Arm cleanup before queueing the blocking kernel. If block_stream throws
+      // after queueing work, cleanup_noexcept must still unblock the stream.
+      m_stream_unblock_armed = true;
       m_measure.block_stream();
-      m_stream_blocked = true;
     }
     if (m_check_throttling)
     {
+      // Arm cleanup before queueing timestamp work. If gpu_frequency_start
+      // throws after queueing work, cleanup_noexcept must still sync the stream.
+      m_gpu_frequency_cleanup_armed = true;
       m_measure.gpu_frequency_start();
-      m_gpu_frequency_started = true;
     }
     if (m_run_once)
     {
@@ -244,15 +248,15 @@ public:
       m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
       m_cuda_timer_started = false;
     }
-    if (m_gpu_frequency_started)
+    if (m_gpu_frequency_cleanup_armed)
     {
       m_measure.gpu_frequency_stop();
-      m_gpu_frequency_started = false;
+      m_gpu_frequency_cleanup_armed = false;
     }
-    if (m_stream_blocked)
+    if (m_stream_unblock_armed)
     {
       m_measure.unblock_stream();
-      m_stream_blocked = false;
+      m_stream_unblock_armed = false;
     }
     m_measure.sync_stream();
     if (m_profiler_started)
@@ -275,22 +279,23 @@ private:
   bool m_run_once;
   bool m_check_throttling;
   bool m_cpu_timer_started{false};
-  bool m_stream_blocked{false};
-  bool m_gpu_frequency_started{false};
+  bool m_stream_unblock_armed{false};
+  bool m_gpu_frequency_cleanup_armed{false};
   bool m_profiler_started{false};
   bool m_cuda_timer_started{false};
 };
 
 __forceinline__ void measure_cold_base::kernel_launch_timer::cleanup_noexcept() noexcept
 {
-  const bool needs_sync = m_stream_blocked || m_cuda_timer_started || m_gpu_frequency_started;
+  const bool sync_armed = m_stream_unblock_armed || m_cuda_timer_started ||
+                          m_gpu_frequency_cleanup_armed;
 
-  if (m_stream_blocked)
+  if (m_stream_unblock_armed)
   {
     m_measure.unblock_stream_noexcept();
-    m_stream_blocked = false;
+    m_stream_unblock_armed = false;
   }
-  if (needs_sync)
+  if (sync_armed)
   {
     (void)m_measure.sync_stream_noexcept();
   }
@@ -305,8 +310,8 @@ __forceinline__ void measure_cold_base::kernel_launch_timer::cleanup_noexcept() 
     m_cpu_timer_started = false;
   }
 
-  m_cuda_timer_started    = false;
-  m_gpu_frequency_started = false;
+  m_cuda_timer_started          = false;
+  m_gpu_frequency_cleanup_armed = false;
 }
 
 template <typename KernelLauncher>
