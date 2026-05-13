@@ -25,8 +25,17 @@
 # stubs in generated out/cuda/nvbench/_nvbench.pyi
 # with definitions given here.
 
-from collections.abc import Callable, Sequence
-from typing import Optional, Self, SupportsFloat, SupportsInt, Union
+from collections.abc import (
+    Callable,
+    Sequence,
+)
+from typing import (
+    Optional,
+    Self,
+    SupportsFloat,
+    SupportsInt,
+    Union,
+)
 
 class CudaStream:
     def __cuda_stream__(self) -> tuple[int, int]: ...

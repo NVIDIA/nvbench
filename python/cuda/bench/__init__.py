@@ -29,6 +29,26 @@ except Exception as e:
     )
 
 
+_NVBENCH_EXPORTS = (
+    "Benchmark",
+    "CudaStream",
+    "Launch",
+    "NVBenchRuntimeError",
+    "State",
+    "register",
+    "run_all_benchmarks",
+)
+
+_NVBENCH_TEST_EXPORTS = (
+    "_test_cpp_exception",
+    "_test_py_exception",
+)
+
+__all__ = list(_NVBENCH_EXPORTS)
+
+_nvbench_module = None
+
+
 # Detect CUDA runtime version and load appropriate extension
 def _get_cuda_major_version():
     """Detect the CUDA runtime major version."""
@@ -47,51 +67,63 @@ def _get_cuda_major_version():
         )
 
 
-_cuda_major = _get_cuda_major_version()
-_extra_name = f"cu{_cuda_major}"
-_module_fullname = f"cuda.bench.{_extra_name}._nvbench"
+def _bind_nvbench_module(module):
+    for name in _NVBENCH_EXPORTS:
+        globals()[name] = getattr(module, name)
+        # Set module of exposed objects
+        globals()[name].__module__ = __name__
 
-try:
-    _nvbench_module = importlib.import_module(_module_fullname)
-except ImportError as e:
-    raise ImportError(
-        f"No cuda-bench extension found for CUDA {_cuda_major}.x. "
-        f"This wheel may not include support for your CUDA version. "
-        f"Supported CUDA versions: 12, 13. "
-        f"Original error: {e}"
+    for name in _NVBENCH_TEST_EXPORTS:
+        globals()[name] = getattr(module, name)
+
+    # Expose the module as _nvbench for backward compatibility (e.g., for tests)
+    globals()["_nvbench"] = module
+
+
+def _load_nvbench_module():
+    global _nvbench_module
+
+    if _nvbench_module is not None:
+        return _nvbench_module
+
+    cuda_major = _get_cuda_major_version()
+    extra_name = f"cu{cuda_major}"
+    module_fullname = f"cuda.bench.{extra_name}._nvbench"
+
+    try:
+        module = importlib.import_module(module_fullname)
+    except ImportError as e:
+        raise ImportError(
+            f"No cuda-bench extension found for CUDA {cuda_major}.x. "
+            f"This wheel may not include support for your CUDA version. "
+            f"Supported CUDA versions: 12, 13. "
+            f"Original error: {e}"
+        ) from e
+
+    _bind_nvbench_module(module)
+    _nvbench_module = module
+    return module
+
+
+def __getattr__(name):
+    if name == "_nvbench":
+        return _load_nvbench_module()
+
+    if name in _NVBENCH_EXPORTS + _NVBENCH_TEST_EXPORTS:
+        _load_nvbench_module()
+        return globals()[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(
+        set(globals())
+        | set(_NVBENCH_EXPORTS)
+        | set(_NVBENCH_TEST_EXPORTS)
+        | {"_nvbench"}
     )
 
-# Import and expose all public symbols from the CUDA-specific extension
-Benchmark = _nvbench_module.Benchmark
-CudaStream = _nvbench_module.CudaStream
-Launch = _nvbench_module.Launch
-NVBenchRuntimeError = _nvbench_module.NVBenchRuntimeError
-State = _nvbench_module.State
-register = _nvbench_module.register
-run_all_benchmarks = _nvbench_module.run_all_benchmarks
-_test_cpp_exception = _nvbench_module._test_cpp_exception
-_test_py_exception = _nvbench_module._test_py_exception
-
-# Expose the module as _nvbench for backward compatibility (e.g., for tests)
-_nvbench = _nvbench_module
-
-# Set module of exposed objects
-Benchmark.__module__ = __name__
-CudaStream.__module__ = __name__
-Launch.__module__ = __name__
-NVBenchRuntimeError.__module__ = __name__
-State.__module__ = __name__
-register.__module__ = __name__
-run_all_benchmarks.__module__ = __name__
-
-# Clean up internal symbols
-del (
-    _nvbench_module,
-    _cuda_major,
-    _extra_name,
-    _module_fullname,
-    _get_cuda_major_version,
-)
 
 __doc__ = """
 CUDA Kernel Benchmarking Library Python API

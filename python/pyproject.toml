@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 [build-system]
 requires = ["scikit-build-core>=0.10", "setuptools_scm"]
 build-backend = "scikit_build_core.build"
@@ -52,6 +55,7 @@ tools = [
 [project.scripts]
 nvbench-compare = "scripts.nvbench_compare:main"
 nvbench-histogram = "scripts.nvbench_histogram:main"
+nvbench-json-summary = "scripts.nvbench_json_summary:main"
 nvbench-walltime = "scripts.nvbench_walltime:main"
 
 [project.urls]
@@ -85,4 +89,5 @@ fallback_version = "0.0.0"
 [tool.scikit-build.wheel.packages]
 "cuda" = "cuda"
 "cuda/bench" = "cuda/bench"
+"cuda/bench/results" = "cuda/bench/results"
 "scripts" = "scripts"
