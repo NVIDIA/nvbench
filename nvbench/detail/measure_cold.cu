@@ -101,9 +101,9 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
+  const auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
   if (m_check_throttling)
   {
-    const auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
     const auto default_clock_rate =
       static_cast<float>(m_state.get_device()->get_sm_default_clock_rate());
 
@@ -165,6 +165,7 @@ void measure_cold_base::record_measurements()
 
   ++m_total_samples;
 
+  m_stopping_criterion.add_frequency(current_clock_rate);
   m_stopping_criterion.add_measurement(cur_cuda_time);
 }
 
