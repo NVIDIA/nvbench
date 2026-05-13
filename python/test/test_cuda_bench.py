@@ -189,6 +189,23 @@ def test_option_decorators_reject_wrong_order(monkeypatch):
         bench.option.min_samples(3)(decorated)
 
 
+def test_axis_decorators_reject_wrong_order(monkeypatch):
+    class FakeBenchmark:
+        pass
+
+    def fake_register(fn):
+        return FakeBenchmark()
+
+    monkeypatch.setattr(bench, "_register", fake_register)
+
+    @bench.register()
+    def decorated(state: bench.State):
+        pass
+
+    with pytest.raises(RuntimeError, match="must be placed below"):
+        bench.axis.int64("Elements", [1, 2, 3])(decorated)
+
+
 def test_run_all_benchmarks_doc():
     obj_has_docstring_check(bench.run_all_benchmarks)
 
