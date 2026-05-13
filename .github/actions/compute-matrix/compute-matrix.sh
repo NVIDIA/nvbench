@@ -18,6 +18,20 @@ extract_matrix() {
   local per_cuda_compiler_matrix="$(echo "$nvcc_full_matrix" | jq -cr ' group_by(.cuda + .compiler.name) | map({(.[0].cuda + "-" + .[0].compiler.name): .}) | add')"
   write_output "PER_CUDA_COMPILER_MATRIX"  "$per_cuda_compiler_matrix"
   write_output "PER_CUDA_COMPILER_KEYS" "$(echo "$per_cuda_compiler_matrix" | jq -r 'keys | @json')"
+
+  local windows_matrix="$(echo "$matrix" | jq -cr '
+    (.windows // [])
+    | map({
+        cuda: .cuda,
+        host: (.host // (.compiler.name + (.compiler.version | tostring))),
+        cpu: (.cpu // "amd64"),
+        runner: (.runner // ("windows-" + (.cpu // "amd64") + "-cpu16")),
+        std: ((.std // "17") | tostring),
+        arch: (.arch // ""),
+        image: (.image // "")
+      })
+  ')"
+  write_output "WINDOWS_MATRIX" "$windows_matrix"
 }
 
 main() {

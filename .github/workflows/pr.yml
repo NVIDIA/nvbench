@@ -42,6 +42,7 @@ jobs:
       DEVCONTAINER_VERSION: ${{steps.set-outputs.outputs.DEVCONTAINER_VERSION}}
       PER_CUDA_COMPILER_MATRIX: ${{steps.set-outputs.outputs.PER_CUDA_COMPILER_MATRIX}}
       PER_CUDA_COMPILER_KEYS: ${{steps.set-outputs.outputs.PER_CUDA_COMPILER_KEYS}}
+      WINDOWS_MATRIX: ${{steps.set-outputs.outputs.WINDOWS_MATRIX}}
       base_sha: ${{ steps.export-pr-info.outputs.base_sha }}
       pr_number: ${{ steps.export-pr-info.outputs.pr_number }}
     steps:
@@ -76,6 +77,28 @@ jobs:
       per_cuda_compiler_matrix: ${{ toJSON(fromJSON(needs.compute-matrix.outputs.PER_CUDA_COMPILER_MATRIX)[ matrix.cuda_host_combination ]) }}
       devcontainer_version: ${{ needs.compute-matrix.outputs.DEVCONTAINER_VERSION }}
 
+  nvbench-windows:
+    name: NVBench Windows CUDA${{ matrix.config.cuda }} ${{ matrix.config.host }} C++${{ matrix.config.std }}
+    # TODO: Re-enable after https://github.com/NVIDIA/nvbench/pull/354 fixes the Windows build.
+    if: false
+    permissions:
+      id-token: write
+      contents: read
+    needs: compute-matrix
+    uses: ./.github/workflows/build-windows.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJSON(needs.compute-matrix.outputs.WINDOWS_MATRIX) }}
+    with:
+      cuda: ${{ matrix.config.cuda }}
+      host: ${{ matrix.config.host }}
+      runner: ${{ matrix.config.runner }}
+      std: ${{ matrix.config.std }}
+      arch: ${{ matrix.config.arch }}
+      image: ${{ matrix.config.image }}
+      devcontainer_version: ${{ needs.compute-matrix.outputs.DEVCONTAINER_VERSION }}
+
   python-wheels:
     name: Python Wheels
     permissions:
@@ -103,6 +126,7 @@ jobs:
     if: ${{ always() }} # need to use always() instead of !cancelled() because skipped jobs count as success
     needs:
       - nvbench
+      - nvbench-windows
       - python-wheels
       - verify-devcontainers
     steps:
