@@ -1,6 +1,7 @@
 set(test_srcs
   axes_metadata.cu
   benchmark.cu
+  cleanup_guards.cu
   create.cu
   cuda_timer.cu
   cuda_stream.cu

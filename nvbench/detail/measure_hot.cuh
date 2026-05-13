@@ -32,6 +32,7 @@
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/detail/stream_cleanup_guard.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
 
@@ -57,6 +58,8 @@ struct measure_hot_base
   measure_hot_base &operator=(measure_hot_base &&)      = delete;
 
 protected:
+  friend struct nvbench::detail::stream_cleanup_guard<measure_hot_base>;
+
   void check();
 
   void initialize()
@@ -81,60 +84,6 @@ protected:
   }
 
   __forceinline__ void sync_stream() const { NVBENCH_CUDA_CALL(this->sync_stream_noexcept()); }
-
-  struct stream_cleanup_guard
-  {
-    explicit stream_cleanup_guard(measure_hot_base &measure)
-        : m_measure{measure}
-    {
-      m_sync_armed = true;
-    }
-
-    stream_cleanup_guard(const stream_cleanup_guard &)            = delete;
-    stream_cleanup_guard(stream_cleanup_guard &&)                 = delete;
-    stream_cleanup_guard &operator=(const stream_cleanup_guard &) = delete;
-    stream_cleanup_guard &operator=(stream_cleanup_guard &&)      = delete;
-
-    ~stream_cleanup_guard() noexcept
-    {
-      if (m_unblock_armed)
-      {
-        m_measure.unblock_stream_noexcept();
-      }
-      if (m_sync_armed)
-      {
-        (void)m_measure.sync_stream_noexcept();
-      }
-    }
-
-    void block_stream()
-    {
-      // Arm cleanup before queueing the blocking kernel. If block_stream throws
-      // after queueing work, the destructor must still unblock the stream.
-      m_unblock_armed = true;
-      m_measure.block_stream();
-    }
-
-    void unblock()
-    {
-      if (m_unblock_armed)
-      {
-        m_measure.unblock_stream();
-        m_unblock_armed = false;
-      }
-    }
-
-    void release() noexcept
-    {
-      m_unblock_armed = false;
-      m_sync_armed    = false;
-    }
-
-  private:
-    measure_hot_base &m_measure;
-    bool m_unblock_armed{false};
-    bool m_sync_armed{false};
-  };
 
   nvbench::state &m_state;
 
@@ -178,7 +127,7 @@ private:
   // measurement.
   void run_warmup()
   {
-    stream_cleanup_guard cleanup{*this};
+    nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
     m_cuda_timer.start(m_launch.get_stream());
     this->launch_kernel();
@@ -204,7 +153,7 @@ private:
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
 
-      stream_cleanup_guard cleanup{*this};
+      nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
       if (!m_disable_blocking_kernel)
       {
