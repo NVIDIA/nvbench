@@ -82,33 +82,55 @@ protected:
 
   __forceinline__ void sync_stream() const { NVBENCH_CUDA_CALL(this->sync_stream_noexcept()); }
 
-  struct block_stream_guard
+  struct stream_cleanup_guard
   {
-    explicit block_stream_guard(measure_hot_base &measure)
+    explicit stream_cleanup_guard(measure_hot_base &measure, bool block_stream)
         : m_measure{measure}
     {
-      m_measure.block_stream();
-      m_active = true;
+      m_needs_sync = true;
+      if (block_stream)
+      {
+        m_measure.block_stream();
+        m_needs_unblock = true;
+      }
     }
 
-    ~block_stream_guard() noexcept
+    stream_cleanup_guard(const stream_cleanup_guard &)            = delete;
+    stream_cleanup_guard(stream_cleanup_guard &&)                 = delete;
+    stream_cleanup_guard &operator=(const stream_cleanup_guard &) = delete;
+    stream_cleanup_guard &operator=(stream_cleanup_guard &&)      = delete;
+
+    ~stream_cleanup_guard() noexcept
     {
-      if (m_active)
+      if (m_needs_unblock)
       {
         m_measure.unblock_stream_noexcept();
+      }
+      if (m_needs_sync)
+      {
         (void)m_measure.sync_stream_noexcept();
       }
     }
 
     void unblock()
     {
-      m_measure.unblock_stream();
-      m_active = false;
+      if (m_needs_unblock)
+      {
+        m_measure.unblock_stream();
+        m_needs_unblock = false;
+      }
+    }
+
+    void release() noexcept
+    {
+      m_needs_unblock = false;
+      m_needs_sync    = false;
     }
 
   private:
     measure_hot_base &m_measure;
-    bool m_active{false};
+    bool m_needs_unblock{false};
+    bool m_needs_sync{false};
   };
 
   nvbench::state &m_state;
@@ -153,11 +175,14 @@ private:
   // measurement.
   void run_warmup()
   {
+    stream_cleanup_guard cleanup{*this, false};
+
     m_cuda_timer.start(m_launch.get_stream());
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
     this->sync_stream();
+    cleanup.release();
 
     this->check_skip_time(m_cuda_timer.get_duration());
   }
@@ -176,6 +201,8 @@ private:
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
 
+      stream_cleanup_guard cleanup{*this, !m_disable_blocking_kernel};
+
       if (!m_disable_blocking_kernel)
       {
         // Block stream until some work is queued.
@@ -184,7 +211,6 @@ private:
         const auto blocked_launches   = std::min(batch_size, nvbench::int64_t{2});
         const auto unblocked_launches = batch_size - blocked_launches;
 
-        block_stream_guard block_guard{*this};
         m_cuda_timer.start(m_launch.get_stream());
 
         for (nvbench::int64_t i = 0; i < blocked_launches; ++i)
@@ -194,7 +220,7 @@ private:
           this->launch_kernel();
         }
 
-        block_guard.unblock(); // Start executing earlier launches
+        cleanup.unblock(); // Start executing earlier launches
 
         for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
         {
@@ -213,6 +239,7 @@ private:
 
       m_cuda_timer.stop(m_launch.get_stream());
       this->sync_stream();
+      cleanup.release();
 
       m_total_cuda_time += m_cuda_timer.get_duration();
       m_total_samples += batch_size;
