@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -58,8 +58,9 @@ __global__ void sleep_kernel(double seconds) {
     return mod.get_kernel("sleep_kernel")
 
 
+@bench.register()
+@bench.option.min_samples(1000)
 def simple(state: bench.State):
-    state.set_min_samples(1000)
     sleep_dur = 1e-3
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
@@ -71,6 +72,8 @@ def simple(state: bench.State):
     state.exec(launcher)
 
 
+@bench.register()
+@bench.axis.float64("Duration (s)", [7e-5, 1e-4, 5e-4])
 def single_float64_axis(state: bench.State):
     # get axis value, or default
     default_sleep_dur = 3.14e-4
@@ -85,6 +88,7 @@ def single_float64_axis(state: bench.State):
     state.exec(launcher)
 
 
+@bench.register()
 def default_value(state: bench.State):
     single_float64_axis(state)
 
@@ -120,6 +124,9 @@ __global__ void copy_kernel(const T *in, U *out, ::cuda::std::size_t n)
     return mod.get_kernel(instance_name)
 
 
+@bench.register()
+@bench.axis.int64("BlockSize", [2**x for x in range(6, 10, 2)])
+@bench.axis.int64("NumBlocks", [2**x for x in range(6, 10, 2)])
 def copy_sweep_grid_shape(state: bench.State):
     block_size = state.get_int64("BlockSize")
     num_blocks = state.get_int64("NumBlocks")
@@ -147,6 +154,8 @@ def copy_sweep_grid_shape(state: bench.State):
     state.exec(launcher)
 
 
+@bench.register()
+@bench.axis.int64("TypeID", range(0, 6))
 def copy_type_sweep(state: bench.State):
     type_id = state.get_int64("TypeID")
 
@@ -186,21 +195,4 @@ def copy_type_sweep(state: bench.State):
 
 
 if __name__ == "__main__":
-    # Benchmark without axes
-    bench.register(simple)
-
-    # benchmark with no axes, that uses default value
-    bench.register(default_value)
-    # specify axis
-    bench.register(single_float64_axis).add_float64_axis(
-        "Duration (s)", [7e-5, 1e-4, 5e-4]
-    )
-
-    copy1_bench = bench.register(copy_sweep_grid_shape)
-    copy1_bench.add_int64_axis("BlockSize", [2**x for x in range(6, 10, 2)])
-    copy1_bench.add_int64_axis("NumBlocks", [2**x for x in range(6, 10, 2)])
-
-    copy2_bench = bench.register(copy_type_sweep)
-    copy2_bench.add_int64_axis("TypeID", range(0, 6))
-
     bench.run_all_benchmarks(sys.argv)

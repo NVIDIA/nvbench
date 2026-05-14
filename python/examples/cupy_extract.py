@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -24,6 +24,9 @@ def as_cp_ExternalStream(cs: bench.CudaStream):
     return cp.cuda.Stream.from_external(cs)
 
 
+@bench.register()
+@bench.axis.int64("numCols", [1024, 2048, 4096, 2 * 4096])
+@bench.axis.int64("numRows", [1024, 2048, 4096, 2 * 4096])
 def cupy_extract_by_mask(state: bench.State):
     n_cols = state.get_int64("numCols")
     n_rows = state.get_int64("numRows")
@@ -51,8 +54,4 @@ def cupy_extract_by_mask(state: bench.State):
 
 
 if __name__ == "__main__":
-    b = bench.register(cupy_extract_by_mask)
-    b.add_int64_axis("numCols", [1024, 2048, 4096, 2 * 4096])
-    b.add_int64_axis("numRows", [1024, 2048, 4096, 2 * 4096])
-
     bench.run_all_benchmarks(sys.argv)

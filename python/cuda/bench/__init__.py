@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -14,9 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+"""CUDA Kernel Benchmarking Library Python API."""
+
+import functools
 import importlib
 import importlib.metadata
 import warnings
+
+from ._decorators import axis as axis
+from ._decorators import make_register as _make_register
+from ._decorators import option as option
 
 try:
     __version__ = importlib.metadata.version("cuda-bench")
@@ -35,8 +42,14 @@ _NVBENCH_EXPORTS = (
     "Launch",
     "NVBenchRuntimeError",
     "State",
-    "register",
     "run_all_benchmarks",
+)
+
+_PUBLIC_EXPORTS = (
+    *_NVBENCH_EXPORTS,
+    "axis",
+    "option",
+    "register",
 )
 
 _NVBENCH_TEST_EXPORTS = (
@@ -44,9 +57,10 @@ _NVBENCH_TEST_EXPORTS = (
     "_test_py_exception",
 )
 
-__all__ = list(_NVBENCH_EXPORTS)
+__all__ = list(_PUBLIC_EXPORTS)
 
-_nvbench_module = None
+# Optional test override used by decorator tests.
+_register = None
 
 
 # Detect CUDA runtime version and load appropriate extension
@@ -80,12 +94,8 @@ def _bind_nvbench_module(module):
     globals()["_nvbench"] = module
 
 
+@functools.lru_cache(maxsize=1)
 def _load_nvbench_module():
-    global _nvbench_module
-
-    if _nvbench_module is not None:
-        return _nvbench_module
-
     cuda_major = _get_cuda_major_version()
     extra_name = f"cu{cuda_major}"
     module_fullname = f"cuda.bench.{extra_name}._nvbench"
@@ -101,7 +111,6 @@ def _load_nvbench_module():
         ) from e
 
     _bind_nvbench_module(module)
-    _nvbench_module = module
     return module
 
 
@@ -119,7 +128,7 @@ def __getattr__(name):
 def __dir__():
     return sorted(
         set(globals())
-        | set(_NVBENCH_EXPORTS)
+        | set(_PUBLIC_EXPORTS)
         | set(_NVBENCH_TEST_EXPORTS)
         | {"_nvbench"}
     )
@@ -128,3 +137,13 @@ def __dir__():
 __doc__ = """
 CUDA Kernel Benchmarking Library Python API
 """
+
+
+def _get_register():
+    if _register is not None:
+        return _register
+    return _load_nvbench_module().register
+
+
+register = _make_register(_get_register)
+register.__module__ = __name__

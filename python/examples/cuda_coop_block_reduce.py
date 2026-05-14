@@ -1,4 +1,4 @@
-# Copyright 2025 NVIDIA Corporation
+# Copyright 2025-2026 NVIDIA Corporation
 #
 #  Licensed under the Apache License, Version 2.0 with the LLVM exception
 #  (the "License"); you may not use this file except in compliance with
@@ -48,6 +48,9 @@ def as_cuda_Stream(cs: bench.CudaStream) -> cuda.cudadrv.driver.Stream:
     return cuda.external_stream(cs.addressof())
 
 
+@bench.register()
+@bench.axis.int64("ThreadsPerBlock", [64, 128, 192, 256])
+@bench.axis.power_of_two("NumBlocks", [10, 11, 12, 14, 16])
 def multi_block_bench(state: bench.State):
     threads_per_block = state.get_int64("ThreadsPerBlock")
     num_blocks = state.get_int64("NumBlocks")
@@ -91,8 +94,4 @@ def multi_block_bench(state: bench.State):
 
 
 if __name__ == "__main__":
-    b = bench.register(multi_block_bench)
-    b.add_int64_axis("ThreadsPerBlock", [64, 128, 192, 256])
-    b.add_int64_power_of_two_axis("NumBlocks", [10, 11, 12, 14, 16])
-
     bench.run_all_benchmarks(sys.argv)
