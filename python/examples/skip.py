@@ -34,7 +34,7 @@ def make_sleep_kernel():
 
 // Each launched thread just sleeps for `seconds`.
 __global__ void sleep_kernel(double seconds) {
-  namespace chrono = ::cuda::std::chrono;
+  namespace chrono = cuda::std::chrono;
   using hr_clock = chrono::high_resolution_clock;
 
   auto duration = static_cast<cuda::std::int64_t>(seconds * 1e9);

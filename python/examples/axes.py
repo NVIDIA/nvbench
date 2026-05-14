@@ -35,7 +35,7 @@ def make_sleep_kernel():
 
 // Each launched thread just sleeps for `seconds`.
 __global__ void sleep_kernel(double seconds) {
-  namespace chrono = ::cuda::std::chrono;
+  namespace chrono = cuda::std::chrono;
   using hr_clock = chrono::high_resolution_clock;
 
   auto duration = static_cast<cuda::std::int64_t>(seconds * 1e9);
@@ -101,7 +101,7 @@ def make_copy_kernel(in_type: Optional[str] = None, out_type: Optional[str] = No
  * Naive copy of `n` values from `in` -> `out`.
  */
 template <typename T, typename U>
-__global__ void copy_kernel(const T *in, U *out, ::cuda::std::size_t n)
+__global__ void copy_kernel(const T *in, U *out, cuda::std::size_t n)
 {
   const auto init = blockIdx.x * blockDim.x + threadIdx.x;
   const auto step = blockDim.x * gridDim.x;
@@ -116,9 +116,9 @@ __global__ void copy_kernel(const T *in, U *out, ::cuda::std::size_t n)
     opts = core.ProgramOptions(include_path=str(incl.libcudacxx))
     prog = core.Program(src, code_type="c++", options=opts)
     if in_type is None:
-        in_type = "::cuda::std::int32_t"
+        in_type = "cuda::std::int32_t"
     if out_type is None:
-        out_type = "::cuda::std::int32_t"
+        out_type = "cuda::std::int32_t"
     instance_name = f"copy_kernel<{in_type}, {out_type}>"
     mod = prog.compile("cubin", name_expressions=(instance_name,))
     return mod.get_kernel(instance_name)
