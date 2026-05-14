@@ -118,7 +118,7 @@ class State:
         fn: Callable[[Launch], None],
         /,
         *,
-        batched: Optional[bool] = True,
+        batched: Optional[bool] = None,
         sync: Optional[bool] = False,
         timer: Literal[False] = False,
     ) -> None: ...
@@ -129,7 +129,7 @@ class State:
         /,
         *,
         timer: Literal[True],
-        batched: Literal[False],
+        batched: Literal[False] | None = None,
         sync: Optional[bool] = False,
     ) -> None: ...
     def get_short_description(self) -> str: ...
