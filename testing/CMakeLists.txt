@@ -13,6 +13,7 @@ set(test_srcs
   custom_main_global_state_raii.cu
   enum_type_list.cu
   entropy_criterion.cu
+  exception_safety.cu
   float64_axis.cu
   int64_axis.cu
   named_values.cu
@@ -55,6 +56,7 @@ endforeach()
 set_tests_properties(nvbench.test.custom_main_custom_exceptions PROPERTIES
   PASS_REGULAR_EXPRESSION "Custom error detected: Expected exception thrown."
 )
+set_tests_properties(nvbench.test.exception_safety PROPERTIES TIMEOUT 20)
 
 add_subdirectory(cmake)
 add_subdirectory(device)
