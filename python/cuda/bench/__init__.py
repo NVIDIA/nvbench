@@ -16,6 +16,7 @@
 
 """CUDA Kernel Benchmarking Library Python API."""
 
+import functools
 import importlib
 import importlib.metadata
 import warnings
@@ -57,7 +58,7 @@ _NVBENCH_TEST_EXPORTS = (
 
 __all__ = list(_PUBLIC_EXPORTS)
 
-_nvbench_module = None
+# Optional test override used by decorator tests.
 _register = None
 
 
@@ -80,8 +81,6 @@ def _get_cuda_major_version():
 
 
 def _bind_nvbench_module(module):
-    global _register
-
     for name in _NVBENCH_EXPORTS:
         globals()[name] = getattr(module, name)
         # Set module of exposed objects
@@ -92,15 +91,10 @@ def _bind_nvbench_module(module):
 
     # Expose the module as _nvbench for backward compatibility (e.g., for tests)
     globals()["_nvbench"] = module
-    _register = module.register
 
 
+@functools.lru_cache(maxsize=1)
 def _load_nvbench_module():
-    global _nvbench_module
-
-    if _nvbench_module is not None:
-        return _nvbench_module
-
     cuda_major = _get_cuda_major_version()
     extra_name = f"cu{cuda_major}"
     module_fullname = f"cuda.bench.{extra_name}._nvbench"
@@ -116,7 +110,6 @@ def _load_nvbench_module():
         ) from e
 
     _bind_nvbench_module(module)
-    _nvbench_module = module
     return module
 
 
