@@ -45,7 +45,8 @@ _NVBENCH_EXPORTS = (
     "run_all_benchmarks",
 )
 
-_PUBLIC_EXPORTS = _NVBENCH_EXPORTS + (
+_PUBLIC_EXPORTS = (
+    *_NVBENCH_EXPORTS,
     "axis",
     "option",
     "register",
