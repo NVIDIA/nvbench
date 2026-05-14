@@ -414,6 +414,15 @@ void def_class_Timer(py::module_ m)
   static constexpr const char *class_Timer_doc = R"XXXX(
     Controls the manually timed region of a benchmark launch.
 
+    Each call to start() must be paired with a corresponding call to stop()
+    before the launch callable returns. NVBench does not validate all possible
+    unpaired or misordered start()/stop() sequences; benchmark results from
+    such use should not be trusted.
+
+    A launch callable may call start() and stop() more than once, matching the
+    C++ API behavior. Repeated pairs overwrite the timer state for the launch;
+    they do not accumulate elapsed time and do not create additional samples.
+
     Note
     ----
         The class is not user-constructible. NVBench provides Timer instances
@@ -421,10 +430,24 @@ void def_class_Timer(py::module_ m)
 )XXXX";
   auto py_timer_cls                            = py::class_<py_timer>(m, "Timer", class_Timer_doc);
 
-  static constexpr const char *method_start_doc = R"XXXX(Start the timed region.)XXXX";
+  static constexpr const char *method_start_doc = R"XXXX(
+    Start the timed region.
+
+    This call must be paired with a corresponding stop() call before the launch
+    callable returns. Calling start()/stop() repeatedly in the same launch
+    overwrites the recorded interval rather than accumulating time or creating
+    additional samples.
+)XXXX";
   py_timer_cls.def("start", &py_timer::start, method_start_doc);
 
-  static constexpr const char *method_stop_doc = R"XXXX(Stop the timed region.)XXXX";
+  static constexpr const char *method_stop_doc = R"XXXX(
+    Stop the timed region.
+
+    This records the interval since the most recent start() call. It must be
+    paired with a preceding start() call. Calling start()/stop() repeatedly in
+    the same launch overwrites the recorded interval rather than accumulating
+    time or creating additional samples.
+)XXXX";
   py_timer_cls.def("stop", &py_timer::stop, method_stop_doc);
 }
 
