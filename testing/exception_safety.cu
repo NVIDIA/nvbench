@@ -237,9 +237,13 @@ void run_benchmark(test_control &control, bool add_axis = false)
 
   synchronize_with_timeout_guard();
 
-  ASSERT(!bench.get_states().empty());
-  ASSERT(bench.get_states().front().is_skipped());
-  ASSERT(bench.get_states().front().get_skip_reason().find("requested") != std::string::npos);
+  const auto &states = bench.get_states();
+  ASSERT(!states.empty());
+  for (const auto &state : states)
+  {
+    ASSERT(state.is_skipped());
+    ASSERT(state.get_skip_reason().find("requested") != std::string::npos);
+  }
 }
 
 void test_cold_runtime_error_cleanup()
