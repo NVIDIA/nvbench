@@ -1061,13 +1061,15 @@ Use argument True to disable use of blocking kernel by NVBench"
   // method State.exec
   auto method_exec_impl = [](nvbench::state &state,
                              py::object py_launcher_fn,
-                             bool batched,
+                             py::object py_batched,
                              bool sync,
                              bool timer) -> void {
     if (!PyCallable_Check(py_launcher_fn.ptr()))
     {
       throw py::type_error("Argument of exec method must be a callable object");
     }
+
+    const bool batched = py_batched.is_none() ? !timer : py_batched.cast<bool>();
 
     // wrapper to invoke Python callable
     auto cpp_launcher_fn = [py_launcher_fn](nvbench::launch &launch_descr) -> void {
@@ -1145,9 +1147,11 @@ Use argument True to disable use of blocking kernel by NVBench"
     ----------
         fn: Callable
             Python callable with signature fn(Launch) -> None that executes the benchmark.
-        batched: bool, optional
+        batched: bool or None, optional
             If `True`, no cache flushing is performed between callable invocations.
-            Default: `True`.
+            If `None`, defaults to `True` unless timer=True is set. When
+            timer=True is set, batched defaults to `False`.
+            Default: `None`.
         sync: bool, optional
             True value indicates that callable performs device synchronization.
             NVBench disables use of blocking kernel in this case.
@@ -1155,8 +1159,8 @@ Use argument True to disable use of blocking kernel by NVBench"
         timer: bool, optional
             True value requests manual timing. The callable must have signature
             fn(Launch, Timer) -> None and call Timer.start() / Timer.stop() to
-            delimit the timed region. Manual timing requires batched=False,
-            matching nvbench::exec_tag::timer in the C++ API, which disables
+            delimit the timed region. Passing timer=True and batched=True is
+            invalid because nvbench::exec_tag::timer in the C++ API disables
             batched measurement.
             Default: `False`.
 
@@ -1166,7 +1170,7 @@ Use argument True to disable use of blocking kernel by NVBench"
                   method_exec_doc,
                   py::arg("launcher_fn"),
                   py::pos_only{},
-                  py::arg("batched") = true,
+                  py::arg("batched") = py::none(),
                   py::arg("sync")    = false,
                   py::arg("timer")   = false);
 
