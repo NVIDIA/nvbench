@@ -117,6 +117,50 @@ private:
   std::shared_ptr<py::object> m_fn;
 };
 
+struct py_timer
+{
+  using callback_t = void (*)(void *);
+
+  py_timer(void *timer, callback_t start, callback_t stop)
+      : m_timer{timer}
+      , m_start{start}
+      , m_stop{stop}
+      , m_valid{true}
+  {}
+
+  void start()
+  {
+    this->check_valid();
+    m_start(m_timer);
+  }
+
+  void stop()
+  {
+    this->check_valid();
+    m_stop(m_timer);
+  }
+
+  void invalidate() noexcept
+  {
+    m_valid = false;
+    m_timer = nullptr;
+  }
+
+private:
+  void check_valid() const
+  {
+    if (!m_valid || !m_timer)
+    {
+      throw std::runtime_error("Timer is no longer valid.");
+    }
+  }
+
+  void *m_timer{};
+  callback_t m_start{};
+  callback_t m_stop{};
+  bool m_valid{false};
+};
+
 // Use struct to ensure public inheritance
 struct nvbench_run_error : std::runtime_error
 {
@@ -338,6 +382,25 @@ void def_class_Launch(py::module_ m)
                     method_get_stream_impl,
                     method_get_stream_doc,
                     py::return_value_policy::reference);
+}
+
+void def_class_Timer(py::module_ m)
+{
+  static constexpr const char *class_Timer_doc = R"XXXX(
+    Controls the manually timed region of a benchmark launch.
+
+    Note
+    ----
+        The class is not user-constructible. NVBench provides Timer instances
+        to launch callables that request manual timing.
+)XXXX";
+  auto py_timer_cls                            = py::class_<py_timer>(m, "Timer", class_Timer_doc);
+
+  static constexpr const char *method_start_doc = R"XXXX(Start the timed region.)XXXX";
+  py_timer_cls.def("start", &py_timer::start, method_start_doc);
+
+  static constexpr const char *method_stop_doc = R"XXXX(Stop the timed region.)XXXX";
+  py_timer_cls.def("stop", &py_timer::stop, method_stop_doc);
 }
 
 static void def_class_Benchmark(py::module_ m)
@@ -1139,6 +1202,8 @@ PYBIND11_MODULE(PYBIND11_MODULE_NAME, m)
   def_class_CudaStream(m);
 
   def_class_Launch(m);
+
+  def_class_Timer(m);
 
   def_class_Benchmark(m);
 

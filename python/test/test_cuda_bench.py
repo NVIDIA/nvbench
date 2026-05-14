@@ -32,7 +32,7 @@ def test_py_exception():
 
 
 @pytest.mark.parametrize(
-    "cls", [bench.CudaStream, bench.State, bench.Launch, bench.Benchmark]
+    "cls", [bench.CudaStream, bench.State, bench.Launch, bench.Timer, bench.Benchmark]
 )
 def test_api_ctor(cls):
     with pytest.raises(TypeError, match="No constructor defined!"):
@@ -224,6 +224,13 @@ def test_Launch_doc():
     cl = bench.Launch
     obj_has_docstring_check(cl)
     obj_has_docstring_check(cl.get_stream)
+
+
+def test_Timer_doc():
+    cl = bench.Timer
+    obj_has_docstring_check(cl)
+    obj_has_docstring_check(cl.start)
+    obj_has_docstring_check(cl.stop)
 
 
 def test_CudaStream_doc():
