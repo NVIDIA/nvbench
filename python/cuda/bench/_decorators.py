@@ -48,7 +48,8 @@ def _append_benchmark_action(action: _BenchmarkAction) -> Callable[[_F], _F]:
                 setattr(fn, _BENCHMARK_ACTIONS_ATTR, actions)
             except AttributeError as e:
                 raise TypeError(
-                    "NVBench benchmark decorators require a callable object"
+                    "NVBench benchmark decorators require an object that "
+                    "supports attribute assignment"
                 ) from e
 
         actions.append(action)
