@@ -161,6 +161,31 @@ private:
   bool m_valid{false};
 };
 
+template <typename TimerT>
+py_timer make_py_timer(TimerT &timer)
+{
+  return py_timer{std::addressof(timer),
+                  [](void *timer_ptr) { static_cast<TimerT *>(timer_ptr)->start(); },
+                  [](void *timer_ptr) { static_cast<TimerT *>(timer_ptr)->stop(); }};
+}
+
+struct py_timer_invalidation_guard
+{
+  explicit py_timer_invalidation_guard(py_timer &timer)
+      : m_timer{timer}
+  {}
+
+  py_timer_invalidation_guard(const py_timer_invalidation_guard &)            = delete;
+  py_timer_invalidation_guard(py_timer_invalidation_guard &&)                 = delete;
+  py_timer_invalidation_guard &operator=(const py_timer_invalidation_guard &) = delete;
+  py_timer_invalidation_guard &operator=(py_timer_invalidation_guard &&)      = delete;
+
+  ~py_timer_invalidation_guard() noexcept { m_timer.invalidate(); }
+
+private:
+  py_timer &m_timer;
+};
+
 // Use struct to ensure public inheritance
 struct nvbench_run_error : std::runtime_error
 {
@@ -1034,8 +1059,11 @@ Use argument True to disable use of blocking kernel by NVBench"
                   py::arg("duration_seconds"));
 
   // method State.exec
-  auto method_exec_impl =
-    [](nvbench::state &state, py::object py_launcher_fn, bool batched, bool sync) -> void {
+  auto method_exec_impl = [](nvbench::state &state,
+                             py::object py_launcher_fn,
+                             bool batched,
+                             bool sync,
+                             bool timer) -> void {
     if (!PyCallable_Check(py_launcher_fn.ptr()))
     {
       throw py::type_error("Argument of exec method must be a callable object");
@@ -1048,6 +1076,36 @@ Use argument True to disable use of blocking kernel by NVBench"
       // call Python callable
       py_launcher_fn(launch_pyarg);
     };
+
+    auto cpp_timer_launcher_fn = [py_launcher_fn](nvbench::launch &launch_descr,
+                                                  auto &timer_descr) -> void {
+      auto launch_pyarg = py::cast(std::ref(launch_descr), py::return_value_policy::reference);
+      auto timer_pyarg  = py::cast(make_py_timer(timer_descr));
+      auto &timer_ref   = timer_pyarg.template cast<py_timer &>();
+      py_timer_invalidation_guard guard{timer_ref};
+
+      py_launcher_fn(launch_pyarg, timer_pyarg);
+    };
+
+    if (timer)
+    {
+      if (batched)
+      {
+        throw py::value_error("State.exec(..., timer=True) requires batched=False.");
+      }
+
+      if (sync)
+      {
+        constexpr auto tag = nvbench::exec_tag::timer | nvbench::exec_tag::sync;
+        state.exec(tag, cpp_timer_launcher_fn);
+      }
+      else
+      {
+        constexpr auto tag = nvbench::exec_tag::timer;
+        state.exec(tag, cpp_timer_launcher_fn);
+      }
+      return;
+    }
 
     if (sync)
     {
@@ -1080,7 +1138,8 @@ Use argument True to disable use of blocking kernel by NVBench"
     Execute callable running the benchmark.
 
     The callable may be executed multiple times. The callable
-    will be passed `Launch` object argument.
+    will be passed a `Launch` object argument by default. When `timer=True`,
+    the callable will be passed `Launch` and `Timer` arguments.
 
     Parameters
     ----------
@@ -1093,6 +1152,13 @@ Use argument True to disable use of blocking kernel by NVBench"
             True value indicates that callable performs device synchronization.
             NVBench disables use of blocking kernel in this case.
             Default: `False`.
+        timer: bool, optional
+            True value requests manual timing. The callable must have signature
+            fn(Launch, Timer) -> None and call Timer.start() / Timer.stop() to
+            delimit the timed region. Manual timing requires batched=False,
+            matching nvbench::exec_tag::timer in the C++ API, which disables
+            batched measurement.
+            Default: `False`.
 
 )XXXX";
   pystate_cls.def("exec",
@@ -1101,7 +1167,8 @@ Use argument True to disable use of blocking kernel by NVBench"
                   py::arg("launcher_fn"),
                   py::pos_only{},
                   py::arg("batched") = true,
-                  py::arg("sync")    = false);
+                  py::arg("sync")    = false,
+                  py::arg("timer")   = false);
 
   // method State.get_short_description
   static constexpr const char *method_get_short_description_doc = R"XXXX(

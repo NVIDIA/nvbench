@@ -129,6 +129,7 @@ class State:
         /,
         *,
         timer: Literal[True],
+        batched: Literal[False],
         sync: Optional[bool] = False,
     ) -> None: ...
     def get_short_description(self) -> str: ...
