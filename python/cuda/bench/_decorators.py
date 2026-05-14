@@ -60,7 +60,12 @@ def _append_benchmark_action(action: _BenchmarkAction) -> Callable[[_F], _F]:
 def _apply_benchmark_actions(
     benchmark: _Benchmark, fn: Callable[..., Any]
 ) -> _Benchmark:
-    """Apply delayed benchmark actions to a registered benchmark."""
+    """Apply delayed benchmark actions to a registered benchmark.
+
+    Python invokes stacked decorators from the function outward, so actions are
+    recorded opposite their source order. Apply them as written below
+    ``@bench.register()``.
+    """
     for action in reversed(getattr(fn, _BENCHMARK_ACTIONS_ATTR, ())):
         action(benchmark)
 
@@ -84,6 +89,19 @@ def make_register(get_register: _RegisterGetter) -> Callable[..., Any]:
         Called as ``bench.register(fn)``, this returns the registered
         ``Benchmark``. Called as ``@bench.register()``, this returns a decorator
         that registers the function and leaves the decorated symbol unchanged.
+
+        When used as a decorator, ``@bench.register()`` must be the top-most
+        decorator. Axis and option decorators are lazy; they only record how to
+        configure the benchmark. ``@bench.register()`` consumes those recorded
+        actions and registers the function with NVBench.
+
+        Example
+        -------
+            @bench.register()
+            @bench.axis.int64("Elements", [1024, 2048])
+            @bench.option.min_samples(10)
+            def copy(state: bench.State):
+                ...
         """
         if fn is None:
 
