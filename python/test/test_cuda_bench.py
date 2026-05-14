@@ -62,7 +62,7 @@ def test_cpu_only():
                 _ = json.dumps(s)
             timer.stop()
 
-        with pytest.raises(ValueError, match="timer=True.*batched=False"):
+        with pytest.raises(ValueError, match=r"timer=True.*batched=False"):
             state.exec(launcher, timer=True, batched=True)
 
         state.exec(launcher, timer=True)

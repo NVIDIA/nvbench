@@ -1193,6 +1193,7 @@ Use argument True to disable use of blocking kernel by NVBench"
                   method_exec_doc,
                   py::arg("launcher_fn"),
                   py::pos_only{},
+                  py::kw_only{},
                   py::arg("batched") = py::none(),
                   py::arg("sync")    = false,
                   py::arg("timer")   = false);

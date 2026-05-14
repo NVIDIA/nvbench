@@ -119,7 +119,7 @@ class State:
         /,
         *,
         batched: Optional[bool] = None,
-        sync: Optional[bool] = False,
+        sync: bool = False,
         timer: Literal[False] = False,
     ) -> None: ...
     @overload
@@ -130,7 +130,7 @@ class State:
         *,
         timer: Literal[True],
         batched: Literal[False] | None = None,
-        sync: Optional[bool] = False,
+        sync: bool = False,
     ) -> None: ...
     def get_short_description(self) -> str: ...
     def add_summary(
