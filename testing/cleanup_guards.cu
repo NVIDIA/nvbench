@@ -1,8 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include <nvbench/blocking_kernel.cuh>
+#include <nvbench/cpu_timer.cuh>
+#include <nvbench/detail/measure_cold.cuh>
 #include <nvbench/detail/measure_cold_launch_timer_core.cuh>
+#include <nvbench/detail/measure_hot.cuh>
 #include <nvbench/detail/stream_cleanup_guard.cuh>
+
+#include <cuda_runtime_api.h>
 
 #include <fmt/format.h>
 
@@ -10,11 +16,108 @@
 #include <cstddef>
 #include <initializer_list>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 
 #include "test_asserts.cuh"
 
 namespace
 {
+
+struct hot_cleanup_probe : nvbench::detail::measure_hot_base
+{
+  using nvbench::detail::measure_hot_base::sync_stream_noexcept;
+  using nvbench::detail::measure_hot_base::unblock_stream_noexcept;
+};
+
+struct cold_cleanup_probe : nvbench::detail::measure_cold_base
+{
+  using kernel_launch_timer = nvbench::detail::measure_cold_base::kernel_launch_timer;
+
+  using nvbench::detail::measure_cold_base::profiler_stop_noexcept;
+  using nvbench::detail::measure_cold_base::sync_stream_noexcept;
+  using nvbench::detail::measure_cold_base::unblock_stream_noexcept;
+};
+
+using cold_launch_timer_probe = cold_cleanup_probe::kernel_launch_timer;
+using cold_launch_timer_core_probe =
+  nvbench::detail::measure_cold_launch_timer_core<cold_launch_timer_probe>;
+
+template <typename Timer>
+constexpr void verify_cpu_timer_noexcept_contract()
+{
+  static_assert(noexcept(std::declval<Timer &>().start()),
+                "CPU timer start must remain noexcept for cleanup-safe measurement code.");
+  static_assert(noexcept(std::declval<Timer &>().stop()),
+                "CPU timer stop must remain noexcept for cleanup-safe measurement code.");
+}
+
+template <typename Measure>
+constexpr void verify_stream_cleanup_measure_noexcept_contract()
+{
+  static_assert(noexcept(std::declval<Measure &>().sync_stream_noexcept()),
+                "Cleanup measure sync_stream_noexcept must remain noexcept.");
+  static_assert(noexcept(std::declval<Measure &>().unblock_stream_noexcept()),
+                "Cleanup measure unblock_stream_noexcept must remain noexcept.");
+}
+
+template <typename Measure>
+constexpr void verify_cold_measure_noexcept_contract()
+{
+  verify_stream_cleanup_measure_noexcept_contract<Measure>();
+  static_assert(noexcept(std::declval<Measure &>().profiler_stop_noexcept()),
+                "Cold cleanup measure profiler_stop_noexcept must remain noexcept.");
+}
+
+template <typename Timer>
+constexpr void verify_cold_launch_timer_noexcept_contract()
+{
+  static_assert(noexcept(std::declval<Timer &>().cpu_timer_start()),
+                "Cold kernel_launch_timer cpu_timer_start must remain noexcept.");
+  static_assert(noexcept(std::declval<Timer &>().cpu_timer_stop()),
+                "Cold kernel_launch_timer cpu_timer_stop must remain noexcept.");
+  static_assert(noexcept(std::declval<Timer &>().cpu_timer_stop_noexcept()),
+                "Cold kernel_launch_timer cpu_timer_stop_noexcept must remain noexcept.");
+  static_assert(noexcept(std::declval<Timer &>().sync_stream_noexcept()),
+                "Cold kernel_launch_timer sync_stream_noexcept must remain noexcept.");
+  static_assert(noexcept(std::declval<Timer &>().profiler_stop_noexcept()),
+                "Cold kernel_launch_timer profiler_stop_noexcept must remain noexcept.");
+  static_assert(noexcept(std::declval<Timer &>().unblock_stream_noexcept()),
+                "Cold kernel_launch_timer unblock_stream_noexcept must remain noexcept.");
+  static_assert(std::is_nothrow_destructible_v<Timer>,
+                "Cold kernel_launch_timer destructor must remain noexcept.");
+}
+
+template <typename Guard>
+constexpr void verify_stream_cleanup_guard_noexcept_contract()
+{
+  static_assert(std::is_nothrow_destructible_v<Guard>,
+                "stream_cleanup_guard destructor must remain noexcept.");
+  static_assert(noexcept(std::declval<Guard &>().release()),
+                "stream_cleanup_guard release must remain noexcept.");
+}
+
+constexpr void verify_noexcept_contracts()
+{
+  verify_cpu_timer_noexcept_contract<nvbench::cpu_timer>();
+  static_assert(noexcept(std::declval<nvbench::blocking_kernel &>().unblock_noexcept()),
+                "blocking_kernel unblock_noexcept must remain noexcept.");
+
+  verify_stream_cleanup_measure_noexcept_contract<hot_cleanup_probe>();
+  verify_cold_measure_noexcept_contract<cold_cleanup_probe>();
+#if defined(CUDART_VERSION) && CUDART_VERSION > 12600
+  // CUDA 12.0 through 12.6 can exhaust host memory in cudafe++ while checking
+  // this contract.
+  verify_cold_launch_timer_noexcept_contract<cold_launch_timer_probe>();
+#endif
+  verify_stream_cleanup_guard_noexcept_contract<
+    nvbench::detail::stream_cleanup_guard<hot_cleanup_probe>>();
+
+  static_assert(std::is_nothrow_destructible_v<cold_launch_timer_core_probe>,
+                "measure_cold_launch_timer_core destructor must remain noexcept.");
+}
+
+static_assert((verify_noexcept_contracts(), true), "Noexcept cleanup contracts must hold.");
 
 enum class action
 {
