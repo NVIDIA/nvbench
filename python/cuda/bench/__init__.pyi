@@ -28,6 +28,7 @@
 from collections.abc import Callable, Sequence
 from typing import (
     Any,
+    Literal,
     Optional,
     Self,
     SupportsFloat,
@@ -66,6 +67,10 @@ class Benchmark:
 
 class Launch:
     def get_stream(self) -> CudaStream: ...
+
+class Timer:
+    def start(self) -> None: ...
+    def stop(self) -> None: ...
 
 class State:
     def has_device(self) -> bool: ...
@@ -107,14 +112,26 @@ class State:
     def set_timeout(self, duration: SupportsFloat) -> None: ...
     def get_blocking_kernel_timeout(self) -> float: ...
     def set_blocking_kernel_timeout(self, duration: SupportsFloat) -> None: ...
+    @overload
     def exec(
         self,
         fn: Callable[[Launch], None],
         /,
         *,
-        batched: Optional[bool] = True,
-        sync: Optional[bool] = False,
-    ): ...
+        batched: Optional[bool] = None,
+        sync: bool = False,
+        timer: Literal[False] = False,
+    ) -> None: ...
+    @overload
+    def exec(
+        self,
+        fn: Callable[[Launch, Timer], None],
+        /,
+        *,
+        timer: Literal[True],
+        batched: Literal[False] | None = None,
+        sync: bool = False,
+    ) -> None: ...
     def get_short_description(self) -> str: ...
     def add_summary(
         self, column_name: str, value: Union[SupportsInt, SupportsFloat, str]

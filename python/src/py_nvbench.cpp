@@ -117,6 +117,75 @@ private:
   std::shared_ptr<py::object> m_fn;
 };
 
+struct py_timer
+{
+  using callback_t = void (*)(void *);
+
+  py_timer(void *timer, callback_t start, callback_t stop)
+      : m_timer{timer}
+      , m_start{start}
+      , m_stop{stop}
+      , m_valid{true}
+  {}
+
+  void start()
+  {
+    this->check_valid();
+    m_start(m_timer);
+  }
+
+  void stop()
+  {
+    this->check_valid();
+    m_stop(m_timer);
+  }
+
+  void invalidate() noexcept
+  {
+    m_valid = false;
+    m_timer = nullptr;
+  }
+
+private:
+  void check_valid() const
+  {
+    if (!m_valid || !m_timer)
+    {
+      throw std::runtime_error("Timer is no longer valid.");
+    }
+  }
+
+  void *m_timer{};
+  callback_t m_start{};
+  callback_t m_stop{};
+  bool m_valid{false};
+};
+
+template <typename TimerT>
+py_timer make_py_timer(TimerT &timer)
+{
+  return py_timer{std::addressof(timer),
+                  [](void *timer_ptr) { static_cast<TimerT *>(timer_ptr)->start(); },
+                  [](void *timer_ptr) { static_cast<TimerT *>(timer_ptr)->stop(); }};
+}
+
+struct py_timer_invalidation_guard
+{
+  explicit py_timer_invalidation_guard(py_timer &timer)
+      : m_timer{timer}
+  {}
+
+  py_timer_invalidation_guard(const py_timer_invalidation_guard &)            = delete;
+  py_timer_invalidation_guard(py_timer_invalidation_guard &&)                 = delete;
+  py_timer_invalidation_guard &operator=(const py_timer_invalidation_guard &) = delete;
+  py_timer_invalidation_guard &operator=(py_timer_invalidation_guard &&)      = delete;
+
+  ~py_timer_invalidation_guard() noexcept { m_timer.invalidate(); }
+
+private:
+  py_timer &m_timer;
+};
+
 // Use struct to ensure public inheritance
 struct nvbench_run_error : std::runtime_error
 {
@@ -338,6 +407,48 @@ void def_class_Launch(py::module_ m)
                     method_get_stream_impl,
                     method_get_stream_doc,
                     py::return_value_policy::reference);
+}
+
+void def_class_Timer(py::module_ m)
+{
+  static constexpr const char *class_Timer_doc = R"XXXX(
+    Controls the manually timed region of a benchmark launch.
+
+    Each call to start() must be paired with a corresponding call to stop()
+    before the launch callable returns. NVBench does not validate all possible
+    unpaired or misordered start()/stop() sequences; benchmark results from
+    such use should not be trusted.
+
+    A launch callable may call start() and stop() more than once, matching the
+    C++ API behavior. Repeated pairs overwrite the timer state for the launch;
+    they do not accumulate elapsed time and do not create additional samples.
+
+    Note
+    ----
+        The class is not user-constructible. NVBench provides Timer instances
+        to launch callables that request manual timing.
+)XXXX";
+  auto py_timer_cls                            = py::class_<py_timer>(m, "Timer", class_Timer_doc);
+
+  static constexpr const char *method_start_doc = R"XXXX(
+    Start the timed region.
+
+    This call must be paired with a corresponding stop() call before the launch
+    callable returns. Calling start()/stop() repeatedly in the same launch
+    overwrites the recorded interval rather than accumulating time or creating
+    additional samples.
+)XXXX";
+  py_timer_cls.def("start", &py_timer::start, method_start_doc);
+
+  static constexpr const char *method_stop_doc = R"XXXX(
+    Stop the timed region.
+
+    This records the interval since the most recent start() call. It must be
+    paired with a preceding start() call. Calling start()/stop() repeatedly in
+    the same launch overwrites the recorded interval rather than accumulating
+    time or creating additional samples.
+)XXXX";
+  py_timer_cls.def("stop", &py_timer::stop, method_stop_doc);
 }
 
 static void def_class_Benchmark(py::module_ m)
@@ -971,12 +1082,17 @@ Use argument True to disable use of blocking kernel by NVBench"
                   py::arg("duration_seconds"));
 
   // method State.exec
-  auto method_exec_impl =
-    [](nvbench::state &state, py::object py_launcher_fn, bool batched, bool sync) -> void {
+  auto method_exec_impl = [](nvbench::state &state,
+                             py::object py_launcher_fn,
+                             py::object py_batched,
+                             bool sync,
+                             bool timer) -> void {
     if (!PyCallable_Check(py_launcher_fn.ptr()))
     {
       throw py::type_error("Argument of exec method must be a callable object");
     }
+
+    const bool batched = py_batched.is_none() ? !timer : py_batched.cast<bool>();
 
     // wrapper to invoke Python callable
     auto cpp_launcher_fn = [py_launcher_fn](nvbench::launch &launch_descr) -> void {
@@ -985,6 +1101,36 @@ Use argument True to disable use of blocking kernel by NVBench"
       // call Python callable
       py_launcher_fn(launch_pyarg);
     };
+
+    auto cpp_timer_launcher_fn = [py_launcher_fn](nvbench::launch &launch_descr,
+                                                  auto &timer_descr) -> void {
+      auto launch_pyarg = py::cast(std::ref(launch_descr), py::return_value_policy::reference);
+      auto timer_pyarg  = py::cast(make_py_timer(timer_descr));
+      auto &timer_ref   = timer_pyarg.template cast<py_timer &>();
+      py_timer_invalidation_guard guard{timer_ref};
+
+      py_launcher_fn(launch_pyarg, timer_pyarg);
+    };
+
+    if (timer)
+    {
+      if (batched)
+      {
+        throw py::value_error("State.exec(..., timer=True) requires batched=False.");
+      }
+
+      if (sync)
+      {
+        constexpr auto tag = nvbench::exec_tag::timer | nvbench::exec_tag::sync;
+        state.exec(tag, cpp_timer_launcher_fn);
+      }
+      else
+      {
+        constexpr auto tag = nvbench::exec_tag::timer;
+        state.exec(tag, cpp_timer_launcher_fn);
+      }
+      return;
+    }
 
     if (sync)
     {
@@ -1017,18 +1163,28 @@ Use argument True to disable use of blocking kernel by NVBench"
     Execute callable running the benchmark.
 
     The callable may be executed multiple times. The callable
-    will be passed `Launch` object argument.
+    will be passed a `Launch` object argument by default. When `timer=True`,
+    the callable will be passed `Launch` and `Timer` arguments.
 
     Parameters
     ----------
         fn: Callable
             Python callable with signature fn(Launch) -> None that executes the benchmark.
-        batched: bool, optional
+        batched: bool or None, optional
             If `True`, no cache flushing is performed between callable invocations.
-            Default: `True`.
+            If `None`, defaults to `True` unless timer=True is set. When
+            timer=True is set, batched defaults to `False`.
+            Default: `None`.
         sync: bool, optional
             True value indicates that callable performs device synchronization.
             NVBench disables use of blocking kernel in this case.
+            Default: `False`.
+        timer: bool, optional
+            True value requests manual timing. The callable must have signature
+            fn(Launch, Timer) -> None and call Timer.start() / Timer.stop() to
+            delimit the timed region. Passing timer=True and batched=True is
+            invalid because nvbench::exec_tag::timer in the C++ API disables
+            batched measurement.
             Default: `False`.
 
 )XXXX";
@@ -1037,8 +1193,10 @@ Use argument True to disable use of blocking kernel by NVBench"
                   method_exec_doc,
                   py::arg("launcher_fn"),
                   py::pos_only{},
-                  py::arg("batched") = true,
-                  py::arg("sync")    = false);
+                  py::kw_only{},
+                  py::arg("batched") = py::none(),
+                  py::arg("sync")    = false,
+                  py::arg("timer")   = false);
 
   // method State.get_short_description
   static constexpr const char *method_get_short_description_doc = R"XXXX(
@@ -1139,6 +1297,8 @@ PYBIND11_MODULE(PYBIND11_MODULE_NAME, m)
   def_class_CudaStream(m);
 
   def_class_Launch(m);
+
+  def_class_Timer(m);
 
   def_class_Benchmark(m);
 

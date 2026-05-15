@@ -42,6 +42,7 @@ _NVBENCH_EXPORTS = (
     "Launch",
     "NVBenchRuntimeError",
     "State",
+    "Timer",
     "run_all_benchmarks",
 )
 

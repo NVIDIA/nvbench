@@ -36,7 +36,7 @@ def make_fill_kernel(data_type: Optional[str] = None):
  * Naive setting of values in buffer
  */
 template <typename T>
-__global__ void fill_kernel(T *buf, T v, ::cuda::std::size_t n)
+__global__ void fill_kernel(T *buf, T v, cuda::std::size_t n)
 {
   const auto init = blockIdx.x * blockDim.x + threadIdx.x;
   const auto step = blockDim.x * gridDim.x;
@@ -51,7 +51,7 @@ __global__ void fill_kernel(T *buf, T v, ::cuda::std::size_t n)
     opts = core.ProgramOptions(include_path=str(incl.libcudacxx))
     prog = core.Program(src, code_type="c++", options=opts)
     if data_type is None:
-        data_type = "::cuda::std::int32_t"
+        data_type = "cuda::std::int32_t"
     instance_name = f"fill_kernel<{data_type}>"
     mod = prog.compile("cubin", name_expressions=(instance_name,))
     return mod.get_kernel(instance_name)

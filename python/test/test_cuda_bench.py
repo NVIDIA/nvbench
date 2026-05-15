@@ -32,7 +32,7 @@ def test_py_exception():
 
 
 @pytest.mark.parametrize(
-    "cls", [bench.CudaStream, bench.State, bench.Launch, bench.Benchmark]
+    "cls", [bench.CudaStream, bench.State, bench.Launch, bench.Timer, bench.Benchmark]
 )
 def test_api_ctor(cls):
     with pytest.raises(TypeError, match="No constructor defined!"):
@@ -50,10 +50,34 @@ def t_bench(state: bench.State):
 
 
 def test_cpu_only():
+    saved_timers = []
+
+    def t_bench_timer(state: bench.State):
+        s = {"a": 1, "b": 0.5, "c": "test", "d": {"a": 1}}
+
+        def launcher(launch: bench.Launch, timer: bench.Timer):
+            saved_timers.append(timer)
+            timer.start()
+            for _ in range(10000):
+                _ = json.dumps(s)
+            timer.stop()
+
+        with pytest.raises(ValueError, match=r"timer=True.*batched=False"):
+            state.exec(launcher, timer=True, batched=True)
+
+        state.exec(launcher, timer=True)
+
     b = bench.register(t_bench)
     b.set_is_cpu_only(True)
 
+    b_timer = bench.register(t_bench_timer)
+    b_timer.set_is_cpu_only(True)
+
     bench.run_all_benchmarks(["-q", "--profile"])
+
+    assert saved_timers
+    with pytest.raises(RuntimeError, match="Timer is no longer valid"):
+        saved_timers[0].start()
 
 
 def docstring_check(doc_str: Union[str, None]) -> None:
@@ -224,6 +248,13 @@ def test_Launch_doc():
     cl = bench.Launch
     obj_has_docstring_check(cl)
     obj_has_docstring_check(cl.get_stream)
+
+
+def test_Timer_doc():
+    cl = bench.Timer
+    obj_has_docstring_check(cl)
+    obj_has_docstring_check(cl.start)
+    obj_has_docstring_check(cl.stop)
 
 
 def test_CudaStream_doc():
