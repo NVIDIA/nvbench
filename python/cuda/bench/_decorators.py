@@ -98,6 +98,9 @@ def make_register(get_register: _RegisterGetter) -> Callable[..., Any]:
 
         Example
         -------
+
+        .. code-block:: python
+
             @bench.register()
             @bench.axis.int64("Elements", [1024, 2048])
             @bench.option.min_samples(10)
