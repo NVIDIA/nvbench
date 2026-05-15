@@ -120,12 +120,20 @@ private:
             self.run_state_prologue(cur_state);
             try
             {
-              if (!skip_remaining)
+              if (skip_remaining)
+              {
+                if (!cur_state.is_skipped())
+                {
+                  cur_state.skip("Skipped because a previous state requested the runner loop to "
+                                 "stop.");
+                }
+              }
+              else
               {
                 auto kernel_generator_copy = self.m_kernel_generator;
                 kernel_generator_copy(cur_state, type_config{});
               }
-              if (skip_remaining || cur_state.is_skipped())
+              if (cur_state.is_skipped())
               {
                 self.print_skip_notification(cur_state);
               }
