@@ -96,14 +96,21 @@ struct blocking_kernel
 
   __forceinline__ void unblock()
   {
-    volatile nvbench::int32_t &flag = m_host_flag;
-    flag                            = 1;
+    this->unblock_noexcept();
 
     const volatile nvbench::int32_t &timeout_flag = m_host_timeout_flag;
     if (timeout_flag)
     {
       blocking_kernel::timeout_detected();
     }
+  }
+
+  __forceinline__ void unblock_noexcept() noexcept
+  {
+    // Used during exception unwinding. Do not check the timeout flag here:
+    // cleanup must not replace the original exception.
+    volatile nvbench::int32_t &flag = m_host_flag;
+    flag                            = 1;
   }
 
   // move-only

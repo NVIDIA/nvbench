@@ -35,6 +35,7 @@
 #include <nvbench/detail/gpu_frequency.cuh>
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
+#include <nvbench/detail/measure_cold_launch_timer_core.cuh>
 #include <nvbench/detail/statistics.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
@@ -83,14 +84,17 @@ protected:
 
   __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
 
-  __forceinline__ void sync_stream() const
+  __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
   {
-    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
+    return cudaStreamSynchronize(m_launch.get_stream());
   }
+  __forceinline__ void sync_stream() const { NVBENCH_CUDA_CALL(this->sync_stream_noexcept()); }
   __forceinline__ void profiler_start() const { NVBENCH_CUDA_CALL(cudaProfilerStart()); }
-  __forceinline__ void profiler_stop() const { NVBENCH_CUDA_CALL(cudaProfilerStop()); }
+  __forceinline__ cudaError_t profiler_stop_noexcept() const noexcept { return cudaProfilerStop(); }
+  __forceinline__ void profiler_stop() const { NVBENCH_CUDA_CALL(this->profiler_stop_noexcept()); }
   void block_stream();
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
+  __forceinline__ void unblock_stream_noexcept() noexcept { m_blocker.unblock_noexcept(); }
 
   nvbench::state &m_state;
 
@@ -146,17 +150,17 @@ protected:
 struct measure_cold_base::kernel_launch_timer
 {
   kernel_launch_timer(measure_cold_base &measure)
-      : m_measure{measure}
-      , m_disable_blocking_kernel{measure.m_disable_blocking_kernel}
-      , m_run_once{measure.m_run_once}
-      , m_check_throttling{measure.m_check_throttling}
+      : kernel_launch_timer{measure,
+                            measure.m_disable_blocking_kernel,
+                            measure.m_run_once,
+                            measure.m_check_throttling}
   {}
 
   explicit kernel_launch_timer(measure_cold_base &measure, bool disable_blocking_kernel)
-      : m_measure{measure}
-      , m_disable_blocking_kernel{disable_blocking_kernel}
-      , m_run_once{measure.m_run_once}
-      , m_check_throttling{measure.m_check_throttling}
+      : kernel_launch_timer{measure,
+                            disable_blocking_kernel,
+                            measure.m_run_once,
+                            measure.m_check_throttling}
   {}
 
   explicit kernel_launch_timer(measure_cold_base &measure,
@@ -164,59 +168,67 @@ struct measure_cold_base::kernel_launch_timer
                                bool run_once,
                                bool check_throttling)
       : m_measure{measure}
-      , m_disable_blocking_kernel{disable_blocking_kernel}
-      , m_run_once{run_once}
-      , m_check_throttling{check_throttling}
+      , m_core{*this, {disable_blocking_kernel, run_once, check_throttling}}
   {}
 
-  __forceinline__ void start()
+  kernel_launch_timer(const kernel_launch_timer &)            = delete;
+  kernel_launch_timer(kernel_launch_timer &&)                 = delete;
+  kernel_launch_timer &operator=(const kernel_launch_timer &) = delete;
+  kernel_launch_timer &operator=(kernel_launch_timer &&)      = delete;
+
+  ~kernel_launch_timer() noexcept = default;
+
+  __forceinline__ void start() { m_core.start(); }
+
+  __forceinline__ void stop() { m_core.stop(); }
+
+  __forceinline__ void flush_device_l2() { m_measure.flush_device_l2(); }
+
+  __forceinline__ void sync_stream() { m_measure.sync_stream(); }
+
+  __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
   {
-    m_measure.flush_device_l2();
-    m_measure.sync_stream();
+    return m_measure.sync_stream_noexcept();
+  }
 
-    // start CPU timer irrespective of use of blocking kernel
-    // Ref: https://github.com/NVIDIA/nvbench/issues/249
-    m_measure.m_cpu_timer.start();
+  __forceinline__ void cpu_timer_start() noexcept { m_measure.m_cpu_timer.start(); }
 
-    if (!m_disable_blocking_kernel)
-    {
-      m_measure.block_stream();
-    }
-    if (m_check_throttling)
-    {
-      m_measure.gpu_frequency_start();
-    }
-    if (m_run_once)
-    {
-      m_measure.profiler_start();
-    }
+  __forceinline__ void cpu_timer_stop() noexcept { m_measure.m_cpu_timer.stop(); }
+
+  __forceinline__ void cpu_timer_stop_noexcept() noexcept { this->cpu_timer_stop(); }
+
+  __forceinline__ void block_stream() { m_measure.block_stream(); }
+
+  __forceinline__ void unblock_stream() { m_measure.unblock_stream(); }
+
+  __forceinline__ void unblock_stream_noexcept() noexcept { m_measure.unblock_stream_noexcept(); }
+
+  __forceinline__ void gpu_frequency_start() { m_measure.gpu_frequency_start(); }
+
+  __forceinline__ void gpu_frequency_stop() { m_measure.gpu_frequency_stop(); }
+
+  __forceinline__ void profiler_start() { m_measure.profiler_start(); }
+
+  __forceinline__ void profiler_stop() { m_measure.profiler_stop(); }
+
+  __forceinline__ cudaError_t profiler_stop_noexcept() const noexcept
+  {
+    return m_measure.profiler_stop_noexcept();
+  }
+
+  __forceinline__ void cuda_timer_start()
+  {
     m_measure.m_cuda_timer.start(m_measure.m_launch.get_stream());
   }
 
-  __forceinline__ void stop()
+  __forceinline__ void cuda_timer_stop()
   {
     m_measure.m_cuda_timer.stop(m_measure.m_launch.get_stream());
-    if (m_check_throttling)
-    {
-      m_measure.gpu_frequency_stop();
-    }
-    if (!m_disable_blocking_kernel)
-    {
-      m_measure.unblock_stream();
-    }
-    m_measure.sync_stream();
-    if (m_run_once)
-    {
-      m_measure.profiler_stop();
-    }
-    m_measure.m_cpu_timer.stop();
   }
 
 private:
   measure_cold_base &m_measure;
-  bool m_disable_blocking_kernel;
-  bool m_run_once;
-  bool m_check_throttling;
+  nvbench::detail::measure_cold_launch_timer_core<kernel_launch_timer> m_core;
 };
 
 template <typename KernelLauncher>

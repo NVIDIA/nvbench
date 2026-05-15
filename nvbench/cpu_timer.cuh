@@ -45,9 +45,9 @@ struct cpu_timer
   cpu_timer &operator=(const cpu_timer &) = delete;
   cpu_timer &operator=(cpu_timer &&)      = default;
 
-  __forceinline__ void start() { m_start = std::chrono::high_resolution_clock::now(); }
+  __forceinline__ void start() noexcept { m_start = std::chrono::high_resolution_clock::now(); }
 
-  __forceinline__ void stop() { m_stop = std::chrono::high_resolution_clock::now(); }
+  __forceinline__ void stop() noexcept { m_stop = std::chrono::high_resolution_clock::now(); }
 
   // In seconds:
   [[nodiscard]] __forceinline__ nvbench::float64_t get_duration()

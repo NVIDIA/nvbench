@@ -32,6 +32,7 @@
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/detail/stream_cleanup_guard.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
 
@@ -57,6 +58,8 @@ struct measure_hot_base
   measure_hot_base &operator=(measure_hot_base &&)      = delete;
 
 protected:
+  friend struct nvbench::detail::stream_cleanup_guard<measure_hot_base>;
+
   void check();
 
   void initialize()
@@ -73,6 +76,14 @@ protected:
   void block_stream();
 
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
+  __forceinline__ void unblock_stream_noexcept() noexcept { m_blocker.unblock_noexcept(); }
+
+  __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
+  {
+    return cudaStreamSynchronize(m_launch.get_stream());
+  }
+
+  __forceinline__ void sync_stream() const { NVBENCH_CUDA_CALL(this->sync_stream_noexcept()); }
 
   nvbench::state &m_state;
 
@@ -116,11 +127,14 @@ private:
   // measurement.
   void run_warmup()
   {
+    nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
+
     m_cuda_timer.start(m_launch.get_stream());
     this->launch_kernel();
     m_cuda_timer.stop(m_launch.get_stream());
 
     this->sync_stream();
+    cleanup.release();
 
     this->check_skip_time(m_cuda_timer.get_duration());
   }
@@ -139,6 +153,8 @@ private:
     {
       batch_size = std::max(batch_size, nvbench::int64_t{1});
 
+      nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
+
       if (!m_disable_blocking_kernel)
       {
         // Block stream until some work is queued.
@@ -147,7 +163,7 @@ private:
         const auto blocked_launches   = std::min(batch_size, nvbench::int64_t{2});
         const auto unblocked_launches = batch_size - blocked_launches;
 
-        this->block_stream();
+        cleanup.block_stream();
         m_cuda_timer.start(m_launch.get_stream());
 
         for (nvbench::int64_t i = 0; i < blocked_launches; ++i)
@@ -157,7 +173,7 @@ private:
           this->launch_kernel();
         }
 
-        this->unblock_stream(); // Start executing earlier launches
+        cleanup.unblock(); // Start executing earlier launches
 
         for (nvbench::int64_t i = 0; i < unblocked_launches; ++i)
         {
@@ -176,6 +192,7 @@ private:
 
       m_cuda_timer.stop(m_launch.get_stream());
       this->sync_stream();
+      cleanup.release();
 
       m_total_cuda_time += m_cuda_timer.get_duration();
       m_total_samples += batch_size;
@@ -186,7 +203,7 @@ private:
         (m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples)));
 
       if (m_total_cuda_time > m_min_time && // min time okay
-          m_total_samples > m_min_samples)  // min samples okay
+          m_total_samples >= m_min_samples) // min samples okay
       {
         break; // Stop iterating
       }
@@ -203,11 +220,6 @@ private:
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }
-
-  __forceinline__ void sync_stream() const
-  {
-    NVBENCH_CUDA_CALL(cudaStreamSynchronize(m_launch.get_stream()));
-  }
 
   KernelLauncher &m_kernel_launcher;
 };
