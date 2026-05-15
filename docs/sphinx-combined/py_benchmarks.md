@@ -7,11 +7,14 @@ library to benchmark GPU-aware Python code.
 
 ```python
 from cuda.bench import State, Launch
-from cuda.bench import register, run_all_registered
+from cuda.bench import register, axis, options, run_all_registered
 from typing import Callable
 
-from my_package import impl
+from my_package import impl, generate
 
+@register()
+@options.set_name("my_package_kernel")
+@axis.add_int64_axis("Elements", [1000, 10000, 100000])
 def benchmark_impl(state: State) -> None:
 
     # get state parameters
@@ -27,13 +30,6 @@ def benchmark_impl(state: State) -> None:
        lambda launch: impl(data, launch.get_stream())
 
     state.exec(launch_fn)
-
-
-bench = register(benchmark_impl)
-# provide kernel a name
-bench.set_name("my_package_kernel")
-# specify default values of parameter to run benchmark with
-bench.add_int64_axis("Elements", [1000, 10000, 100000])
 
 
 if __name__ == "__main__":
