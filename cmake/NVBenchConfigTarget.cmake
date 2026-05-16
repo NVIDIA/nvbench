@@ -136,3 +136,42 @@ function(nvbench_config_target target_name)
     )
   endif()
 endfunction()
+
+function(nvbench_append_test_runtime_path path_modifications_var target_name)
+  if (NOT TARGET ${target_name})
+    return()
+  endif()
+
+  list(APPEND ${path_modifications_var}
+    "PATH=path_list_prepend:$<TARGET_FILE_DIR:${target_name}>"
+  )
+
+  set(${path_modifications_var}
+    "${${path_modifications_var}}"
+    PARENT_SCOPE
+  )
+endfunction()
+
+function(nvbench_config_test_runtime_environment test_name)
+  if (NOT WIN32)
+    return()
+  endif()
+
+  set(path_modifications "")
+  if (TARGET nvbench)
+    nvbench_append_test_runtime_path(path_modifications nvbench)
+  else()
+    nvbench_append_test_runtime_path(path_modifications nvbench::nvbench)
+  endif()
+
+  nvbench_append_test_runtime_path(path_modifications nvbench::cupti)
+  nvbench_append_test_runtime_path(path_modifications nvbench::nvperf_target)
+  nvbench_append_test_runtime_path(path_modifications nvbench::nvperf_host)
+
+  if (path_modifications)
+    list(REMOVE_DUPLICATES path_modifications)
+    set_property(TEST ${test_name}
+      APPEND PROPERTY ENVIRONMENT_MODIFICATION ${path_modifications}
+    )
+  endif()
+endfunction()

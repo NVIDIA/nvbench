@@ -10,12 +10,22 @@ set(cmake_opts
   -D "CMAKE_CUDA_ARCHITECTURES=${arches}"
 )
 if (WIN32)
+  set(cuda_host_compiler "${CMAKE_CUDA_HOST_COMPILER}")
+  if (NOT cuda_host_compiler)
+    set(cuda_host_compiler "${CMAKE_CXX_COMPILER}")
+  endif()
   list(APPEND cmake_opts
-    -D "CMAKE_CUDA_HOST_COMPILER=${CMAKE_CXX_COMPILER}"
-    -D "CMAKE_LINKER=${CMAKE_LINKER}"
-    -D "CMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}"
-    -D "CMAKE_MT=${CMAKE_MT}"
+    -D "CMAKE_CUDA_HOST_COMPILER=${cuda_host_compiler}"
   )
+  if (CMAKE_LINKER)
+    list(APPEND cmake_opts -D "CMAKE_LINKER=${CMAKE_LINKER}")
+  endif()
+  if (CMAKE_RC_COMPILER)
+    list(APPEND cmake_opts -D "CMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
+  endif()
+  if (CMAKE_MT)
+    list(APPEND cmake_opts -D "CMAKE_MT=${CMAKE_MT}")
+  endif()
 endif()
 
 # Temporary installation prefix for tests against installed nvbench:
@@ -40,11 +50,13 @@ function(nvbench_add_compile_test full_test_name_var subdir test_id)
         ${ARGN}
       --test-command "${CMAKE_CTEST_COMMAND}" --output-on-failure
   )
-  if (WIN32 AND NVBench_ENABLE_CUPTI AND nvbench_cupti_root)
-    cmake_path(NATIVE_PATH nvbench_cupti_root cupti_native)
-    cmake_path(NATIVE_PATH NVBench_EXECUTABLE_OUTPUT_DIR bin_native)
-    set_tests_properties(${test_name} PROPERTIES
-      ENVIRONMENT "PATH=${bin_native}\\;${cupti_native}\\lib64\\;$ENV{PATH}"
+  if (WIN32)
+    set(path_mods "PATH=path_list_prepend:$<SHELL_PATH:${NVBench_EXECUTABLE_OUTPUT_DIR}>")
+    if (TARGET nvbench::cupti)
+      list(PREPEND path_mods "PATH=path_list_prepend:$<TARGET_FILE_DIR:nvbench::cupti>")
+    endif()
+    set_property(TEST ${test_name} PROPERTY
+      ENVIRONMENT_MODIFICATION ${path_mods}
     )
   endif()
   set(${full_test_name_var} ${test_name} PARENT_SCOPE)

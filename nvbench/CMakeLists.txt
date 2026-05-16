@@ -101,6 +101,12 @@ target_link_libraries(nvbench
     fmt::fmt
     nvbench_json
 )
+target_compile_options(nvbench PUBLIC
+  # CCCL requires MSVC's conforming preprocessor when compiling CUDA sources
+  # with cl.exe as the host compiler.
+  $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:preprocessor>
+  $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<CXX_COMPILER_ID:MSVC>>:-Xcompiler=/Zc:preprocessor>
+)
 
 
 # ##################################################################################################
@@ -134,6 +140,10 @@ nvbench_config_target(nvbench.main)
 target_compile_definitions(nvbench.main PRIVATE NVBENCH_NO_IMPLICIT_SYSTEM_HEADER)
 # Propagate `nvbench` to consumers but keep NVBench's own build warning-visible.
 target_link_libraries(nvbench.main PUBLIC nvbench)
+if (MSVC)
+  # inform MSVC that library provides main
+  target_link_options(nvbench.main INTERFACE "LINKER:/INCLUDE:main")
+endif()
 # Ensure CUDA/CUPTI/NVML include dirs are visible for nvbench.main's build.
 target_link_libraries(nvbench.main PRIVATE ${ctk_libraries})
 # Add NVBench's headers privately so the main library itself sees warnings.

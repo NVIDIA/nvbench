@@ -38,7 +38,7 @@ on:
   workflow_dispatch:
     inputs:
       cuda:
-        description: "CUDA Toolkit version"
+        description: "CUDA Toolkit major.minor version"
         type: string
         required: false
         default: "13.0"
@@ -113,14 +113,50 @@ jobs:
           aws-region: us-east-2
           role-duration-seconds: 43200
 
+      - name: Validate Windows build inputs
+        id: validate_windows_build_inputs
+        env:
+          NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
+          NVBENCH_WINDOWS_STD: ${{ inputs.std }}
+          NVBENCH_WINDOWS_ARCH: ${{ inputs.arch }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if ($env:NVBENCH_WINDOWS_CUDA -notmatch '^\d+\.\d+$') {
+            throw "Invalid CUDA version '$env:NVBENCH_WINDOWS_CUDA'. Expected '<major>.<minor>', for example '13.0'."
+          }
+
+          if (@("17", "20") -notcontains $env:NVBENCH_WINDOWS_STD) {
+            throw "Invalid C++ standard '$env:NVBENCH_WINDOWS_STD'. Expected '17' or '20'."
+          }
+
+          $arch = "$env:NVBENCH_WINDOWS_ARCH".Trim()
+          $normalizedArch = $arch
+          if ($arch) {
+            if (@("all", "all-major", "native") -notcontains $arch) {
+              $archItems = @($arch -split '[;,]' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+              if ($archItems.Length -eq 0) {
+                throw "Invalid CMAKE_CUDA_ARCHITECTURES value '$arch'. Expected empty, 'all', 'all-major', 'native', or a list like '80;90-real'."
+              }
+              foreach ($archItem in $archItems) {
+                if ($archItem -notmatch '^\d{2,3}(-real|-virtual)?$') {
+                  throw "Invalid CMAKE_CUDA_ARCHITECTURES value '$arch'. Expected empty, 'all', 'all-major', 'native', or a list like '80;90-real'."
+                }
+              }
+              $normalizedArch = $archItems -join ';'
+            }
+          }
+          "arch=$normalizedArch" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       - name: Fetch Windows devcontainer image
         run: |
           docker pull "$env:WINDOWS_CI_IMAGE"
 
       - name: Build NVBench
         env:
+          NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
-          NVBENCH_WINDOWS_ARCH: ${{ inputs.arch }}
+          NVBENCH_WINDOWS_ARCH: ${{ steps.validate_windows_build_inputs.outputs.arch }}
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -131,7 +167,8 @@ jobs:
           @"
           `$ErrorActionPreference = 'Stop'
           git config --global --add safe.directory '$containerRepo'
-          & '$containerRepo/ci/windows/build_nvbench.ps1' -std '$env:NVBENCH_WINDOWS_STD' -arch '$env:NVBENCH_WINDOWS_ARCH'
+          & '$containerRepo/ci/windows/install_cuda_profiler_api.ps1' -cudaVersion "`$env:NVBENCH_WINDOWS_CUDA"
+          & '$containerRepo/ci/windows/build_nvbench.ps1' -std "`$env:NVBENCH_WINDOWS_STD" -arch "`$env:NVBENCH_WINDOWS_ARCH" -device-testing `$true
           exit `$LASTEXITCODE
           "@ | Set-Content -Path $script -Encoding UTF8
 
@@ -152,13 +189,19 @@ jobs:
             "--env", "GITHUB_REPOSITORY=$env:GITHUB_REPOSITORY",
             "--env", "GITHUB_RUN_ID=$env:GITHUB_RUN_ID",
             "--env", "GITHUB_SHA=$env:GITHUB_SHA",
+            "--env", "NVBENCH_WINDOWS_ARCH=$env:NVBENCH_WINDOWS_ARCH",
+            "--env", "NVBENCH_WINDOWS_CUDA=$env:NVBENCH_WINDOWS_CUDA",
+            "--env", "NVBENCH_WINDOWS_STD=$env:NVBENCH_WINDOWS_STD",
             "--env", "SCCACHE_BUCKET=$env:SCCACHE_BUCKET",
             "--env", "SCCACHE_IDLE_TIMEOUT=$env:SCCACHE_IDLE_TIMEOUT",
             "--env", "SCCACHE_REGION=$env:SCCACHE_REGION",
             "--env", "SCCACHE_S3_NO_CREDENTIALS=$env:SCCACHE_S3_NO_CREDENTIALS",
             "--env", "SCCACHE_S3_PREPROCESSOR_CACHE_KEY_PREFIX=$env:SCCACHE_S3_PREPROCESSOR_CACHE_KEY_PREFIX",
             "--env", "SCCACHE_S3_USE_PREPROCESSOR_CACHE_MODE=$env:SCCACHE_S3_USE_PREPROCESSOR_CACHE_MODE",
-            "--env", "SCCACHE_S3_USE_SSL=$env:SCCACHE_S3_USE_SSL",
+            "--env", "SCCACHE_S3_USE_SSL=$env:SCCACHE_S3_USE_SSL"
+          )
+
+          $dockerArgs += @(
             "$env:WINDOWS_CI_IMAGE",
             "powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass",
             "-File", $containerScript
