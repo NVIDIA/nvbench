@@ -119,6 +119,7 @@ jobs:
 
       - name: Build NVBench
         env:
+          NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
           NVBENCH_WINDOWS_ARCH: ${{ inputs.arch }}
         run: |
@@ -131,6 +132,7 @@ jobs:
           @"
           `$ErrorActionPreference = 'Stop'
           git config --global --add safe.directory '$containerRepo'
+          & '$containerRepo/ci/windows/install_cuda_profiler_api.ps1' -cudaVersion '$env:NVBENCH_WINDOWS_CUDA'
           & '$containerRepo/ci/windows/build_nvbench.ps1' -std '$env:NVBENCH_WINDOWS_STD' -arch '$env:NVBENCH_WINDOWS_ARCH'
           exit `$LASTEXITCODE
           "@ | Set-Content -Path $script -Encoding UTF8
