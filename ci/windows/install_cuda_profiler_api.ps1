@@ -9,6 +9,19 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
+function Get-CudaVersionFromPath {
+    Param(
+        [Parameter(Mandatory = $false)]
+        [string]$Path = ""
+    )
+
+    if ($Path -and $Path -match "v(?<version>\d+\.\d+)[\\/]?$") {
+        return $Matches.version
+    }
+
+    return ""
+}
+
 function Assert-NvidiaAuthenticodeSignature {
     Param(
         [Parameter(Mandatory = $true)]
@@ -30,10 +43,9 @@ function Assert-NvidiaAuthenticodeSignature {
 }
 
 if (-not $CUDA_VERSION) {
-    if ($env:CUDA_PATH -and ($env:CUDA_PATH -match "v(?<version>\d+\.\d+)$")) {
-        $CUDA_VERSION = $Matches.version
-    } else {
-        throw "Could not determine CUDA version. Provide -cudaVersion or set CUDA_PATH."
+    $CUDA_VERSION = Get-CudaVersionFromPath -Path $env:CUDA_PATH
+    if (-not $CUDA_VERSION) {
+        throw "Could not determine CUDA version. Provide -cudaVersion or set CUDA_PATH to a path ending in v<major>.<minor>."
     }
 }
 
@@ -48,10 +60,18 @@ if ($build -lt 0) {
 
 $mmbVersionTag = "${major}.${minor}.${build}"
 $mmVersionTag = "${major}.${minor}"
-$cudaRoot = if ($env:CUDA_PATH) {
-    $env:CUDA_PATH
+
+if ($env:CUDA_PATH) {
+    $cudaPathVersion = Get-CudaVersionFromPath -Path $env:CUDA_PATH
+    if (-not $cudaPathVersion) {
+        throw "CUDA_PATH is set but does not end in v<major>.<minor>: $env:CUDA_PATH"
+    }
+    if ($cudaPathVersion -ne $mmVersionTag) {
+        throw "CUDA_PATH points to CUDA $cudaPathVersion, but CUDA $mmVersionTag was requested."
+    }
+    $cudaRoot = $env:CUDA_PATH
 } else {
-    "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$mmVersionTag"
+    $cudaRoot = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$mmVersionTag"
 }
 $profilerHeader = "$cudaRoot\include\cuda_profiler_api.h"
 
