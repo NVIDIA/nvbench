@@ -55,6 +55,14 @@ function(join_nonempty_paths out_var separator)
   set(${out_var} "${joined_paths}" PARENT_SCOPE)
 endfunction()
 
+function(prepend_runtime_path out_var path_var separator env_var)
+  if (DEFINED ENV{${env_var}} AND NOT "$ENV{${env_var}}" STREQUAL "")
+    set(${out_var} "${${path_var}}${separator}$ENV{${env_var}}" PARENT_SCOPE)
+  else()
+    set(${out_var} "${${path_var}}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 if (WIN32)
   join_nonempty_paths(lib_dirs "\\;" "${nvbench_lib_dir}" "${cupti_lib_dir}")
   if (lib_dirs)
@@ -72,13 +80,15 @@ else()
   join_nonempty_paths(cupti_ld_library_path ":" "${cupti_lib_dir}")
   join_nonempty_paths(nvbench_ld_library_path ":" "${nvbench_lib_dir}" "${cupti_lib_dir}")
   if (cupti_ld_library_path)
+    prepend_runtime_path(test_bench_ld_library_path cupti_ld_library_path ":" LD_LIBRARY_PATH)
     set_property(TEST test_bench PROPERTY
-      ENVIRONMENT "LD_LIBRARY_PATH=${cupti_ld_library_path}"
+      ENVIRONMENT "LD_LIBRARY_PATH=${test_bench_ld_library_path}"
     )
   endif()
   if (nvbench_ld_library_path)
+    prepend_runtime_path(nvbench_ctl_ld_library_path nvbench_ld_library_path ":" LD_LIBRARY_PATH)
     set_property(TEST nvbench_ctl PROPERTY
-      ENVIRONMENT "LD_LIBRARY_PATH=${nvbench_ld_library_path}"
+      ENVIRONMENT "LD_LIBRARY_PATH=${nvbench_ctl_ld_library_path}"
     )
   endif()
 endif()
