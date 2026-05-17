@@ -44,19 +44,37 @@ if (TARGET nvbench::cupti)
   cmake_path(GET cupti_lib PARENT_PATH cupti_lib_dir)
 endif()
 
+function(join_nonempty_paths out_var separator)
+  set(paths "")
+  foreach(path IN LISTS ARGN)
+    if (path)
+      list(APPEND paths "${path}")
+    endif()
+  endforeach()
+  list(JOIN paths "${separator}" joined_paths)
+  set(${out_var} "${joined_paths}" PARENT_SCOPE)
+endfunction()
+
 if (WIN32)
-  set(lib_dirs "${nvbench_lib_dir}\\;${cupti_lib_dir}")
+  join_nonempty_paths(lib_dirs "\\;" "${nvbench_lib_dir}" "${cupti_lib_dir}")
+  if (lib_dirs)
+    set(path_env "PATH=${lib_dirs}\\;$ENV{PATH}")
+  else()
+    set(path_env "PATH=$ENV{PATH}")
+  endif()
   set_property(TEST test_bench PROPERTY
-    ENVIRONMENT "PATH=${lib_dirs}\\;$ENV{PATH}"
+    ENVIRONMENT "${path_env}"
   )
   set_property(TEST nvbench_ctl PROPERTY
-    ENVIRONMENT "PATH=${lib_dirs}\\;$ENV{PATH}"
+    ENVIRONMENT "${path_env}"
   )
 else()
+  join_nonempty_paths(cupti_ld_library_path ":" "${cupti_lib_dir}")
+  join_nonempty_paths(nvbench_ld_library_path ":" "${nvbench_lib_dir}" "${cupti_lib_dir}")
   set_property(TEST test_bench PROPERTY
-    ENVIRONMENT "LD_LIBRARY_PATH=${cupti_lib_dir}"
+    ENVIRONMENT "LD_LIBRARY_PATH=${cupti_ld_library_path}"
   )
   set_property(TEST nvbench_ctl PROPERTY
-    ENVIRONMENT "LD_LIBRARY_PATH=${nvbench_lib_dir}:${cupti_lib_dir}"
+    ENVIRONMENT "LD_LIBRARY_PATH=${nvbench_ld_library_path}"
   )
 endif()
