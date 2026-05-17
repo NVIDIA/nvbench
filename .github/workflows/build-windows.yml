@@ -132,8 +132,8 @@ jobs:
           @"
           `$ErrorActionPreference = 'Stop'
           git config --global --add safe.directory '$containerRepo'
-          & '$containerRepo/ci/windows/install_cuda_profiler_api.ps1' -cudaVersion '$env:NVBENCH_WINDOWS_CUDA'
-          & '$containerRepo/ci/windows/build_nvbench.ps1' -std '$env:NVBENCH_WINDOWS_STD' -arch '$env:NVBENCH_WINDOWS_ARCH'
+          & '$containerRepo/ci/windows/install_cuda_profiler_api.ps1' -cudaVersion "`$env:NVBENCH_WINDOWS_CUDA"
+          & '$containerRepo/ci/windows/build_nvbench.ps1' -std "`$env:NVBENCH_WINDOWS_STD" -arch "`$env:NVBENCH_WINDOWS_ARCH"
           exit `$LASTEXITCODE
           "@ | Set-Content -Path $script -Encoding UTF8
 
@@ -154,6 +154,9 @@ jobs:
             "--env", "GITHUB_REPOSITORY=$env:GITHUB_REPOSITORY",
             "--env", "GITHUB_RUN_ID=$env:GITHUB_RUN_ID",
             "--env", "GITHUB_SHA=$env:GITHUB_SHA",
+            "--env", "NVBENCH_WINDOWS_ARCH=$env:NVBENCH_WINDOWS_ARCH",
+            "--env", "NVBENCH_WINDOWS_CUDA=$env:NVBENCH_WINDOWS_CUDA",
+            "--env", "NVBENCH_WINDOWS_STD=$env:NVBENCH_WINDOWS_STD",
             "--env", "SCCACHE_BUCKET=$env:SCCACHE_BUCKET",
             "--env", "SCCACHE_IDLE_TIMEOUT=$env:SCCACHE_IDLE_TIMEOUT",
             "--env", "SCCACHE_REGION=$env:SCCACHE_REGION",
