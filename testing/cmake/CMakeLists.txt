@@ -45,10 +45,11 @@ function(nvbench_add_compile_test full_test_name_var subdir test_id)
       --test-command "${CMAKE_CTEST_COMMAND}" --output-on-failure
   )
   if (WIN32 AND NVBench_ENABLE_CUPTI AND nvbench_cupti_root)
-    cmake_path(NATIVE_PATH nvbench_cupti_root cupti_native)
-    cmake_path(NATIVE_PATH NVBench_EXECUTABLE_OUTPUT_DIR bin_native)
+    set(cupti_lib_dir "${nvbench_cupti_root}/lib64")
     set_tests_properties(${test_name} PROPERTIES
-      ENVIRONMENT "PATH=${bin_native}\\;${cupti_native}\\lib64\\;$ENV{PATH}"
+      ENVIRONMENT_MODIFICATION
+        "PATH=path_list_prepend:$<SHELL_PATH:${cupti_lib_dir}>"
+        "PATH=path_list_prepend:$<SHELL_PATH:${NVBench_EXECUTABLE_OUTPUT_DIR}>"
     )
   endif()
   set(${full_test_name_var} ${test_name} PARENT_SCOPE)
