@@ -71,10 +71,14 @@ if (WIN32)
 else()
   join_nonempty_paths(cupti_ld_library_path ":" "${cupti_lib_dir}")
   join_nonempty_paths(nvbench_ld_library_path ":" "${nvbench_lib_dir}" "${cupti_lib_dir}")
-  set_property(TEST test_bench PROPERTY
-    ENVIRONMENT "LD_LIBRARY_PATH=${cupti_ld_library_path}"
-  )
-  set_property(TEST nvbench_ctl PROPERTY
-    ENVIRONMENT "LD_LIBRARY_PATH=${nvbench_ld_library_path}"
-  )
+  if (cupti_ld_library_path)
+    set_property(TEST test_bench PROPERTY
+      ENVIRONMENT "LD_LIBRARY_PATH=${cupti_ld_library_path}"
+    )
+  endif()
+  if (nvbench_ld_library_path)
+    set_property(TEST nvbench_ctl PROPERTY
+      ENVIRONMENT "LD_LIBRARY_PATH=${nvbench_ld_library_path}"
+    )
+  endif()
 endif()
