@@ -34,12 +34,16 @@ function Assert-NvidiaAuthenticodeSignature {
         throw "Invalid Authenticode signature for '$Path': $($signature.Status) $($signature.StatusMessage)"
     }
 
-    $subject = $signature.SignerCertificate.Subject
-    if ($subject -notmatch "NVIDIA") {
-        throw "Unexpected signer for '$Path': $subject"
+    $expectedPublisher = "NVIDIA Corporation"
+    $publisher = $signature.SignerCertificate.GetNameInfo(
+        [System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName,
+        $false
+    )
+    if ($publisher -ne $expectedPublisher) {
+        throw "Unexpected signer for '$Path': $publisher"
     }
 
-    Write-Host "Validated Authenticode signature for '$Path': $subject"
+    Write-Host "Validated Authenticode signature for '$Path': $publisher"
 }
 
 function Invoke-WebRequestWithRetry {
