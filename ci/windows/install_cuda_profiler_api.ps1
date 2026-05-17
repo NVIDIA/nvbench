@@ -9,6 +9,26 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
+function Assert-NvidiaAuthenticodeSignature {
+    Param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path
+    )
+
+    $signature = Get-AuthenticodeSignature -FilePath $Path
+    if ($signature.Status -ne "Valid") {
+        throw "Invalid Authenticode signature for '$Path': $($signature.Status) $($signature.StatusMessage)"
+    }
+
+    $subject = $signature.SignerCertificate.Subject
+    if ($subject -notmatch "NVIDIA") {
+        throw "Unexpected signer for '$Path': $subject"
+    }
+
+    Write-Host "Validated Authenticode signature for '$Path': $subject"
+}
+
 if (-not $CUDA_VERSION) {
     if ($env:CUDA_PATH -and ($env:CUDA_PATH -match "v(?<version>\d+\.\d+)$")) {
         $CUDA_VERSION = $Matches.version
@@ -28,7 +48,11 @@ if ($build -lt 0) {
 
 $mmbVersionTag = "${major}.${minor}.${build}"
 $mmVersionTag = "${major}.${minor}"
-$cudaRoot = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$mmVersionTag"
+$cudaRoot = if ($env:CUDA_PATH) {
+    $env:CUDA_PATH
+} else {
+    "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$mmVersionTag"
+}
 $profilerHeader = "$cudaRoot\include\cuda_profiler_api.h"
 
 if (Test-Path $profilerHeader) {
@@ -44,6 +68,7 @@ $installer = Join-Path $env:TEMP "cuda_${mmbVersionTag}_windows_network.exe"
 Write-Host "Installing CUDA component: $component"
 Write-Host "Downloading CUDA network installer: $cudaVersionUrl"
 Invoke-WebRequest -Uri $cudaVersionUrl -OutFile $installer -UseBasicParsing
+Assert-NvidiaAuthenticodeSignature -Path $installer
 
 try {
     $process = Start-Process -Wait -PassThru -FilePath $installer -ArgumentList @("-s", $component)
