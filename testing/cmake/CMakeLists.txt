@@ -10,8 +10,12 @@ set(cmake_opts
   -D "CMAKE_CUDA_ARCHITECTURES=${arches}"
 )
 if (WIN32)
+  set(cuda_host_compiler "${CMAKE_CUDA_HOST_COMPILER}")
+  if (NOT cuda_host_compiler)
+    set(cuda_host_compiler "${CMAKE_CXX_COMPILER}")
+  endif()
   list(APPEND cmake_opts
-    -D "CMAKE_CUDA_HOST_COMPILER=${CMAKE_CXX_COMPILER}"
+    -D "CMAKE_CUDA_HOST_COMPILER=${cuda_host_compiler}"
     -D "CMAKE_LINKER=${CMAKE_LINKER}"
     -D "CMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}"
     -D "CMAKE_MT=${CMAKE_MT}"
