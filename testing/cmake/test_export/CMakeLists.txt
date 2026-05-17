@@ -64,18 +64,21 @@ function(prepend_runtime_path out_var path_var separator env_var)
 endfunction()
 
 if (WIN32)
-  join_nonempty_paths(lib_dirs "\\;" "${nvbench_lib_dir}" "${cupti_lib_dir}")
-  if (lib_dirs)
-    set(path_env "PATH=${lib_dirs}\\;$ENV{PATH}")
-  else()
-    set(path_env "PATH=$ENV{PATH}")
+  set(path_modifications "")
+  if (cupti_lib_dir)
+    list(APPEND path_modifications "PATH=path_list_prepend:$<SHELL_PATH:${cupti_lib_dir}>")
   endif()
-  set_property(TEST test_bench PROPERTY
-    ENVIRONMENT "${path_env}"
-  )
-  set_property(TEST nvbench_ctl PROPERTY
-    ENVIRONMENT "${path_env}"
-  )
+  if (nvbench_lib_dir)
+    list(APPEND path_modifications "PATH=path_list_prepend:$<SHELL_PATH:${nvbench_lib_dir}>")
+  endif()
+  if (path_modifications)
+    set_property(TEST test_bench PROPERTY
+      ENVIRONMENT_MODIFICATION ${path_modifications}
+    )
+    set_property(TEST nvbench_ctl PROPERTY
+      ENVIRONMENT_MODIFICATION ${path_modifications}
+    )
+  endif()
 else()
   join_nonempty_paths(cupti_ld_library_path ":" "${cupti_lib_dir}")
   join_nonempty_paths(nvbench_ld_library_path ":" "${nvbench_lib_dir}" "${cupti_lib_dir}")
