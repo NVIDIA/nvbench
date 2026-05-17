@@ -46,7 +46,7 @@ function(nvbench_add_compile_test full_test_name_var subdir test_id)
   )
   if (WIN32 AND NVBench_ENABLE_CUPTI AND nvbench_cupti_root)
     set(cupti_lib_dir "${nvbench_cupti_root}/lib64")
-    set_tests_properties(${test_name} PROPERTIES
+    set_property(TEST ${test_name} PROPERTY
       ENVIRONMENT_MODIFICATION
         "PATH=path_list_prepend:$<SHELL_PATH:${cupti_lib_dir}>"
         "PATH=path_list_prepend:$<SHELL_PATH:${NVBench_EXECUTABLE_OUTPUT_DIR}>"
