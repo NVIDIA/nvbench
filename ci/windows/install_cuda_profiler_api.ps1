@@ -42,6 +42,38 @@ function Assert-NvidiaAuthenticodeSignature {
     Write-Host "Validated Authenticode signature for '$Path': $subject"
 }
 
+function Invoke-WebRequestWithRetry {
+    Param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Uri,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$OutFile,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateRange(1, 10)]
+        [int]$MaxAttempts = 3
+    )
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        try {
+            Remove-Item $OutFile -ErrorAction SilentlyContinue
+            Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+            return
+        } catch {
+            if ($attempt -eq $MaxAttempts) {
+                throw
+            }
+
+            $delaySeconds = 5 * $attempt
+            Write-Warning "Download failed on attempt $attempt of $MaxAttempts. Retrying in $delaySeconds seconds. $_"
+            Start-Sleep -Seconds $delaySeconds
+        }
+    }
+}
+
 if (-not $CUDA_VERSION) {
     $CUDA_VERSION = Get-CudaVersionFromPath -Path $env:CUDA_PATH
     if (-not $CUDA_VERSION) {
@@ -87,7 +119,7 @@ $installer = Join-Path $env:TEMP "cuda_${mmbVersionTag}_windows_network.exe"
 
 Write-Host "Installing CUDA component: $component"
 Write-Host "Downloading CUDA network installer: $cudaVersionUrl"
-Invoke-WebRequest -Uri $cudaVersionUrl -OutFile $installer -UseBasicParsing
+Invoke-WebRequestWithRetry -Uri $cudaVersionUrl -OutFile $installer
 Assert-NvidiaAuthenticodeSignature -Path $installer
 
 try {
