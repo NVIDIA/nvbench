@@ -46,6 +46,30 @@ function Assert-NvidiaAuthenticodeSignature {
     Write-Host "Validated Authenticode signature for '$Path': $publisher"
 }
 
+function Get-HttpStatusCodeFromError {
+    Param(
+        [Parameter(Mandatory = $true)]
+        $ErrorRecord
+    )
+
+    $responseProperty = $ErrorRecord.Exception.PSObject.Properties["Response"]
+    if (-not $responseProperty) {
+        return $null
+    }
+
+    $response = $responseProperty.Value
+    if ($null -eq $response) {
+        return $null
+    }
+
+    $statusCodeProperty = $response.PSObject.Properties["StatusCode"]
+    if (-not $statusCodeProperty) {
+        return $null
+    }
+
+    return [int]$statusCodeProperty.Value
+}
+
 function Invoke-WebRequestWithRetry {
     Param(
         [Parameter(Mandatory = $true)]
@@ -67,6 +91,11 @@ function Invoke-WebRequestWithRetry {
             Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
             return
         } catch {
+            $statusCode = Get-HttpStatusCodeFromError -ErrorRecord $_
+            if ($statusCode -ge 400 -and $statusCode -lt 500) {
+                throw "Download failed with non-retryable HTTP status $statusCode from '$Uri'. $_"
+            }
+
             if ($attempt -eq $MaxAttempts) {
                 throw
             }
@@ -126,12 +155,22 @@ Write-Host "Downloading CUDA network installer: $cudaVersionUrl"
 Invoke-WebRequestWithRetry -Uri $cudaVersionUrl -OutFile $installer
 Assert-NvidiaAuthenticodeSignature -Path $installer
 
+$installerTimeoutSeconds = 900
+$process = $null
 try {
-    $process = Start-Process -Wait -PassThru -FilePath $installer -ArgumentList @("-s", $component)
+    $process = Start-Process -PassThru -FilePath $installer -ArgumentList @("-s", $component)
+    if (-not $process.WaitForExit($installerTimeoutSeconds * 1000)) {
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        throw "CUDA network installer timed out after $installerTimeoutSeconds seconds."
+    }
+
     if ($process.ExitCode -ne 0) {
         throw "CUDA network installer failed with exit code $($process.ExitCode)."
     }
 } finally {
+    if ($process) {
+        $process.Dispose()
+    }
     Remove-Item $installer -ErrorAction SilentlyContinue
 }
 
