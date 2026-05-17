@@ -88,7 +88,7 @@ function Invoke-WebRequestWithRetry {
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
         try {
             Remove-Item $OutFile -ErrorAction SilentlyContinue
-            Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+            Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing -TimeoutSec 300
             return
         } catch {
             $statusCode = Get-HttpStatusCodeFromError -ErrorRecord $_
