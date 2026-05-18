@@ -137,59 +137,14 @@ function(nvbench_config_target target_name)
   endif()
 endfunction()
 
-function(nvbench_get_imported_location out_var target_name)
-  get_property(imported_configs TARGET ${target_name}
-    PROPERTY IMPORTED_CONFIGURATIONS
-  )
-  list(LENGTH imported_configs num_configs)
-
-  if (num_configs GREATER 0)
-    if (CMAKE_BUILD_TYPE)
-      string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type)
-      list(FIND imported_configs "${build_type}" imported_config_index)
-    else()
-      set(imported_config_index -1)
-    endif()
-
-    if (imported_config_index GREATER_EQUAL 0)
-      list(GET imported_configs ${imported_config_index} imported_config)
-    else()
-      list(GET imported_configs 0 imported_config)
-    endif()
-
-    get_property(imported_location TARGET ${target_name}
-      PROPERTY IMPORTED_LOCATION_${imported_config}
-    )
-  endif()
-
-  if (NOT imported_location)
-    get_property(imported_location TARGET ${target_name}
-      PROPERTY IMPORTED_LOCATION
-    )
-  endif()
-
-  set(${out_var} "${imported_location}" PARENT_SCOPE)
-endfunction()
-
 function(nvbench_append_test_runtime_path path_modifications_var target_name)
   if (NOT TARGET ${target_name})
     return()
   endif()
 
-  get_property(is_imported TARGET ${target_name} PROPERTY IMPORTED)
-  if (is_imported)
-    nvbench_get_imported_location(runtime_artifact ${target_name})
-    if (runtime_artifact)
-      cmake_path(GET runtime_artifact PARENT_PATH runtime_dir)
-      list(APPEND ${path_modifications_var}
-        "PATH=path_list_prepend:$<SHELL_PATH:${runtime_dir}>"
-      )
-    endif()
-  else()
-    list(APPEND ${path_modifications_var}
-      "PATH=path_list_prepend:$<TARGET_FILE_DIR:${target_name}>"
-    )
-  endif()
+  list(APPEND ${path_modifications_var}
+    "PATH=path_list_prepend:$<TARGET_FILE_DIR:${target_name}>"
+  )
 
   set(${path_modifications_var}
     "${${path_modifications_var}}"
