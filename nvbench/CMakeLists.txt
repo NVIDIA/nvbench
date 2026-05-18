@@ -101,6 +101,12 @@ target_link_libraries(nvbench
     fmt::fmt
     nvbench_json
 )
+target_compile_options(nvbench PUBLIC
+  # CCCL requires MSVC's conforming preprocessor when compiling CUDA sources
+  # with cl.exe as the host compiler.
+  $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:preprocessor>
+  $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<CXX_COMPILER_ID:MSVC>>:-Xcompiler=/Zc:preprocessor>
+)
 
 
 # ##################################################################################################

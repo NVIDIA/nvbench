@@ -66,12 +66,6 @@ if (NVBench_TOPLEVEL_PROJECT AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
   endif()
 endif()
 
-if (MSVC)
-  # CCCL requires MSVC's conforming preprocessor when compiling CUDA sources
-  # with cl.exe as the host compiler.
-  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/Zc:preprocessor")
-endif()
-
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wall")
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wextra")
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wconversion")
