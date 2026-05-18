@@ -330,7 +330,7 @@ function Select-ProfilerApiManifest {
             continue
         }
 
-        $matches = 0
+        $componentMatches = 0
         $mismatches = @()
         foreach ($componentName in $matchComponents) {
             $localVersion = Get-ComponentVersion `
@@ -345,18 +345,18 @@ function Select-ProfilerApiManifest {
             }
 
             if ($localVersion -eq $manifestVersion) {
-                $matches++
+                $componentMatches++
             } else {
                 $mismatches += "$componentName local=$localVersion manifest=$manifestVersion"
             }
         }
 
-        if ($matches -gt 0 -and $mismatches.Count -eq 0) {
-            if ($null -eq $bestCandidate -or $matches -gt $bestCandidate.MatchCount) {
+        if ($componentMatches -gt 0 -and $mismatches.Count -eq 0) {
+            if ($null -eq $bestCandidate -or $componentMatches -gt $bestCandidate.MatchCount) {
                 $bestCandidate = [PSCustomObject]@{
                     Name = $manifestName
                     Manifest = $manifest
-                    MatchCount = $matches
+                    MatchCount = $componentMatches
                 }
             }
         }
