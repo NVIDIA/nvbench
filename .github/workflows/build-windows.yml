@@ -179,6 +179,10 @@ jobs:
             throw "Invalid Windows build inputs: gpu=true is only supported in NVIDIA/nvbench, where the configured runner can be selected."
           }
 
+          if ($deviceTesting -and -not $runTests) {
+            throw "Invalid Windows build inputs: device_testing=true requires run_tests=true."
+          }
+
           if ($runTests -and $deviceTesting -and -not $gpuEnabled) {
             throw "Invalid Windows build inputs: run_tests=true and device_testing=true require gpu=true."
           }
