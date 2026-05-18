@@ -22,6 +22,43 @@ function Get-CudaVersionFromPath {
     return ""
 }
 
+function Get-CudaRootFromNvcc {
+    $nvccCommand = Get-Command "nvcc.exe" -ErrorAction SilentlyContinue
+    if (-not $nvccCommand) {
+        return ""
+    }
+
+    $nvccPath = $nvccCommand.Source
+    $binDir = Split-Path -Parent $nvccPath
+    if ((Split-Path -Leaf $binDir) -ne "bin") {
+        throw "Could not derive CUDA root from nvcc.exe path: $nvccPath"
+    }
+
+    return Split-Path -Parent $binDir
+}
+
+function Assert-SamePath {
+    Param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Left,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Right,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Message
+    )
+
+    $leftFullPath = [System.IO.Path]::GetFullPath($Left).TrimEnd('\', '/')
+    $rightFullPath = [System.IO.Path]::GetFullPath($Right).TrimEnd('\', '/')
+    if ($leftFullPath -ne $rightFullPath) {
+        throw "$Message Left='$leftFullPath' Right='$rightFullPath'"
+    }
+}
+
 function Assert-NvidiaAuthenticodeSignature {
     Param(
         [Parameter(Mandatory = $true)]
@@ -130,6 +167,17 @@ if ($build -lt 0) {
 $mmbVersionTag = "${major}.${minor}.${build}"
 $mmVersionTag = "${major}.${minor}"
 
+$nvccCudaRoot = Get-CudaRootFromNvcc
+if ($nvccCudaRoot) {
+    $nvccCudaVersion = Get-CudaVersionFromPath -Path $nvccCudaRoot
+    if (-not $nvccCudaVersion) {
+        throw "Could not determine CUDA version from active nvcc.exe root: $nvccCudaRoot"
+    }
+    if ($nvccCudaVersion -ne $mmVersionTag) {
+        throw "Active nvcc.exe is from CUDA $nvccCudaVersion, but CUDA $mmVersionTag was requested."
+    }
+}
+
 if ($env:CUDA_PATH) {
     $cudaPathVersion = Get-CudaVersionFromPath -Path $env:CUDA_PATH
     if (-not $cudaPathVersion) {
@@ -138,7 +186,15 @@ if ($env:CUDA_PATH) {
     if ($cudaPathVersion -ne $mmVersionTag) {
         throw "CUDA_PATH points to CUDA $cudaPathVersion, but CUDA $mmVersionTag was requested."
     }
+    if ($nvccCudaRoot) {
+        Assert-SamePath `
+            -Left $env:CUDA_PATH `
+            -Right $nvccCudaRoot `
+            -Message "CUDA_PATH and active nvcc.exe point to different CUDA Toolkit roots."
+    }
     $cudaRoot = $env:CUDA_PATH
+} elseif ($nvccCudaRoot) {
+    $cudaRoot = $nvccCudaRoot
 } else {
     $cudaRoot = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$mmVersionTag"
 }
