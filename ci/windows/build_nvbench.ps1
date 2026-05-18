@@ -11,7 +11,11 @@ Param(
 
     [Parameter(Mandatory = $false)]
     [Alias("cmake-options")]
-    [string]$CMAKE_OPTIONS = ""
+    [string]$CMAKE_OPTIONS = "",
+
+    [Parameter(Mandatory = $false)]
+    [Alias("device-testing")]
+    [bool]$DEVICE_TESTING = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,10 +34,11 @@ try {
     Print-EnvironmentDetails
 
     $preset = "nvbench-ci"
+    $deviceTestingOption = if ($DEVICE_TESTING) { "ON" } else { "OFF" }
     $localOptions = @(
         "-DCMAKE_CXX_STANDARD=$CXX_STANDARD",
         "-DCMAKE_CUDA_STANDARD=$CXX_STANDARD",
-        "-DNVBench_ENABLE_DEVICE_TESTING=ON"
+        "-DNVBench_ENABLE_DEVICE_TESTING=$deviceTestingOption"
     )
 
     Configure-And-Build-Preset "NVBench" $preset $localOptions
