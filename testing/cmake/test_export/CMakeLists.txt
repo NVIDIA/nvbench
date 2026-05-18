@@ -39,7 +39,9 @@ function(get_imported_location out_var target_name)
     get_property(imported_location TARGET ${target_name}
       PROPERTY IMPORTED_LOCATION_${imported_config}
     )
-  else()
+  endif()
+
+  if (NOT imported_location)
     get_property(imported_location TARGET ${target_name}
       PROPERTY IMPORTED_LOCATION
     )
