@@ -12,6 +12,14 @@ else()
   set(nvbench_cupti_root "${CUDAToolkit_LIBRARY_ROOT}")
 endif()
 
+set(nvbench_cupti_library_hints "${nvbench_cupti_root}/lib64")
+if (WIN32)
+  list(APPEND nvbench_cupti_library_hints
+    "${nvbench_cupti_root}/lib/x64"
+    "${nvbench_cupti_root}/lib"
+  )
+endif()
+
 # The CUPTI targets in FindCUDAToolkit are broken:
 # - The dll locations are not specified
 # - Dependent libraries nvperf_* are not linked.
@@ -78,8 +86,8 @@ function(nvbench_add_cupti_dep dep_name)
   add_library(nvbench::${dep_name_lower} SHARED IMPORTED)
 
   find_library(NVBench_${dep_name_upper}_LIBRARY ${dep_name_lower} REQUIRED
-    DOC "The import library for ${dep_name_lower} from the CUDA Toolkit."
-    HINTS "${nvbench_cupti_root}/lib64"
+    DOC "The library for ${dep_name_lower} from the CUDA Toolkit."
+    HINTS ${nvbench_cupti_library_hints}
   )
   mark_as_advanced(NVBench_${dep_name_upper}_LIBRARY)
 
