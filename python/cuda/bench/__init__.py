@@ -135,11 +135,6 @@ def __dir__():
     )
 
 
-__doc__ = """
-CUDA Kernel Benchmarking Library Python API
-"""
-
-
 def _get_register():
     if _register is not None:
         return _register
