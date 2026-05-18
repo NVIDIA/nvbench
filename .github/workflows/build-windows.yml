@@ -145,7 +145,7 @@ jobs:
               $normalizedArch = $archItems -join ';'
             }
           }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "arch=$normalizedArch"
+          "arch=$normalizedArch" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Fetch Windows devcontainer image
         env:
