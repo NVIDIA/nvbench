@@ -35,22 +35,6 @@ on:
         type: string
         required: false
         default: ""
-      gpu:
-        type: boolean
-        required: false
-        default: false
-      gpu_devices:
-        type: string
-        required: false
-        default: "all"
-      run_tests:
-        type: boolean
-        required: false
-        default: false
-      device_testing:
-        type: boolean
-        required: false
-        default: false
   workflow_dispatch:
     inputs:
       cuda:
@@ -89,26 +73,6 @@ on:
         type: string
         required: false
         default: ""
-      gpu:
-        description: "Expose host GPUs to the Windows devcontainer"
-        type: boolean
-        required: false
-        default: false
-      gpu_devices:
-        description: "GPU devices to expose when gpu is true: 'all' or 'device=0,1'"
-        type: string
-        required: false
-        default: "all"
-      run_tests:
-        description: "Run CTest after building"
-        type: boolean
-        required: false
-        default: false
-      device_testing:
-        description: "Enable tests that require a CUDA-capable device"
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: read
@@ -154,11 +118,6 @@ jobs:
           NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
           NVBENCH_WINDOWS_ARCH: ${{ inputs.arch }}
-          NVBENCH_WINDOWS_GPU: ${{ inputs.gpu }}
-          NVBENCH_WINDOWS_GPU_DEVICES: ${{ inputs.gpu_devices }}
-          NVBENCH_WINDOWS_RUN_TESTS: ${{ inputs.run_tests }}
-          NVBENCH_WINDOWS_DEVICE_TESTING: ${{ inputs.device_testing }}
-          NVBENCH_GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -168,22 +127,6 @@ jobs:
 
           if (@("17", "20") -notcontains $env:NVBENCH_WINDOWS_STD) {
             throw "Invalid C++ standard '$env:NVBENCH_WINDOWS_STD'. Expected '17' or '20'."
-          }
-
-          $gpuEnabled = $env:NVBENCH_WINDOWS_GPU -eq "true"
-          $runTests = $env:NVBENCH_WINDOWS_RUN_TESTS -eq "true"
-          $deviceTesting = $env:NVBENCH_WINDOWS_DEVICE_TESTING -eq "true"
-
-          if ($gpuEnabled -and $env:NVBENCH_GITHUB_REPOSITORY -ne "NVIDIA/nvbench") {
-            throw "Invalid Windows build inputs: gpu=true is only supported in NVIDIA/nvbench, where the configured runner can be selected."
-          }
-
-          if ($deviceTesting -and -not $runTests) {
-            throw "Invalid Windows build inputs: device_testing=true requires run_tests=true."
-          }
-
-          if ($runTests -and $deviceTesting -and -not $gpuEnabled) {
-            throw "Invalid Windows build inputs: run_tests=true and device_testing=true require gpu=true."
           }
 
           $arch = "$env:NVBENCH_WINDOWS_ARCH".Trim()
@@ -204,18 +147,6 @@ jobs:
           }
           Add-Content -Path $env:GITHUB_OUTPUT -Value "arch=$normalizedArch"
 
-          $gpuDevices = "$env:NVBENCH_WINDOWS_GPU_DEVICES".Trim()
-          if ($gpuDevices -and $gpuDevices -ne "all" -and $gpuDevices -notmatch '^device=\d+(,\d+)*$') {
-            throw "Invalid GPU devices value '$gpuDevices'. Expected 'all' or a device list like 'device=0,1'."
-          }
-          if ($gpuEnabled -and -not $gpuDevices) {
-            throw "GPU devices must not be empty when GPU support is enabled."
-          }
-          if (-not $gpuEnabled -and $gpuDevices -and $gpuDevices -ne "all") {
-            throw "Invalid Windows build inputs: gpu_devices may only select specific devices when gpu=true."
-          }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "gpu_devices=$gpuDevices"
-
       - name: Fetch Windows devcontainer image
         env:
           WINDOWS_CI_IMAGE: ${{ inputs.image != '' && inputs.image || format('rapidsai/devcontainers:{0}-cuda{1}-{2}', inputs.devcontainer_version, inputs.cuda, inputs.host) }}
@@ -227,10 +158,6 @@ jobs:
           NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
           NVBENCH_WINDOWS_ARCH: ${{ steps.validate_windows_build_inputs.outputs.arch }}
-          NVBENCH_WINDOWS_GPU: ${{ inputs.gpu }}
-          NVBENCH_WINDOWS_GPU_DEVICES: ${{ steps.validate_windows_build_inputs.outputs.gpu_devices }}
-          NVBENCH_WINDOWS_RUN_TESTS: ${{ inputs.run_tests }}
-          NVBENCH_WINDOWS_DEVICE_TESTING: ${{ inputs.device_testing }}
           WINDOWS_CI_IMAGE: ${{ inputs.image != '' && inputs.image || format('rapidsai/devcontainers:{0}-cuda{1}-{2}', inputs.devcontainer_version, inputs.cuda, inputs.host) }}
         run: |
           $ErrorActionPreference = "Stop"
@@ -243,7 +170,7 @@ jobs:
           `$ErrorActionPreference = 'Stop'
           git config --global --add safe.directory '$containerRepo'
           & '$containerRepo/ci/windows/install_cuda_profiler_api.ps1' -cudaVersion "`$env:NVBENCH_WINDOWS_CUDA"
-          & '$containerRepo/ci/windows/build_nvbench.ps1' -std "`$env:NVBENCH_WINDOWS_STD" -arch "`$env:NVBENCH_WINDOWS_ARCH" -run-tests "`$env:NVBENCH_WINDOWS_RUN_TESTS" -device-testing "`$env:NVBENCH_WINDOWS_DEVICE_TESTING"
+          & '$containerRepo/ci/windows/build_nvbench.ps1' -std "`$env:NVBENCH_WINDOWS_STD" -arch "`$env:NVBENCH_WINDOWS_ARCH"
           exit `$LASTEXITCODE
           "@ | Set-Content -Path $script -Encoding UTF8
 
@@ -266,9 +193,6 @@ jobs:
             "--env", "GITHUB_SHA=$env:GITHUB_SHA",
             "--env", "NVBENCH_WINDOWS_ARCH=$env:NVBENCH_WINDOWS_ARCH",
             "--env", "NVBENCH_WINDOWS_CUDA=$env:NVBENCH_WINDOWS_CUDA",
-            "--env", "NVBENCH_WINDOWS_DEVICE_TESTING=$env:NVBENCH_WINDOWS_DEVICE_TESTING",
-            "--env", "NVBENCH_WINDOWS_GPU=$env:NVBENCH_WINDOWS_GPU",
-            "--env", "NVBENCH_WINDOWS_RUN_TESTS=$env:NVBENCH_WINDOWS_RUN_TESTS",
             "--env", "NVBENCH_WINDOWS_STD=$env:NVBENCH_WINDOWS_STD",
             "--env", "SCCACHE_BUCKET=$env:SCCACHE_BUCKET",
             "--env", "SCCACHE_IDLE_TIMEOUT=$env:SCCACHE_IDLE_TIMEOUT",
@@ -278,13 +202,6 @@ jobs:
             "--env", "SCCACHE_S3_USE_PREPROCESSOR_CACHE_MODE=$env:SCCACHE_S3_USE_PREPROCESSOR_CACHE_MODE",
             "--env", "SCCACHE_S3_USE_SSL=$env:SCCACHE_S3_USE_SSL"
           )
-
-          if ($env:NVBENCH_WINDOWS_GPU -eq "true") {
-            if (-not $env:NVBENCH_WINDOWS_GPU_DEVICES) {
-              throw "NVBENCH_WINDOWS_GPU_DEVICES must not be empty when GPU support is enabled."
-            }
-            $dockerArgs += @("--gpus", $env:NVBENCH_WINDOWS_GPU_DEVICES)
-          }
 
           $dockerArgs += @(
             "$env:WINDOWS_CI_IMAGE",
