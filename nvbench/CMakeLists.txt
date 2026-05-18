@@ -111,6 +111,14 @@ target_compile_options(nvbench PUBLIC
 
 # ##################################################################################################
 # * conda environment -----------------------------------------------------------------------------
+if (WIN32)
+  foreach(conda_path_var IN ITEMS CONDA_PREFIX PREFIX BUILD_PREFIX CMAKE_PREFIX_PATH)
+    if (DEFINED ENV{${conda_path_var}})
+      file(TO_CMAKE_PATH "$ENV{${conda_path_var}}" conda_path_value)
+      set(ENV{${conda_path_var}} "${conda_path_value}")
+    endif()
+  endforeach()
+endif()
 rapids_cmake_support_conda_env(conda_env MODIFY_PREFIX_PATH)
 if(TARGET conda_env)
   # When we are inside a conda env the linker will be set to
