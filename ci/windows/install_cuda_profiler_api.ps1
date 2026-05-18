@@ -114,6 +114,10 @@ if (-not $CUDA_VERSION) {
     }
 }
 
+if ($CUDA_VERSION -notmatch '^\d+\.\d+(\.\d+)?$') {
+    throw "Invalid CUDA version '$CUDA_VERSION'. Expected '<major>.<minor>' or '<major>.<minor>.<patch>', for example '13.0' or '13.0.2'."
+}
+
 $version = [Version]$CUDA_VERSION
 $major = $version.Major
 $minor = $version.Minor
