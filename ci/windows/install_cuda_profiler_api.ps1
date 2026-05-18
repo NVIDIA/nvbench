@@ -129,7 +129,10 @@ function Invoke-WebRequestWithRetry {
             return
         } catch {
             $statusCode = Get-HttpStatusCodeFromError -ErrorRecord $_
-            if ($statusCode -ge 400 -and $statusCode -lt 500) {
+            # Fail fast for deterministic client errors that indicate a bad URL,
+            # missing installer, or unsupported method. Keep 408/429 and 5xx on
+            # the retry path because they are commonly transient in CI.
+            if (@(400, 401, 403, 404, 405, 410, 414) -contains $statusCode) {
                 throw "Download failed with non-retryable HTTP status $statusCode from '$Uri'. $_"
             }
 
