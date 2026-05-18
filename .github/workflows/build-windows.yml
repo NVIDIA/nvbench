@@ -159,6 +159,7 @@ jobs:
           NVBENCH_WINDOWS_GPU_DEVICES: ${{ inputs.gpu_devices }}
           NVBENCH_WINDOWS_RUN_TESTS: ${{ inputs.run_tests }}
           NVBENCH_WINDOWS_DEVICE_TESTING: ${{ inputs.device_testing }}
+          NVBENCH_GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -173,6 +174,10 @@ jobs:
           $gpuEnabled = $env:NVBENCH_WINDOWS_GPU -eq "true"
           $runTests = $env:NVBENCH_WINDOWS_RUN_TESTS -eq "true"
           $deviceTesting = $env:NVBENCH_WINDOWS_DEVICE_TESTING -eq "true"
+
+          if ($gpuEnabled -and $env:NVBENCH_GITHUB_REPOSITORY -ne "NVIDIA/nvbench") {
+            throw "Invalid Windows build inputs: gpu=true is only supported in NVIDIA/nvbench, where the configured runner can be selected."
+          }
 
           if ($runTests -and $deviceTesting -and -not $gpuEnabled) {
             throw "Invalid Windows build inputs: run_tests=true and device_testing=true require gpu=true."
