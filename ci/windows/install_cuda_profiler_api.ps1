@@ -148,24 +148,17 @@ function Invoke-WebRequestWithRetry {
 }
 
 if (-not $CUDA_VERSION) {
-    $CUDA_VERSION = Get-CudaVersionFromPath -Path $env:CUDA_PATH
-    if (-not $CUDA_VERSION) {
-        throw "Could not determine CUDA version. Provide -cudaVersion or set CUDA_PATH to a path ending in v<major>.<minor>."
-    }
+    throw "CUDA installer version is required. Provide -cudaVersion <major>.<minor>.<patch>, for example '13.0.2'."
 }
 
-if ($CUDA_VERSION -notmatch '^\d+\.\d+(\.\d+)?$') {
-    throw "Invalid CUDA version '$CUDA_VERSION'. Expected '<major>.<minor>' or '<major>.<minor>.<patch>', for example '13.0' or '13.0.2'."
+if ($CUDA_VERSION -notmatch '^\d+\.\d+\.\d+$') {
+    throw "Invalid CUDA installer version '$CUDA_VERSION'. Expected '<major>.<minor>.<patch>', for example '13.0.2'."
 }
 
 $version = [Version]$CUDA_VERSION
 $major = $version.Major
 $minor = $version.Minor
 $build = $version.Build
-
-if ($build -lt 0) {
-    $build = 0
-}
 
 $mmbVersionTag = "${major}.${minor}.${build}"
 $mmVersionTag = "${major}.${minor}"
