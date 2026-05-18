@@ -47,6 +47,7 @@ foreach(test_src IN LISTS test_srcs)
   set_target_properties(${test_name} PROPERTIES COMPILE_FEATURES cuda_std_17)
   nvbench_config_target(${test_name})
   add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:${test_name}>" ${NVBench_TEST_ARGS_${test_name}})
+  nvbench_config_test_runtime_environment(${test_name})
 
   add_dependencies(nvbench.test.all ${test_name})
 endforeach()

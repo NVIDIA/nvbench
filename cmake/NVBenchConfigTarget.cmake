@@ -66,6 +66,12 @@ if (NVBench_TOPLEVEL_PROJECT AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
   endif()
 endif()
 
+if (MSVC)
+  # CCCL requires MSVC's conforming preprocessor when compiling CUDA sources
+  # with cl.exe as the host compiler.
+  nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "/Zc:preprocessor")
+endif()
+
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wall")
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wextra")
 nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Wconversion")
@@ -133,6 +139,31 @@ function(nvbench_config_target target_name)
   if (NVBench_ENABLE_CUPTI AND nvbench_cupti_root AND NOT WIN32)
     set_target_properties(${target_name} PROPERTIES
       INSTALL_RPATH "${nvbench_cupti_root}/lib64"
+    )
+  endif()
+endfunction()
+
+function(nvbench_config_test_runtime_environment test_name)
+  if (NOT WIN32)
+    return()
+  endif()
+
+  set(path_modifications "")
+  if (TARGET nvbench)
+    list(APPEND path_modifications "PATH=path_list_prepend:$<TARGET_FILE_DIR:nvbench>")
+  endif()
+
+  if (TARGET nvbench::cupti)
+    get_property(cupti_runtime_lib TARGET nvbench::cupti PROPERTY IMPORTED_LOCATION)
+    if (cupti_runtime_lib)
+      cmake_path(GET cupti_runtime_lib PARENT_PATH cupti_runtime_dir)
+      list(APPEND path_modifications "PATH=path_list_prepend:$<SHELL_PATH:${cupti_runtime_dir}>")
+    endif()
+  endif()
+
+  if (path_modifications)
+    set_property(TEST ${test_name}
+      APPEND PROPERTY ENVIRONMENT_MODIFICATION ${path_modifications}
     )
   endif()
 endfunction()

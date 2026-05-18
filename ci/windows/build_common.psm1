@@ -178,4 +178,23 @@ function Configure-And-Build-Preset {
     Build-Preset $BUILD_NAME $PRESET
 }
 
-Export-ModuleMember -Function Print-EnvironmentDetails, Configure-Preset, Build-Preset, Configure-And-Build-Preset
+function Test-Preset {
+    Param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$BUILD_NAME,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$PRESET
+    )
+
+    Push-Location ".."
+    try {
+        Invoke-NativeCommand "$BUILD_NAME test" "ctest" @("--preset=$PRESET", "--output-on-failure")
+    } finally {
+        Pop-Location
+    }
+}
+
+Export-ModuleMember -Function Print-EnvironmentDetails, Configure-Preset, Build-Preset, Configure-And-Build-Preset, Test-Preset
