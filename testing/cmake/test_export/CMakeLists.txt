@@ -36,11 +36,7 @@ endif()
 
 set(cupti_lib_dir "")
 if (TARGET nvbench::cupti)
-  if (WIN32)
-    get_property(cupti_lib TARGET nvbench::cupti PROPERTY IMPORTED_IMPLIB)
-  else()
-    get_property(cupti_lib TARGET nvbench::cupti PROPERTY IMPORTED_LOCATION)
-  endif()
+  get_property(cupti_lib TARGET nvbench::cupti PROPERTY IMPORTED_LOCATION)
   cmake_path(GET cupti_lib PARENT_PATH cupti_lib_dir)
 endif()
 
