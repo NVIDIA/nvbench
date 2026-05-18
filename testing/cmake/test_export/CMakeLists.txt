@@ -20,12 +20,22 @@ function(get_imported_location out_var target_name)
   if (num_configs GREATER 1)
     message(WARNING
       "Multiple IMPORTED_CONFIGURATIONS for ${target_name}. "
-      "Picking the first one. This may cause issues."
+      "Picking CMAKE_BUILD_TYPE if present, otherwise the first one."
     )
   endif()
 
   if (num_configs GREATER 0)
-    list(GET imported_configs 0 imported_config)
+    if (CMAKE_BUILD_TYPE)
+      string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type)
+      list(FIND imported_configs "${build_type}" imported_config_index)
+    else()
+      set(imported_config_index -1)
+    endif()
+    if (imported_config_index GREATER_EQUAL 0)
+      list(GET imported_configs ${imported_config_index} imported_config)
+    else()
+      list(GET imported_configs 0 imported_config)
+    endif()
     get_property(imported_location TARGET ${target_name}
       PROPERTY IMPORTED_LOCATION_${imported_config}
     )
