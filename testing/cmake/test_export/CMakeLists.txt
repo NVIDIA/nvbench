@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30.4)
+cmake_minimum_required(VERSION 3.21.0)
 project(NVBenchTestExport CUDA CXX)
 
 message(STATUS "NVBench_DIR=${NVBench_DIR}")
