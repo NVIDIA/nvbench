@@ -39,19 +39,23 @@ def test_api_ctor(cls):
         cls()
 
 
-def t_bench(state: bench.State):
-    s = {"a": 1, "b": 0.5, "c": "test", "d": {"a": 1}}
-
-    def launcher(launch: bench.Launch):
-        for _ in range(10000):
-            _ = json.dumps(s)
-
-    state.exec(launcher)
-
-
 def test_cpu_only():
     saved_timers = []
+    observed = {}
 
+    @bench.register()
+    @bench.option.set_is_cpu_only(True)
+    def t_bench(state: bench.State):
+        s = {"a": 1, "b": 0.5, "c": "test", "d": {"a": 1}}
+
+        def launcher(launch: bench.Launch):
+            for _ in range(10000):
+                _ = json.dumps(s)
+
+        state.exec(launcher)
+
+    @bench.register()
+    @bench.option.set_is_cpu_only(True)
     def t_bench_timer(state: bench.State):
         s = {"a": 1, "b": 0.5, "c": "test", "d": {"a": 1}}
 
@@ -67,17 +71,33 @@ def test_cpu_only():
 
         state.exec(launcher, timer=True)
 
-    b = bench.register(t_bench)
-    b.set_is_cpu_only(True)
+    @bench.register()
+    @bench.option.set_is_cpu_only(True)
+    @bench.option.set_cold_warmup_runs(13)
+    @bench.option.set_cold_max_warmup_walltime(0.5)
+    def cold_warmup_state_probe(state: bench.State):
+        observed["benchmark_runs"] = state.get_cold_warmup_runs()
+        observed["benchmark_walltime"] = state.get_cold_max_warmup_walltime()
 
-    b_timer = bench.register(t_bench_timer)
-    b_timer.set_is_cpu_only(True)
+        state.set_cold_warmup_runs(3)
+        state.set_cold_max_warmup_walltime(0.125)
+        observed["state_runs"] = state.get_cold_warmup_runs()
+        observed["state_walltime"] = state.get_cold_max_warmup_walltime()
+
+        state.exec(lambda launch: None)
 
     bench.run_all_benchmarks(["-q", "--profile"])
 
     assert saved_timers
     with pytest.raises(RuntimeError, match="Timer is no longer valid"):
         saved_timers[0].start()
+
+    assert observed == {
+        "benchmark_runs": 13,
+        "benchmark_walltime": 0.5,
+        "state_runs": 3,
+        "state_walltime": 0.125,
+    }
 
 
 def docstring_check(doc_str: Union[str, None]) -> None:
@@ -132,6 +152,10 @@ def test_decorator_docstrings():
     obj_has_docstring_check(bench.option.set_criterion_param_string)
     obj_has_docstring_check(bench.option.min_samples)
     obj_has_docstring_check(bench.option.set_min_samples)
+    obj_has_docstring_check(bench.option.cold_warmup_runs)
+    obj_has_docstring_check(bench.option.set_cold_warmup_runs)
+    obj_has_docstring_check(bench.option.cold_max_warmup_walltime)
+    obj_has_docstring_check(bench.option.set_cold_max_warmup_walltime)
     obj_has_docstring_check(bench.option.is_cpu_only)
     obj_has_docstring_check(bench.option.set_is_cpu_only)
 
@@ -149,6 +173,14 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
             self.calls.append(("min_samples", count))
             return self
 
+        def set_cold_warmup_runs(self, count):
+            self.calls.append(("cold_warmup_runs", count))
+            return self
+
+        def set_cold_max_warmup_walltime(self, duration_seconds):
+            self.calls.append(("cold_max_warmup_walltime", duration_seconds))
+            return self
+
     fake_benchmark = FakeBenchmark()
     registered_functions = []
 
@@ -161,6 +193,8 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
     @bench.register()
     @bench.axis.int64("Elements", [1, 2, 3])
     @bench.option.min_samples(11)
+    @bench.option.cold_warmup_runs(7)
+    @bench.option.cold_max_warmup_walltime(0.25)
     def decorated(state: bench.State):
         pass
 
@@ -168,6 +202,41 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
     assert fake_benchmark.calls == [
         ("int64", "Elements", [1, 2, 3]),
         ("min_samples", 11),
+        ("cold_warmup_runs", 7),
+        ("cold_max_warmup_walltime", 0.25),
+    ]
+    assert callable(decorated)
+
+
+def test_set_cold_warmup_option_decorators_apply_options(monkeypatch):
+    class FakeBenchmark:
+        def __init__(self):
+            self.calls = []
+
+        def set_cold_warmup_runs(self, count):
+            self.calls.append(("cold_warmup_runs", count))
+            return self
+
+        def set_cold_max_warmup_walltime(self, duration_seconds):
+            self.calls.append(("cold_max_warmup_walltime", duration_seconds))
+            return self
+
+    fake_benchmark = FakeBenchmark()
+
+    def fake_register(fn):
+        return fake_benchmark
+
+    monkeypatch.setattr(bench, "_register", fake_register)
+
+    @bench.register()
+    @bench.option.set_cold_warmup_runs(13)
+    @bench.option.set_cold_max_warmup_walltime(0.5)
+    def decorated(state: bench.State):
+        pass
+
+    assert fake_benchmark.calls == [
+        ("cold_warmup_runs", 13),
+        ("cold_max_warmup_walltime", 0.5),
     ]
     assert callable(decorated)
 
@@ -241,6 +310,10 @@ def test_State_doc():
     obj_has_docstring_check(cl.get_int64)
     obj_has_docstring_check(cl.get_float64)
     obj_has_docstring_check(cl.get_string)
+    obj_has_docstring_check(cl.get_cold_warmup_runs)
+    obj_has_docstring_check(cl.set_cold_warmup_runs)
+    obj_has_docstring_check(cl.get_cold_max_warmup_walltime)
+    obj_has_docstring_check(cl.set_cold_max_warmup_walltime)
     obj_has_docstring_check(cl.skip)
 
 
@@ -269,3 +342,5 @@ def test_Benchmark_doc():
     obj_has_docstring_check(cl.add_int64_power_of_two_axis)
     obj_has_docstring_check(cl.add_float64_axis)
     obj_has_docstring_check(cl.add_string_axis)
+    obj_has_docstring_check(cl.set_cold_warmup_runs)
+    obj_has_docstring_check(cl.set_cold_max_warmup_walltime)

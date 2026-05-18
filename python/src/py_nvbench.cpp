@@ -472,6 +472,8 @@ static void def_class_Benchmark(py::module_ m)
   //        nvbench::benchmark_base::set_criterion_param_float64
   //        nvbench::benchmark_base::set_criterion_param_string
   //        nvbench::benchmark_base::set_min_samples
+  //        nvbench::benchmark_base::set_cold_warmup_runs
+  //        nvbench::benchmark_base::set_cold_max_warmup_walltime
 
   static constexpr const char *class_Benchmark_doc = R"XXXX(
     Represents NVBench benchmark.
@@ -731,6 +733,36 @@ Set minimal samples count before stopping criterion applies
                        method_set_min_samples_doc,
                        py::return_value_policy::reference,
                        py::arg("min_samples_count"));
+
+  // method Benchmark.set_cold_warmup_runs
+  auto method_set_cold_warmup_runs_impl = [](nvbench::benchmark_base &self,
+                                             nvbench::int64_t count) {
+    self.set_cold_warmup_runs(count);
+    return std::ref(self);
+  };
+  static constexpr const char *method_set_cold_warmup_runs_doc = R"XXXX(
+Set the number of cold measurement warmup runs
+)XXXX";
+  py_benchmark_cls.def("set_cold_warmup_runs",
+                       method_set_cold_warmup_runs_impl,
+                       method_set_cold_warmup_runs_doc,
+                       py::return_value_policy::reference,
+                       py::arg("cold_warmup_runs"));
+
+  // method Benchmark.set_cold_max_warmup_walltime
+  auto method_set_cold_max_warmup_walltime_impl = [](nvbench::benchmark_base &self,
+                                                     nvbench::float64_t duration_seconds) {
+    self.set_cold_max_warmup_walltime(duration_seconds);
+    return std::ref(self);
+  };
+  static constexpr const char *method_set_cold_max_warmup_walltime_doc = R"XXXX(
+Set the maximum walltime spent on cold measurement warmup runs, in seconds
+)XXXX";
+  py_benchmark_cls.def("set_cold_max_warmup_walltime",
+                       method_set_cold_max_warmup_walltime_impl,
+                       method_set_cold_max_warmup_walltime_doc,
+                       py::return_value_policy::reference,
+                       py::arg("duration_seconds"));
 }
 
 void def_class_State(py::module_ m)
@@ -763,6 +795,10 @@ void def_class_State(py::module_ m)
   //        nvbench::state::get_skip_reason
   //        nvbench::state::get_min_samples
   //        nvbench::state::set_min_samples
+  //        nvbench::state::get_cold_warmup_runs
+  //        nvbench::state::set_cold_warmup_runs
+  //        nvbench::state::get_cold_max_warmup_walltime
+  //        nvbench::state::set_cold_max_warmup_walltime
   //        nvbench::state::get_criterion_params
   //        nvbench::state::get_stopping_criterion
   //        nvbench::state::get_run_once
@@ -1022,6 +1058,40 @@ Set the number of benchmark timings for NVBench to perform before stopping crite
                   &nvbench::state::set_min_samples,
                   method_set_min_samples_doc,
                   py::arg("min_samples_count"));
+
+  // method State.get_cold_warmup_runs
+  static constexpr const char *method_get_cold_warmup_runs_doc = R"XXXX(
+Get the number of cold measurement warmup runs
+)XXXX";
+  pystate_cls.def("get_cold_warmup_runs",
+                  &nvbench::state::get_cold_warmup_runs,
+                  method_get_cold_warmup_runs_doc);
+
+  // method State.set_cold_warmup_runs
+  static constexpr const char *method_set_cold_warmup_runs_doc = R"XXXX(
+Set the number of cold measurement warmup runs
+)XXXX";
+  pystate_cls.def("set_cold_warmup_runs",
+                  &nvbench::state::set_cold_warmup_runs,
+                  method_set_cold_warmup_runs_doc,
+                  py::arg("cold_warmup_runs"));
+
+  // method State.get_cold_max_warmup_walltime
+  static constexpr const char *method_get_cold_max_warmup_walltime_doc = R"XXXX(
+Get the maximum walltime spent on cold measurement warmup runs, in seconds
+)XXXX";
+  pystate_cls.def("get_cold_max_warmup_walltime",
+                  &nvbench::state::get_cold_max_warmup_walltime,
+                  method_get_cold_max_warmup_walltime_doc);
+
+  // method State.set_cold_max_warmup_walltime
+  static constexpr const char *method_set_cold_max_warmup_walltime_doc = R"XXXX(
+Set the maximum walltime spent on cold measurement warmup runs, in seconds
+)XXXX";
+  pystate_cls.def("set_cold_max_warmup_walltime",
+                  &nvbench::state::set_cold_max_warmup_walltime,
+                  method_set_cold_max_warmup_walltime_doc,
+                  py::arg("duration_seconds"));
 
   // method State.get_disable_blocking_kernel
   static constexpr const char *method_get_disable_blocking_kernel_doc = R"XXXX(

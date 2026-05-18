@@ -60,11 +60,15 @@ __global__ void sleep_kernel(double seconds) {
 
 def no_axes(state: bench.State):
     state.set_min_samples(1000)
+    state.set_cold_warmup_runs(5)
+    state.set_cold_max_warmup_walltime(0.25)
     sleep_dur = 1e-3
     krn = make_sleep_kernel()
     launch_config = core.LaunchConfig(grid=1, block=1, shmem_size=0)
 
     print(f"Stopping criterion used: {state.get_stopping_criterion()}")
+    print(f"Cold warmup runs: {state.get_cold_warmup_runs()}")
+    print(f"Cold max warmup walltime: {state.get_cold_max_warmup_walltime()}")
 
     def launcher(launch: bench.Launch):
         s = as_core_Stream(launch.get_stream())
@@ -216,12 +220,14 @@ if __name__ == "__main__":
     # benchmark with no axes, that uses default value
     default_b = bench.register(default_value)
     default_b.set_min_samples(7)
+    default_b.set_cold_warmup_runs(11)
 
     # specify axis
     axes_b = bench.register(single_float64_axis).add_float64_axis(
         "Duration", [7e-5, 1e-4, 5e-4]
     )
     axes_b.set_timeout(20)
+    axes_b.set_cold_max_warmup_walltime(0.5)
     axes_b.set_skip_time(1e-5)
     axes_b.set_throttle_threshold(0.2)
     axes_b.set_throttle_recovery_delay(0.1)
