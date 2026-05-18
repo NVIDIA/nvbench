@@ -142,7 +142,7 @@ target_compile_definitions(nvbench.main PRIVATE NVBENCH_NO_IMPLICIT_SYSTEM_HEADE
 target_link_libraries(nvbench.main PUBLIC nvbench)
 if (MSVC)
   # inform MSVC that library provides main
-  target_link_options(nvbench.main INTERFACE "/INCLUDE:main")
+  target_link_options(nvbench.main INTERFACE "LINKER:/INCLUDE:main")
 endif()
 # Ensure CUDA/CUPTI/NVML include dirs are visible for nvbench.main's build.
 target_link_libraries(nvbench.main PRIVATE ${ctk_libraries})
