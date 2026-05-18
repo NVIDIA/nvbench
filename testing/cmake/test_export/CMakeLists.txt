@@ -12,26 +12,40 @@ add_test(NAME nvbench_ctl COMMAND "$<TARGET_FILE:nvbench::ctl>")
 
 # Setup runtime library paths for testing.
 # Unix uses LD_LIBRARY_PATH; Windows uses PATH for DLL lookup.
-get_property(nvbench_config TARGET nvbench::nvbench
-  PROPERTY IMPORTED_CONFIGURATIONS
-)
-list(LENGTH nvbench_config num_configs)
-if (num_configs GREATER 1)
-  message(WARNING
-    "Multiple IMPORTED_CONFIGURATIONS for nvbench::nvbench. "
-    "Picking the first one. This may cause issues."
+function(get_imported_location out_var target_name)
+  get_property(imported_configs TARGET ${target_name}
+    PROPERTY IMPORTED_CONFIGURATIONS
   )
-  list(GET nvbench_config 0 nvbench_config)
-endif()
+  list(LENGTH imported_configs num_configs)
+  if (num_configs GREATER 1)
+    message(WARNING
+      "Multiple IMPORTED_CONFIGURATIONS for ${target_name}. "
+      "Picking the first one. This may cause issues."
+    )
+  endif()
+
+  if (num_configs GREATER 0)
+    list(GET imported_configs 0 imported_config)
+    get_property(imported_location TARGET ${target_name}
+      PROPERTY IMPORTED_LOCATION_${imported_config}
+    )
+  else()
+    get_property(imported_location TARGET ${target_name}
+      PROPERTY IMPORTED_LOCATION
+    )
+  endif()
+
+  set(${out_var} "${imported_location}" PARENT_SCOPE)
+endfunction()
 
 set(nvbench_lib_dir "")
 # On Unix the build tree uses RUNPATH so only the install tree needs the path.
 # On Windows there is no RUNPATH so we always need the DLL directory.
 if (WIN32 OR TEST_TYPE STREQUAL "INSTALL_TREE")
-  get_property(nvbench_lib TARGET nvbench::nvbench
-    PROPERTY IMPORTED_LOCATION_${nvbench_config}
-  )
-  cmake_path(GET nvbench_lib PARENT_PATH nvbench_lib_dir)
+  get_imported_location(nvbench_lib nvbench::nvbench)
+  if (nvbench_lib)
+    cmake_path(GET nvbench_lib PARENT_PATH nvbench_lib_dir)
+  endif()
 endif()
 
 set(cupti_lib_dir "")
