@@ -10,7 +10,7 @@ on:
       cuda:
         type: string
         required: false
-        default: "13.0.2"
+        default: "13.0"
       host:
         type: string
         required: false
@@ -54,10 +54,10 @@ on:
   workflow_dispatch:
     inputs:
       cuda:
-        description: "Full CUDA Toolkit version"
+        description: "CUDA Toolkit major.minor version"
         type: string
         required: false
-        default: "13.0.2"
+        default: "13.0"
       host:
         description: "Host compiler tag"
         type: string
@@ -162,12 +162,9 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          if ($env:NVBENCH_WINDOWS_CUDA -notmatch '^\d+\.\d+\.\d+$') {
-            throw "Invalid CUDA version '$env:NVBENCH_WINDOWS_CUDA'. Expected '<major>.<minor>.<patch>', for example '13.0.2'."
+          if ($env:NVBENCH_WINDOWS_CUDA -notmatch '^\d+\.\d+$') {
+            throw "Invalid CUDA version '$env:NVBENCH_WINDOWS_CUDA'. Expected '<major>.<minor>', for example '13.0'."
           }
-          $cudaVersionParts = $env:NVBENCH_WINDOWS_CUDA.Split(".")
-          $cudaImageVersion = "$($cudaVersionParts[0]).$($cudaVersionParts[1])"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "cuda_image_version=$cudaImageVersion"
 
           if (@("17", "20") -notcontains $env:NVBENCH_WINDOWS_STD) {
             throw "Invalid C++ standard '$env:NVBENCH_WINDOWS_STD'. Expected '17' or '20'."
@@ -221,7 +218,7 @@ jobs:
 
       - name: Fetch Windows devcontainer image
         env:
-          WINDOWS_CI_IMAGE: ${{ inputs.image != '' && inputs.image || format('rapidsai/devcontainers:{0}-cuda{1}-{2}', inputs.devcontainer_version, steps.validate_windows_build_inputs.outputs.cuda_image_version, inputs.host) }}
+          WINDOWS_CI_IMAGE: ${{ inputs.image != '' && inputs.image || format('rapidsai/devcontainers:{0}-cuda{1}-{2}', inputs.devcontainer_version, inputs.cuda, inputs.host) }}
         run: |
           docker pull "$env:WINDOWS_CI_IMAGE"
 
@@ -234,7 +231,7 @@ jobs:
           NVBENCH_WINDOWS_GPU_DEVICES: ${{ steps.validate_windows_build_inputs.outputs.gpu_devices }}
           NVBENCH_WINDOWS_RUN_TESTS: ${{ inputs.run_tests }}
           NVBENCH_WINDOWS_DEVICE_TESTING: ${{ inputs.device_testing }}
-          WINDOWS_CI_IMAGE: ${{ inputs.image != '' && inputs.image || format('rapidsai/devcontainers:{0}-cuda{1}-{2}', inputs.devcontainer_version, steps.validate_windows_build_inputs.outputs.cuda_image_version, inputs.host) }}
+          WINDOWS_CI_IMAGE: ${{ inputs.image != '' && inputs.image || format('rapidsai/devcontainers:{0}-cuda{1}-{2}', inputs.devcontainer_version, inputs.cuda, inputs.host) }}
         run: |
           $ErrorActionPreference = "Stop"
 
