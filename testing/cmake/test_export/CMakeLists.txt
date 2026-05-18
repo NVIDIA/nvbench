@@ -50,8 +50,10 @@ endif()
 
 set(cupti_lib_dir "")
 if (TARGET nvbench::cupti)
-  get_property(cupti_lib TARGET nvbench::cupti PROPERTY IMPORTED_LOCATION)
-  cmake_path(GET cupti_lib PARENT_PATH cupti_lib_dir)
+  get_imported_location(cupti_lib nvbench::cupti)
+  if (cupti_lib)
+    cmake_path(GET cupti_lib PARENT_PATH cupti_lib_dir)
+  endif()
 endif()
 
 function(join_nonempty_paths out_var separator)
