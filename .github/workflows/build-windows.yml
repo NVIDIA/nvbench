@@ -150,6 +150,7 @@ jobs:
           role-duration-seconds: 43200
 
       - name: Validate Windows build inputs
+        id: validate_windows_build_inputs
         env:
           NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
@@ -166,16 +167,22 @@ jobs:
           }
 
           $arch = "$env:NVBENCH_WINDOWS_ARCH".Trim()
+          $normalizedArch = $arch
           if ($arch) {
             if (@("all", "all-major", "native") -notcontains $arch) {
-              $archItems = @($arch -split '[;,]' | Where-Object { $_ })
+              $archItems = @($arch -split '[;,]' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+              if ($archItems.Length -eq 0) {
+                throw "Invalid CMAKE_CUDA_ARCHITECTURES value '$arch'. Expected empty, 'all', 'all-major', 'native', or a list like '80;90-real'."
+              }
               foreach ($archItem in $archItems) {
                 if ($archItem -notmatch '^\d{2,3}(-real|-virtual)?$') {
                   throw "Invalid CMAKE_CUDA_ARCHITECTURES value '$arch'. Expected empty, 'all', 'all-major', 'native', or a list like '80;90-real'."
                 }
               }
+              $normalizedArch = $archItems -join ';'
             }
           }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "arch=$normalizedArch"
 
       - name: Fetch Windows devcontainer image
         run: |
@@ -185,7 +192,7 @@ jobs:
         env:
           NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
-          NVBENCH_WINDOWS_ARCH: ${{ inputs.arch }}
+          NVBENCH_WINDOWS_ARCH: ${{ steps.validate_windows_build_inputs.outputs.arch }}
           NVBENCH_WINDOWS_GPU: ${{ inputs.gpu }}
           NVBENCH_WINDOWS_GPU_ARGS: ${{ inputs.gpu_args }}
           NVBENCH_WINDOWS_RUN_TESTS: ${{ inputs.run_tests }}
