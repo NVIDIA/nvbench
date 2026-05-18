@@ -16,10 +16,16 @@ if (WIN32)
   endif()
   list(APPEND cmake_opts
     -D "CMAKE_CUDA_HOST_COMPILER=${cuda_host_compiler}"
-    -D "CMAKE_LINKER=${CMAKE_LINKER}"
-    -D "CMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}"
-    -D "CMAKE_MT=${CMAKE_MT}"
   )
+  if (CMAKE_LINKER)
+    list(APPEND cmake_opts -D "CMAKE_LINKER=${CMAKE_LINKER}")
+  endif()
+  if (CMAKE_RC_COMPILER)
+    list(APPEND cmake_opts -D "CMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
+  endif()
+  if (CMAKE_MT)
+    list(APPEND cmake_opts -D "CMAKE_MT=${CMAKE_MT}")
+  endif()
 endif()
 
 # Temporary installation prefix for tests against installed nvbench:
