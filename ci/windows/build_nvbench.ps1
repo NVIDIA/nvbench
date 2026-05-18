@@ -67,6 +67,8 @@ try {
     )
     if ($deviceTesting) {
         $localOptions += "-DNVBench_ENABLE_DEVICE_TESTING=ON"
+    } else {
+        $localOptions += "-DNVBench_ENABLE_DEVICE_TESTING=OFF"
     }
 
     Configure-And-Build-Preset "NVBench" $preset $localOptions
