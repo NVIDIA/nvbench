@@ -48,14 +48,18 @@ function(nvbench_find_windows_cupti_runtime_library out_var dep_name library_pat
     endif()
 
     if (runtime_libraries)
+      list(SORT runtime_libraries COMPARE NATURAL ORDER DESCENDING)
       list(LENGTH runtime_libraries num_runtime_libraries)
       if (num_runtime_libraries GREATER 1)
-        message(FATAL_ERROR
-          "Found multiple runtime DLLs for ${dep_name}: ${runtime_libraries}"
+        list(GET runtime_libraries 0 runtime_library)
+        message(WARNING
+          "Found multiple runtime DLLs for ${dep_name}; selecting "
+          "${runtime_library}. Candidates: ${runtime_libraries}"
         )
+      else()
+        list(GET runtime_libraries 0 runtime_library)
       endif()
 
-      list(GET runtime_libraries 0 runtime_library)
       set(${out_var} "${runtime_library}" PARENT_SCOPE)
       return()
     endif()
