@@ -39,10 +39,10 @@ on:
         type: boolean
         required: false
         default: false
-      gpu_args:
+      gpu_devices:
         type: string
         required: false
-        default: "--gpus all"
+        default: "all"
       run_tests:
         type: boolean
         required: false
@@ -94,11 +94,11 @@ on:
         type: boolean
         required: false
         default: false
-      gpu_args:
-        description: "Docker arguments used when gpu is true"
+      gpu_devices:
+        description: "GPU devices to expose when gpu is true: 'all' or 'device=0,1'"
         type: string
         required: false
-        default: "--gpus all"
+        default: "all"
       run_tests:
         description: "Run CTest after building"
         type: boolean
@@ -155,6 +155,8 @@ jobs:
           NVBENCH_WINDOWS_CUDA: ${{ inputs.cuda }}
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
           NVBENCH_WINDOWS_ARCH: ${{ inputs.arch }}
+          NVBENCH_WINDOWS_GPU: ${{ inputs.gpu }}
+          NVBENCH_WINDOWS_GPU_DEVICES: ${{ inputs.gpu_devices }}
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -184,6 +186,17 @@ jobs:
           }
           Add-Content -Path $env:GITHUB_OUTPUT -Value "arch=$normalizedArch"
 
+          $gpuDevices = "$env:NVBENCH_WINDOWS_GPU_DEVICES".Trim()
+          if ($env:NVBENCH_WINDOWS_GPU -eq "true") {
+            if (-not $gpuDevices) {
+              throw "GPU devices must not be empty when GPU support is enabled."
+            }
+            if ($gpuDevices -ne "all" -and $gpuDevices -notmatch '^device=\d+(,\d+)*$') {
+              throw "Invalid GPU devices value '$gpuDevices'. Expected 'all' or a device list like 'device=0,1'."
+            }
+          }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "gpu_devices=$gpuDevices"
+
       - name: Fetch Windows devcontainer image
         run: |
           docker pull "$env:WINDOWS_CI_IMAGE"
@@ -194,7 +207,7 @@ jobs:
           NVBENCH_WINDOWS_STD: ${{ inputs.std }}
           NVBENCH_WINDOWS_ARCH: ${{ steps.validate_windows_build_inputs.outputs.arch }}
           NVBENCH_WINDOWS_GPU: ${{ inputs.gpu }}
-          NVBENCH_WINDOWS_GPU_ARGS: ${{ inputs.gpu_args }}
+          NVBENCH_WINDOWS_GPU_DEVICES: ${{ steps.validate_windows_build_inputs.outputs.gpu_devices }}
           NVBENCH_WINDOWS_RUN_TESTS: ${{ inputs.run_tests }}
           NVBENCH_WINDOWS_DEVICE_TESTING: ${{ inputs.device_testing }}
         run: |
@@ -245,11 +258,10 @@ jobs:
           )
 
           if ($env:NVBENCH_WINDOWS_GPU -eq "true") {
-            $dockerGpuArgs = @($env:NVBENCH_WINDOWS_GPU_ARGS -split '\s+' | Where-Object { $_ })
-            if ($dockerGpuArgs.Length -eq 0) {
-              throw "NVBENCH_WINDOWS_GPU_ARGS must not be empty when GPU support is enabled."
+            if (-not $env:NVBENCH_WINDOWS_GPU_DEVICES) {
+              throw "NVBENCH_WINDOWS_GPU_DEVICES must not be empty when GPU support is enabled."
             }
-            $dockerArgs += $dockerGpuArgs
+            $dockerArgs += @("--gpus", $env:NVBENCH_WINDOWS_GPU_DEVICES)
           }
 
           $dockerArgs += @(
