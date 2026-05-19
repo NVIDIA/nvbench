@@ -101,7 +101,7 @@ nvbench::float64_t compute_mean(It first, It last)
  * Computes exact percentile values using rank round(p / 100 * (S - 1)).
  *
  * The input range is copied before sorting, so const iterators are supported.
- * If the input has fewer than 1 sample, all percentiles are returned as infinity.
+ * If the input has fewer than 1 sample, all percentiles are returned as quiet NaNs.
  */
 template <typename Iter,
           std::size_t N,
