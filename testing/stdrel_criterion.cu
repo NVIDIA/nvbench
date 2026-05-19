@@ -16,6 +16,7 @@
  *  limitations under the License.
  */
 
+#include <nvbench/detail/statistics.cuh>
 #include <nvbench/detail/stdrel_criterion.cuh>
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
@@ -31,8 +32,8 @@ void test_const()
   nvbench::detail::stdrel_criterion criterion;
 
   criterion.initialize(params);
-  for (int i = 0; i < 5; i++)
-  { // nvbench wants at least 5 to compute the standard deviation
+  for (nvbench::int64_t i = 0; i < nvbench::detail::statistics::min_samples_for_noise_estimate; ++i)
+  {
     criterion.add_measurement(42.0);
   }
   ASSERT(criterion.is_finished());
@@ -49,7 +50,10 @@ void test_stdrel()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  const std::vector<nvbench::float64_t> low_noise{100.0, 100.0, 100.0, 101.0, 101.0};
+  std::vector<nvbench::float64_t> low_noise(
+    nvbench::detail::statistics::min_samples_for_noise_estimate,
+    100.0);
+  low_noise.back() = 101.0;
   for (nvbench::float64_t measurement : low_noise)
   {
     criterion.add_measurement(measurement);
@@ -59,7 +63,12 @@ void test_stdrel()
   params.set_float64("max-noise", max_noise);
   criterion.initialize(params);
 
-  const std::vector<nvbench::float64_t> high_noise{10.0, 20.0, 30.0, 40.0, 50.0};
+  std::vector<nvbench::float64_t> high_noise;
+  high_noise.reserve(nvbench::detail::statistics::min_samples_for_noise_estimate);
+  for (nvbench::int64_t i = 0; i < nvbench::detail::statistics::min_samples_for_noise_estimate; ++i)
+  {
+    high_noise.push_back(static_cast<nvbench::float64_t>(i + 1) * 10.0);
+  }
   for (nvbench::float64_t measurement : high_noise)
   {
     criterion.add_measurement(measurement);
@@ -75,7 +84,7 @@ void test_stdrel_needs_enough_samples()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  for (int i = 0; i < 4; ++i)
+  for (nvbench::int64_t i = 1; i < nvbench::detail::statistics::min_samples_for_noise_estimate; ++i)
   {
     criterion.add_measurement(42.0);
   }

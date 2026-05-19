@@ -49,8 +49,8 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
   m_total_cuda_time += measurement;
   m_cuda_times.push_back(measurement);
 
-  // require at least 5 samples for meaningful noise estimate
-  if (m_total_samples > 4)
+  // Require enough samples for a meaningful noise estimate.
+  if (m_total_samples >= nvbench::detail::statistics::min_samples_for_noise_estimate)
   {
     // Compute convergence statistics using CUDA timings:
     const auto [cuda_first_quartile, cuda_median, cuda_third_quartile] =

@@ -214,17 +214,20 @@ void measure_cpu_only_base::generate_summaries()
     const auto cpu_ir = cpu_third_quartile - cpu_first_quartile;
     summ.set_float64("value", cpu_ir);
   }
-  if (const auto cpu_robust_noise =
-        nvbench::detail::statistics::compute_relative_interquartile_range(cpu_first_quartile,
-                                                                          cpu_median,
-                                                                          cpu_third_quartile))
+  if (m_total_samples >= nvbench::detail::statistics::min_samples_for_noise_estimate)
   {
-    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
-    summ.set_string("name", "Noise");
-    summ.set_string("hint", "percentage");
-    summ.set_string("description",
-                    "Relative interquartile range of CPU times of isolated kernel executions");
-    summ.set_float64("value", *cpu_robust_noise);
+    if (const auto cpu_robust_noise =
+          nvbench::detail::statistics::compute_relative_interquartile_range(cpu_first_quartile,
+                                                                            cpu_median,
+                                                                            cpu_third_quartile))
+    {
+      auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
+      summ.set_string("name", "Noise");
+      summ.set_string("hint", "percentage");
+      summ.set_string("description",
+                      "Relative interquartile range of CPU times of isolated kernel executions");
+      summ.set_float64("value", *cpu_robust_noise);
+    }
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)

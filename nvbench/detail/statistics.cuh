@@ -49,10 +49,12 @@
 namespace nvbench::detail::statistics
 {
 
+inline constexpr nvbench::int64_t min_samples_for_noise_estimate = 5;
+
 /**
  * Computes and returns the unbiased sample standard deviation.
  *
- * If the input has fewer than 5 sample, infinity is returned.
+ * If the input has fewer than min_samples_for_noise_estimate samples, infinity is returned.
  */
 template <typename Iter, typename ValueType = typename std::iterator_traits<Iter>::value_type>
 ValueType standard_deviation(Iter first, Iter last, ValueType mean)
@@ -61,7 +63,7 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
 
   const auto num = std::distance(first, last);
 
-  if (num < 5) // don't bother with low sample sizes.
+  if (num < min_samples_for_noise_estimate) // don't bother with low sample sizes.
   {
     return std::numeric_limits<ValueType>::infinity();
   }
