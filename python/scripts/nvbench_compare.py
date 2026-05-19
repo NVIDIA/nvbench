@@ -364,6 +364,8 @@ def compare_benches(
 
                 cmp_state_name = cmp_state["name"]
                 counters[cmp_state_name] = counters.get(cmp_state_name, 0) + 1
+                # Duplicate state names are matched by occurrence order within
+                # the same device section.
                 ref_state = next(
                     islice(
                         (
