@@ -570,11 +570,37 @@ def compare_benches(
 
                     noise = list(plot_data[key + "_noise"][axis].values())
 
-                    top = [y[i] + y[i] * noise[i] for i in range(len(x))]
-                    bottom = [y[i] - y[i] * noise[i] for i in range(len(x))]
-
                     p = plt.plot(x, y, shape, marker="o", label=label)
-                    plt.fill_between(x, bottom, top, color=p[0].get_color(), alpha=0.1)
+
+                    def plot_confidence_band(first, last):
+                        if last - first < 2:
+                            return
+
+                        band_x = x[first:last]
+                        band_y = y[first:last]
+                        band_noise = noise[first:last]
+                        top = [
+                            band_y[i] + band_y[i] * band_noise[i]
+                            for i in range(len(band_x))
+                        ]
+                        bottom = [
+                            band_y[i] - band_y[i] * band_noise[i]
+                            for i in range(len(band_x))
+                        ]
+                        plt.fill_between(
+                            band_x, bottom, top, color=p[0].get_color(), alpha=0.1
+                        )
+
+                    start = None
+                    for i, noise_value in enumerate(noise):
+                        if noise_value is not None and start is None:
+                            start = i
+                        if noise_value is None and start is not None:
+                            plot_confidence_band(start, i)
+                            start = None
+
+                    if start is not None:
+                        plot_confidence_band(start, len(x))
 
                 for axis in plot_data["cmp"].keys():
                     plot_line("cmp", "-", axis)
