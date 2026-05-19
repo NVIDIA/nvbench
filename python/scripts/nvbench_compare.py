@@ -417,27 +417,27 @@ def compare_benches(
                     assert value_data["type"] == "float64"
                     return value_data["value"]
 
-                cmp_time = extract_value(cmp_time_summary)
-                ref_time = extract_value(ref_time_summary)
-                cmp_noise = extract_value(cmp_noise_summary)
-                ref_noise = extract_value(ref_noise_summary)
+                def normalize_float_value(value):
+                    if value is None:
+                        return None
+                    return float(value)
 
-                # Convert string encoding to expected numerics:
-                cmp_time = float(cmp_time)
-                ref_time = float(ref_time)
+                cmp_time = normalize_float_value(extract_value(cmp_time_summary))
+                ref_time = normalize_float_value(extract_value(ref_time_summary))
+                cmp_noise = normalize_float_value(extract_value(cmp_noise_summary))
+                ref_noise = normalize_float_value(extract_value(ref_noise_summary))
+
+                if cmp_time is None or ref_time is None:
+                    continue
 
                 diff = cmp_time - ref_time
                 frac_diff = diff / ref_time
 
-                if ref_noise and cmp_noise:
-                    ref_noise = float(ref_noise)
-                    cmp_noise = float(cmp_noise)
+                if ref_noise is not None and cmp_noise is not None:
                     max_noise = max(ref_noise, cmp_noise)
-                elif ref_noise:
-                    ref_noise = float(ref_noise)
+                elif ref_noise is not None:
                     max_noise = ref_noise
-                elif cmp_noise:
-                    cmp_noise = float(cmp_noise)
+                elif cmp_noise is not None:
                     max_noise = cmp_noise
                 else:
                     max_noise = None  # Noise is inf
