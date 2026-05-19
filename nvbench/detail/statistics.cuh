@@ -147,10 +147,13 @@ std::array<ValueType, N> compute_percentiles(Iter first, Iter last, const int (&
   return compute_percentiles(first, last, percentile_array);
 }
 
+// Returns nullopt for invalid inputs. A +inf result is allowed: it represents
+// unbounded relative dispersion rather than missing data.
 inline std::optional<nvbench::float64_t> compute_relative_dispersion(nvbench::float64_t dispersion,
                                                                      nvbench::float64_t center)
 {
-  if (center == nvbench::float64_t{} || !std::isfinite(center) || std::isnan(dispersion))
+  if (center == nvbench::float64_t{} || !std::isfinite(center) ||
+      dispersion < nvbench::float64_t{} || std::isnan(dispersion))
   {
     return std::nullopt;
   }
