@@ -417,14 +417,7 @@ def compare_benches(
 
                 # TODO: Use other timings, too. Maybe multiple rows, with a
                 # "Timing" column + values "CPU/GPU/Batch"?
-                if not all(
-                    [
-                        cmp_time_summary,
-                        ref_time_summary,
-                        cmp_noise_summary,
-                        ref_noise_summary,
-                    ]
-                ):
+                if not all([cmp_time_summary, ref_time_summary]):
                     continue
 
                 def extract_value(summary):
@@ -442,8 +435,16 @@ def compare_benches(
 
                 cmp_time = normalize_float_value(extract_value(cmp_time_summary))
                 ref_time = normalize_float_value(extract_value(ref_time_summary))
-                cmp_noise = normalize_float_value(extract_value(cmp_noise_summary))
-                ref_noise = normalize_float_value(extract_value(ref_noise_summary))
+                cmp_noise = (
+                    normalize_float_value(extract_value(cmp_noise_summary))
+                    if cmp_noise_summary
+                    else None
+                )
+                ref_noise = (
+                    normalize_float_value(extract_value(ref_noise_summary))
+                    if ref_noise_summary
+                    else None
+                )
 
                 if cmp_time is None or ref_time is None:
                     continue
