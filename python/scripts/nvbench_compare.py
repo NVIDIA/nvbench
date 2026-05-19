@@ -449,14 +449,10 @@ def compare_benches(
                 diff = cmp_time - ref_time
                 frac_diff = diff / ref_time
 
-                if ref_noise is not None and cmp_noise is not None:
-                    max_noise = max(ref_noise, cmp_noise)
-                elif ref_noise is not None:
-                    max_noise = ref_noise
-                elif cmp_noise is not None:
-                    max_noise = cmp_noise
+                if ref_noise is None or cmp_noise is None:
+                    max_noise = None  # Noise is inf or unavailable
                 else:
-                    max_noise = None  # Noise is inf
+                    max_noise = max(ref_noise, cmp_noise)
 
                 if plot_along:
                     axis_name = []
