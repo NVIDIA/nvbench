@@ -702,10 +702,10 @@ def main():
         )
 
     print("# Summary\n")
-    print("- Total Matches: %d" % config_count)
-    print("  - Pass    (diff <= max_noise): %d" % pass_count)
-    print("  - Unknown (infinite noise):    %d" % unknown_count)
-    print("  - Failure (diff > max_noise):  %d" % failure_count)
+    print(f"- Total Matches: {config_count}")
+    print(f"  - Pass    (abs(%Diff) <= max_noise): {pass_count}")
+    print(f"  - Unknown (infinite noise):    {unknown_count}")
+    print(f"  - Failure (abs(%Diff) > max_noise):  {failure_count}")
     return failure_count
 
 
