@@ -49,11 +49,13 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
       nvbench::detail::statistics::compute_percentiles(m_cuda_times.cbegin(),
                                                        m_cuda_times.cend(),
                                                        {25, 50, 75});
-    const auto cuda_noise = (cuda_third_quartile - cuda_first_quartile) / cuda_median;
-
-    if (std::isfinite(cuda_noise))
+    const auto cuda_noise =
+      nvbench::detail::statistics::compute_relative_interquartile_range(cuda_first_quartile,
+                                                                        cuda_median,
+                                                                        cuda_third_quartile);
+    if (cuda_noise && std::isfinite(*cuda_noise))
     {
-      m_noise_tracker.push_back(cuda_noise);
+      m_noise_tracker.push_back(*cuda_noise);
     }
   }
 }

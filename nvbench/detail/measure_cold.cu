@@ -30,7 +30,6 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
-#include <optional>
 #include <thread>
 
 namespace nvbench::detail
@@ -255,7 +254,9 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  const auto cpu_noise = cpu_stdev / cpu_mean;
+  const auto cpu_noise = nvbench::detail::statistics::compute_relative_dispersion(cpu_stdev,
+                                                                                  cpu_mean);
+  if (cpu_noise)
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
@@ -263,7 +264,7 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description",
                     "Relative standard deviation of isolated kernel execution CPU times");
     summ.set_string("hide", "Hidden by default.");
-    summ.set_float64("value", cpu_noise);
+    summ.set_float64("value", *cpu_noise);
   }
 
   const auto [cpu_time_first_quartile, cpu_time_median, cpu_time_third_quartile] =
@@ -302,15 +303,17 @@ void measure_cold_base::generate_summaries()
     const auto cpu_time_ir = cpu_time_third_quartile - cpu_time_first_quartile;
     summ.set_float64("value", cpu_time_ir);
   }
+  if (const auto cpu_robust_noise =
+        nvbench::detail::statistics::compute_relative_interquartile_range(cpu_time_first_quartile,
+                                                                          cpu_time_median,
+                                                                          cpu_time_third_quartile))
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/ir/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative interquartile range of isolated kernel execution CPU times");
-    const auto cpu_time_ir      = cpu_time_third_quartile - cpu_time_first_quartile;
-    const auto cpu_robust_noise = cpu_time_ir / cpu_time_median;
-    summ.set_float64("value", cpu_robust_noise);
+    summ.set_float64("value", *cpu_robust_noise);
   }
 
   // gpu time statistics
@@ -360,7 +363,9 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  const auto cuda_noise = cuda_stdev / cuda_mean;
+  const auto cuda_noise = nvbench::detail::statistics::compute_relative_dispersion(cuda_stdev,
+                                                                                   cuda_mean);
+  if (cuda_noise)
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
     summ.set_string("name", "Noise");
@@ -368,7 +373,7 @@ void measure_cold_base::generate_summaries()
     summ.set_string("description",
                     "Relative standard deviation of isolated kernel execution GPU times");
     summ.set_string("hide", "Hidden by default.");
-    summ.set_float64("value", cuda_noise);
+    summ.set_float64("value", *cuda_noise);
   }
 
   const auto [cuda_time_first_quartile, cuda_time_median, cuda_time_third_quartile] =
@@ -407,15 +412,17 @@ void measure_cold_base::generate_summaries()
     const auto cuda_time_ir = cuda_time_third_quartile - cuda_time_first_quartile;
     summ.set_float64("value", cuda_time_ir);
   }
+  if (const auto cuda_robust_noise =
+        nvbench::detail::statistics::compute_relative_interquartile_range(cuda_time_first_quartile,
+                                                                          cuda_time_median,
+                                                                          cuda_time_third_quartile))
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/ir/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative interquartile range of isolated kernel execution GPU times");
-    const auto cuda_time_ir      = cuda_time_third_quartile - cuda_time_first_quartile;
-    const auto cuda_robust_noise = cuda_time_ir / cuda_time_median;
-    summ.set_float64("value", cuda_robust_noise);
+    summ.set_float64("value", *cuda_robust_noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -511,14 +518,14 @@ void measure_cold_base::generate_summaries()
       std::optional<nvbench::float64_t> min_time;
       get_param(min_time, "min-time");
 
-      if (max_noise && cuda_noise > *max_noise)
+      if (max_noise && cuda_noise && *cuda_noise > *max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                cuda_noise * 100,
+                                *cuda_noise * 100,
                                 *max_noise * 100));
       }
       if (m_total_samples < m_min_samples)

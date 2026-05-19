@@ -21,6 +21,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <limits>
 #include <vector>
 
 #include "test_asserts.cuh"
@@ -94,6 +96,63 @@ void test_percentiles()
     ASSERT(!std::isfinite(actual[0]));
     ASSERT(!std::isfinite(actual[1]));
     ASSERT(!std::isfinite(actual[2]));
+  }
+}
+
+void test_relative_interquartile_range()
+{
+  {
+    const auto actual = statistics::compute_relative_dispersion(6.0, 3.0);
+    ASSERT(actual);
+    ASSERT(std::abs(*actual - 2.0) < 0.001);
+  }
+
+  {
+    const auto actual = statistics::compute_relative_dispersion(1.0, 0.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_relative_dispersion(std::numeric_limits<nvbench::float64_t>::quiet_NaN(),
+                                              1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_relative_dispersion(std::numeric_limits<nvbench::float64_t>::infinity(),
+                                              1.0);
+    ASSERT(actual);
+    ASSERT(!std::isfinite(*actual));
+  }
+
+  {
+    const auto actual = statistics::compute_relative_interquartile_range(2.0, 4.0, 6.0);
+    ASSERT(actual);
+    ASSERT(std::abs(*actual - 1.0) < 0.001);
+  }
+
+  {
+    const auto actual = statistics::compute_relative_interquartile_range(0.0, 0.0, 1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual = statistics::compute_relative_interquartile_range(
+      0.0,
+      1.0,
+      std::numeric_limits<nvbench::float64_t>::infinity());
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual = statistics::compute_relative_interquartile_range(
+      0.0,
+      std::numeric_limits<nvbench::float64_t>::min(),
+      std::numeric_limits<nvbench::float64_t>::max());
+    ASSERT(actual);
+    ASSERT(!std::isfinite(*actual));
   }
 }
 
@@ -172,6 +231,7 @@ int main()
   test_mean();
   test_std();
   test_percentiles();
+  test_relative_interquartile_range();
   test_lin_regression();
   test_r2();
   test_slope_conversion();

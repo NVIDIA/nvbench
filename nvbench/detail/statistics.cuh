@@ -38,6 +38,7 @@
 #include <iterator>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <type_traits>
 #include <vector>
 
@@ -144,6 +145,31 @@ std::array<ValueType, N> compute_percentiles(Iter first, Iter last, const int (&
   std::array<int, N> percentile_array{};
   std::copy(std::begin(percentiles), std::end(percentiles), percentile_array.begin());
   return compute_percentiles(first, last, percentile_array);
+}
+
+inline std::optional<nvbench::float64_t> compute_relative_dispersion(nvbench::float64_t dispersion,
+                                                                     nvbench::float64_t center)
+{
+  if (center == nvbench::float64_t{} || !std::isfinite(center) || std::isnan(dispersion))
+  {
+    return std::nullopt;
+  }
+
+  return dispersion / center;
+}
+
+inline std::optional<nvbench::float64_t>
+compute_relative_interquartile_range(nvbench::float64_t first_quartile,
+                                     nvbench::float64_t median,
+                                     nvbench::float64_t third_quartile)
+{
+  const auto interquartile_range = third_quartile - first_quartile;
+  if (!std::isfinite(interquartile_range))
+  {
+    return std::nullopt;
+  }
+
+  return compute_relative_dispersion(interquartile_range, median);
 }
 
 /**

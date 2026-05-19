@@ -164,13 +164,15 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  const auto cpu_noise = cpu_stdev / cpu_mean;
+  const auto cpu_noise = nvbench::detail::statistics::compute_relative_dispersion(cpu_stdev,
+                                                                                  cpu_mean);
+  if (cpu_noise)
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated CPU times");
-    summ.set_float64("value", cpu_noise);
+    summ.set_float64("value", *cpu_noise);
   }
 
   const auto [cpu_first_quartile, cpu_median, cpu_third_quartile] =
@@ -211,6 +213,10 @@ void measure_cpu_only_base::generate_summaries()
     const auto cpu_ir = cpu_third_quartile - cpu_first_quartile;
     summ.set_float64("value", cpu_ir);
   }
+  if (const auto cpu_robust_noise =
+        nvbench::detail::statistics::compute_relative_interquartile_range(cpu_first_quartile,
+                                                                          cpu_median,
+                                                                          cpu_third_quartile))
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
     summ.set_string("name", "IR");
@@ -218,9 +224,7 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("description",
                     "Relative interquartile range of CPU times of isolated kernel executions");
     summ.set_string("hide", "Hidden by default.");
-    const auto cpu_ir           = cpu_third_quartile - cpu_first_quartile;
-    const auto cpu_robust_noise = cpu_ir / cpu_median;
-    summ.set_float64("value", cpu_robust_noise);
+    summ.set_float64("value", *cpu_robust_noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -275,14 +279,14 @@ void measure_cpu_only_base::generate_summaries()
       std::optional<nvbench::float64_t> min_time;
       get_param(min_time, "min-time");
 
-      if (max_noise && cpu_noise > *max_noise)
+      if (max_noise && cpu_noise && *cpu_noise > *max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                cpu_noise * 100,
+                                *cpu_noise * 100,
                                 *max_noise * 100));
       }
       if (m_total_samples < m_min_samples)
