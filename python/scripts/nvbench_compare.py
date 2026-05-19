@@ -321,6 +321,7 @@ def compare_benches(
         print(f"""# {cmp_bench["name"]}\n""")
 
         cmp_device_ids = cmp_bench["devices"]
+        ref_device_ids = ref_bench["devices"]
         axes = cmp_bench["axes"]
         ref_states = ref_bench["states"]
         cmp_states = cmp_bench["states"]
@@ -345,17 +346,32 @@ def compare_benches(
         headers.append("Status")
         colalign.append("center")
 
-        for cmp_device_id in cmp_device_ids:
+        for cmp_device_index, cmp_device_id in enumerate(cmp_device_ids):
+            if cmp_device_id in ref_device_ids:
+                ref_device_id = cmp_device_id
+            elif cmp_device_index < len(ref_device_ids):
+                ref_device_id = ref_device_ids[cmp_device_index]
+            else:
+                continue
+
             rows = []
             plot_data = {"cmp": {}, "ref": {}, "cmp_noise": {}, "ref_noise": {}}
             counters = {}
 
             for cmp_state in cmp_states:
+                if cmp_state["device"] != cmp_device_id:
+                    continue
+
                 cmp_state_name = cmp_state["name"]
                 counters[cmp_state_name] = counters.get(cmp_state_name, 0) + 1
                 ref_state = next(
                     islice(
-                        filter(lambda st: st["name"] == cmp_state_name, ref_states),
+                        (
+                            st
+                            for st in ref_states
+                            if st["device"] == ref_device_id
+                            and st["name"] == cmp_state_name
+                        ),
                         counters[cmp_state_name] - 1,
                         None,
                     ),
@@ -515,7 +531,7 @@ def compare_benches(
                 continue
 
             cmp_device = find_device_by_id(cmp_device_id, all_cmp_devices)
-            ref_device = find_device_by_id(ref_state["device"], all_ref_devices)
+            ref_device = find_device_by_id(ref_device_id, all_ref_devices)
 
             if cmp_device == ref_device:
                 print("## [%d] %s\n" % (cmp_device["id"], cmp_device["name"]))
