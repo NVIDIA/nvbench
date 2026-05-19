@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20.1)
+cmake_minimum_required(VERSION 3.22.0)
 project(NVBenchTestExport CUDA CXX)
 
 message(STATUS "NVBench_DIR=${NVBench_DIR}")
@@ -10,45 +10,107 @@ enable_testing()
 add_test(NAME test_bench COMMAND "$<TARGET_FILE:test_bench>" --timeout 1)
 add_test(NAME nvbench_ctl COMMAND "$<TARGET_FILE:nvbench::ctl>")
 
-# Setup LD_LIBRARY_PATH for testing
-if (UNIX)
-  set(ctl_lib_path "")
-  set(cupti_lib_path "")
-
-  # Need to find installed libnvbench.so for installed nvbench-ctl.
-  # Not needed for build_tree test because of RUNPATH.
-  if (TEST_TYPE STREQUAL "INSTALL_TREE")
-    get_property(nvbench_config TARGET nvbench::nvbench
-      PROPERTY IMPORTED_CONFIGURATIONS
+# Setup runtime library paths for testing.
+# Unix uses LD_LIBRARY_PATH; Windows uses PATH for DLL lookup.
+function(get_imported_location out_var target_name)
+  get_property(imported_configs TARGET ${target_name}
+    PROPERTY IMPORTED_CONFIGURATIONS
+  )
+  list(LENGTH imported_configs num_configs)
+  if (num_configs GREATER 1)
+    message(WARNING
+      "Multiple IMPORTED_CONFIGURATIONS for ${target_name}. "
+      "Picking CMAKE_BUILD_TYPE if present, otherwise the first one."
     )
+  endif()
 
-    list(LENGTH nvbench_config num_configs)
-    if (num_configs GREATER 1)
-      message(WARNING
-        "Multiple IMPORTED_CONFIGURATIONS for nvbench::nvbench. "
-        "Picking the first one. This may cause issues."
-      )
-      list(GET nvbench_config 0 nvbench_config)
+  if (num_configs GREATER 0)
+    if (CMAKE_BUILD_TYPE)
+      string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type)
+      list(FIND imported_configs "${build_type}" imported_config_index)
+    else()
+      set(imported_config_index -1)
     endif()
-
-    get_property(ctl_lib_path TARGET nvbench::nvbench
-      PROPERTY IMPORTED_LOCATION_${nvbench_config}
+    if (imported_config_index GREATER_EQUAL 0)
+      list(GET imported_configs ${imported_config_index} imported_config)
+    else()
+      list(GET imported_configs 0 imported_config)
+    endif()
+    get_property(imported_location TARGET ${target_name}
+      PROPERTY IMPORTED_LOCATION_${imported_config}
     )
-    cmake_path(GET ctl_lib_path PARENT_PATH ctl_lib_path)
   endif()
 
-  # Need to add the CUPTI path to LD_LIBRARY_PATH to make sure CUPTI libraries
-  # are found at runtime:
-  if (TARGET nvbench::cupti)
-    get_property(cupti_lib_path TARGET nvbench::cupti PROPERTY IMPORTED_LOCATION)
-    cmake_path(GET cupti_lib_path PARENT_PATH cupti_lib_path)
+  if (NOT imported_location)
+    get_property(imported_location TARGET ${target_name}
+      PROPERTY IMPORTED_LOCATION
+    )
   endif()
 
-  set_property(TEST test_bench PROPERTY
-    ENVIRONMENT "LD_LIBRARY_PATH=${cupti_lib_path}"
-  )
-  set_property(TEST nvbench_ctl PROPERTY
-    ENVIRONMENT "LD_LIBRARY_PATH=${ctl_lib_path}:${cupti_lib_path}"
-  )
+  set(${out_var} "${imported_location}" PARENT_SCOPE)
+endfunction()
 
+set(nvbench_lib_dir "")
+# On Unix the build tree uses RUNPATH so only the install tree needs the path.
+# On Windows there is no RUNPATH so we always need the DLL directory.
+if (WIN32 OR TEST_TYPE STREQUAL "INSTALL_TREE")
+  get_imported_location(nvbench_lib nvbench::nvbench)
+  if (nvbench_lib)
+    cmake_path(GET nvbench_lib PARENT_PATH nvbench_lib_dir)
+  endif()
+endif()
+
+set(cupti_lib_dir "")
+if (TARGET nvbench::cupti)
+  get_imported_location(cupti_lib nvbench::cupti)
+  if (cupti_lib)
+    cmake_path(GET cupti_lib PARENT_PATH cupti_lib_dir)
+  endif()
+endif()
+
+if (WIN32)
+  set(path_modifications "")
+  if (cupti_lib_dir)
+    list(APPEND path_modifications "PATH=path_list_prepend:$<SHELL_PATH:${cupti_lib_dir}>")
+  endif()
+  if (nvbench_lib_dir)
+    list(APPEND path_modifications "PATH=path_list_prepend:$<SHELL_PATH:${nvbench_lib_dir}>")
+  endif()
+  if (path_modifications)
+    set_property(TEST test_bench PROPERTY
+      ENVIRONMENT_MODIFICATION ${path_modifications}
+    )
+    set_property(TEST nvbench_ctl PROPERTY
+      ENVIRONMENT_MODIFICATION ${path_modifications}
+    )
+  endif()
+else()
+  set(test_bench_ld_modifications "")
+  if (cupti_lib_dir)
+    list(APPEND test_bench_ld_modifications
+      "LD_LIBRARY_PATH=path_list_prepend:$<SHELL_PATH:${cupti_lib_dir}>"
+    )
+  endif()
+  if (test_bench_ld_modifications)
+    set_property(TEST test_bench PROPERTY
+      ENVIRONMENT_MODIFICATION ${test_bench_ld_modifications}
+    )
+  endif()
+
+  set(nvbench_ctl_ld_modifications "")
+  if (cupti_lib_dir)
+    list(APPEND nvbench_ctl_ld_modifications
+      "LD_LIBRARY_PATH=path_list_prepend:$<SHELL_PATH:${cupti_lib_dir}>"
+    )
+  endif()
+  if (nvbench_lib_dir)
+    list(APPEND nvbench_ctl_ld_modifications
+      "LD_LIBRARY_PATH=path_list_prepend:$<SHELL_PATH:${nvbench_lib_dir}>"
+    )
+  endif()
+  if (nvbench_ctl_ld_modifications)
+    set_property(TEST nvbench_ctl PROPERTY
+      ENVIRONMENT_MODIFICATION ${nvbench_ctl_ld_modifications}
+    )
+  endif()
 endif()

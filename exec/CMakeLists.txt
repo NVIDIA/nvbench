@@ -9,35 +9,57 @@ add_dependencies(nvbench.all nvbench.ctl)
 nvbench_install_executables(nvbench.ctl)
 
 if (NVBench_ENABLE_TESTING)
+  set(ctl_test_names)
+
   # Test: nvbench
-  add_test(NAME nvbench.ctl.no_args COMMAND "$<TARGET_FILE:nvbench.ctl>")
+  set(test_name nvbench.ctl.no_args)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>")
+  list(APPEND ctl_test_names ${test_name})
   # Should print the version without any args:
-  set_property(TEST nvbench.ctl.no_args
+  set_property(TEST ${test_name}
     PROPERTY PASS_REGULAR_EXPRESSION "NVBench v"
   )
 
   # Test: nvbench --version
-  add_test(NAME nvbench.ctl.version COMMAND "$<TARGET_FILE:nvbench.ctl>" --version)
+  set(test_name nvbench.ctl.version)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>" --version)
+  list(APPEND ctl_test_names ${test_name})
   # Should print the version without any args:
-  set_property(TEST nvbench.ctl.version
+  set_property(TEST ${test_name}
     PROPERTY PASS_REGULAR_EXPRESSION "NVBench v"
   )
 
   # Test: nvbench --list
-  add_test(NAME nvbench.ctl.list COMMAND "$<TARGET_FILE:nvbench.ctl>" --list)
+  set(test_name nvbench.ctl.list)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>" --list)
+  list(APPEND ctl_test_names ${test_name})
 
   # Test: nvbench -l
-  add_test(NAME nvbench.ctl.l COMMAND "$<TARGET_FILE:nvbench.ctl>" -l)
+  set(test_name nvbench.ctl.l)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>" -l)
+  list(APPEND ctl_test_names ${test_name})
 
   # Test: nvbench --help
-  add_test(NAME nvbench.ctl.help COMMAND "$<TARGET_FILE:nvbench.ctl>" --help)
+  set(test_name nvbench.ctl.help)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>" --help)
+  list(APPEND ctl_test_names ${test_name})
 
   # Test: nvbench -h
-  add_test(NAME nvbench.ctl.h COMMAND "$<TARGET_FILE:nvbench.ctl>" -h)
+  set(test_name nvbench.ctl.h)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>" -h)
+  list(APPEND ctl_test_names ${test_name})
 
   # Test: nvbench --help-axes
-  add_test(NAME nvbench.ctl.help_axes COMMAND "$<TARGET_FILE:nvbench.ctl>" --help-axes)
+  set(test_name nvbench.ctl.help_axes)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>" --help-axes)
+  list(APPEND ctl_test_names ${test_name})
 
   # Test: nvbench --help-axis
-  add_test(NAME nvbench.ctl.help_axis COMMAND "$<TARGET_FILE:nvbench.ctl>" --help-axis)
+  set(test_name nvbench.ctl.help_axis)
+  add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:nvbench.ctl>" --help-axis)
+  list(APPEND ctl_test_names ${test_name})
+
+  foreach(test_name IN LISTS ctl_test_names)
+    nvbench_config_test_runtime_environment(${test_name})
+  endforeach()
 endif()

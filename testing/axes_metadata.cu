@@ -24,6 +24,7 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <iterator>
 #include <string_view>
 
 #include "test_asserts.cuh"

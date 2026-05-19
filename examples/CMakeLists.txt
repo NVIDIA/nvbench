@@ -37,6 +37,7 @@ function (nvbench_add_examples_target target_prefix cuda_std)
 
     add_test(NAME ${example_name}
       COMMAND "$<TARGET_FILE:${example_name}>" ${example_args})
+    nvbench_config_test_runtime_environment(${example_name})
 
     # These should not deadlock. If they do, it may be that the CUDA context was created before
     # setting CUDA_MODULE_LOAD=EAGER in main, see NVIDIA/nvbench#136.
