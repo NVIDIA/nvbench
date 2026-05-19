@@ -20,9 +20,7 @@
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
-#include <algorithm>
-#include <numeric>
-#include <random>
+#include <limits>
 #include <vector>
 
 #include "test_asserts.cuh"
@@ -40,29 +38,19 @@ void test_const()
   ASSERT(criterion.is_finished());
 }
 
-std::vector<double> generate(double mean, double rel_std_dev, int size)
-{
-  static std::mt19937::result_type seed = 0;
-  std::mt19937 gen(seed++);
-  std::vector<nvbench::float64_t> v(static_cast<std::size_t>(size));
-  std::normal_distribution<nvbench::float64_t> dist(mean, mean * rel_std_dev);
-  std::generate(v.begin(), v.end(), [&] { return dist(gen); });
-  return v;
-}
-
 void test_stdrel()
 {
-  const nvbench::int64_t size        = 10;
-  const nvbench::float64_t mean      = 42.0;
   const nvbench::float64_t max_noise = 0.1;
 
   nvbench::criterion_params params;
   params.set_float64("max-noise", max_noise);
+  params.set_float64("min-time", 0.0);
 
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  for (nvbench::float64_t measurement : generate(mean, max_noise / 2, size))
+  const std::vector<nvbench::float64_t> low_noise{100.0, 100.0, 100.0, 101.0, 101.0};
+  for (nvbench::float64_t measurement : low_noise)
   {
     criterion.add_measurement(measurement);
   }
@@ -71,7 +59,8 @@ void test_stdrel()
   params.set_float64("max-noise", max_noise);
   criterion.initialize(params);
 
-  for (nvbench::float64_t measurement : generate(mean, max_noise * 2, size))
+  const std::vector<nvbench::float64_t> high_noise{10.0, 20.0, 30.0, 40.0, 50.0};
+  for (nvbench::float64_t measurement : high_noise)
   {
     criterion.add_measurement(measurement);
   }
@@ -93,9 +82,30 @@ void test_stdrel_needs_enough_samples()
   ASSERT(!criterion.is_finished());
 }
 
+void test_stdrel_finishes_with_persistently_invalid_noise()
+{
+  nvbench::criterion_params params;
+  params.set_float64("min-time", 0.0);
+
+  nvbench::detail::stdrel_criterion criterion;
+  criterion.initialize(params);
+
+  // Force invalid relative-IQR estimates while still satisfying min-time.
+  const auto invalid_measurement = std::numeric_limits<nvbench::float64_t>::infinity();
+  for (int i = 0; i < 67; ++i)
+  {
+    criterion.add_measurement(invalid_measurement);
+  }
+  ASSERT(!criterion.is_finished());
+
+  criterion.add_measurement(invalid_measurement);
+  ASSERT(criterion.is_finished());
+}
+
 int main()
 {
   test_const();
   test_stdrel();
   test_stdrel_needs_enough_samples();
+  test_stdrel_finishes_with_persistently_invalid_noise();
 }
