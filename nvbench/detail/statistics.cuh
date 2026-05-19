@@ -108,6 +108,9 @@ template <typename Iter,
           typename ValueType = typename std::iterator_traits<Iter>::value_type>
 std::array<ValueType, N> compute_percentiles(Iter first, Iter last, std::array<int, N> percentiles)
 {
+  static_assert(std::is_floating_point_v<ValueType>,
+                "compute_percentiles requires a floating-point value type.");
+
   std::array<ValueType, N> result{};
 
   const auto num = std::distance(first, last);
@@ -152,7 +155,7 @@ std::array<ValueType, N> compute_percentiles(Iter first, Iter last, const int (&
 inline std::optional<nvbench::float64_t> compute_relative_dispersion(nvbench::float64_t dispersion,
                                                                      nvbench::float64_t center)
 {
-  if (center == nvbench::float64_t{} || !std::isfinite(center) ||
+  if (center <= nvbench::float64_t{} || !std::isfinite(center) ||
       dispersion < nvbench::float64_t{} || std::isnan(dispersion))
   {
     return std::nullopt;
