@@ -21,6 +21,13 @@
 namespace nvbench::detail
 {
 
+namespace
+{
+
+constexpr nvbench::int64_t invalid_noise_estimate_limit = 64;
+
+} // namespace
+
 stdrel_criterion::stdrel_criterion()
     : stopping_criterion_base{"stdrel",
                               {{"max-noise", 0.005}, // 0.5% stdrel
@@ -29,8 +36,9 @@ stdrel_criterion::stdrel_criterion()
 
 void stdrel_criterion::do_initialize()
 {
-  m_total_samples   = 0;
-  m_total_cuda_time = 0.0;
+  m_total_samples                       = 0;
+  m_total_cuda_time                     = 0.0;
+  m_consecutive_invalid_noise_estimates = 0;
   m_cuda_times.clear();
   m_noise_tracker.clear();
 }
@@ -55,7 +63,12 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
                                                                         cuda_third_quartile);
     if (cuda_noise && std::isfinite(*cuda_noise))
     {
+      m_consecutive_invalid_noise_estimates = 0;
       m_noise_tracker.push_back(*cuda_noise);
+    }
+    else
+    {
+      ++m_consecutive_invalid_noise_estimates;
     }
   }
 }
@@ -65,6 +78,11 @@ bool stdrel_criterion::do_is_finished()
   if (m_total_cuda_time <= m_params.get_float64("min-time"))
   {
     return false;
+  }
+
+  if (m_consecutive_invalid_noise_estimates >= invalid_noise_estimate_limit)
+  {
+    return true;
   }
 
   if (m_noise_tracker.empty())
