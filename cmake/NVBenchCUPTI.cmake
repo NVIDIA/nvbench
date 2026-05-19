@@ -56,6 +56,8 @@ function(nvbench_find_windows_cupti_runtime_library out_var dep_name library_pat
     endif()
 
     if (runtime_libraries)
+      # Natural sort compares numeric suffixes numerically, so cupti64_10.dll
+      # sorts newer than cupti64_9.dll.
       list(SORT runtime_libraries COMPARE NATURAL ORDER DESCENDING)
       list(LENGTH runtime_libraries num_runtime_libraries)
       if (num_runtime_libraries GREATER 1)
