@@ -347,12 +347,9 @@ def compare_benches(
         colalign.append("center")
 
         for cmp_device_index, cmp_device_id in enumerate(cmp_device_ids):
-            if cmp_device_id in ref_device_ids:
-                ref_device_id = cmp_device_id
-            elif cmp_device_index < len(ref_device_ids):
-                ref_device_id = ref_device_ids[cmp_device_index]
-            else:
+            if cmp_device_index >= len(ref_device_ids):
                 continue
+            ref_device_id = ref_device_ids[cmp_device_index]
 
             rows = []
             plot_data = {"cmp": {}, "ref": {}, "cmp_noise": {}, "ref_noise": {}}
