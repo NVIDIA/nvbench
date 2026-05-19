@@ -150,6 +150,7 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("hint", "duration");
     summ.set_string("description", "Mean CPU time of isolated kernel executions");
     summ.set_float64("value", cpu_mean);
+    summ.set_string("hide", "Hidden by default.");
   }
 
   const auto cpu_stdev = nvbench::detail::statistics::standard_deviation(m_cpu_times.cbegin(),
@@ -173,6 +174,7 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated CPU times");
     summ.set_float64("value", *cpu_noise);
+    summ.set_string("hide", "Hidden by default.");
   }
 
   const auto [cpu_first_quartile, cpu_median, cpu_third_quartile] =
@@ -189,11 +191,10 @@ void measure_cpu_only_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/median");
-    summ.set_string("name", "Median");
+    summ.set_string("name", "CPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Median of CPU times of isolated kernel executions");
     summ.set_float64("value", cpu_median);
-    summ.set_string("hide", "Hidden by default.");
   }
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/q3");
@@ -219,11 +220,10 @@ void measure_cpu_only_base::generate_summaries()
                                                                           cpu_third_quartile))
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
-    summ.set_string("name", "IR");
+    summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative interquartile range of CPU times of isolated kernel executions");
-    summ.set_string("hide", "Hidden by default.");
     summ.set_float64("value", *cpu_robust_noise);
   }
 
