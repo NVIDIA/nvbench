@@ -120,6 +120,11 @@ void test_relative_interquartile_range()
   }
 
   {
+    const auto actual = statistics::compute_relative_dispersion(-1.0, 1.0);
+    ASSERT(!actual);
+  }
+
+  {
     const auto actual =
       statistics::compute_relative_dispersion(std::numeric_limits<nvbench::float64_t>::infinity(),
                                               1.0);
