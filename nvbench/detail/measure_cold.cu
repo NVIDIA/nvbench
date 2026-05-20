@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
+#include <optional>
 #include <thread>
 
 namespace nvbench::detail
