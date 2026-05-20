@@ -26,6 +26,27 @@
 
 #include "test_asserts.cuh"
 
+nvbench::int64_t count_invalid_measurements_until_finished()
+{
+  nvbench::criterion_params params;
+  params.set_float64("min-time", 0.0);
+
+  nvbench::detail::stdrel_criterion criterion;
+  criterion.initialize(params);
+
+  const auto invalid_measurement = std::numeric_limits<nvbench::float64_t>::infinity();
+  constexpr nvbench::int64_t max_invalid_measurements = 1024;
+  nvbench::int64_t total_invalid_measurements         = 0;
+  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements)
+  {
+    criterion.add_measurement(invalid_measurement);
+    ++total_invalid_measurements;
+  }
+  ASSERT(total_invalid_measurements > 0);
+  ASSERT(criterion.is_finished());
+  return total_invalid_measurements;
+}
+
 void test_const()
 {
   nvbench::criterion_params params;
@@ -93,22 +114,40 @@ void test_stdrel_needs_enough_samples()
 
 void test_stdrel_finishes_with_persistently_invalid_noise()
 {
+  [[maybe_unused]] const auto count = count_invalid_measurements_until_finished();
+}
+
+void test_stdrel_invalid_noise_count_resets_after_valid_noise()
+{
+  const auto invalid_measurement          = std::numeric_limits<nvbench::float64_t>::infinity();
+  const auto invalid_finish_count         = count_invalid_measurements_until_finished();
+  const auto initial_invalid_measurements = invalid_finish_count / 4;
+  const auto valid_measurements           = invalid_finish_count - initial_invalid_measurements;
+  ASSERT(initial_invalid_measurements >=
+         nvbench::detail::statistics::min_samples_for_noise_estimate);
+  ASSERT(valid_measurements > 0);
+
   nvbench::criterion_params params;
+  params.set_float64("max-noise", -1.0);
   params.set_float64("min-time", 0.0);
 
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  const auto invalid_measurement = std::numeric_limits<nvbench::float64_t>::infinity();
-  constexpr nvbench::int64_t max_invalid_measurements = 1024;
-  nvbench::int64_t total_invalid_measurements         = 0;
-  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements)
+  for (nvbench::int64_t i = 0; i < initial_invalid_measurements; ++i)
   {
     criterion.add_measurement(invalid_measurement);
-    ++total_invalid_measurements;
+    ASSERT(!criterion.is_finished());
   }
-  ASSERT(total_invalid_measurements > 0);
-  ASSERT(criterion.is_finished());
+
+  for (nvbench::int64_t i = 0; i < valid_measurements; ++i)
+  {
+    criterion.add_measurement(100.0);
+    ASSERT(!criterion.is_finished());
+  }
+
+  criterion.add_measurement(invalid_measurement);
+  ASSERT(!criterion.is_finished());
 }
 
 int main()
@@ -117,4 +156,5 @@ int main()
   test_stdrel();
   test_stdrel_needs_enough_samples();
   test_stdrel_finishes_with_persistently_invalid_noise();
+  test_stdrel_invalid_noise_count_resets_after_valid_noise();
 }
