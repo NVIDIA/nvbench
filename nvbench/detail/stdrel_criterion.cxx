@@ -16,6 +16,7 @@
  *  limitations under the License.
  */
 
+#include <nvbench/detail/statistics.cuh>
 #include <nvbench/detail/stdrel_criterion.cuh>
 
 namespace nvbench::detail
