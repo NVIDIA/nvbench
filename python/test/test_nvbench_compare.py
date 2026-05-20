@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-import importlib
 import importlib.util
 import sys
 import types
@@ -10,24 +9,20 @@ from pathlib import Path
 import pytest
 
 
-def ensure_optional_script_dependency(name, module):
-    try:
-        importlib.import_module(name)
-    except ImportError:
-        sys.modules[name] = module
-
-
-def load_nvbench_compare():
-    ensure_optional_script_dependency(
-        "jsondiff", types.SimpleNamespace(diff=lambda *args, **kwargs: {})
+@pytest.fixture
+def nvbench_compare(monkeypatch):
+    monkeypatch.setitem(
+        sys.modules, "jsondiff", types.SimpleNamespace(diff=lambda *args, **kwargs: {})
     )
-    ensure_optional_script_dependency(
+    monkeypatch.setitem(
+        sys.modules,
         "tabulate",
         types.SimpleNamespace(
             __version__="0.8.10", tabulate=lambda *args, **kwargs: ""
         ),
     )
-    ensure_optional_script_dependency(
+    monkeypatch.setitem(
+        sys.modules,
         "colorama",
         types.SimpleNamespace(
             Fore=types.SimpleNamespace(
@@ -49,10 +44,7 @@ def load_nvbench_compare():
     return module
 
 
-nvbench_compare = load_nvbench_compare()
-
-
-def make_state(name):
+def make_state(nvbench_compare, name):
     return {
         "name": name,
         "device": 0,
@@ -79,26 +71,26 @@ def make_benchmark(states):
     }
 
 
-def test_compare_benches_rejects_swapped_duplicate_state_counts():
+def test_compare_benches_rejects_swapped_duplicate_state_counts(nvbench_compare):
     ref_benches = [
         make_benchmark(
             [
-                make_state("state1"),
-                make_state("state1"),
-                make_state("state1"),
-                make_state("state2"),
-                make_state("state2"),
+                make_state(nvbench_compare, "state1"),
+                make_state(nvbench_compare, "state1"),
+                make_state(nvbench_compare, "state1"),
+                make_state(nvbench_compare, "state2"),
+                make_state(nvbench_compare, "state2"),
             ]
         )
     ]
     cmp_benches = [
         make_benchmark(
             [
-                make_state("state1"),
-                make_state("state1"),
-                make_state("state2"),
-                make_state("state2"),
-                make_state("state2"),
+                make_state(nvbench_compare, "state1"),
+                make_state(nvbench_compare, "state1"),
+                make_state(nvbench_compare, "state2"),
+                make_state(nvbench_compare, "state2"),
+                make_state(nvbench_compare, "state2"),
             ]
         )
     ]
