@@ -7,6 +7,7 @@ import argparse
 import math
 import os
 import sys
+from dataclasses import dataclass
 from enum import StrEnum
 from itertools import islice
 
@@ -35,6 +36,33 @@ improvement_count = 0
 regression_count = 0
 pass_count = 0
 
+GPU_TIME_MIN_TAG = "nv/cold/time/gpu/min"
+GPU_TIME_MAX_TAG = "nv/cold/time/gpu/max"
+GPU_TIME_MEAN_TAG = "nv/cold/time/gpu/mean"
+GPU_TIME_STDEV_TAG = "nv/cold/time/gpu/stdev/absolute"
+GPU_TIME_STDEV_RELATIVE_TAG = "nv/cold/time/gpu/stdev/relative"
+GPU_TIME_MEDIAN_TAG = "nv/cold/time/gpu/median"
+GPU_TIME_IR_TAG = "nv/cold/time/gpu/ir/absolute"
+GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
+
+
+@dataclass(frozen=True)
+class GpuTimeSummary:
+    minimum: float | None
+    maximum: float | None
+    mean: float | None
+    stdev: float | None
+    stdev_relative: float | None
+    median: float | None
+    interquartile_range: float | None
+    interquartile_range_relative: float | None
+
+
+@dataclass(frozen=True)
+class TimeEstimate:
+    center: float | None
+    relative_dispersion: float | None
+
 
 class Emoji(StrEnum):
     YELLOW = "\U0001f7e1"
@@ -52,6 +80,109 @@ def colorize(msg: str, fore: Fore, emoji: Emoji, no_color: bool) -> str:
         return f"{prefix}{msg}"
     else:
         return f"{fore}{msg}{Fore.RESET}"
+
+
+def lookup_summary(summaries, tag):
+    return next((summary for summary in summaries if summary["tag"] == tag), None)
+
+
+def extract_summary_value(summary):
+    summary_data = summary["data"]
+    value_data = next(value for value in summary_data if value["name"] == "value")
+    assert value_data["type"] == "float64"
+    return value_data["value"]
+
+
+def normalize_float_value(value):
+    if value is None:
+        return None
+    return float(value)
+
+
+def extract_summary_float(summaries, tag):
+    summary = lookup_summary(summaries, tag)
+    if summary is None:
+        return None
+    return normalize_float_value(extract_summary_value(summary))
+
+
+def extract_gpu_time_summary(summaries):
+    return GpuTimeSummary(
+        minimum=extract_summary_float(summaries, GPU_TIME_MIN_TAG),
+        maximum=extract_summary_float(summaries, GPU_TIME_MAX_TAG),
+        mean=extract_summary_float(summaries, GPU_TIME_MEAN_TAG),
+        stdev=extract_summary_float(summaries, GPU_TIME_STDEV_TAG),
+        stdev_relative=extract_summary_float(summaries, GPU_TIME_STDEV_RELATIVE_TAG),
+        median=extract_summary_float(summaries, GPU_TIME_MEDIAN_TAG),
+        interquartile_range=extract_summary_float(summaries, GPU_TIME_IR_TAG),
+        interquartile_range_relative=extract_summary_float(
+            summaries, GPU_TIME_IR_RELATIVE_TAG
+        ),
+    )
+
+
+def compute_relative_dispersion(dispersion, center):
+    if (
+        dispersion is None
+        or center is None
+        or center <= 0
+        or not math.isfinite(center)
+        or dispersion < 0
+        or math.isnan(dispersion)
+    ):
+        return None
+    return dispersion / center
+
+
+def has_robust_estimate(summary):
+    return (
+        summary.median is not None and summary.interquartile_range_relative is not None
+    )
+
+
+def has_mean_estimate(summary):
+    return summary.mean is not None and summary.stdev_relative is not None
+
+
+def compute_common_time_estimates(ref_summary, cmp_summary):
+    if has_robust_estimate(ref_summary) and has_robust_estimate(cmp_summary):
+        return (
+            TimeEstimate(
+                center=ref_summary.median,
+                relative_dispersion=ref_summary.interquartile_range_relative,
+            ),
+            TimeEstimate(
+                center=cmp_summary.median,
+                relative_dispersion=cmp_summary.interquartile_range_relative,
+            ),
+        )
+
+    if has_mean_estimate(ref_summary) and has_mean_estimate(cmp_summary):
+        return (
+            TimeEstimate(
+                center=ref_summary.mean,
+                relative_dispersion=ref_summary.stdev_relative,
+            ),
+            TimeEstimate(
+                center=cmp_summary.mean,
+                relative_dispersion=cmp_summary.stdev_relative,
+            ),
+        )
+
+    return (
+        TimeEstimate(
+            center=ref_summary.mean,
+            relative_dispersion=compute_relative_dispersion(
+                ref_summary.stdev, ref_summary.mean
+            ),
+        ),
+        TimeEstimate(
+            center=cmp_summary.mean,
+            relative_dispersion=compute_relative_dispersion(
+                cmp_summary.stdev, cmp_summary.mean
+            ),
+        ),
+    )
 
 
 def find_matching_bench(needle, haystack):
@@ -400,55 +531,21 @@ def compare_benches(
                 if not ref_summaries or not cmp_summaries:
                     continue
 
-                def lookup_summary(summaries, tag):
-                    return next(filter(lambda s: s["tag"] == tag, summaries), None)
-
-                cmp_time_summary = lookup_summary(
-                    cmp_summaries, "nv/cold/time/gpu/median"
-                )
-                ref_time_summary = lookup_summary(
-                    ref_summaries, "nv/cold/time/gpu/median"
-                )
-                cmp_noise_summary = lookup_summary(
-                    cmp_summaries, "nv/cold/time/gpu/ir/relative"
-                )
-                ref_noise_summary = lookup_summary(
-                    ref_summaries, "nv/cold/time/gpu/ir/relative"
-                )
-
                 # TODO: Use other timings, too. Maybe multiple rows, with a
                 # "Timing" column + values "CPU/GPU/Batch"?
-                if not all([cmp_time_summary, ref_time_summary]):
-                    continue
-
-                def extract_value(summary):
-                    summary_data = summary["data"]
-                    value_data = next(
-                        filter(lambda v: v["name"] == "value", summary_data)
-                    )
-                    assert value_data["type"] == "float64"
-                    return value_data["value"]
-
-                def normalize_float_value(value):
-                    if value is None:
-                        return None
-                    return float(value)
-
-                cmp_time = normalize_float_value(extract_value(cmp_time_summary))
-                ref_time = normalize_float_value(extract_value(ref_time_summary))
-                cmp_noise = (
-                    normalize_float_value(extract_value(cmp_noise_summary))
-                    if cmp_noise_summary
-                    else None
-                )
-                ref_noise = (
-                    normalize_float_value(extract_value(ref_noise_summary))
-                    if ref_noise_summary
-                    else None
+                cmp_gpu_time = extract_gpu_time_summary(cmp_summaries)
+                ref_gpu_time = extract_gpu_time_summary(ref_summaries)
+                ref_estimate, cmp_estimate = compute_common_time_estimates(
+                    ref_gpu_time, cmp_gpu_time
                 )
 
-                if cmp_time is None or ref_time is None:
+                if cmp_estimate.center is None or ref_estimate.center is None:
                     continue
+
+                cmp_time = cmp_estimate.center
+                ref_time = ref_estimate.center
+                cmp_noise = cmp_estimate.relative_dispersion
+                ref_noise = ref_estimate.relative_dispersion
 
                 diff = cmp_time - ref_time
                 frac_diff = diff / ref_time
