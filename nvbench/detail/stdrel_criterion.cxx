@@ -102,8 +102,8 @@ bool stdrel_criterion::do_is_finished()
   // Check if the noise has converged by inspecting a
   // trailing window of recorded noise measurements.
   // This helps identify benchmarks that are inherently noisy and would
-  // never converge to the target stdev threshold. This check ensures that the
-  // benchmark will end if the stdev stabilizes above the target threshold.
+  // never converge to the target noise threshold. This check ensures that the
+  // benchmark will end if the noise stabilizes above the target threshold.
   // Gather some iterations before checking noise, and limit how often we
   // check this.
   if (m_noise_tracker.size() > 64 && (m_total_samples % 16 == 0))
