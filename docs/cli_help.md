@@ -171,7 +171,9 @@
 ### "stdrel" Stopping Criterion Parameters
 
 * `--min-time <seconds>`
-  * Accumulate at least `<seconds>` of execution time per measurement.
+  * Require at least `<seconds>` of accumulated execution time before normal
+    `stdrel` convergence checks can stop the measurement. NVBench may stop
+    earlier if the relative noise estimate remains invalid persistently.
   * Only applies to `stdrel` stopping criterion.
   * Default is 0.5 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified

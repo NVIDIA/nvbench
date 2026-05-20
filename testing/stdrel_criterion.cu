@@ -117,6 +117,26 @@ void test_stdrel_finishes_with_persistently_invalid_noise()
   [[maybe_unused]] const auto count = count_invalid_measurements_until_finished();
 }
 
+void test_stdrel_invalid_noise_bypasses_min_time()
+{
+  nvbench::criterion_params params;
+  params.set_float64("min-time", 1.0);
+
+  nvbench::detail::stdrel_criterion criterion;
+  criterion.initialize(params);
+
+  const auto invalid_measurement                      = nvbench::float64_t{};
+  constexpr nvbench::int64_t max_invalid_measurements = 1024;
+  nvbench::int64_t total_invalid_measurements         = 0;
+  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements)
+  {
+    criterion.add_measurement(invalid_measurement);
+    ++total_invalid_measurements;
+  }
+  ASSERT(total_invalid_measurements > 0);
+  ASSERT(criterion.is_finished());
+}
+
 void test_stdrel_invalid_noise_count_resets_after_valid_noise()
 {
   const auto invalid_measurement          = std::numeric_limits<nvbench::float64_t>::infinity();
@@ -156,5 +176,6 @@ int main()
   test_stdrel();
   test_stdrel_needs_enough_samples();
   test_stdrel_finishes_with_persistently_invalid_noise();
+  test_stdrel_invalid_noise_bypasses_min_time();
   test_stdrel_invalid_noise_count_resets_after_valid_noise();
 }
