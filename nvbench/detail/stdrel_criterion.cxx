@@ -25,6 +25,8 @@ namespace nvbench::detail
 namespace
 {
 
+// Allow transient invalid noise estimates while still terminating when robust
+// relative noise cannot be computed persistently.
 constexpr nvbench::int64_t invalid_noise_estimate_limit = 64;
 
 } // namespace
