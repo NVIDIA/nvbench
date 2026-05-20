@@ -103,9 +103,9 @@ void test_percentiles()
     const std::vector<nvbench::float64_t> data;
     const auto actual =
       statistics::compute_percentiles(data.cbegin(), data.cend(), std::array<int, 3>{25, 50, 75});
-    ASSERT(!std::isfinite(actual[0]));
-    ASSERT(!std::isfinite(actual[1]));
-    ASSERT(!std::isfinite(actual[2]));
+    ASSERT(std::isnan(actual[0]));
+    ASSERT(std::isnan(actual[1]));
+    ASSERT(std::isnan(actual[2]));
   }
 }
 
