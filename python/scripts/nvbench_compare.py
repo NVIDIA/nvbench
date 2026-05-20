@@ -465,10 +465,18 @@ def compare_benches(
         if benchmark_filters and cmp_bench["name"] not in benchmark_filters:
             continue
 
-        print(f"""# {cmp_bench["name"]}\n""")
-
         cmp_device_ids = cmp_bench["devices"]
         ref_device_ids = ref_bench["devices"]
+        if len(cmp_device_ids) != len(ref_device_ids):
+            raise ValueError(
+                f"benchmark {cmp_bench['name']!r} has {len(ref_device_ids)} "
+                f"reference device(s) but {len(cmp_device_ids)} compare device(s); "
+                "nvbench_compare pairs devices by position, so each compared "
+                "benchmark must contain the same number of devices"
+            )
+
+        print(f"""# {cmp_bench["name"]}\n""")
+
         axes = cmp_bench["axes"]
         ref_states = ref_bench["states"]
         cmp_states = cmp_bench["states"]
@@ -494,8 +502,6 @@ def compare_benches(
         colalign.append("center")
 
         for cmp_device_index, cmp_device_id in enumerate(cmp_device_ids):
-            if cmp_device_index >= len(ref_device_ids):
-                continue
             ref_device_id = ref_device_ids[cmp_device_index]
 
             rows = []
@@ -792,11 +798,11 @@ def main():
         axis_filters = parse_axis_filters(args.axis)
     except ValueError as exc:
         print(str(exc))
-        sys.exit(1)
+        return -1
 
     if len(files_or_dirs) != 2:
         parser.print_help()
-        sys.exit(1)
+        return -1
 
     # if provided two directories, find all the exactly named files
     # in both and treat them as the reference and compare
@@ -838,19 +844,23 @@ def main():
                 )
             )
             if not args.ignore_devices:
-                sys.exit(1)
+                return -1
 
-        compare_benches(
-            ref_root["benchmarks"],
-            cmp_root["benchmarks"],
-            args.threshold,
-            args.plot_along,
-            args.plot,
-            args.dark,
-            axis_filters,
-            args.benchmark,
-            args.no_color,
-        )
+        try:
+            compare_benches(
+                ref_root["benchmarks"],
+                cmp_root["benchmarks"],
+                args.threshold,
+                args.plot_along,
+                args.plot,
+                args.dark,
+                axis_filters,
+                args.benchmark,
+                args.no_color,
+            )
+        except ValueError as exc:
+            print(str(exc))
+            return -1
 
     print("# Summary\n")
     print(f"- Total Matches: {config_count}")
