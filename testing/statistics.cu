@@ -22,7 +22,9 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <iterator>
 #include <limits>
+#include <sstream>
 #include <vector>
 
 #include "test_asserts.cuh"
@@ -87,6 +89,16 @@ void test_percentiles()
   {
     const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
     const auto actual = statistics::compute_percentiles(data.cbegin(), data.cend(), {25, 50, 75});
+    const std::array<nvbench::float64_t, 3> expected{20.0, 30.0, 30.0};
+    ASSERT(actual == expected);
+  }
+
+  {
+    std::istringstream data{"40 10 30 20"};
+    const auto actual =
+      statistics::compute_percentiles(std::istream_iterator<nvbench::float64_t>{data},
+                                      std::istream_iterator<nvbench::float64_t>{},
+                                      std::array<int, 3>{25, 50, 75});
     const std::array<nvbench::float64_t, 3> expected{20.0, 30.0, 30.0};
     ASSERT(actual == expected);
   }

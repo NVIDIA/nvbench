@@ -115,14 +115,13 @@ std::array<ValueType, N> compute_percentiles(Iter first, Iter last, std::array<i
 
   std::array<ValueType, N> result{};
 
-  const auto num = std::distance(first, last);
-  if (num < 1)
+  std::vector<ValueType> sorted(first, last);
+  if (sorted.empty())
   {
     result.fill(std::numeric_limits<ValueType>::quiet_NaN());
     return result;
   }
 
-  std::vector<ValueType> sorted(first, last);
   std::sort(sorted.begin(), sorted.end());
 
   const auto max_rank = static_cast<nvbench::float64_t>(sorted.size() - 1);
