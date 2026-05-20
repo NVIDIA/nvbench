@@ -706,10 +706,22 @@ def compare_benches(
                 plt.title(cmp_device["name"])
 
                 def plot_line(key, shape, label):
-                    x = [float(x) for x in plot_data[key][axis].keys()]
-                    y = list(plot_data[key][axis].values())
-
-                    noise = list(plot_data[key + "_noise"][axis].values())
+                    axis_times = plot_data[key][axis]
+                    if not axis_times:
+                        return
+                    axis_noise = plot_data[key + "_noise"][axis]
+                    series = sorted(
+                        (
+                            (
+                                float(axis_value),
+                                axis_times[axis_value],
+                                axis_noise[axis_value],
+                            )
+                            for axis_value in axis_times
+                        ),
+                        key=lambda item: item[0],
+                    )
+                    x, y, noise = map(list, zip(*series))
 
                     p = plt.plot(x, y, shape, marker="o", label=label)
 
