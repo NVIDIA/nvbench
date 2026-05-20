@@ -162,8 +162,8 @@
   * If both GPU and CPU times are gathered, GPU time is used for stopping
     analysis.
   * Stopping criteria provided by NVBench are:
-    * "stdrel": (default) Converges to a minimal relative standard deviation,
-       stdev / mean
+    * "stdrel": (default) Converges to a minimal relative dispersion,
+       dispersion / center
     * "entropy": Converges based on the cumulative entropy of all samples.
     * "sample-count": Stops after a target number of samples.
   * Each stopping criterion may provide additional parameters to customize
