@@ -100,8 +100,12 @@ void test_stdrel_finishes_with_persistently_invalid_noise()
   criterion.initialize(params);
 
   // Force invalid relative-IQR estimates while still satisfying min-time.
-  const auto invalid_measurement = std::numeric_limits<nvbench::float64_t>::infinity();
-  for (int i = 0; i < 67; ++i)
+  // invalid_noise_estimate_limit is internal to stdrel_criterion.cxx.
+  constexpr nvbench::int64_t invalid_noise_estimate_limit = 64;
+  constexpr auto min_samples          = nvbench::detail::statistics::min_samples_for_noise_estimate;
+  constexpr auto iterations_to_finish = invalid_noise_estimate_limit + min_samples - 1;
+  const auto invalid_measurement      = std::numeric_limits<nvbench::float64_t>::infinity();
+  for (nvbench::int64_t i = 0; i < iterations_to_finish - 1; ++i)
   {
     criterion.add_measurement(invalid_measurement);
   }
