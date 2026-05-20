@@ -165,15 +165,15 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  const auto cpu_noise = nvbench::detail::statistics::compute_relative_dispersion(cpu_stdev,
-                                                                                  cpu_mean);
-  if (cpu_noise)
+  const auto cpu_stdev_noise = nvbench::detail::statistics::compute_relative_dispersion(cpu_stdev,
+                                                                                        cpu_mean);
+  if (cpu_stdev_noise)
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated CPU times");
-    summ.set_float64("value", *cpu_noise);
+    summ.set_float64("value", *cpu_stdev_noise);
     summ.set_string("hide", "Hidden by default.");
   }
 
@@ -214,20 +214,18 @@ void measure_cpu_only_base::generate_summaries()
     const auto cpu_ir = cpu_third_quartile - cpu_first_quartile;
     summ.set_float64("value", cpu_ir);
   }
-  if (m_total_samples >= nvbench::detail::statistics::min_samples_for_noise_estimate)
+  const auto cpu_noise = nvbench::detail::statistics::compute_robust_noise(m_total_samples,
+                                                                           cpu_first_quartile,
+                                                                           cpu_median,
+                                                                           cpu_third_quartile);
+  if (cpu_noise)
   {
-    if (const auto cpu_robust_noise =
-          nvbench::detail::statistics::compute_relative_interquartile_range(cpu_first_quartile,
-                                                                            cpu_median,
-                                                                            cpu_third_quartile))
-    {
-      auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
-      summ.set_string("name", "Noise");
-      summ.set_string("hint", "percentage");
-      summ.set_string("description",
-                      "Relative interquartile range of CPU times of isolated kernel executions");
-      summ.set_float64("value", *cpu_robust_noise);
-    }
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
+    summ.set_string("name", "Noise");
+    summ.set_string("hint", "percentage");
+    summ.set_string("description",
+                    "Relative interquartile range of CPU times of isolated kernel executions");
+    summ.set_float64("value", *cpu_noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)

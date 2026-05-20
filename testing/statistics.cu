@@ -166,6 +166,22 @@ void test_relative_interquartile_range()
   }
 
   {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate - 1,
+                                       2.0,
+                                       4.0,
+                                       6.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, 2.0, 4.0, 6.0);
+    ASSERT(actual);
+    ASSERT(std::abs(*actual - 1.0) < 0.001);
+  }
+
+  {
     const auto actual = statistics::compute_relative_interquartile_range(0.0, 0.0, 1.0);
     ASSERT(!actual);
   }

@@ -52,27 +52,28 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
   m_total_cuda_time += measurement;
   m_cuda_times.push_back(measurement);
 
-  // Require enough samples for a meaningful noise estimate.
-  if (m_total_samples >= nvbench::detail::statistics::min_samples_for_noise_estimate)
+  if (m_total_samples < nvbench::detail::statistics::min_samples_for_noise_estimate)
   {
-    // Compute convergence statistics using CUDA timings:
-    const auto [cuda_first_quartile, cuda_median, cuda_third_quartile] =
-      nvbench::detail::statistics::compute_percentiles(m_cuda_times.cbegin(),
-                                                       m_cuda_times.cend(),
-                                                       {25, 50, 75});
-    const auto cuda_noise =
-      nvbench::detail::statistics::compute_relative_interquartile_range(cuda_first_quartile,
-                                                                        cuda_median,
-                                                                        cuda_third_quartile);
-    if (cuda_noise && std::isfinite(*cuda_noise))
-    {
-      m_consecutive_invalid_noise_estimates = 0;
-      m_noise_tracker.push_back(*cuda_noise);
-    }
-    else
-    {
-      ++m_consecutive_invalid_noise_estimates;
-    }
+    return;
+  }
+
+  // Compute convergence statistics using CUDA timings:
+  const auto [cuda_first_quartile, cuda_median, cuda_third_quartile] =
+    nvbench::detail::statistics::compute_percentiles(m_cuda_times.cbegin(),
+                                                     m_cuda_times.cend(),
+                                                     {25, 50, 75});
+  const auto cuda_noise = nvbench::detail::statistics::compute_robust_noise(m_total_samples,
+                                                                            cuda_first_quartile,
+                                                                            cuda_median,
+                                                                            cuda_third_quartile);
+  if (cuda_noise && std::isfinite(*cuda_noise))
+  {
+    m_consecutive_invalid_noise_estimates = 0;
+    m_noise_tracker.push_back(*cuda_noise);
+  }
+  else
+  {
+    ++m_consecutive_invalid_noise_estimates;
   }
 }
 

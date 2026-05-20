@@ -179,6 +179,20 @@ compute_relative_interquartile_range(nvbench::float64_t first_quartile,
   return compute_relative_dispersion(interquartile_range, median);
 }
 
+// Returns nullopt until there are enough samples for a meaningful robust noise estimate.
+inline std::optional<nvbench::float64_t> compute_robust_noise(nvbench::int64_t num_samples,
+                                                              nvbench::float64_t first_quartile,
+                                                              nvbench::float64_t median,
+                                                              nvbench::float64_t third_quartile)
+{
+  if (num_samples < min_samples_for_noise_estimate)
+  {
+    return std::nullopt;
+  }
+
+  return compute_relative_interquartile_range(first_quartile, median, third_quartile);
+}
+
 /**
  * Computes linear regression and returns the slope and intercept
  *
