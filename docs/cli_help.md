@@ -180,7 +180,7 @@
 
 * `--max-noise <value>`
   * Gather samples until the error in the measurement drops below `<value>`.
-  * Noise is specified as the percent relative standard deviation (stdev/mean).
+  * Noise is specified as the percent relative dispersion (dispersion/center).
   * Default is 0.5% (`--max-noise 0.5`)
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
