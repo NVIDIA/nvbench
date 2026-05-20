@@ -105,17 +105,17 @@ def extract_summary_value(summary):
     raise ValueError(f"summary {summary_tag!r} is missing field 'value'")
 
 
-def normalize_float_value(value):
+def normalize_float_value(value, *, null_value=None):
     if value is None:
-        return None
+        return null_value
     return float(value)
 
 
-def extract_summary_float(summaries, tag):
+def extract_summary_float(summaries, tag, *, null_value=None):
     summary = lookup_summary(summaries, tag)
     if summary is None:
         return None
-    return normalize_float_value(extract_summary_value(summary))
+    return normalize_float_value(extract_summary_value(summary), null_value=null_value)
 
 
 def extract_gpu_time_summary(summaries):
@@ -123,12 +123,16 @@ def extract_gpu_time_summary(summaries):
         minimum=extract_summary_float(summaries, GPU_TIME_MIN_TAG),
         maximum=extract_summary_float(summaries, GPU_TIME_MAX_TAG),
         mean=extract_summary_float(summaries, GPU_TIME_MEAN_TAG),
-        stdev=extract_summary_float(summaries, GPU_TIME_STDEV_TAG),
-        stdev_relative=extract_summary_float(summaries, GPU_TIME_STDEV_RELATIVE_TAG),
+        stdev=extract_summary_float(summaries, GPU_TIME_STDEV_TAG, null_value=math.inf),
+        stdev_relative=extract_summary_float(
+            summaries, GPU_TIME_STDEV_RELATIVE_TAG, null_value=math.inf
+        ),
         median=extract_summary_float(summaries, GPU_TIME_MEDIAN_TAG),
-        interquartile_range=extract_summary_float(summaries, GPU_TIME_IR_TAG),
+        interquartile_range=extract_summary_float(
+            summaries, GPU_TIME_IR_TAG, null_value=math.inf
+        ),
         interquartile_range_relative=extract_summary_float(
-            summaries, GPU_TIME_IR_RELATIVE_TAG
+            summaries, GPU_TIME_IR_RELATIVE_TAG, null_value=math.inf
         ),
     )
 
@@ -147,13 +151,22 @@ def compute_relative_dispersion(dispersion, center):
 
 
 def has_robust_estimate(summary):
-    return (
-        summary.median is not None and summary.interquartile_range_relative is not None
+    return summary.median is not None and (
+        summary.interquartile_range_relative is not None
+        or summary.interquartile_range is not None
     )
 
 
 def has_mean_estimate(summary):
-    return summary.mean is not None and summary.stdev_relative is not None
+    return summary.mean is not None and (
+        summary.stdev_relative is not None or summary.stdev is not None
+    )
+
+
+def select_relative_dispersion(relative_dispersion, absolute_dispersion, center):
+    if relative_dispersion is not None:
+        return relative_dispersion
+    return compute_relative_dispersion(absolute_dispersion, center)
 
 
 def compute_common_time_estimates(ref_summary, cmp_summary):
@@ -161,11 +174,19 @@ def compute_common_time_estimates(ref_summary, cmp_summary):
         return (
             TimeEstimate(
                 center=ref_summary.median,
-                relative_dispersion=ref_summary.interquartile_range_relative,
+                relative_dispersion=select_relative_dispersion(
+                    ref_summary.interquartile_range_relative,
+                    ref_summary.interquartile_range,
+                    ref_summary.median,
+                ),
             ),
             TimeEstimate(
                 center=cmp_summary.median,
-                relative_dispersion=cmp_summary.interquartile_range_relative,
+                relative_dispersion=select_relative_dispersion(
+                    cmp_summary.interquartile_range_relative,
+                    cmp_summary.interquartile_range,
+                    cmp_summary.median,
+                ),
             ),
         )
 
@@ -173,11 +194,15 @@ def compute_common_time_estimates(ref_summary, cmp_summary):
         return (
             TimeEstimate(
                 center=ref_summary.mean,
-                relative_dispersion=ref_summary.stdev_relative,
+                relative_dispersion=select_relative_dispersion(
+                    ref_summary.stdev_relative, ref_summary.stdev, ref_summary.mean
+                ),
             ),
             TimeEstimate(
                 center=cmp_summary.mean,
-                relative_dispersion=cmp_summary.stdev_relative,
+                relative_dispersion=select_relative_dispersion(
+                    cmp_summary.stdev_relative, cmp_summary.stdev, cmp_summary.mean
+                ),
             ),
         )
 
@@ -217,8 +242,8 @@ def format_int64_axis_value(axis_name, axis_value, axes):
     value = int(axis_value["value"])
     if axis_flags == "pow2":
         value = math.log2(value)
-        return "2^%d" % value
-    return "%d" % value
+        return f"2^{value:.0f}"
+    return f"{value:d}"
 
 
 def format_float64_axis_value(axis_name, axis_value, axes):
@@ -226,11 +251,11 @@ def format_float64_axis_value(axis_name, axis_value, axes):
 
 
 def format_type_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_string_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_axis_value(axis_name, axis_value, axes):
@@ -336,16 +361,21 @@ def format_duration(seconds):
     else:
         multiplier = 1e6
         units = "us"
-    return "%0.3f %s" % (seconds * multiplier, units)
+    return f"{seconds * multiplier:0.3f} {units}"
 
 
 def format_percentage(percentage):
-    # When there aren't enough samples for a meaningful noise measurement,
-    # the noise is recorded as infinity. Unfortunately, JSON spec doesn't
-    # allow for inf, so these get turned into null.
     if percentage is None:
+        return "n/a"
+    if math.isnan(percentage):
+        return "n/a"
+    if math.isinf(percentage):
         return "inf"
-    return "%0.2f%%" % (percentage * 100.0)
+    return f"{percentage * 100.0:0.2f}%"
+
+
+def has_finite_noise(noise):
+    return noise is not None and math.isfinite(noise)
 
 
 def format_axis_values(axis_values, axes, axis_filters=None):
@@ -568,8 +598,8 @@ def compare_benches(
                 diff = cmp_time - ref_time
                 frac_diff = diff / ref_time
 
-                if ref_noise is None or cmp_noise is None:
-                    max_noise = None  # Noise is inf or unavailable
+                if not has_finite_noise(ref_noise) or not has_finite_noise(cmp_noise):
+                    max_noise = None
                 else:
                     max_noise = max(ref_noise, cmp_noise)
 
@@ -650,16 +680,11 @@ def compare_benches(
             ref_device = find_device_by_id(ref_device_id, all_ref_devices)
 
             if cmp_device == ref_device:
-                print("## [%d] %s\n" % (cmp_device["id"], cmp_device["name"]))
+                print(f"## [{cmp_device['id']}] {cmp_device['name']}\n")
             else:
                 print(
-                    "## [%d] %s vs. [%d] %s\n"
-                    % (
-                        ref_device["id"],
-                        ref_device["name"],
-                        cmp_device["id"],
-                        cmp_device["name"],
-                    )
+                    f"## [{ref_device['id']}] {ref_device['name']} vs. "
+                    f"[{cmp_device['id']}] {cmp_device['name']}\n"
                 )
             # colalign and github format require tabulate 0.8.3
             if tabulate_version >= (0, 8, 3):
@@ -709,9 +734,9 @@ def compare_benches(
 
                     start = None
                     for i, noise_value in enumerate(noise):
-                        if noise_value is not None and start is None:
+                        if has_finite_noise(noise_value) and start is None:
                             start = i
-                        if noise_value is None and start is not None:
+                        if not has_finite_noise(noise_value) and start is not None:
                             plot_confidence_band(start, i)
                             start = None
 
