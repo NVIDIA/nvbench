@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import argparse
 import math
@@ -674,7 +677,6 @@ def main():
     )
 
     args, files_or_dirs = parser.parse_known_args()
-    print(files_or_dirs)
     try:
         axis_filters = parse_axis_filters(args.axis)
     except ValueError as exc:
