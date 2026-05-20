@@ -87,10 +87,22 @@ def lookup_summary(summaries, tag):
 
 
 def extract_summary_value(summary):
-    summary_data = summary["data"]
-    value_data = next(value for value in summary_data if value["name"] == "value")
-    assert value_data["type"] == "float64"
-    return value_data["value"]
+    summary_tag = summary.get("tag", "<unknown>")
+    for value_data in summary.get("data", []):
+        if value_data.get("name") != "value":
+            continue
+
+        value_type = value_data.get("type")
+        if value_type != "float64":
+            raise ValueError(
+                f"summary {summary_tag!r} field 'value' has type "
+                f"{value_type!r}; expected 'float64'"
+            )
+        if "value" not in value_data:
+            raise ValueError(f"summary {summary_tag!r} field 'value' is missing value")
+        return value_data["value"]
+
+    raise ValueError(f"summary {summary_tag!r} is missing field 'value'")
 
 
 def normalize_float_value(value):
