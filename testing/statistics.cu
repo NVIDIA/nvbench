@@ -47,12 +47,22 @@ void test_mean()
 
 void test_std()
 {
-  std::vector<nvbench::float64_t> data{1.0, 2.0, 3.0, 4.0, 5.0};
-  const nvbench::float64_t mean = 3.0;
-  const nvbench::float64_t actual =
-    statistics::standard_deviation(std::begin(data), std::end(data), mean);
-  const nvbench::float64_t expected = 1.581;
-  ASSERT(std::abs(actual - expected) < 0.001);
+  {
+    std::vector<nvbench::float64_t> data{1.0, 2.0, 3.0, 4.0, 5.0};
+    const nvbench::float64_t mean = 3.0;
+    const nvbench::float64_t actual =
+      statistics::standard_deviation(std::begin(data), std::end(data), mean);
+    const nvbench::float64_t expected = 1.581;
+    ASSERT(std::abs(actual - expected) < 0.001);
+  }
+
+  {
+    std::vector<nvbench::float64_t> data;
+    data.resize(static_cast<std::size_t>(statistics::min_samples_for_noise_estimate - 1), 1.0);
+    const nvbench::float64_t actual =
+      statistics::standard_deviation(std::begin(data), std::end(data), 1.0);
+    ASSERT(!std::isfinite(actual));
+  }
 }
 
 void test_percentiles()
