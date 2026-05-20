@@ -7,6 +7,7 @@ import argparse
 import math
 import os
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from enum import StrEnum
 from itertools import islice
@@ -62,6 +63,10 @@ class GpuTimeSummary:
 class TimeEstimate:
     center: float | None
     relative_dispersion: float | None
+
+
+def state_name_counts(states, device_id):
+    return Counter(state["name"] for state in states if state["device"] == device_id)
 
 
 class Emoji(StrEnum):
@@ -533,6 +538,15 @@ def compare_benches(
 
         for cmp_device_index, cmp_device_id in enumerate(cmp_device_ids):
             ref_device_id = ref_device_ids[cmp_device_index]
+            ref_state_counts = state_name_counts(ref_states, ref_device_id)
+            cmp_state_counts = state_name_counts(cmp_states, cmp_device_id)
+            if ref_state_counts != cmp_state_counts:
+                raise ValueError(
+                    f"benchmark {cmp_bench['name']!r} device pair "
+                    f"ref={ref_device_id} cmp={cmp_device_id} has mismatched "
+                    f"state occurrences: ref={dict(ref_state_counts)}, "
+                    f"cmp={dict(cmp_state_counts)}"
+                )
 
             rows = []
             plot_data = {"cmp": {}, "ref": {}, "cmp_noise": {}, "ref_noise": {}}
@@ -559,8 +573,12 @@ def compare_benches(
                     ),
                     None,
                 )
-                if not ref_state:
-                    continue
+                if ref_state is None:
+                    raise ValueError(
+                        f"benchmark {cmp_bench['name']!r} device pair "
+                        f"ref={ref_device_id} cmp={cmp_device_id} has no reference "
+                        f"occurrence {counters[cmp_state_name]} for state {cmp_state_name!r}"
+                    )
                 if not matches_axis_filters(cmp_state, axis_filters):
                     continue
 
