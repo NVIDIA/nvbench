@@ -31,7 +31,8 @@ all_ref_devices = []
 all_cmp_devices = []
 config_count = 0
 unknown_count = 0
-failure_count = 0
+improvement_count = 0
+regression_count = 0
 pass_count = 0
 
 
@@ -481,7 +482,8 @@ def compare_benches(
                 global config_count
                 global unknown_count
                 global pass_count
-                global failure_count
+                global improvement_count
+                global regression_count
 
                 config_count += 1
                 if max_noise is None:
@@ -493,11 +495,11 @@ def compare_benches(
                     status_label = "SAME"
                     status = colorize(status_label, Fore.BLUE, Emoji.BLUE, no_color)
                 elif diff < 0:
-                    failure_count += 1
+                    improvement_count += 1
                     status_label = "FAST"
                     status = colorize(status_label, Fore.GREEN, Emoji.GREEN, no_color)
                 else:
-                    failure_count += 1
+                    regression_count += 1
                     status_label = "SLOW"
                     status = colorize(status_label, Fore.RED, Emoji.RED, no_color)
 
@@ -743,10 +745,11 @@ def main():
 
     print("# Summary\n")
     print(f"- Total Matches: {config_count}")
-    print(f"  - Pass    (abs(%Diff) <= max_noise): {pass_count}")
-    print(f"  - Unknown (infinite noise):    {unknown_count}")
-    print(f"  - Failure (abs(%Diff) > max_noise):  {failure_count}")
-    return failure_count
+    print(f"  - Pass        (abs(%Diff) <= max_noise): {pass_count}")
+    print(f"  - Improvement (abs(%Diff) > max_noise, %Diff < 0): {improvement_count}")
+    print(f"  - Regression  (abs(%Diff) > max_noise, %Diff > 0): {regression_count}")
+    print(f"  - Unknown     (infinite or unavailable noise): {unknown_count}")
+    return regression_count
 
 
 if __name__ == "__main__":
