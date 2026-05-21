@@ -9,7 +9,7 @@ import os
 import sys
 from collections import Counter
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 from itertools import islice
 
 import jsondiff
@@ -69,7 +69,8 @@ def state_name_counts(states, device_id):
     return Counter(state["name"] for state in states if state["device"] == device_id)
 
 
-class Emoji(StrEnum):
+# TODO(opavlyk): replace with Emoji(StrEnum) after EOL of Python 3.10
+class Emoji(str, Enum):
     YELLOW = "\U0001f7e1"
     BLUE = "\U0001f535"
     GREEN = "\U0001f7e2"
