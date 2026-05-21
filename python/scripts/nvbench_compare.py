@@ -724,11 +724,11 @@ def compare_benches(
                 plt.ylabel("time [s]")
                 plt.title(cmp_device["name"])
 
-                def plot_line(key, shape, label):
-                    axis_times = plot_data[key][axis]
+                def plot_line(key, shape, label, data=plot_data):
+                    axis_times = data[key][axis]
                     if not axis_times:
                         return
-                    axis_noise = plot_data[key + "_noise"][axis]
+                    axis_noise = data[key + "_noise"][axis]
                     series = sorted(
                         (
                             (
@@ -740,7 +740,7 @@ def compare_benches(
                         ),
                         key=lambda item: item[0],
                     )
-                    x, y, noise = map(list, zip(*series))
+                    x, y, noise = map(list, zip(*series, strict=True))
 
                     p = plt.plot(x, y, shape, marker="o", label=label)
 
