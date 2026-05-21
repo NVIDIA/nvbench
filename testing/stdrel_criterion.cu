@@ -21,6 +21,7 @@
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
+#include <algorithm>
 #include <limits>
 #include <vector>
 
@@ -117,7 +118,7 @@ void test_stdrel_finishes_with_persistently_invalid_noise()
   [[maybe_unused]] const auto count = count_invalid_measurements_until_finished();
 }
 
-void test_stdrel_invalid_noise_bypasses_min_time()
+void test_stdrel_invalid_noise_bypasses_min_time(nvbench::float64_t invalid_measurement)
 {
   nvbench::criterion_params params;
   params.set_float64("min-time", 1.0);
@@ -125,7 +126,6 @@ void test_stdrel_invalid_noise_bypasses_min_time()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  const auto invalid_measurement                      = nvbench::float64_t{};
   constexpr nvbench::int64_t max_invalid_measurements = 1024;
   nvbench::int64_t total_invalid_measurements         = 0;
   while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements)
@@ -139,12 +139,11 @@ void test_stdrel_invalid_noise_bypasses_min_time()
 
 void test_stdrel_invalid_noise_count_resets_after_valid_noise()
 {
-  const auto invalid_measurement          = std::numeric_limits<nvbench::float64_t>::infinity();
-  const auto invalid_finish_count         = count_invalid_measurements_until_finished();
-  const auto initial_invalid_measurements = invalid_finish_count / 4;
-  const auto valid_measurements           = invalid_finish_count - initial_invalid_measurements;
-  ASSERT(initial_invalid_measurements >=
-         nvbench::detail::statistics::min_samples_for_noise_estimate);
+  const auto invalid_measurement  = std::numeric_limits<nvbench::float64_t>::infinity();
+  const auto invalid_finish_count = count_invalid_measurements_until_finished();
+  const auto initial_invalid_measurements =
+    std::max(nvbench::detail::statistics::min_samples_for_noise_estimate, invalid_finish_count / 4);
+  const auto valid_measurements = invalid_finish_count - initial_invalid_measurements;
   ASSERT(valid_measurements > 0);
 
   nvbench::criterion_params params;
@@ -176,6 +175,7 @@ int main()
   test_stdrel();
   test_stdrel_needs_enough_samples();
   test_stdrel_finishes_with_persistently_invalid_noise();
-  test_stdrel_invalid_noise_bypasses_min_time();
+  test_stdrel_invalid_noise_bypasses_min_time(nvbench::float64_t{});
+  test_stdrel_invalid_noise_bypasses_min_time(std::numeric_limits<nvbench::float64_t>::infinity());
   test_stdrel_invalid_noise_count_resets_after_valid_noise();
 }
