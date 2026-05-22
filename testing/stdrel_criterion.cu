@@ -169,6 +169,31 @@ void test_stdrel_invalid_noise_count_resets_after_valid_noise()
   ASSERT(!criterion.is_finished());
 }
 
+void test_stdrel_current_invalid_noise_does_not_use_stale_noise()
+{
+  const auto invalid_measurement = std::numeric_limits<nvbench::float64_t>::infinity();
+
+  nvbench::criterion_params params;
+  params.set_float64("max-noise", 0.1);
+  params.set_float64("min-time", 0.0);
+
+  nvbench::detail::stdrel_criterion criterion;
+  criterion.initialize(params);
+
+  std::vector<nvbench::float64_t> low_noise(
+    nvbench::detail::statistics::min_samples_for_noise_estimate,
+    100.0);
+  low_noise.back() = 101.0;
+  for (nvbench::float64_t measurement : low_noise)
+  {
+    criterion.add_measurement(measurement);
+  }
+
+  criterion.add_measurement(invalid_measurement);
+  criterion.add_measurement(invalid_measurement);
+  ASSERT(!criterion.is_finished());
+}
+
 int main()
 {
   test_const();
@@ -178,4 +203,5 @@ int main()
   test_stdrel_invalid_noise_bypasses_min_time(nvbench::float64_t{});
   test_stdrel_invalid_noise_bypasses_min_time(std::numeric_limits<nvbench::float64_t>::infinity());
   test_stdrel_invalid_noise_count_resets_after_valid_noise();
+  test_stdrel_current_invalid_noise_does_not_use_stale_noise();
 }
