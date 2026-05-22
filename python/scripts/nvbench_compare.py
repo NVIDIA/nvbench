@@ -724,11 +724,11 @@ def compare_benches(
                 plt.ylabel("time [s]")
                 plt.title(cmp_device["name"])
 
-                def plot_line(key, shape, label, data=plot_data):
-                    axis_times = data[key][axis]
+                def plot_line(key, shape, label, data_axis, data=plot_data):
+                    axis_times = data[key][data_axis]
                     if not axis_times:
                         return
-                    axis_noise = data[key + "_noise"][axis]
+                    axis_noise = data[key + "_noise"][data_axis]
                     series = sorted(
                         (
                             (
@@ -775,8 +775,8 @@ def compare_benches(
                         plot_confidence_band(start, len(x))
 
                 for axis in plot_data["cmp"].keys():
-                    plot_line("cmp", "-", axis)
-                    plot_line("ref", "--", axis + " ref")
+                    plot_line("cmp", "-", axis, axis)
+                    plot_line("ref", "--", axis + " ref", axis)
 
                 plt.legend()
                 plt.show()
