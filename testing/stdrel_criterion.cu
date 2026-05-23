@@ -22,6 +22,7 @@
 #include <nvbench/types.cuh>
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <vector>
 
@@ -35,7 +36,7 @@ nvbench::int64_t count_invalid_measurements_until_finished()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  const auto invalid_measurement = std::numeric_limits<nvbench::float64_t>::infinity();
+  const auto invalid_measurement                      = nvbench::float64_t{0};
   constexpr nvbench::int64_t max_invalid_measurements = 1024;
   nvbench::int64_t total_invalid_measurements         = 0;
   while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements)
@@ -52,9 +53,10 @@ void test_const()
 {
   nvbench::criterion_params params;
   nvbench::detail::stdrel_criterion criterion;
+  using nvbench::detail::statistics::min_samples_for_noise_estimate;
 
   criterion.initialize(params);
-  for (nvbench::int64_t i = 0; i < nvbench::detail::statistics::min_samples_for_noise_estimate; ++i)
+  for (nvbench::int64_t i = 0; i < min_samples_for_noise_estimate; ++i)
   {
     criterion.add_measurement(42.0);
   }
@@ -72,9 +74,9 @@ void test_stdrel()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  std::vector<nvbench::float64_t> low_noise(
-    nvbench::detail::statistics::min_samples_for_noise_estimate,
-    100.0);
+  using nvbench::detail::statistics::min_samples_for_noise_estimate;
+
+  std::vector<nvbench::float64_t> low_noise(min_samples_for_noise_estimate, 100.0);
   low_noise.back() = 101.0;
   for (nvbench::float64_t measurement : low_noise)
   {
@@ -86,8 +88,8 @@ void test_stdrel()
   criterion.initialize(params);
 
   std::vector<nvbench::float64_t> high_noise;
-  high_noise.reserve(nvbench::detail::statistics::min_samples_for_noise_estimate);
-  for (nvbench::int64_t i = 0; i < nvbench::detail::statistics::min_samples_for_noise_estimate; ++i)
+  high_noise.reserve(min_samples_for_noise_estimate);
+  for (nvbench::int64_t i = 0; i < min_samples_for_noise_estimate; ++i)
   {
     high_noise.push_back(static_cast<nvbench::float64_t>(i + 1) * 10.0);
   }
@@ -106,10 +108,44 @@ void test_stdrel_needs_enough_samples()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  for (nvbench::int64_t i = 1; i < nvbench::detail::statistics::min_samples_for_noise_estimate; ++i)
+  using nvbench::detail::statistics::min_samples_for_noise_estimate;
+  for (nvbench::int64_t i = 1; i < min_samples_for_noise_estimate; ++i)
   {
     criterion.add_measurement(42.0);
   }
+  ASSERT(!criterion.is_finished());
+}
+
+void test_stdrel_uses_sample_standard_deviation()
+{
+  const int n                = 26;
+  const nvbench::float64_t a = 6;
+  const nvbench::float64_t b = 0;
+  // for sequence t = a * i + b, 1 <= i <= n
+  // mean = a*(n+1)/2 + b
+  // variance = a^2/12 * (n^2 - 1)
+  // for a, b, n = 6, 0, 26, mean = 81,
+  // biased standard deviation = 45        (noise 0.5556)
+  // unbiased standard deviation = 45.8912 (noise 0.5666)
+
+  const nvbench::float64_t biased_noise = std::sqrt(static_cast<nvbench::float64_t>(n - 1) /
+                                                    static_cast<nvbench::float64_t>(3 * (n + 1)));
+  const nvbench::float64_t unbiased_noise =
+    std::sqrt(static_cast<nvbench::float64_t>(n) / static_cast<nvbench::float64_t>(3 * (n + 1)));
+
+  nvbench::criterion_params params;
+  params.set_float64("max-noise", 0.5 * (biased_noise + unbiased_noise));
+  params.set_float64("min-time", 0.0);
+
+  nvbench::detail::stdrel_criterion criterion;
+  criterion.initialize(params);
+
+  for (int i = 1; i <= n; ++i)
+  {
+    const nvbench::float64_t measurement = a * static_cast<nvbench::float64_t>(i) + b;
+    criterion.add_measurement(measurement);
+  }
+
   ASSERT(!criterion.is_finished());
 }
 
@@ -118,8 +154,9 @@ void test_stdrel_finishes_with_persistently_invalid_noise()
   [[maybe_unused]] const auto count = count_invalid_measurements_until_finished();
 }
 
-void test_stdrel_invalid_noise_bypasses_min_time(nvbench::float64_t invalid_measurement)
+void test_stdrel_invalid_noise_bypasses_min_time()
 {
+  constexpr nvbench::float64_t invalid_measurement{0};
   nvbench::criterion_params params;
   params.set_float64("min-time", 1.0);
 
@@ -137,71 +174,12 @@ void test_stdrel_invalid_noise_bypasses_min_time(nvbench::float64_t invalid_meas
   ASSERT(criterion.is_finished());
 }
 
-void test_stdrel_invalid_noise_count_resets_after_valid_noise()
-{
-  const auto invalid_measurement  = std::numeric_limits<nvbench::float64_t>::infinity();
-  const auto invalid_finish_count = count_invalid_measurements_until_finished();
-  const auto initial_invalid_measurements =
-    std::max(nvbench::detail::statistics::min_samples_for_noise_estimate, invalid_finish_count / 4);
-  const auto valid_measurements = invalid_finish_count - initial_invalid_measurements;
-  ASSERT(valid_measurements > 0);
-
-  nvbench::criterion_params params;
-  params.set_float64("max-noise", -1.0);
-  params.set_float64("min-time", 0.0);
-
-  nvbench::detail::stdrel_criterion criterion;
-  criterion.initialize(params);
-
-  for (nvbench::int64_t i = 0; i < initial_invalid_measurements; ++i)
-  {
-    criterion.add_measurement(invalid_measurement);
-    ASSERT(!criterion.is_finished());
-  }
-
-  for (nvbench::int64_t i = 0; i < valid_measurements; ++i)
-  {
-    criterion.add_measurement(100.0);
-    ASSERT(!criterion.is_finished());
-  }
-
-  criterion.add_measurement(invalid_measurement);
-  ASSERT(!criterion.is_finished());
-}
-
-void test_stdrel_current_invalid_noise_does_not_use_stale_noise()
-{
-  const auto invalid_measurement = std::numeric_limits<nvbench::float64_t>::infinity();
-
-  nvbench::criterion_params params;
-  params.set_float64("max-noise", 0.1);
-  params.set_float64("min-time", 0.0);
-
-  nvbench::detail::stdrel_criterion criterion;
-  criterion.initialize(params);
-
-  std::vector<nvbench::float64_t> low_noise(
-    nvbench::detail::statistics::min_samples_for_noise_estimate,
-    100.0);
-  low_noise.back() = 101.0;
-  for (nvbench::float64_t measurement : low_noise)
-  {
-    criterion.add_measurement(measurement);
-  }
-
-  criterion.add_measurement(invalid_measurement);
-  criterion.add_measurement(invalid_measurement);
-  ASSERT(!criterion.is_finished());
-}
-
 int main()
 {
   test_const();
   test_stdrel();
   test_stdrel_needs_enough_samples();
+  test_stdrel_uses_sample_standard_deviation();
   test_stdrel_finishes_with_persistently_invalid_noise();
-  test_stdrel_invalid_noise_bypasses_min_time(nvbench::float64_t{});
-  test_stdrel_invalid_noise_bypasses_min_time(std::numeric_limits<nvbench::float64_t>::infinity());
-  test_stdrel_invalid_noise_count_resets_after_valid_noise();
-  test_stdrel_current_invalid_noise_does_not_use_stale_noise();
+  test_stdrel_invalid_noise_bypasses_min_time();
 }

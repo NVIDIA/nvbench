@@ -32,8 +32,6 @@
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
-#include <vector>
-
 namespace nvbench::detail
 {
 
@@ -42,8 +40,8 @@ class stdrel_criterion final : public stopping_criterion_base
   // state
   nvbench::int64_t m_total_samples{};
   nvbench::int64_t m_consecutive_invalid_noise_estimates{};
-  nvbench::float64_t m_total_cuda_time{};
-  std::vector<nvbench::float64_t> m_cuda_times{};
+  nvbench::float64_t m_mean_cuda_time{};
+  nvbench::float64_t m_variance_cuda_time{};
   nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
 
 public:

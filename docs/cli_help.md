@@ -162,7 +162,7 @@
   * If both GPU and CPU times are gathered, GPU time is used for stopping
     analysis.
   * Stopping criteria provided by NVBench are:
-    * "stdrel": (default) Stops when relative dispersion falls below max-noise.
+    * "stdrel": (default) Stops when relative standard deviation falls below max-noise.
     * "entropy": Stops when the entropy estimate of all collected samples converges.
     * "sample-count": Stops after a target number of samples.
   * Each stopping criterion may provide additional parameters to customize
@@ -173,7 +173,8 @@
 * `--min-time <seconds>`
   * Require at least `<seconds>` of accumulated execution time before normal
     `stdrel` convergence checks can stop the measurement. NVBench may stop
-    earlier if the relative noise estimate remains invalid persistently.
+    earlier if the relative standard deviation estimate remains invalid for
+    64 consecutive samples.
   * Only applies to `stdrel` stopping criterion.
   * Default is 0.5 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
@@ -181,7 +182,7 @@
 
 * `--max-noise <value>`
   * Gather samples until the error in the measurement drops below `<value>`.
-  * Noise is specified as the percent relative dispersion (dispersion/center).
+  * Noise is specified as the percent relative standard deviation (stdev/mean).
   * Default is 0.5% (`--max-noise 0.5`)
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.

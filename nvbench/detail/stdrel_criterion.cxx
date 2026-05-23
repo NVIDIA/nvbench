@@ -19,14 +19,16 @@
 #include <nvbench/detail/statistics.cuh>
 #include <nvbench/detail/stdrel_criterion.cuh>
 
+#include <cmath> // std::sqrt
+
 namespace nvbench::detail
 {
 
 namespace
 {
 
-// Allow transient invalid noise estimates while still terminating when robust
-// relative noise cannot be computed persistently.
+// Allow transient invalid noise estimates while still terminating when
+// stdev relative noise cannot be computed persistently.
 constexpr nvbench::int64_t invalid_noise_estimate_limit = 64;
 
 } // namespace
@@ -40,32 +42,37 @@ stdrel_criterion::stdrel_criterion()
 void stdrel_criterion::do_initialize()
 {
   m_total_samples                       = 0;
-  m_total_cuda_time                     = 0.0;
+  m_mean_cuda_time                      = 0.0;
+  m_variance_cuda_time                  = 0.0;
   m_consecutive_invalid_noise_estimates = 0;
-  m_cuda_times.clear();
   m_noise_tracker.clear();
 }
 
 void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
 {
   m_total_samples++;
-  m_total_cuda_time += measurement;
-  m_cuda_times.push_back(measurement);
+  // update for mean and variance
+  const auto diff    = (measurement - m_mean_cuda_time);
+  constexpr auto one = nvbench::float64_t{1};
+  const auto f       = one / static_cast<nvbench::float64_t>(m_total_samples);
+  // online update for sample mean, i.e., sum(t for t in times)/len(times)
+  // mu_{n+1} = mu_{n} + (x_{n+1} - mu_{n}) / (n+1)
+  m_mean_cuda_time += diff * f;
+  const auto diff2 = diff * diff;
+  // online update for biased sample variance, i.e., sum((t - mean)**2 for t in times)/len(times)
+  // var_{n+1} = var_{n} - (var_{n} - n/(n+1) * diff * diff) / (n+1)
+  m_variance_cuda_time -= f * ((m_variance_cuda_time - diff2) + f * diff2);
 
   if (m_total_samples < nvbench::detail::statistics::min_samples_for_noise_estimate)
   {
     return;
   }
 
-  // Compute convergence statistics using CUDA timings:
-  const auto [cuda_first_quartile, cuda_median, cuda_third_quartile] =
-    nvbench::detail::statistics::compute_percentiles(m_cuda_times.cbegin(),
-                                                     m_cuda_times.cend(),
-                                                     {25, 50, 75});
-  const auto cuda_noise = nvbench::detail::statistics::compute_robust_noise(m_total_samples,
-                                                                            cuda_first_quartile,
-                                                                            cuda_median,
-                                                                            cuda_third_quartile);
+  // Compute convergence statistics using CUDA timings
+  // dispersion includes Bessel correction to preserve legacy behavior
+  const auto dispersion = std::sqrt(m_variance_cuda_time / (one - f));
+  const auto cuda_noise =
+    nvbench::detail::statistics::compute_relative_dispersion(dispersion, m_mean_cuda_time);
   if (cuda_noise && std::isfinite(*cuda_noise))
   {
     m_consecutive_invalid_noise_estimates = 0;
@@ -84,7 +91,8 @@ bool stdrel_criterion::do_is_finished()
     return true;
   }
 
-  if (m_total_cuda_time <= m_params.get_float64("min-time"))
+  const auto total_cuda_time = m_mean_cuda_time * static_cast<nvbench::float64_t>(m_total_samples);
+  if (total_cuda_time <= m_params.get_float64("min-time"))
   {
     return false;
   }
