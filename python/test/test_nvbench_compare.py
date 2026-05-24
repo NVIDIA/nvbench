@@ -119,6 +119,8 @@ def test_compare_benches_accepts_matching_duplicate_state_counts(nvbench_compare
 
 
 def test_compare_benches_rejects_swapped_duplicate_state_counts(nvbench_compare):
+    set_test_devices(nvbench_compare)
+
     ref_benches = [
         make_benchmark(
             [
