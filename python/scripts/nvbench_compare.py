@@ -65,8 +65,77 @@ class TimeEstimate:
     relative_dispersion: float | None
 
 
+def state_match_key(state):
+    device_prefix = f"Device={state['device']}"
+    state_name = state["name"]
+    if state_name == device_prefix:
+        return ""
+    if state_name.startswith(f"{device_prefix} "):
+        return state_name[len(device_prefix) + 1 :]
+    return state_name
+
+
 def state_name_counts(states):
-    return Counter(state["name"] for state in states)
+    return Counter(state_match_key(state) for state in states)
+
+
+def format_device_ids(device_ids):
+    return ", ".join(str(device_id) for device_id in device_ids)
+
+
+def parse_device_filter(device_arg, option_name):
+    device_arg = device_arg.strip()
+    if device_arg.lower() == "all":
+        return None
+
+    values = [value.strip() for value in device_arg.split(",")]
+    if not all(values):
+        raise ValueError(
+            f"{option_name} must be 'all', an integer, or comma-separated integers"
+        )
+
+    try:
+        return [int(value) for value in values]
+    except ValueError as exc:
+        raise ValueError(
+            f"{option_name} must be 'all', an integer, or comma-separated integers"
+        ) from exc
+
+
+def select_devices(all_devices, device_filter, option_name):
+    if device_filter is None:
+        return list(all_devices)
+
+    devices_by_id = {device["id"]: device for device in all_devices}
+    missing_ids = [
+        device_id for device_id in device_filter if device_id not in devices_by_id
+    ]
+    if missing_ids:
+        raise ValueError(
+            f"{option_name} requested device id(s) not present in input: "
+            f"{format_device_ids(missing_ids)}"
+        )
+
+    return [devices_by_id[device_id] for device_id in device_filter]
+
+
+def resolve_benchmark_device_ids(bench, device_filter, option_name):
+    if device_filter is None:
+        return bench["devices"]
+
+    benchmark_device_ids = set(bench["devices"])
+    missing_ids = [
+        device_id
+        for device_id in device_filter
+        if device_id not in benchmark_device_ids
+    ]
+    if missing_ids:
+        raise ValueError(
+            f"benchmark {bench['name']!r} does not contain {option_name} "
+            f"device id(s): {format_device_ids(missing_ids)}"
+        )
+
+    return device_filter
 
 
 # TODO(opavlyk): replace with Emoji(StrEnum) after EOL of Python 3.10
@@ -485,6 +554,8 @@ def compare_benches(
     axis_filters,
     benchmark_filters,
     no_color,
+    reference_device_filter=None,
+    compare_device_filter=None,
 ):
     if plot_along:
         import matplotlib.pyplot as plt
@@ -501,8 +572,12 @@ def compare_benches(
         if benchmark_filters and cmp_bench["name"] not in benchmark_filters:
             continue
 
-        cmp_device_ids = cmp_bench["devices"]
-        ref_device_ids = ref_bench["devices"]
+        cmp_device_ids = resolve_benchmark_device_ids(
+            cmp_bench, compare_device_filter, "--compare-devices"
+        )
+        ref_device_ids = resolve_benchmark_device_ids(
+            ref_bench, reference_device_filter, "--reference-devices"
+        )
         if len(cmp_device_ids) != len(ref_device_ids):
             raise ValueError(
                 f"benchmark {cmp_bench['name']!r} has {len(ref_device_ids)} "
@@ -566,7 +641,7 @@ def compare_benches(
             counters = {}
 
             for cmp_state in cmp_device_states:
-                cmp_state_name = cmp_state["name"]
+                cmp_state_name = state_match_key(cmp_state)
                 counters[cmp_state_name] = counters.get(cmp_state_name, 0) + 1
                 # Duplicate state names are matched by occurrence order within
                 # the same device section.
@@ -575,7 +650,7 @@ def compare_benches(
                         (
                             st
                             for st in ref_device_states
-                            if st["name"] == cmp_state_name
+                            if state_match_key(st) == cmp_state_name
                         ),
                         counters[cmp_state_name] - 1,
                         None,
@@ -841,6 +916,16 @@ def main():
         help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
     )
     parser.add_argument(
+        "--reference-devices",
+        default="all",
+        help="Reference devices to compare: all, an integer id, or comma-separated ids",
+    )
+    parser.add_argument(
+        "--compare-devices",
+        default="all",
+        help="Compare devices to compare: all, an integer id, or comma-separated ids",
+    )
+    parser.add_argument(
         "-a",
         "--axis",
         action="append",
@@ -858,6 +943,12 @@ def main():
     args, files_or_dirs = parser.parse_known_args()
     try:
         axis_filters = parse_axis_filters(args.axis)
+        reference_device_filter = parse_device_filter(
+            args.reference_devices, "--reference-devices"
+        )
+        compare_device_filter = parse_device_filter(
+            args.compare_devices, "--compare-devices"
+        )
     except ValueError as exc:
         print(str(exc))
         return -1
@@ -891,20 +982,31 @@ def main():
 
         global all_ref_devices
         global all_cmp_devices
-        all_ref_devices = ref_root["devices"]
-        all_cmp_devices = cmp_root["devices"]
+        try:
+            all_ref_devices = select_devices(
+                ref_root["devices"], reference_device_filter, "--reference-devices"
+            )
+            all_cmp_devices = select_devices(
+                cmp_root["devices"], compare_device_filter, "--compare-devices"
+            )
+        except ValueError as exc:
+            print(str(exc))
+            return -1
 
-        if ref_root["devices"] != cmp_root["devices"]:
+        if len(all_ref_devices) != len(all_cmp_devices):
+            print(
+                f"--reference-devices selected {len(all_ref_devices)} device(s), "
+                f"but --compare-devices selected {len(all_cmp_devices)} device(s)"
+            )
+            return -1
+
+        if all_ref_devices != all_cmp_devices:
             warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
             print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
             print(": ", end="")
 
-            print(
-                jsondiff.diff(
-                    ref_root["devices"], cmp_root["devices"], syntax="symmetric"
-                )
-            )
+            print(jsondiff.diff(all_ref_devices, all_cmp_devices, syntax="symmetric"))
             if not args.ignore_devices:
                 return -1
 
@@ -919,6 +1021,8 @@ def main():
                 axis_filters,
                 args.benchmark,
                 args.no_color,
+                reference_device_filter,
+                compare_device_filter,
             )
         except ValueError as exc:
             print(str(exc))
