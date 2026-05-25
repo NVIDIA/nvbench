@@ -81,7 +81,7 @@ class Emoji(str, Enum):
 def colorize(msg: str, fore: Fore, emoji: Emoji, no_color: bool) -> str:
     if no_color:
         prefix = ""
-        if emoji_s := str(emoji):
+        if emoji_s := emoji.value:
             prefix = f"{emoji_s} "
         return f"{prefix}{msg}"
     else:
