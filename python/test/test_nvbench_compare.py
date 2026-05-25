@@ -44,11 +44,13 @@ def nvbench_compare(monkeypatch):
     return module
 
 
-def make_state(nvbench_compare, name, *, mean="1.0", noise="0.01"):
+def make_state(nvbench_compare, name, *, mean="1.0", noise="0.01", axis_value=None):
     return {
         "name": name,
         "device": 0,
-        "axis_values": [],
+        "axis_values": []
+        if axis_value is None
+        else [{"name": "A", "type": "int64", "value": axis_value}],
         "summaries": [
             {
                 "tag": nvbench_compare.GPU_TIME_MEAN_TAG,
@@ -66,7 +68,9 @@ def make_benchmark(states):
     return {
         "name": "bench",
         "devices": [0],
-        "axes": [],
+        "axes": [{"name": "A", "type": "int64", "flags": ""}]
+        if any(state["axis_values"] for state in states)
+        else [],
         "states": states,
     }
 
@@ -156,3 +160,42 @@ def test_compare_benches_rejects_swapped_duplicate_state_counts(nvbench_compare)
             benchmark_filters=[],
             no_color=True,
         )
+
+
+def test_compare_benches_matches_duplicate_states_after_axis_filter(nvbench_compare):
+    set_test_devices(nvbench_compare)
+
+    ref_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+                make_state(nvbench_compare, "state", mean="2.0", axis_value=2),
+            ]
+        )
+    ]
+    cmp_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="2.0", axis_value=2),
+                make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+            ]
+        )
+    ]
+
+    nvbench_compare.compare_benches(
+        ref_benches,
+        cmp_benches,
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        axis_filters=[{"name": "A", "values": ["2"], "display": "A=2"}],
+        benchmark_filters=[],
+        no_color=True,
+    )
+
+    assert nvbench_compare.config_count == 1
+    assert nvbench_compare.pass_count == 1
+    assert nvbench_compare.improvement_count == 0
+    assert nvbench_compare.regression_count == 0
+    assert nvbench_compare.unknown_count == 0

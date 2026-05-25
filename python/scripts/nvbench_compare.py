@@ -65,8 +65,8 @@ class TimeEstimate:
     relative_dispersion: float | None
 
 
-def state_name_counts(states, device_id):
-    return Counter(state["name"] for state in states if state["device"] == device_id)
+def state_name_counts(states):
+    return Counter(state["name"] for state in states)
 
 
 # TODO(opavlyk): replace with Emoji(StrEnum) after EOL of Python 3.10
@@ -539,8 +539,20 @@ def compare_benches(
 
         for cmp_device_index, cmp_device_id in enumerate(cmp_device_ids):
             ref_device_id = ref_device_ids[cmp_device_index]
-            ref_state_counts = state_name_counts(ref_states, ref_device_id)
-            cmp_state_counts = state_name_counts(cmp_states, cmp_device_id)
+            ref_device_states = [
+                state
+                for state in ref_states
+                if state["device"] == ref_device_id
+                and matches_axis_filters(state, axis_filters)
+            ]
+            cmp_device_states = [
+                state
+                for state in cmp_states
+                if state["device"] == cmp_device_id
+                and matches_axis_filters(state, axis_filters)
+            ]
+            ref_state_counts = state_name_counts(ref_device_states)
+            cmp_state_counts = state_name_counts(cmp_device_states)
             if ref_state_counts != cmp_state_counts:
                 raise ValueError(
                     f"benchmark {cmp_bench['name']!r} device pair "
@@ -553,10 +565,7 @@ def compare_benches(
             plot_data = {"cmp": {}, "ref": {}, "cmp_noise": {}, "ref_noise": {}}
             counters = {}
 
-            for cmp_state in cmp_states:
-                if cmp_state["device"] != cmp_device_id:
-                    continue
-
+            for cmp_state in cmp_device_states:
                 cmp_state_name = cmp_state["name"]
                 counters[cmp_state_name] = counters.get(cmp_state_name, 0) + 1
                 # Duplicate state names are matched by occurrence order within
@@ -565,9 +574,8 @@ def compare_benches(
                     islice(
                         (
                             st
-                            for st in ref_states
-                            if st["device"] == ref_device_id
-                            and st["name"] == cmp_state_name
+                            for st in ref_device_states
+                            if st["name"] == cmp_state_name
                         ),
                         counters[cmp_state_name] - 1,
                         None,
@@ -580,8 +588,6 @@ def compare_benches(
                         f"ref={ref_device_id} cmp={cmp_device_id} has no reference "
                         f"occurrence {counters[cmp_state_name]} for state {cmp_state_name!r}"
                     )
-                if not matches_axis_filters(cmp_state, axis_filters):
-                    continue
 
                 axis_values = cmp_state["axis_values"]
                 if not axis_values:
