@@ -748,6 +748,9 @@ def compare_benches(
                     ),
                     None,
                 )
+                assert ref_state is not None, (
+                    "invariant: count validation ensures match exists"
+                )
                 axis_values = cmp_state["axis_values"]
                 if not axis_values:
                     axis_values = []
