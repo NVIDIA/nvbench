@@ -71,7 +71,7 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
   constexpr auto zero = nvbench::float64_t{0};
   // Compute convergence statistics using CUDA timings
   // dispersion includes Bessel correction to preserve legacy behavior
-  const auto unbiased_dispersion = ((m_variance_cuda_time >= zero) && (zero < f < one))
+  const auto unbiased_dispersion = ((m_variance_cuda_time >= zero) && (f < one) && (f > zero))
                                      ? std::sqrt(m_variance_cuda_time / (one - f))
                                      : std::numeric_limits<nvbench::float64_t>::quiet_NaN();
   const auto cuda_noise =
