@@ -178,9 +178,7 @@ void measure_cpu_only_base::generate_summaries()
   }
 
   const auto [cpu_first_quartile, cpu_median, cpu_third_quartile] =
-    nvbench::detail::statistics::compute_percentiles(m_cpu_times.cbegin(),
-                                                     m_cpu_times.cend(),
-                                                     {25, 50, 75});
+    nvbench::detail::statistics::compute_quartiles(m_cpu_times.cbegin(), m_cpu_times.cend());
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/q1");
     summ.set_string("name", "Q1");

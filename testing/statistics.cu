@@ -31,6 +31,22 @@
 
 namespace statistics = nvbench::detail::statistics;
 
+template <typename T>
+void assert_quartiles_equal(statistics::quartiles_t<T> actual, statistics::quartiles_t<T> expected)
+{
+  ASSERT(actual.first_quartile == expected.first_quartile);
+  ASSERT(actual.median == expected.median);
+  ASSERT(actual.third_quartile == expected.third_quartile);
+}
+
+template <typename T>
+void assert_quartiles_nan(statistics::quartiles_t<T> actual)
+{
+  ASSERT(std::isnan(actual.first_quartile));
+  ASSERT(std::isnan(actual.median));
+  ASSERT(std::isnan(actual.third_quartile));
+}
+
 void test_mean()
 {
   {
@@ -88,7 +104,8 @@ void test_percentiles()
 
   {
     const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
-    const auto actual = statistics::compute_percentiles(data.cbegin(), data.cend(), {25, 50, 75});
+    const auto actual =
+      statistics::compute_percentiles(data.cbegin(), data.cend(), std::array<int, 3>{25, 50, 75});
     const std::array<nvbench::float64_t, 3> expected{20.0, 30.0, 30.0};
     ASSERT(actual == expected);
   }
@@ -118,6 +135,57 @@ void test_percentiles()
     ASSERT(std::isnan(actual[0]));
     ASSERT(std::isnan(actual[1]));
     ASSERT(std::isnan(actual[2]));
+  }
+}
+
+void test_quartiles()
+{
+  {
+    const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
+    const auto sorting   = statistics::compute_quartiles_by_sorting(data);
+    const auto selection = statistics::compute_quartiles_by_selection(data);
+    assert_quartiles_equal(selection, sorting);
+    assert_quartiles_equal(sorting, statistics::quartiles_t<nvbench::float64_t>{20.0, 30.0, 30.0});
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data{5.0, -1.0, 5.0, 2.0, 9.0, 2.0, 5.0};
+    const auto sorting   = statistics::compute_quartiles_by_sorting(data);
+    const auto selection = statistics::compute_quartiles_by_selection(data);
+    assert_quartiles_equal(selection, sorting);
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data{42.0};
+    assert_quartiles_equal(statistics::compute_quartiles(data.cbegin(), data.cend()),
+                           statistics::quartiles_t<nvbench::float64_t>{42.0, 42.0, 42.0});
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data;
+    assert_quartiles_nan(statistics::compute_quartiles(data.cbegin(), data.cend()));
+  }
+
+  {
+    std::istringstream data{"40 10 30 20"};
+    const auto actual =
+      statistics::compute_quartiles(std::istream_iterator<nvbench::float64_t>{data},
+                                    std::istream_iterator<nvbench::float64_t>{});
+    assert_quartiles_equal(actual, statistics::quartiles_t<nvbench::float64_t>{20.0, 30.0, 30.0});
+  }
+
+  {
+    std::vector<nvbench::float64_t> data(4096);
+    for (std::size_t i = 0; i < data.size(); ++i)
+    {
+      data[i] = static_cast<nvbench::float64_t>((i * 37) % data.size());
+    }
+
+    const auto public_api = statistics::compute_quartiles(data.cbegin(), data.cend());
+    const auto sorting    = statistics::compute_quartiles_by_sorting(data);
+    const auto selection  = statistics::compute_quartiles_by_selection(data);
+    assert_quartiles_equal(selection, sorting);
+    assert_quartiles_equal(public_api, sorting);
   }
 }
 
@@ -279,6 +347,7 @@ int main()
   test_mean();
   test_std();
   test_percentiles();
+  test_quartiles();
   test_relative_interquartile_range();
   test_lin_regression();
   test_r2();

@@ -40,6 +40,7 @@
 #include <numeric>
 #include <optional>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #ifndef M_PI
@@ -99,6 +100,35 @@ nvbench::float64_t compute_mean(It first, It last)
   return std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(num);
 }
 
+template <typename ValueType>
+std::size_t percentile_rank(int percentile, std::size_t size)
+{
+  const auto p        = std::clamp(percentile, 0, 100);
+  const auto max_rank = static_cast<nvbench::float64_t>(size - 1);
+  const auto q        = static_cast<nvbench::float64_t>(p) / 100.0;
+  return static_cast<std::size_t>(std::round(q * max_rank));
+}
+
+template <typename ValueType, std::size_t N>
+std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> samples,
+                                                        std::array<int, N> percentiles)
+{
+  std::array<ValueType, N> result{};
+  if (samples.empty())
+  {
+    result.fill(std::numeric_limits<ValueType>::quiet_NaN());
+    return result;
+  }
+
+  std::sort(samples.begin(), samples.end());
+
+  for (std::size_t i = 0; i < N; ++i)
+  {
+    result[i] = samples[percentile_rank<ValueType>(percentiles[i], samples.size())];
+  }
+  return result;
+}
+
 /**
  * Computes exact percentile values using rank round(p / 100 * (S - 1)).
  *
@@ -113,42 +143,70 @@ std::array<ValueType, N> compute_percentiles(Iter first, Iter last, std::array<i
   static_assert(std::is_floating_point_v<ValueType>,
                 "compute_percentiles requires a floating-point value type.");
 
-  std::array<ValueType, N> result{};
-
-  std::vector<ValueType> sorted(first, last);
-  if (sorted.empty())
-  {
-    result.fill(std::numeric_limits<ValueType>::quiet_NaN());
-    return result;
-  }
-
-  std::sort(sorted.begin(), sorted.end());
-
-  const auto max_rank = static_cast<nvbench::float64_t>(sorted.size() - 1);
-  for (std::size_t i = 0; i < N; ++i)
-  {
-    const auto clamped_percentile = std::clamp(percentiles[i], 0, 100);
-
-    const auto quantile = static_cast<nvbench::float64_t>(clamped_percentile) / 100.0;
-    const auto rank     = static_cast<std::size_t>(std::round(quantile * max_rank));
-
-    result[i] = sorted[rank];
-  }
-
-  return result;
+  std::vector<ValueType> samples(first, last);
+  return compute_percentiles_by_sorting(std::move(samples), percentiles);
 }
 
-/**
- * Overload that supports calls like `compute_percentiles(first, last, {25, 50, 75})`.
- */
-template <typename Iter,
-          std::size_t N,
-          typename ValueType = typename std::iterator_traits<Iter>::value_type>
-std::array<ValueType, N> compute_percentiles(Iter first, Iter last, const int (&percentiles)[N])
+template <typename T>
+struct quartiles_t
 {
-  std::array<int, N> percentile_array{};
-  std::copy(std::begin(percentiles), std::end(percentiles), percentile_array.begin());
-  return compute_percentiles(first, last, percentile_array);
+  T first_quartile;
+  T median;
+  T third_quartile;
+};
+
+template <typename ValueType>
+quartiles_t<ValueType> compute_quartiles_by_sorting(std::vector<ValueType> samples)
+{
+  constexpr std::array<int, 3> qs{25, 50, 75};
+  const auto r = compute_percentiles_by_sorting(std::move(samples), qs);
+  return {r[0], r[1], r[2]};
+}
+
+template <typename ValueType>
+quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> samples)
+{
+  if (samples.empty())
+  {
+    constexpr auto nan = std::numeric_limits<ValueType>::quiet_NaN();
+    return {nan, nan, nan};
+  }
+
+  const auto select = [](auto first, std::size_t rank, auto last) {
+    auto nth = first + static_cast<std::ptrdiff_t>(rank);
+    std::nth_element(first, nth, last);
+    return nth;
+  };
+
+  const auto n       = samples.size();
+  const auto rank_25 = percentile_rank<ValueType>(25, n);
+  const auto rank_50 = percentile_rank<ValueType>(50, n);
+  const auto rank_75 = percentile_rank<ValueType>(75, n);
+
+  const auto q2_iter = select(samples.begin(), rank_50, samples.end());
+  const auto q2      = *q2_iter;
+
+  const auto q1 = rank_25 == rank_50 ? q2 : *select(samples.begin(), rank_25, q2_iter);
+  const auto q3 = rank_75 == rank_50 ? q2
+                                     : *select(q2_iter + 1, rank_75 - rank_50 - 1, samples.end());
+
+  return {q1, q2, q3};
+}
+
+template <typename Iter, typename ValueType = typename std::iterator_traits<Iter>::value_type>
+quartiles_t<ValueType> compute_quartiles(Iter first, Iter last)
+{
+  static_assert(std::is_floating_point_v<ValueType>);
+
+  std::vector<ValueType> samples(first, last);
+  constexpr std::size_t selection_threshold = 4096;
+
+  if (samples.size() >= selection_threshold)
+  {
+    return compute_quartiles_by_selection(std::move(samples));
+  }
+
+  return compute_quartiles_by_sorting(std::move(samples));
 }
 
 // Returns nullopt for invalid inputs. A +inf result is allowed: it represents

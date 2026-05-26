@@ -269,9 +269,7 @@ void measure_cold_base::generate_summaries()
   }
 
   const auto [cpu_time_first_quartile, cpu_time_median, cpu_time_third_quartile] =
-    nvbench::detail::statistics::compute_percentiles(m_cpu_times.cbegin(),
-                                                     m_cpu_times.cend(),
-                                                     {25, 50, 75});
+    nvbench::detail::statistics::compute_quartiles(m_cpu_times.cbegin(), m_cpu_times.cend());
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/q1");
     summ.set_string("name", "Q1");
@@ -379,9 +377,7 @@ void measure_cold_base::generate_summaries()
   }
 
   const auto [cuda_time_first_quartile, cuda_time_median, cuda_time_third_quartile] =
-    nvbench::detail::statistics::compute_percentiles(m_cuda_times.cbegin(),
-                                                     m_cuda_times.cend(),
-                                                     {25, 50, 75});
+    nvbench::detail::statistics::compute_quartiles(m_cuda_times.cbegin(), m_cuda_times.cend());
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/q1");
     summ.set_string("name", "Q1");
