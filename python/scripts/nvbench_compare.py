@@ -159,6 +159,10 @@ def resolve_benchmark_device_ids(bench, device_filter, option_name):
     return device_filter
 
 
+def require_matching_device_sections(reference_device_filter, compare_device_filter):
+    return reference_device_filter is None and compare_device_filter is None
+
+
 # TODO(opavlyk): replace with Emoji(StrEnum) after EOL of Python 3.10
 class Emoji(str, Enum):
     YELLOW = "\U0001f7e1"
@@ -1096,7 +1100,9 @@ def main():
             print(": ", end="")
 
             print(jsondiff.diff(all_ref_devices, all_cmp_devices, syntax="symmetric"))
-            if not args.ignore_devices:
+            if not args.ignore_devices and require_matching_device_sections(
+                reference_device_filter, compare_device_filter
+            ):
                 return -1
 
         try:

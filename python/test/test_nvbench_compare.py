@@ -224,6 +224,13 @@ def test_device_filter_parser_accepts_all_and_duplicate_ids(nvbench_compare):
     ]
 
 
+def test_explicit_device_filters_downgrade_device_mismatch_to_warning(nvbench_compare):
+    assert nvbench_compare.require_matching_device_sections(None, None)
+    assert not nvbench_compare.require_matching_device_sections([0], None)
+    assert not nvbench_compare.require_matching_device_sections(None, [1])
+    assert not nvbench_compare.require_matching_device_sections([0], [1])
+
+
 def test_compare_benches_pairs_filtered_devices_by_position(nvbench_compare):
     set_test_devices(
         nvbench_compare,
