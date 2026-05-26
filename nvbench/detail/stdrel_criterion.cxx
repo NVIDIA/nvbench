@@ -68,11 +68,14 @@ void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
     return;
   }
 
+  constexpr auto zero = nvbench::float64_t{0};
   // Compute convergence statistics using CUDA timings
   // dispersion includes Bessel correction to preserve legacy behavior
-  const auto dispersion = std::sqrt(m_variance_cuda_time / (one - f));
+  const auto unbiased_dispersion = ((m_variance_cuda_time >= zero) && (zero < f < one))
+                                     ? std::sqrt(m_variance_cuda_time / (one - f))
+                                     : std::numeric_limits<nvbench::float64_t>::quiet_NaN();
   const auto cuda_noise =
-    nvbench::detail::statistics::compute_relative_dispersion(dispersion, m_mean_cuda_time);
+    nvbench::detail::statistics::compute_relative_dispersion(unbiased_dispersion, m_mean_cuda_time);
   if (cuda_noise && std::isfinite(*cuda_noise))
   {
     m_consecutive_invalid_noise_estimates = 0;
