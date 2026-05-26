@@ -744,13 +744,6 @@ def compare_benches(
                     ),
                     None,
                 )
-                if ref_state is None:
-                    raise ValueError(
-                        f"benchmark {cmp_bench['name']!r} device pair "
-                        f"ref={ref_device_id} cmp={cmp_device_id} has no reference "
-                        f"occurrence {counters[cmp_state_name]} for state {cmp_state_name!r}"
-                    )
-
                 axis_values = cmp_state["axis_values"]
                 if not axis_values:
                     axis_values = []

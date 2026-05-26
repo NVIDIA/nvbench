@@ -174,7 +174,7 @@
   * Require at least `<seconds>` of accumulated execution time before normal
     `stdrel` convergence checks can stop the measurement. NVBench may stop
     earlier if the relative standard deviation estimate remains invalid for
-    64 consecutive samples.
+    a number of consecutive samples.
   * Only applies to `stdrel` stopping criterion.
   * Default is 0.5 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified

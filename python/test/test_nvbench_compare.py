@@ -86,6 +86,11 @@ def set_test_devices(nvbench_compare, ref_devices=None, cmp_devices=None):
     devices = [{"id": 0, "name": "Test GPU"}]
     nvbench_compare.all_ref_devices = devices if ref_devices is None else ref_devices
     nvbench_compare.all_cmp_devices = devices if cmp_devices is None else cmp_devices
+    nvbench_compare.config_count = 0
+    nvbench_compare.pass_count = 0
+    nvbench_compare.improvement_count = 0
+    nvbench_compare.regression_count = 0
+    nvbench_compare.unknown_count = 0
 
 
 def make_filter_plan(nvbench_compare, filter_actions=None):
