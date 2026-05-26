@@ -136,7 +136,7 @@
   * Applied to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
-## Stopping Criteria
+## Measurement Collection
 
 * `--timeout <seconds>`
   * Measurements will timeout after `<seconds>` have elapsed.
@@ -154,6 +154,8 @@
   * Default is 10 samples.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
+
+## Stopping Criteria
 
 * `--stopping-criterion <criterion>`
   * After `--min-samples` is satisfied, use `<criterion>` to detect if enough
