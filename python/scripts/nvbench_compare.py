@@ -767,11 +767,15 @@ def compare_benches(
                     ref_gpu_time, cmp_gpu_time
                 )
 
-                if cmp_estimate.center is None or ref_estimate.center is None:
-                    continue
-
                 cmp_time = cmp_estimate.center
                 ref_time = ref_estimate.center
+
+                if cmp_time is None or ref_time is None:
+                    continue
+
+                if cmp_time <= 0.0 or ref_time <= 0.0:
+                    continue
+
                 cmp_noise = cmp_estimate.relative_dispersion
                 ref_noise = ref_estimate.relative_dispersion
 
