@@ -100,6 +100,88 @@ nvbench::float64_t compute_mean(It first, It last)
   return std::accumulate(first, last, 0.0) / static_cast<nvbench::float64_t>(num);
 }
 
+class online_mean_variance
+{
+  nvbench::int64_t m_size{};
+  nvbench::float64_t m_mean{};
+  nvbench::float64_t m_variance{};
+
+public:
+  void update(nvbench::float64_t measurement) noexcept
+  {
+    ++m_size;
+
+    if (m_size > 2)
+    {
+      const auto diff    = measurement - m_mean;
+      constexpr auto one = nvbench::float64_t{1};
+      const auto f       = one / static_cast<nvbench::float64_t>(m_size);
+
+      m_mean += diff * f;
+
+      const auto diff2 = diff * diff;
+      m_variance += f * ((diff2 - m_variance) - f * diff2);
+    }
+    else if (m_size == 2)
+    {
+      const auto x1        = m_mean;
+      const auto x2        = measurement;
+      m_mean               = 0.5 * (x1 + x2);
+      const auto diff      = x1 - x2;
+      const auto half_diff = 0.5 * diff;
+      m_variance           = half_diff * half_diff;
+    }
+    else
+    {
+      m_mean = measurement;
+    }
+  }
+
+  void merge(const online_mean_variance &other) noexcept
+  {
+    if (other.m_size == 0)
+    {
+      return;
+    }
+    if (m_size == 0)
+    {
+      *this = other;
+      return;
+    }
+
+    const auto merged_size = m_size + other.m_size;
+    const auto diff        = other.m_mean - m_mean;
+    const auto f           = static_cast<nvbench::float64_t>(other.m_size) /
+                             static_cast<nvbench::float64_t>(merged_size);
+
+    m_mean += f * diff;
+
+    const auto diff2 = diff * diff;
+    m_variance += f * ((other.m_variance - m_variance + diff2) - f * diff2);
+    m_size = merged_size;
+  }
+
+  [[nodiscard]] nvbench::int64_t get_size() const noexcept { return m_size; }
+
+  [[nodiscard]] nvbench::float64_t get_mean() const noexcept { return m_mean; }
+
+  [[nodiscard]] nvbench::float64_t get_sample_variance() const noexcept { return m_variance; }
+
+  [[nodiscard]] nvbench::float64_t get_unbiased_variance() const noexcept
+  {
+    constexpr auto zero = nvbench::float64_t{0};
+    constexpr auto one  = nvbench::float64_t{1};
+
+    if (m_size <= 1 || m_variance < zero)
+    {
+      return std::numeric_limits<nvbench::float64_t>::quiet_NaN();
+    }
+
+    const auto f = one / static_cast<nvbench::float64_t>(m_size);
+    return m_variance / (one - f);
+  }
+};
+
 template <typename ValueType>
 std::size_t percentile_rank(int percentile, std::size_t size)
 {

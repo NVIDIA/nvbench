@@ -63,6 +63,115 @@ void test_mean()
   }
 }
 
+void test_online_mean_variance()
+{
+  {
+    statistics::online_mean_variance stats;
+    ASSERT(stats.get_size() == 0);
+    ASSERT(stats.get_mean() == 0.0);
+    ASSERT(stats.get_sample_variance() == 0.0);
+    ASSERT(std::isnan(stats.get_unbiased_variance()));
+  }
+
+  {
+    statistics::online_mean_variance stats;
+    stats.update(42.0);
+
+    ASSERT(stats.get_size() == 1);
+    ASSERT(stats.get_mean() == 42.0);
+    ASSERT(stats.get_sample_variance() == 0.0);
+    ASSERT(std::isnan(stats.get_unbiased_variance()));
+  }
+
+  {
+    statistics::online_mean_variance stats;
+    for (const auto value : std::vector<nvbench::float64_t>{1.0, 2.0, 3.0, 4.0, 5.0})
+    {
+      stats.update(value);
+    }
+
+    ASSERT(stats.get_size() == 5);
+    constexpr nvbench::float64_t eps = 1e-14;
+    ASSERT(std::abs(stats.get_mean() - 3.0) < eps);
+    ASSERT(std::abs(stats.get_sample_variance() - 2.0) < eps);
+    ASSERT(std::abs(stats.get_unbiased_variance() - 2.5) < eps);
+  }
+
+  {
+    statistics::online_mean_variance left;
+    left.update(1.0);
+
+    statistics::online_mean_variance right;
+    right.update(3.0);
+
+    left.merge(right);
+
+    ASSERT(left.get_size() == 2);
+    ASSERT(left.get_mean() == 2.0);
+    ASSERT(left.get_sample_variance() == 1.0);
+    ASSERT(left.get_unbiased_variance() == 2.0);
+  }
+
+  {
+    statistics::online_mean_variance left;
+    left.update(1.0);
+    left.update(2.0);
+
+    statistics::online_mean_variance right;
+    right.update(3.0);
+    right.update(4.0);
+    right.update(5.0);
+
+    statistics::online_mean_variance merged = left;
+    merged.merge(right);
+
+    statistics::online_mean_variance expected;
+    for (const auto value : std::vector<nvbench::float64_t>{1.0, 2.0, 3.0, 4.0, 5.0})
+    {
+      expected.update(value);
+    }
+
+    ASSERT(merged.get_size() == expected.get_size());
+    constexpr nvbench::float64_t eps = 1e-14;
+    ASSERT(std::abs(merged.get_mean() - expected.get_mean()) < eps);
+    ASSERT(std::abs(merged.get_sample_variance() - expected.get_sample_variance()) < eps);
+    ASSERT(std::abs(merged.get_unbiased_variance() - expected.get_unbiased_variance()) < eps);
+  }
+
+  {
+    statistics::online_mean_variance empty;
+    statistics::online_mean_variance stats;
+    stats.update(1.0);
+    stats.update(3.0);
+
+    const auto size              = stats.get_size();
+    const auto mean              = stats.get_mean();
+    const auto sample_variance   = stats.get_sample_variance();
+    const auto unbiased_variance = stats.get_unbiased_variance();
+
+    stats.merge(empty);
+
+    ASSERT(stats.get_size() == size);
+    ASSERT(stats.get_mean() == mean);
+    ASSERT(stats.get_sample_variance() == sample_variance);
+    ASSERT(stats.get_unbiased_variance() == unbiased_variance);
+  }
+
+  {
+    statistics::online_mean_variance stats;
+    stats.update(1.4e154);
+    stats.update(1.4e154);
+
+    statistics::online_mean_variance merged;
+    merged.merge(stats);
+
+    ASSERT(merged.get_size() == stats.get_size());
+    ASSERT(merged.get_mean() == stats.get_mean());
+    ASSERT(merged.get_sample_variance() == stats.get_sample_variance());
+    ASSERT(merged.get_unbiased_variance() == stats.get_unbiased_variance());
+  }
+}
+
 void test_std()
 {
   {
@@ -345,6 +454,7 @@ void test_slope_conversion()
 int main()
 {
   test_mean();
+  test_online_mean_variance();
   test_std();
   test_percentiles();
   test_quartiles();
