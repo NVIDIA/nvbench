@@ -19,7 +19,8 @@
 #include <nvbench/detail/statistics.cuh>
 #include <nvbench/detail/stdrel_criterion.cuh>
 
-#include <cmath> // std::sqrt
+#include <cmath>  // std::sqrt
+#include <limits> // std::numeric_limits
 
 namespace nvbench::detail
 {
