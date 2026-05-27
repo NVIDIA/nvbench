@@ -115,15 +115,23 @@ def parse_device_filter(device_arg, option_name):
     values = [value.strip() for value in device_arg.split(",")]
     if not all(values):
         raise ValueError(
-            f"{option_name} must be 'all', an integer, or comma-separated integers"
+            f"{option_name} must be 'all', a non-negative integer, "
+            "or comma-separated non-negative integers"
         )
 
     try:
-        return [int(value) for value in values]
+        device_ids = [int(value) for value in values]
     except ValueError as exc:
         raise ValueError(
-            f"{option_name} must be 'all', an integer, or comma-separated integers"
+            f"{option_name} must be 'all', a non-negative integer, "
+            "or comma-separated non-negative integers"
         ) from exc
+    if any(device_id < 0 for device_id in device_ids):
+        raise ValueError(
+            f"{option_name} must be 'all', a non-negative integer, "
+            "or comma-separated non-negative integers"
+        )
+    return device_ids
 
 
 def select_devices(all_devices, device_filter, option_name):
@@ -878,6 +886,11 @@ def compare_benches(
 
             cmp_device = find_device_by_id(cmp_device_id, all_cmp_devices)
             ref_device = find_device_by_id(ref_device_id, all_ref_devices)
+            if ref_device is None or cmp_device is None:
+                raise ValueError(
+                    f"benchmark {cmp_bench['name']!r} references device pair "
+                    f"ref={ref_device_id} cmp={cmp_device_id}, but device metadata is missing"
+                )
 
             if cmp_device == ref_device:
                 print(f"## [{cmp_device['id']}] {cmp_device['name']}\n")
@@ -1024,12 +1037,12 @@ def main() -> int:
     parser.add_argument(
         "--reference-devices",
         default="all",
-        help="Reference devices to compare: all, an integer id, or comma-separated ids",
+        help="Reference devices to compare: all, a non-negative integer id, or comma-separated ids",
     )
     parser.add_argument(
         "--compare-devices",
         default="all",
-        help="Compare devices to compare: all, an integer id, or comma-separated ids",
+        help="Compare devices to compare: all, a non-negative integer id, or comma-separated ids",
     )
     parser.add_argument(
         "-a",
