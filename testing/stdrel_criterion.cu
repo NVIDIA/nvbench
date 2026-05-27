@@ -28,6 +28,8 @@
 
 #include "test_asserts.cuh"
 
+constexpr nvbench::int64_t max_invalid_measurements_cap = 1024;
+
 nvbench::int64_t count_invalid_measurements_until_finished()
 {
   nvbench::criterion_params params;
@@ -36,10 +38,9 @@ nvbench::int64_t count_invalid_measurements_until_finished()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  const auto invalid_measurement                      = nvbench::float64_t{0};
-  constexpr nvbench::int64_t max_invalid_measurements = 1024;
-  nvbench::int64_t total_invalid_measurements         = 0;
-  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements)
+  const auto invalid_measurement              = nvbench::float64_t{0};
+  nvbench::int64_t total_invalid_measurements = 0;
+  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements_cap)
   {
     criterion.add_measurement(invalid_measurement);
     ++total_invalid_measurements;
@@ -163,9 +164,8 @@ void test_stdrel_invalid_noise_bypasses_min_time()
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
 
-  constexpr nvbench::int64_t max_invalid_measurements = 1024;
-  nvbench::int64_t total_invalid_measurements         = 0;
-  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements)
+  nvbench::int64_t total_invalid_measurements = 0;
+  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements_cap)
   {
     criterion.add_measurement(invalid_measurement);
     ++total_invalid_measurements;
