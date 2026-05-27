@@ -803,24 +803,25 @@ def compare_benches(
 
                 if plot_along:
                     axis_name = []
-                    axis_value = "--"
+                    axis_value = None
                     for av in axis_values:
                         if av["name"] != plot_along:
                             axis_name.append(f"""{av["name"]} = {av["value"]}""")
                         else:
                             axis_value = float(av["value"])
-                    axis_name = ", ".join(axis_name)
+                    if axis_value is not None:
+                        axis_name = ", ".join(axis_name)
 
-                    if axis_name not in plot_data["cmp"]:
-                        plot_data["cmp"][axis_name] = {}
-                        plot_data["ref"][axis_name] = {}
-                        plot_data["cmp_noise"][axis_name] = {}
-                        plot_data["ref_noise"][axis_name] = {}
+                        if axis_name not in plot_data["cmp"]:
+                            plot_data["cmp"][axis_name] = {}
+                            plot_data["ref"][axis_name] = {}
+                            plot_data["cmp_noise"][axis_name] = {}
+                            plot_data["ref_noise"][axis_name] = {}
 
-                    plot_data["cmp"][axis_name][axis_value] = cmp_time
-                    plot_data["ref"][axis_name][axis_value] = ref_time
-                    plot_data["cmp_noise"][axis_name][axis_value] = cmp_noise
-                    plot_data["ref_noise"][axis_name][axis_value] = ref_noise
+                        plot_data["cmp"][axis_name][axis_value] = cmp_time
+                        plot_data["ref"][axis_name][axis_value] = ref_time
+                        plot_data["cmp_noise"][axis_name][axis_value] = cmp_noise
+                        plot_data["ref_noise"][axis_name][axis_value] = ref_noise
 
                 global config_count
                 global unknown_count
