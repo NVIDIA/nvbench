@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <functional>
 #include <iterator>
@@ -182,9 +183,9 @@ public:
   }
 };
 
-template <typename ValueType>
-std::size_t percentile_rank(int percentile, std::size_t size)
+inline std::size_t percentile_rank(int percentile, std::size_t size)
 {
+  assert(size > 0 && "percentile_rank requires non-empty sample set");
   const auto p        = std::clamp(percentile, 0, 100);
   const auto max_rank = static_cast<nvbench::float64_t>(size - 1);
   const auto q        = static_cast<nvbench::float64_t>(p) / 100.0;
@@ -206,7 +207,7 @@ std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> s
 
   for (std::size_t i = 0; i < N; ++i)
   {
-    result[i] = samples[percentile_rank<ValueType>(percentiles[i], samples.size())];
+    result[i] = samples[percentile_rank(percentiles[i], samples.size())];
   }
   return result;
 }
@@ -261,9 +262,9 @@ quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> sam
   };
 
   const auto n       = samples.size();
-  const auto rank_25 = percentile_rank<ValueType>(25, n);
-  const auto rank_50 = percentile_rank<ValueType>(50, n);
-  const auto rank_75 = percentile_rank<ValueType>(75, n);
+  const auto rank_25 = percentile_rank(25, n);
+  const auto rank_50 = percentile_rank(50, n);
+  const auto rank_75 = percentile_rank(75, n);
 
   const auto q2_iter = select(samples.begin(), rank_50, samples.end());
   const auto q2      = *q2_iter;
