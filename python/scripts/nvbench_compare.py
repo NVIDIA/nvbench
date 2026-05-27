@@ -912,6 +912,7 @@ def compare_benches(
             print("")
 
             if plot_along:
+                plt.figure()
                 plt.xscale("log")
                 plt.yscale("log")
                 plt.xlabel(plot_along)

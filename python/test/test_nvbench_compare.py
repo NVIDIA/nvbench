@@ -16,6 +16,7 @@ def nvbench_compare(monkeypatch):
             return "black"
 
     pyplot = types.ModuleType("matplotlib.pyplot")
+    pyplot.figure = lambda *args, **kwargs: None
     pyplot.xscale = lambda *args, **kwargs: None
     pyplot.yscale = lambda *args, **kwargs: None
     pyplot.xlabel = lambda *args, **kwargs: None
