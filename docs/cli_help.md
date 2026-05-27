@@ -171,10 +171,12 @@
 ### "stdrel" Stopping Criterion Parameters
 
 * `--min-time <seconds>`
-  * Require at least `<seconds>` of accumulated execution time before normal
-    `stdrel` convergence checks can stop the measurement. NVBench may stop
-    earlier if the relative standard deviation estimate remains invalid for
-    a number of consecutive samples.
+  * Require at least `<seconds>` of accumulated execution time before `stdrel`
+    can stop the measurement based on convergence of relative standard
+    deviation (stdev/mean). As an implementation detail, NVBench may stop
+    earlier if the relative standard deviation estimate remains non-finite
+    persistently; this prevents non-converging measurements from running
+    indefinitely.
   * Only applies to `stdrel` stopping criterion.
   * Default is 0.5 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
