@@ -163,7 +163,7 @@
     analysis.
   * Stopping criteria provided by NVBench are:
     * "stdrel": (default) Stops when relative standard deviation falls below
-      max-noise, or when the noise estimate stabilizes without reaching that
+      `--max-noise`, or when the noise estimate stabilizes without reaching that
       threshold.
     * "entropy": Stops when the entropy estimate of all collected samples converges.
     * "sample-count": Stops after a target number of samples.
