@@ -30,13 +30,15 @@
 
 constexpr nvbench::int64_t max_invalid_measurements_cap = 1024;
 
-nvbench::int64_t count_invalid_measurements_until_finished()
+nvbench::int64_t count_invalid_measurements_until_finished(nvbench::float64_t min_time)
 {
   nvbench::criterion_params params;
-  params.set_float64("min-time", 0.0);
+  params.set_float64("min-time", min_time);
 
   nvbench::detail::stdrel_criterion criterion;
   criterion.initialize(params);
+  // freshly initialized criterion starts as not is_finished
+  ASSERT(!criterion.is_finished());
 
   const auto invalid_measurement              = nvbench::float64_t{0};
   nvbench::int64_t total_invalid_measurements = 0;
@@ -45,7 +47,6 @@ nvbench::int64_t count_invalid_measurements_until_finished()
     criterion.add_measurement(invalid_measurement);
     ++total_invalid_measurements;
   }
-  ASSERT(total_invalid_measurements > 0);
   ASSERT(criterion.is_finished());
   return total_invalid_measurements;
 }
@@ -119,7 +120,8 @@ void test_stdrel_needs_enough_samples()
 
 void test_stdrel_uses_sample_standard_deviation()
 {
-  const int n                = 26;
+  using nvbench::detail::statistics::min_samples_for_noise_estimate;
+  const nvbench::int64_t n   = std::max(nvbench::int64_t{26}, min_samples_for_noise_estimate);
   const nvbench::float64_t a = 6;
   const nvbench::float64_t b = 0;
   // for sequence t = a * i + b, 1 <= i <= n
@@ -152,26 +154,14 @@ void test_stdrel_uses_sample_standard_deviation()
 
 void test_stdrel_finishes_with_persistently_invalid_noise()
 {
-  [[maybe_unused]] const auto count = count_invalid_measurements_until_finished();
+  const auto count = count_invalid_measurements_until_finished(0.0);
+  ASSERT(count > 0);
 }
 
 void test_stdrel_invalid_noise_bypasses_min_time()
 {
-  constexpr nvbench::float64_t invalid_measurement{0};
-  nvbench::criterion_params params;
-  params.set_float64("min-time", 1.0);
-
-  nvbench::detail::stdrel_criterion criterion;
-  criterion.initialize(params);
-
-  nvbench::int64_t total_invalid_measurements = 0;
-  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements_cap)
-  {
-    criterion.add_measurement(invalid_measurement);
-    ++total_invalid_measurements;
-  }
-  ASSERT(total_invalid_measurements > 0);
-  ASSERT(criterion.is_finished());
+  const auto count = count_invalid_measurements_until_finished(1.0);
+  ASSERT(count > 0);
 }
 
 int main()
