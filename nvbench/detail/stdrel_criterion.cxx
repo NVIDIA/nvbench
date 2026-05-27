@@ -28,7 +28,9 @@ namespace
 {
 
 // Allow transient invalid noise estimates while still terminating when
-// stdev relative noise cannot be computed persistently.
+// stdev relative noise cannot be computed persistently. The limit is high
+// enough to tolerate short startup/transient phases, but bounded so a stream
+// of invalid estimates cannot run until the wall-time timeout.
 constexpr nvbench::int64_t invalid_noise_estimate_limit = 64;
 
 } // namespace
