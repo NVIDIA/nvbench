@@ -29,8 +29,8 @@ def version_tuple(v):
 
 tabulate_version = version_tuple(tabulate.__version__)
 
-all_ref_devices = []
-all_cmp_devices = []
+all_ref_devices: list[dict] = []
+all_cmp_devices: list[dict] = []
 config_count = 0
 unknown_count = 0
 improvement_count = 0
@@ -371,10 +371,10 @@ def format_axis_value(axis_name, axis_value, axes):
         return format_string_axis_value(axis_name, axis_value, axes)
 
 
-def make_display(name: str, display_values: [list[str]]) -> str:
+def make_display(name: str, display_values: list[str]) -> str:
     open_bracket, close_bracket = ("[", "]") if len(display_values) > 1 else ("", "")
-    display_values = ",".join(display_values)
-    return f"{name}={open_bracket}{display_values}{close_bracket}"
+    joined_values = ",".join(display_values)
+    return f"{name}={open_bracket}{joined_values}{close_bracket}"
 
 
 def parse_axis_filters(axis_args):
