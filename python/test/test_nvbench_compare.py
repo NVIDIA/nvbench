@@ -11,6 +11,30 @@ import pytest
 
 @pytest.fixture
 def nvbench_compare(monkeypatch):
+    class DummyLine:
+        def get_color(self):
+            return "black"
+
+    pyplot = types.ModuleType("matplotlib.pyplot")
+    pyplot.xscale = lambda *args, **kwargs: None
+    pyplot.yscale = lambda *args, **kwargs: None
+    pyplot.xlabel = lambda *args, **kwargs: None
+    pyplot.ylabel = lambda *args, **kwargs: None
+    pyplot.title = lambda *args, **kwargs: None
+    pyplot.plot = lambda *args, **kwargs: [DummyLine()]
+    pyplot.fill_between = lambda *args, **kwargs: None
+    pyplot.legend = lambda *args, **kwargs: None
+    pyplot.show = lambda *args, **kwargs: None
+
+    matplotlib = types.ModuleType("matplotlib")
+    matplotlib.pyplot = pyplot
+    monkeypatch.setitem(sys.modules, "matplotlib", matplotlib)
+    monkeypatch.setitem(sys.modules, "matplotlib.pyplot", pyplot)
+    monkeypatch.setitem(
+        sys.modules,
+        "seaborn",
+        types.SimpleNamespace(set_theme=lambda *args, **kwargs: None),
+    )
     monkeypatch.setitem(
         sys.modules, "jsondiff", types.SimpleNamespace(diff=lambda *args, **kwargs: {})
     )
@@ -336,6 +360,44 @@ def test_compare_benches_marks_unavailable_noise_unknown(nvbench_compare):
     assert nvbench_compare.improvement_count == 0
     assert nvbench_compare.regression_count == 0
     assert nvbench_compare.unknown_count == 2
+
+
+def test_plot_along_skips_states_without_selected_axis(nvbench_compare):
+    set_test_devices(nvbench_compare)
+
+    ref_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "with_axis", axis_value=1),
+                make_state(nvbench_compare, "without_axis"),
+            ]
+        )
+    ]
+    cmp_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "with_axis", axis_value=1),
+                make_state(nvbench_compare, "without_axis"),
+            ]
+        )
+    ]
+
+    nvbench_compare.compare_benches(
+        ref_benches,
+        cmp_benches,
+        threshold=0.0,
+        plot_along="A",
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert nvbench_compare.config_count == 2
+    assert nvbench_compare.pass_count == 2
+    assert nvbench_compare.improvement_count == 0
+    assert nvbench_compare.regression_count == 0
+    assert nvbench_compare.unknown_count == 0
 
 
 def test_device_filter_parser_accepts_all_and_duplicate_ids(nvbench_compare):
