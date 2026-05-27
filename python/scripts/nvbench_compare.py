@@ -993,10 +993,11 @@ def compare_benches(
 
 def main() -> int:
     """
-    Returns regression_count.
-      - 0 means no slow-downs detected.
-      - Positive return value corresponds to the number of slow-downs detected.
-      - -1 signals an error has occurred.
+    Returns a process exit code.
+      - 0 means the comparison completed successfully.
+      - 1 signals an error has occurred.
+
+    The number of detected regressions is reported in the summary output.
     """
     help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
     parser = argparse.ArgumentParser(prog="nvbench_compare", usage=help_text)
@@ -1075,11 +1076,11 @@ def main() -> int:
         )
     except ValueError as exc:
         print(str(exc))
-        return -1
+        return 1
 
     if len(files_or_dirs) != 2:
         parser.print_help()
-        return -1
+        return 1
 
     # if provided two directories, find all the exactly named files
     # in both and treat them as the reference and compare
@@ -1115,14 +1116,14 @@ def main() -> int:
             )
         except ValueError as exc:
             print(str(exc))
-            return -1
+            return 1
 
         if len(all_ref_devices) != len(all_cmp_devices):
             print(
                 f"--reference-devices selected {len(all_ref_devices)} device(s), "
                 f"but --compare-devices selected {len(all_cmp_devices)} device(s)"
             )
-            return -1
+            return 1
 
         if all_ref_devices != all_cmp_devices:
             warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
@@ -1134,7 +1135,7 @@ def main() -> int:
             if not args.ignore_devices and require_matching_device_sections(
                 reference_device_filter, compare_device_filter
             ):
-                return -1
+                return 1
 
         try:
             compare_benches(
@@ -1151,7 +1152,7 @@ def main() -> int:
             )
         except ValueError as exc:
             print(str(exc))
-            return -1
+            return 1
 
     print("# Summary\n")
     print(f"- Total Matches: {config_count}")
@@ -1159,7 +1160,7 @@ def main() -> int:
     print(f"  - Improvement (abs(%Diff) > max_noise, %Diff < 0): {improvement_count}")
     print(f"  - Regression  (abs(%Diff) > max_noise, %Diff > 0): {regression_count}")
     print(f"  - Unknown     (infinite or unavailable noise): {unknown_count}")
-    return regression_count
+    return 0
 
 
 if __name__ == "__main__":

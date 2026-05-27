@@ -560,3 +560,33 @@ def test_axis_filter_applies_to_most_recent_benchmark(monkeypatch, nvbench_compa
     assert nvbench_compare.improvement_count == 0
     assert nvbench_compare.regression_count == 0
     assert nvbench_compare.unknown_count == 0
+
+
+def test_main_returns_success_exit_code_when_regressions_are_detected(
+    monkeypatch, capsys, nvbench_compare
+):
+    devices = [{"id": 0, "name": "Test GPU"}]
+    ref_root = {
+        "devices": devices,
+        "benchmarks": [
+            make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])
+        ],
+    }
+    cmp_root = {
+        "devices": devices,
+        "benchmarks": [
+            make_benchmark([make_state(nvbench_compare, "state", mean="1.2")])
+        ],
+    }
+
+    def read_file(path):
+        return ref_root if path == "ref.json" else cmp_root
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", read_file)
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 0
+    assert nvbench_compare.regression_count == 1
+    assert (
+        "Regression  (abs(%Diff) > max_noise, %Diff > 0): 1" in capsys.readouterr().out
+    )
