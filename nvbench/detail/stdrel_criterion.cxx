@@ -16,10 +16,24 @@
  *  limitations under the License.
  */
 
+#include <nvbench/detail/statistics.cuh>
 #include <nvbench/detail/stdrel_criterion.cuh>
+
+#include <cmath> // std::sqrt
 
 namespace nvbench::detail
 {
+
+namespace
+{
+
+// Allow transient invalid noise estimates while still terminating when
+// stdev relative noise cannot be computed persistently. The limit is high
+// enough to tolerate short startup/transient phases, but bounded so a stream
+// of invalid estimates cannot run until the wall-time timeout.
+constexpr nvbench::int64_t invalid_noise_estimate_limit = 64;
+
+} // namespace
 
 stdrel_criterion::stdrel_criterion()
     : stopping_criterion_base{"stdrel",
@@ -29,38 +43,56 @@ stdrel_criterion::stdrel_criterion()
 
 void stdrel_criterion::do_initialize()
 {
-  m_total_samples   = 0;
-  m_total_cuda_time = 0.0;
-  m_cuda_times.clear();
+  m_cuda_times_summary                  = {};
+  m_consecutive_invalid_noise_estimates = 0;
   m_noise_tracker.clear();
 }
 
 void stdrel_criterion::do_add_measurement(nvbench::float64_t measurement)
 {
-  m_total_samples++;
-  m_total_cuda_time += measurement;
-  m_cuda_times.push_back(measurement);
+  m_cuda_times_summary.update(measurement);
 
-  // Compute convergence statistics using CUDA timings:
-  const auto mean_cuda_time = m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples);
-  const auto cuda_stdev     = nvbench::detail::statistics::standard_deviation(m_cuda_times.cbegin(),
-                                                                              m_cuda_times.cend(),
-                                                                              mean_cuda_time);
-  const auto cuda_rel_stdev = cuda_stdev / mean_cuda_time;
-  if (std::isfinite(cuda_rel_stdev))
+  if (m_cuda_times_summary.get_size() < statistics::min_samples_for_noise_estimate)
   {
-    m_noise_tracker.push_back(cuda_rel_stdev);
+    return;
+  }
+
+  // Compute convergence statistics using CUDA timings
+  // dispersion includes Bessel correction to preserve legacy behavior
+  const auto unbiased_dispersion = std::sqrt(m_cuda_times_summary.get_unbiased_variance());
+  const auto cuda_noise = statistics::compute_relative_dispersion(unbiased_dispersion,
+                                                                  m_cuda_times_summary.get_mean());
+  if (cuda_noise && std::isfinite(*cuda_noise))
+  {
+    m_consecutive_invalid_noise_estimates = 0;
+    m_noise_tracker.push_back(*cuda_noise);
+  }
+  else
+  {
+    ++m_consecutive_invalid_noise_estimates;
   }
 }
 
 bool stdrel_criterion::do_is_finished()
 {
-  if (m_total_cuda_time <= m_params.get_float64("min-time"))
+  if (m_consecutive_invalid_noise_estimates >= invalid_noise_estimate_limit)
+  {
+    return true;
+  }
+
+  const auto total_cuda_time = m_cuda_times_summary.get_mean() *
+                               static_cast<nvbench::float64_t>(m_cuda_times_summary.get_size());
+  if (total_cuda_time <= m_params.get_float64("min-time"))
   {
     return false;
   }
 
   if (m_noise_tracker.empty())
+  {
+    return false;
+  }
+
+  if (m_consecutive_invalid_noise_estimates != 0)
   {
     return false;
   }
@@ -71,29 +103,31 @@ bool stdrel_criterion::do_is_finished()
     return true;
   }
 
-  // Check if the noise (cuda rel stdev) has converged by inspecting a
+  // Check if the noise has converged by inspecting a
   // trailing window of recorded noise measurements.
   // This helps identify benchmarks that are inherently noisy and would
-  // never converge to the target stdev threshold. This check ensures that the
-  // benchmark will end if the stdev stabilizes above the target threshold.
+  // never converge to the target noise threshold. This check ensures that the
+  // benchmark will end if the noise stabilizes above the target threshold.
   // Gather some iterations before checking noise, and limit how often we
   // check this.
-  if (m_noise_tracker.size() > 64 && (m_total_samples % 16 == 0))
+  if (m_noise_tracker.size() > 64 && (m_cuda_times_summary.get_size() % 16 == 0))
   {
     // Use the current noise as the stdev reference.
     const auto current_noise = m_noise_tracker.back();
-    const auto noise_stdev =
-      nvbench::detail::statistics::standard_deviation(m_noise_tracker.cbegin(),
-                                                      m_noise_tracker.cend(),
-                                                      current_noise);
-    const auto noise_rel_stdev = noise_stdev / current_noise;
-
-    // If the rel stdev of the last N cuda noise measurements is less than
-    // 5%, consider the result stable.
-    const auto noise_threshold = 0.05;
-    if (noise_rel_stdev < noise_threshold)
+    if (std::isfinite(current_noise) && current_noise > 0.0)
     {
-      return true;
+      const auto noise_stdev     = statistics::standard_deviation(m_noise_tracker.cbegin(),
+                                                                  m_noise_tracker.cend(),
+                                                                  current_noise);
+      const auto noise_rel_stdev = noise_stdev / current_noise;
+
+      // If the rel stdev of the last N cuda noise measurements is less than
+      // 5%, consider the result stable.
+      const auto noise_threshold = 0.05;
+      if (noise_rel_stdev < noise_threshold)
+      {
+        return true;
+      }
     }
   }
 
