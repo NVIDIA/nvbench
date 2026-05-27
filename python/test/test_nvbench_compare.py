@@ -113,23 +113,33 @@ def make_benchmark(states, *, name="bench"):
     }
 
 
-def set_test_devices(nvbench_compare, ref_devices=None, cmp_devices=None):
+def set_test_devices(monkeypatch, nvbench_compare, ref_devices=None, cmp_devices=None):
     devices = [{"id": 0, "name": "Test GPU"}]
-    nvbench_compare.all_ref_devices = devices if ref_devices is None else ref_devices
-    nvbench_compare.all_cmp_devices = devices if cmp_devices is None else cmp_devices
-    nvbench_compare.config_count = 0
-    nvbench_compare.pass_count = 0
-    nvbench_compare.improvement_count = 0
-    nvbench_compare.regression_count = 0
-    nvbench_compare.unknown_count = 0
+    monkeypatch.setattr(
+        nvbench_compare,
+        "all_ref_devices",
+        devices if ref_devices is None else ref_devices,
+    )
+    monkeypatch.setattr(
+        nvbench_compare,
+        "all_cmp_devices",
+        devices if cmp_devices is None else cmp_devices,
+    )
+    monkeypatch.setattr(nvbench_compare, "config_count", 0)
+    monkeypatch.setattr(nvbench_compare, "pass_count", 0)
+    monkeypatch.setattr(nvbench_compare, "improvement_count", 0)
+    monkeypatch.setattr(nvbench_compare, "regression_count", 0)
+    monkeypatch.setattr(nvbench_compare, "unknown_count", 0)
 
 
 def make_filter_plan(nvbench_compare, filter_actions=None):
     return nvbench_compare.build_benchmark_filter_plan(filter_actions or [])
 
 
-def test_compare_benches_accepts_matching_duplicate_state_counts(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_compare_benches_accepts_matching_duplicate_state_counts(
+    monkeypatch, nvbench_compare
+):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     ref_benches = [
         make_benchmark(
@@ -168,8 +178,10 @@ def test_compare_benches_accepts_matching_duplicate_state_counts(nvbench_compare
     assert nvbench_compare.unknown_count == 0
 
 
-def test_compare_benches_rejects_swapped_duplicate_state_counts(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_compare_benches_rejects_swapped_duplicate_state_counts(
+    monkeypatch, nvbench_compare
+):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     ref_benches = [
         make_benchmark(
@@ -207,8 +219,10 @@ def test_compare_benches_rejects_swapped_duplicate_state_counts(nvbench_compare)
         )
 
 
-def test_compare_benches_matches_duplicate_states_after_axis_filter(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_compare_benches_matches_duplicate_states_after_axis_filter(
+    monkeypatch, nvbench_compare
+):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     ref_benches = [
         make_benchmark(
@@ -245,8 +259,8 @@ def test_compare_benches_matches_duplicate_states_after_axis_filter(nvbench_comp
     assert nvbench_compare.unknown_count == 0
 
 
-def test_compare_benches_skips_non_finite_centers(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_compare_benches_skips_non_finite_centers(monkeypatch, nvbench_compare):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     ref_benches = [
         make_benchmark(
@@ -285,8 +299,10 @@ def test_compare_benches_skips_non_finite_centers(nvbench_compare):
     assert nvbench_compare.unknown_count == 0
 
 
-def test_compare_benches_prefers_median_and_iqr_when_available(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_compare_benches_prefers_median_and_iqr_when_available(
+    monkeypatch, nvbench_compare
+):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     ref_state = make_state(nvbench_compare, "state", mean="1.0", noise="0.01")
     ref_state["summaries"].extend(
@@ -321,8 +337,8 @@ def test_compare_benches_prefers_median_and_iqr_when_available(nvbench_compare):
     assert nvbench_compare.unknown_count == 0
 
 
-def test_compare_benches_marks_unavailable_noise_unknown(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_compare_benches_marks_unavailable_noise_unknown(monkeypatch, nvbench_compare):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     missing_noise_ref = make_state(nvbench_compare, "missing_noise")
     missing_noise_ref["summaries"] = [
@@ -362,8 +378,8 @@ def test_compare_benches_marks_unavailable_noise_unknown(nvbench_compare):
     assert nvbench_compare.unknown_count == 2
 
 
-def test_plot_along_skips_states_without_selected_axis(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_compare):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     ref_benches = [
         make_benchmark(
@@ -417,8 +433,11 @@ def test_explicit_device_filters_downgrade_device_mismatch_to_warning(nvbench_co
     assert not nvbench_compare.require_matching_device_sections([0], [1])
 
 
-def test_compare_benches_pairs_filtered_devices_by_position(nvbench_compare):
+def test_compare_benches_pairs_filtered_devices_by_position(
+    monkeypatch, nvbench_compare
+):
     set_test_devices(
+        monkeypatch,
         nvbench_compare,
         ref_devices=[
             {"id": 0, "name": "Reference GPU 0"},
@@ -467,8 +486,8 @@ def test_compare_benches_pairs_filtered_devices_by_position(nvbench_compare):
     assert nvbench_compare.unknown_count == 0
 
 
-def test_axis_filter_applies_to_most_recent_benchmark(nvbench_compare):
-    set_test_devices(nvbench_compare)
+def test_axis_filter_applies_to_most_recent_benchmark(monkeypatch, nvbench_compare):
+    set_test_devices(monkeypatch, nvbench_compare)
 
     ref_benches = [
         make_benchmark(
