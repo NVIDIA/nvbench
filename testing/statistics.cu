@@ -283,6 +283,7 @@ void test_quartiles()
     assert_quartiles_equal(actual, statistics::quartiles_t<nvbench::float64_t>{20.0, 30.0, 30.0});
   }
 
+  // test around threshold when public API switches between implementations
   for (const auto n : std::array<std::size_t, 3>{4095, 4096, 4097})
   {
     std::vector<nvbench::float64_t> data(n);
