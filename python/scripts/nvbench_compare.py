@@ -969,7 +969,13 @@ def compare_benches(
         plot_comparison_entries(comparison_entries, title=title, dark=dark)
 
 
-def main():
+def main() -> int:
+    """
+    Returns regression_count.
+      - 0 means no slow-downs detected.
+      - Positive return value corresponds to the number of slow-downs detected.
+      - -1 signals an error has occurred.
+    """
     help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
     parser = argparse.ArgumentParser(prog="nvbench_compare", usage=help_text)
     parser.add_argument(
