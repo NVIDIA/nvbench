@@ -155,7 +155,7 @@ void test_stdrel_uses_sample_standard_deviation()
 void test_stdrel_finishes_with_persistently_invalid_noise()
 {
   const auto count = count_invalid_measurements_until_finished(0.0);
-  ASSERT(count > 0);
+  ASSERT(count > 1);
 }
 
 void test_stdrel_invalid_noise_bypasses_min_time()
