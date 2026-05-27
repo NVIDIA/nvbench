@@ -162,7 +162,9 @@
   * If both GPU and CPU times are gathered, GPU time is used for stopping
     analysis.
   * Stopping criteria provided by NVBench are:
-    * "stdrel": (default) Stops when relative standard deviation falls below max-noise.
+    * "stdrel": (default) Stops when relative standard deviation falls below
+      max-noise, or when the noise estimate stabilizes without reaching that
+      threshold.
     * "entropy": Stops when the entropy estimate of all collected samples converges.
     * "sample-count": Stops after a target number of samples.
   * Each stopping criterion may provide additional parameters to customize
@@ -172,19 +174,21 @@
 
 * `--min-time <seconds>`
   * Require at least `<seconds>` of accumulated execution time before `stdrel`
-    can stop the measurement based on convergence of relative standard
-    deviation (stdev/mean). As an implementation detail, NVBench may stop
-    earlier if the relative standard deviation estimate remains non-finite
-    persistently; this prevents non-converging measurements from running
-    indefinitely.
+    can stop based on the relative standard deviation estimate, either because
+    it falls below `--max-noise` or because it stabilizes above that threshold.
+    To avoid running indefinitely when relative standard deviation cannot be
+    computed reliably, NVBench may also stop earlier after repeated non-finite
+    noise estimates.
   * Only applies to `stdrel` stopping criterion.
   * Default is 0.5 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
 * `--max-noise <value>`
-  * Gather samples until the error in the measurement drops below `<value>`.
-  * Noise is specified as the percent relative standard deviation (stdev/mean).
+  * Target relative standard deviation (stdev/mean). `stdrel` stops once the
+    estimate falls below this value, or once the estimate has stabilized above
+    it and additional samples are unlikely to improve convergence.
+  * Noise is specified as the percent relative standard deviation.
   * Default is 0.5% (`--max-noise 0.5`)
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
