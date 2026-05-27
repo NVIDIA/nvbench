@@ -784,6 +784,9 @@ def compare_benches(
                 if cmp_time is None or ref_time is None:
                     continue
 
+                if not math.isfinite(cmp_time) or not math.isfinite(ref_time):
+                    continue
+
                 if cmp_time <= 0.0 or ref_time <= 0.0:
                     continue
 

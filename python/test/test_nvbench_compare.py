@@ -66,6 +66,13 @@ def make_state(
     }
 
 
+def make_summary(nvbench_compare, tag, value):
+    return {
+        "tag": getattr(nvbench_compare, tag),
+        "data": [{"name": "value", "type": "float64", "value": value}],
+    }
+
+
 def make_benchmark(states, *, name="bench"):
     devices = []
     for state in states:
@@ -212,6 +219,123 @@ def test_compare_benches_matches_duplicate_states_after_axis_filter(nvbench_comp
     assert nvbench_compare.improvement_count == 0
     assert nvbench_compare.regression_count == 0
     assert nvbench_compare.unknown_count == 0
+
+
+def test_compare_benches_skips_non_finite_centers(nvbench_compare):
+    set_test_devices(nvbench_compare)
+
+    ref_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "finite", mean="1.0"),
+                make_state(nvbench_compare, "nan", mean="nan"),
+                make_state(nvbench_compare, "inf", mean="inf"),
+            ]
+        )
+    ]
+    cmp_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "finite", mean="1.0"),
+                make_state(nvbench_compare, "nan", mean="1.0"),
+                make_state(nvbench_compare, "inf", mean="1.0"),
+            ]
+        )
+    ]
+
+    nvbench_compare.compare_benches(
+        ref_benches,
+        cmp_benches,
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert nvbench_compare.config_count == 1
+    assert nvbench_compare.pass_count == 1
+    assert nvbench_compare.improvement_count == 0
+    assert nvbench_compare.regression_count == 0
+    assert nvbench_compare.unknown_count == 0
+
+
+def test_compare_benches_prefers_median_and_iqr_when_available(nvbench_compare):
+    set_test_devices(nvbench_compare)
+
+    ref_state = make_state(nvbench_compare, "state", mean="1.0", noise="0.01")
+    ref_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.0"),
+            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+        ]
+    )
+    cmp_state = make_state(nvbench_compare, "state", mean="1.0", noise="0.01")
+    cmp_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.2"),
+            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+        ]
+    )
+
+    nvbench_compare.compare_benches(
+        [make_benchmark([ref_state])],
+        [make_benchmark([cmp_state])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert nvbench_compare.config_count == 1
+    assert nvbench_compare.pass_count == 0
+    assert nvbench_compare.improvement_count == 0
+    assert nvbench_compare.regression_count == 1
+    assert nvbench_compare.unknown_count == 0
+
+
+def test_compare_benches_marks_unavailable_noise_unknown(nvbench_compare):
+    set_test_devices(nvbench_compare)
+
+    missing_noise_ref = make_state(nvbench_compare, "missing_noise")
+    missing_noise_ref["summaries"] = [
+        make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "1.0")
+    ]
+    missing_noise_cmp = make_state(nvbench_compare, "missing_noise")
+    missing_noise_cmp["summaries"] = [
+        make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "1.001")
+    ]
+
+    null_noise_ref = make_state(nvbench_compare, "null_noise")
+    null_noise_ref["summaries"] = [
+        make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "1.0"),
+        make_summary(nvbench_compare, "GPU_TIME_STDEV_RELATIVE_TAG", None),
+    ]
+    null_noise_cmp = make_state(nvbench_compare, "null_noise")
+    null_noise_cmp["summaries"] = [
+        make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "1.001"),
+        make_summary(nvbench_compare, "GPU_TIME_STDEV_RELATIVE_TAG", None),
+    ]
+
+    nvbench_compare.compare_benches(
+        [make_benchmark([missing_noise_ref, null_noise_ref])],
+        [make_benchmark([missing_noise_cmp, null_noise_cmp])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert nvbench_compare.config_count == 2
+    assert nvbench_compare.pass_count == 0
+    assert nvbench_compare.improvement_count == 0
+    assert nvbench_compare.regression_count == 0
+    assert nvbench_compare.unknown_count == 2
 
 
 def test_device_filter_parser_accepts_all_and_duplicate_ids(nvbench_compare):
