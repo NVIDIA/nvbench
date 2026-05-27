@@ -103,9 +103,9 @@ nvbench::float64_t compute_mean(It first, It last)
 
 class online_mean_variance
 {
-  nvbench::int64_t m_size{};
-  nvbench::float64_t m_mean{};
-  nvbench::float64_t m_variance{};
+  nvbench::int64_t m_size{};       // number of samples
+  nvbench::float64_t m_mean{};     // sample mean
+  nvbench::float64_t m_variance{}; // unbiased (MLE) sample variance
 
 public:
   void update(nvbench::float64_t measurement) noexcept
@@ -118,22 +118,29 @@ public:
       constexpr auto one = nvbench::float64_t{1};
       const auto f       = one / static_cast<nvbench::float64_t>(m_size);
 
+      // mu_{n+1} = mu_{n} + (x_{n+1} - mu_{n}) / (n+1)
       m_mean += diff * f;
 
+      // var_{n+1} = var_{n} + (n/(n+1) * diff * diff - var_{n}) / (n+1)
       const auto diff2 = diff * diff;
       m_variance += f * ((diff2 - m_variance) - f * diff2);
     }
     else if (m_size == 2)
     {
-      const auto x1        = m_mean;
-      const auto x2        = measurement;
-      m_mean               = 0.5 * (x1 + x2);
+      const auto x1 = m_mean;
+      const auto x2 = measurement;
+
+      // mu = (x1 + x2) /2
+      m_mean = 0.5 * (x1 + x2);
+
+      // var = ((x1 - x2)/2)^2
       const auto diff      = x1 - x2;
       const auto half_diff = 0.5 * diff;
       m_variance           = half_diff * half_diff;
     }
     else
     {
+      // mu = x1, var = 0
       m_mean = measurement;
     }
   }
@@ -155,8 +162,10 @@ public:
     const auto f           = static_cast<nvbench::float64_t>(other.m_size) /
                              static_cast<nvbench::float64_t>(merged_size);
 
+    // mu_{n+m} = mu_n + (m / (n + m)) * (mu_m - mu_n)
     m_mean += f * diff;
 
+    // var_{n+m} = var_n + (m / (n + m)) * (var_m - var_n + (n / (n + m)) * (mu_n - mu_m)^2)
     const auto diff2 = diff * diff;
     m_variance += f * ((other.m_variance - m_variance + diff2) - f * diff2);
     m_size = merged_size;
@@ -178,11 +187,13 @@ public:
       return std::numeric_limits<nvbench::float64_t>::quiet_NaN();
     }
 
+    // \hat{var}_n = var_n / (1 - (1 / n))
     const auto f = one / static_cast<nvbench::float64_t>(m_size);
     return m_variance / (one - f);
   }
 };
 
+// Compute percentile rank using nearest rank method
 inline std::size_t percentile_rank(int percentile, std::size_t size)
 {
   assert(size > 0 && "percentile_rank requires non-empty sample set");
