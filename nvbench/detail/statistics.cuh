@@ -266,6 +266,9 @@ quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> sam
   const auto rank_50 = percentile_rank(50, n);
   const auto rank_75 = percentile_rank(75, n);
 
+  assert(rank_25 <= rank_50 && rank_50 <= rank_75 &&
+         "invariant: quartile ranks must be ordered: q1 <= median <= q3");
+
   const auto q2_iter = select(samples.begin(), rank_50, samples.end());
   const auto q2      = *q2_iter;
 
