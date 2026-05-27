@@ -26,6 +26,7 @@ def nvbench_compare(monkeypatch):
     pyplot.fill_between = lambda *args, **kwargs: None
     pyplot.legend = lambda *args, **kwargs: None
     pyplot.show = lambda *args, **kwargs: None
+    pyplot.close = lambda *args, **kwargs: None
 
     matplotlib = types.ModuleType("matplotlib")
     matplotlib.pyplot = pyplot

@@ -912,69 +912,72 @@ def compare_benches(
             print("")
 
             if plot_along:
-                plt.figure()
-                plt.xscale("log")
-                plt.yscale("log")
-                plt.xlabel(plot_along)
-                plt.ylabel("time [s]")
-                plt.title(cmp_device["name"])
+                fig = plt.figure()
+                try:
+                    plt.xscale("log")
+                    plt.yscale("log")
+                    plt.xlabel(plot_along)
+                    plt.ylabel("time [s]")
+                    plt.title(cmp_device["name"])
 
-                def plot_line(key, shape, label, data_axis, data=plot_data):
-                    axis_times = data[key][data_axis]
-                    if not axis_times:
-                        return
-                    axis_noise = data[key + "_noise"][data_axis]
-                    series = sorted(
-                        (
-                            (
-                                float(axis_value),
-                                axis_times[axis_value],
-                                axis_noise[axis_value],
-                            )
-                            for axis_value in axis_times
-                        ),
-                        key=lambda item: item[0],
-                    )
-                    x, y, noise = map(list, zip(*series, strict=True))
-
-                    p = plt.plot(x, y, shape, marker="o", label=label)
-
-                    def plot_confidence_band(first, last):
-                        if last - first < 2:
+                    def plot_line(key, shape, label, data_axis, data=plot_data):
+                        axis_times = data[key][data_axis]
+                        if not axis_times:
                             return
-
-                        band_x = x[first:last]
-                        band_y = y[first:last]
-                        band_noise = noise[first:last]
-                        top = [
-                            band_y[i] + band_y[i] * band_noise[i]
-                            for i in range(len(band_x))
-                        ]
-                        bottom = [
-                            band_y[i] - band_y[i] * band_noise[i]
-                            for i in range(len(band_x))
-                        ]
-                        plt.fill_between(
-                            band_x, bottom, top, color=p[0].get_color(), alpha=0.1
+                        axis_noise = data[key + "_noise"][data_axis]
+                        series = sorted(
+                            (
+                                (
+                                    float(axis_value),
+                                    axis_times[axis_value],
+                                    axis_noise[axis_value],
+                                )
+                                for axis_value in axis_times
+                            ),
+                            key=lambda item: item[0],
                         )
+                        x, y, noise = map(list, zip(*series, strict=True))
 
-                    start = None
-                    for i, noise_value in enumerate(noise):
-                        if has_finite_noise(noise_value) and start is None:
-                            start = i
-                        if not has_finite_noise(noise_value) and start is not None:
-                            plot_confidence_band(start, i)
-                            start = None
+                        p = plt.plot(x, y, shape, marker="o", label=label)
 
-                    if start is not None:
-                        plot_confidence_band(start, len(x))
+                        def plot_confidence_band(first, last):
+                            if last - first < 2:
+                                return
 
-                for axis in plot_data["cmp"].keys():
-                    plot_line("cmp", "-", axis, axis)
-                    plot_line("ref", "--", axis + " ref", axis)
+                            band_x = x[first:last]
+                            band_y = y[first:last]
+                            band_noise = noise[first:last]
+                            top = [
+                                band_y[i] + band_y[i] * band_noise[i]
+                                for i in range(len(band_x))
+                            ]
+                            bottom = [
+                                band_y[i] - band_y[i] * band_noise[i]
+                                for i in range(len(band_x))
+                            ]
+                            plt.fill_between(
+                                band_x, bottom, top, color=p[0].get_color(), alpha=0.1
+                            )
 
-                plt.legend()
-                plt.show()
+                        start = None
+                        for i, noise_value in enumerate(noise):
+                            if has_finite_noise(noise_value) and start is None:
+                                start = i
+                            if not has_finite_noise(noise_value) and start is not None:
+                                plot_confidence_band(start, i)
+                                start = None
+
+                        if start is not None:
+                            plot_confidence_band(start, len(x))
+
+                    for axis in plot_data["cmp"].keys():
+                        plot_line("cmp", "-", axis, axis)
+                        plot_line("ref", "--", axis + " ref", axis)
+
+                    plt.legend()
+                    plt.show()
+                finally:
+                    plt.close(fig)
 
     if plot:
         title = "%SOL Bandwidth change"
