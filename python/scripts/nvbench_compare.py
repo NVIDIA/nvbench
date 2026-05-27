@@ -1,10 +1,14 @@
 #!/usr/bin/env python
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import argparse
 import math
 import os
 import sys
-from enum import StrEnum
+from dataclasses import dataclass
+from enum import Enum
 
 import jsondiff
 import tabulate
@@ -23,15 +27,47 @@ def version_tuple(v):
 
 tabulate_version = version_tuple(tabulate.__version__)
 
-all_ref_devices = []
-all_cmp_devices = []
+all_ref_devices: list[dict] = []
+all_cmp_devices: list[dict] = []
 config_count = 0
 unknown_count = 0
-failure_count = 0
+improvement_count = 0
+regression_count = 0
 pass_count = 0
 
+GPU_TIME_MIN_TAG = "nv/cold/time/gpu/min"
+GPU_TIME_MAX_TAG = "nv/cold/time/gpu/max"
+GPU_TIME_MEAN_TAG = "nv/cold/time/gpu/mean"
+GPU_TIME_STDEV_TAG = "nv/cold/time/gpu/stdev/absolute"
+GPU_TIME_STDEV_RELATIVE_TAG = "nv/cold/time/gpu/stdev/relative"
+GPU_TIME_MEDIAN_TAG = "nv/cold/time/gpu/median"
+GPU_TIME_IR_TAG = "nv/cold/time/gpu/ir/absolute"
+GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
 
-class Emoji(StrEnum):
+# These dataclasses are treated as parsed value objects. frozen=True prevents
+# accidental field reassignment but does not imply deep immutability.
+
+
+@dataclass(frozen=True)
+class GpuTimeSummary:
+    minimum: float | None
+    maximum: float | None
+    mean: float | None
+    stdev: float | None
+    stdev_relative: float | None
+    median: float | None
+    interquartile_range: float | None
+    interquartile_range_relative: float | None
+
+
+@dataclass(frozen=True)
+class TimeEstimate:
+    center: float | None
+    relative_dispersion: float | None
+
+
+# TODO(opavlyk): replace with Emoji(StrEnum) after EOL of Python 3.10
+class Emoji(str, Enum):
     YELLOW = "\U0001f7e1"
     BLUE = "\U0001f535"
     GREEN = "\U0001f7e2"
@@ -42,11 +78,151 @@ class Emoji(StrEnum):
 def colorize(msg: str, fore: Fore, emoji: Emoji, no_color: bool) -> str:
     if no_color:
         prefix = ""
-        if emoji_s := str(emoji):
+        if emoji_s := emoji.value:
             prefix = f"{emoji_s} "
         return f"{prefix}{msg}"
     else:
         return f"{fore}{msg}{Fore.RESET}"
+
+
+def lookup_summary(summaries, tag):
+    return next((summary for summary in summaries if summary["tag"] == tag), None)
+
+
+def extract_summary_value(summary):
+    summary_tag = summary.get("tag", "<unknown>")
+    for value_data in summary.get("data", []):
+        if value_data.get("name") != "value":
+            continue
+
+        value_type = value_data.get("type")
+        if value_type != "float64":
+            raise ValueError(
+                f"summary {summary_tag!r} field 'value' has type "
+                f"{value_type!r}; expected 'float64'"
+            )
+        if "value" not in value_data:
+            raise ValueError(f"summary {summary_tag!r} field 'value' is missing value")
+        return value_data["value"]
+
+    raise ValueError(f"summary {summary_tag!r} is missing field 'value'")
+
+
+def normalize_float_value(value, *, null_value=None):
+    if value is None:
+        return null_value
+    return float(value)
+
+
+def extract_summary_float(summaries, tag, *, null_value=None):
+    summary = lookup_summary(summaries, tag)
+    if summary is None:
+        return None
+    return normalize_float_value(extract_summary_value(summary), null_value=null_value)
+
+
+def extract_gpu_time_summary(summaries):
+    return GpuTimeSummary(
+        minimum=extract_summary_float(summaries, GPU_TIME_MIN_TAG),
+        maximum=extract_summary_float(summaries, GPU_TIME_MAX_TAG),
+        mean=extract_summary_float(summaries, GPU_TIME_MEAN_TAG),
+        stdev=extract_summary_float(summaries, GPU_TIME_STDEV_TAG, null_value=math.inf),
+        stdev_relative=extract_summary_float(
+            summaries, GPU_TIME_STDEV_RELATIVE_TAG, null_value=math.inf
+        ),
+        median=extract_summary_float(summaries, GPU_TIME_MEDIAN_TAG),
+        interquartile_range=extract_summary_float(
+            summaries, GPU_TIME_IR_TAG, null_value=math.inf
+        ),
+        interquartile_range_relative=extract_summary_float(
+            summaries, GPU_TIME_IR_RELATIVE_TAG, null_value=math.inf
+        ),
+    )
+
+
+def compute_relative_dispersion(dispersion, center):
+    if (
+        dispersion is None
+        or center is None
+        or center <= 0
+        or not math.isfinite(center)
+        or dispersion < 0
+        or math.isnan(dispersion)
+    ):
+        return None
+    return dispersion / center
+
+
+def has_robust_estimate(summary):
+    return summary.median is not None and (
+        summary.interquartile_range_relative is not None
+        or summary.interquartile_range is not None
+    )
+
+
+def has_mean_estimate(summary):
+    return summary.mean is not None and (
+        summary.stdev_relative is not None or summary.stdev is not None
+    )
+
+
+def select_relative_dispersion(relative_dispersion, absolute_dispersion, center):
+    if relative_dispersion is not None:
+        return relative_dispersion
+    return compute_relative_dispersion(absolute_dispersion, center)
+
+
+def compute_common_time_estimates(ref_summary, cmp_summary):
+    if has_robust_estimate(ref_summary) and has_robust_estimate(cmp_summary):
+        return (
+            TimeEstimate(
+                center=ref_summary.median,
+                relative_dispersion=select_relative_dispersion(
+                    ref_summary.interquartile_range_relative,
+                    ref_summary.interquartile_range,
+                    ref_summary.median,
+                ),
+            ),
+            TimeEstimate(
+                center=cmp_summary.median,
+                relative_dispersion=select_relative_dispersion(
+                    cmp_summary.interquartile_range_relative,
+                    cmp_summary.interquartile_range,
+                    cmp_summary.median,
+                ),
+            ),
+        )
+
+    if has_mean_estimate(ref_summary) and has_mean_estimate(cmp_summary):
+        return (
+            TimeEstimate(
+                center=ref_summary.mean,
+                relative_dispersion=select_relative_dispersion(
+                    ref_summary.stdev_relative, ref_summary.stdev, ref_summary.mean
+                ),
+            ),
+            TimeEstimate(
+                center=cmp_summary.mean,
+                relative_dispersion=select_relative_dispersion(
+                    cmp_summary.stdev_relative, cmp_summary.stdev, cmp_summary.mean
+                ),
+            ),
+        )
+
+    return (
+        TimeEstimate(
+            center=ref_summary.mean,
+            relative_dispersion=compute_relative_dispersion(
+                ref_summary.stdev, ref_summary.mean
+            ),
+        ),
+        TimeEstimate(
+            center=cmp_summary.mean,
+            relative_dispersion=compute_relative_dispersion(
+                cmp_summary.stdev, cmp_summary.mean
+            ),
+        ),
+    )
 
 
 def find_matching_bench(needle, haystack):
@@ -69,8 +245,8 @@ def format_int64_axis_value(axis_name, axis_value, axes):
     value = int(axis_value["value"])
     if axis_flags == "pow2":
         value = math.log2(value)
-        return "2^%d" % value
-    return "%d" % value
+        return f"2^{value:.0f}"
+    return f"{value:d}"
 
 
 def format_float64_axis_value(axis_name, axis_value, axes):
@@ -78,11 +254,11 @@ def format_float64_axis_value(axis_name, axis_value, axes):
 
 
 def format_type_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_string_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_axis_value(axis_name, axis_value, axes):
@@ -98,10 +274,10 @@ def format_axis_value(axis_name, axis_value, axes):
         return format_string_axis_value(axis_name, axis_value, axes)
 
 
-def make_display(name: str, display_values: [list[str]]) -> str:
+def make_display(name: str, display_values: list[str]) -> str:
     open_bracket, close_bracket = ("[", "]") if len(display_values) > 1 else ("", "")
-    display_values = ",".join(display_values)
-    return f"{name}={open_bracket}{display_values}{close_bracket}"
+    joined_values = ",".join(display_values)
+    return f"{name}={open_bracket}{joined_values}{close_bracket}"
 
 
 def parse_axis_filters(axis_args):
@@ -188,16 +364,21 @@ def format_duration(seconds):
     else:
         multiplier = 1e6
         units = "us"
-    return "%0.3f %s" % (seconds * multiplier, units)
+    return f"{seconds * multiplier:0.3f} {units}"
 
 
 def format_percentage(percentage):
-    # When there aren't enough samples for a meaningful noise measurement,
-    # the noise is recorded as infinity. Unfortunately, JSON spec doesn't
-    # allow for inf, so these get turned into null.
     if percentage is None:
+        return "n/a"
+    if math.isnan(percentage):
+        return "n/a"
+    if math.isinf(percentage):
         return "inf"
-    return "%0.2f%%" % (percentage * 100.0)
+    return f"{percentage * 100.0:0.2f}%"
+
+
+def has_finite_noise(noise):
+    return noise is not None and math.isfinite(noise)
 
 
 def format_axis_values(axis_values, axes, axis_filters=None):
@@ -373,108 +554,80 @@ def compare_benches(
                 if not ref_summaries or not cmp_summaries:
                     continue
 
-                def lookup_summary(summaries, tag):
-                    return next(filter(lambda s: s["tag"] == tag, summaries), None)
-
-                cmp_time_summary = lookup_summary(
-                    cmp_summaries, "nv/cold/time/gpu/mean"
-                )
-                ref_time_summary = lookup_summary(
-                    ref_summaries, "nv/cold/time/gpu/mean"
-                )
-                cmp_noise_summary = lookup_summary(
-                    cmp_summaries, "nv/cold/time/gpu/stdev/relative"
-                )
-                ref_noise_summary = lookup_summary(
-                    ref_summaries, "nv/cold/time/gpu/stdev/relative"
-                )
-
                 # TODO: Use other timings, too. Maybe multiple rows, with a
                 # "Timing" column + values "CPU/GPU/Batch"?
-                if not all(
-                    [
-                        cmp_time_summary,
-                        ref_time_summary,
-                        cmp_noise_summary,
-                        ref_noise_summary,
-                    ]
-                ):
+                cmp_gpu_time = extract_gpu_time_summary(cmp_summaries)
+                ref_gpu_time = extract_gpu_time_summary(ref_summaries)
+                ref_estimate, cmp_estimate = compute_common_time_estimates(
+                    ref_gpu_time, cmp_gpu_time
+                )
+
+                cmp_time = cmp_estimate.center
+                ref_time = ref_estimate.center
+
+                if cmp_time is None or ref_time is None:
                     continue
 
-                def extract_value(summary):
-                    summary_data = summary["data"]
-                    value_data = next(
-                        filter(lambda v: v["name"] == "value", summary_data)
-                    )
-                    assert value_data["type"] == "float64"
-                    return value_data["value"]
+                if not math.isfinite(cmp_time) or not math.isfinite(ref_time):
+                    continue
 
-                cmp_time = extract_value(cmp_time_summary)
-                ref_time = extract_value(ref_time_summary)
-                cmp_noise = extract_value(cmp_noise_summary)
-                ref_noise = extract_value(ref_noise_summary)
+                if cmp_time <= 0.0 or ref_time <= 0.0:
+                    continue
 
-                # Convert string encoding to expected numerics:
-                cmp_time = float(cmp_time)
-                ref_time = float(ref_time)
+                cmp_noise = cmp_estimate.relative_dispersion
+                ref_noise = ref_estimate.relative_dispersion
 
                 diff = cmp_time - ref_time
                 frac_diff = diff / ref_time
 
-                if ref_noise and cmp_noise:
-                    ref_noise = float(ref_noise)
-                    cmp_noise = float(cmp_noise)
-                    min_noise = min(ref_noise, cmp_noise)
-                elif ref_noise:
-                    ref_noise = float(ref_noise)
-                    min_noise = ref_noise
-                elif cmp_noise:
-                    cmp_noise = float(cmp_noise)
-                    min_noise = cmp_noise
+                if not has_finite_noise(ref_noise) or not has_finite_noise(cmp_noise):
+                    max_noise = None
                 else:
-                    min_noise = None  # Noise is inf
+                    max_noise = max(ref_noise, cmp_noise)
 
                 if plot_along:
                     axis_name = []
-                    axis_value = "--"
+                    axis_value = None
                     for av in axis_values:
                         if av["name"] != plot_along:
                             axis_name.append(f"""{av["name"]} = {av["value"]}""")
                         else:
                             axis_value = float(av["value"])
-                    axis_name = ", ".join(axis_name)
+                    if axis_value is not None:
+                        axis_name = ", ".join(axis_name)
 
-                    if axis_name not in plot_data["cmp"]:
-                        plot_data["cmp"][axis_name] = {}
-                        plot_data["ref"][axis_name] = {}
-                        plot_data["cmp_noise"][axis_name] = {}
-                        plot_data["ref_noise"][axis_name] = {}
+                        if axis_name not in plot_data["cmp"]:
+                            plot_data["cmp"][axis_name] = {}
+                            plot_data["ref"][axis_name] = {}
+                            plot_data["cmp_noise"][axis_name] = {}
+                            plot_data["ref_noise"][axis_name] = {}
 
-                    plot_data["cmp"][axis_name][axis_value] = cmp_time
-                    plot_data["ref"][axis_name][axis_value] = ref_time
-                    plot_data["cmp_noise"][axis_name][axis_value] = cmp_noise
-                    plot_data["ref_noise"][axis_name][axis_value] = ref_noise
+                        plot_data["cmp"][axis_name][axis_value] = cmp_time
+                        plot_data["ref"][axis_name][axis_value] = ref_time
+                        plot_data["cmp_noise"][axis_name][axis_value] = cmp_noise
+                        plot_data["ref_noise"][axis_name][axis_value] = ref_noise
 
                 global config_count
                 global unknown_count
                 global pass_count
-                global failure_count
+                global improvement_count
+                global regression_count
 
                 config_count += 1
-                if not min_noise:
+                if max_noise is None:
                     unknown_count += 1
                     status_label = "????"
                     status = colorize(status_label, Fore.YELLOW, Emoji.YELLOW, no_color)
-                elif abs(frac_diff) <= min_noise:
+                elif abs(frac_diff) <= max_noise:
                     pass_count += 1
                     status_label = "SAME"
                     status = colorize(status_label, Fore.BLUE, Emoji.BLUE, no_color)
                 elif diff < 0:
-                    failure_count += 1
+                    improvement_count += 1
                     status_label = "FAST"
                     status = colorize(status_label, Fore.GREEN, Emoji.GREEN, no_color)
                 else:
-                    failure_count += 1
+                    regression_count += 1
                     status_label = "SLOW"
                     status = colorize(status_label, Fore.RED, Emoji.RED, no_color)
 
@@ -510,16 +663,11 @@ def compare_benches(
             ref_device = find_device_by_id(ref_state["device"], all_ref_devices)
 
             if cmp_device == ref_device:
-                print("## [%d] %s\n" % (cmp_device["id"], cmp_device["name"]))
+                print(f"## [{cmp_device['id']}] {cmp_device['name']}\n")
             else:
                 print(
-                    "## [%d] %s vs. [%d] %s\n"
-                    % (
-                        ref_device["id"],
-                        ref_device["name"],
-                        cmp_device["id"],
-                        cmp_device["name"],
-                    )
+                    f"## [{ref_device['id']}] {ref_device['name']} vs. "
+                    f"[{cmp_device['id']}] {cmp_device['name']}\n"
                 )
             # colalign and github format require tabulate 0.8.3
             if tabulate_version >= (0, 8, 3):
@@ -534,30 +682,75 @@ def compare_benches(
             print("")
 
             if plot_along:
-                plt.xscale("log")
-                plt.yscale("log")
-                plt.xlabel(plot_along)
-                plt.ylabel("time [s]")
-                plt.title(cmp_device["name"])
+                fig = plt.figure()
+                try:
+                    plt.xscale("log")
+                    plt.yscale("log")
+                    plt.xlabel(plot_along)
+                    plt.ylabel("time [s]")
+                    plt.title(cmp_device["name"])
 
-                def plot_line(key, shape, label):
-                    x = [float(x) for x in plot_data[key][axis].keys()]
-                    y = list(plot_data[key][axis].values())
+                    def plot_line(key, shape, label, data_axis, data=plot_data):
+                        axis_times = data[key][data_axis]
+                        if not axis_times:
+                            return
+                        axis_noise = data[key + "_noise"][data_axis]
+                        series = sorted(
+                            (
+                                (
+                                    float(axis_value),
+                                    axis_times[axis_value],
+                                    axis_noise[axis_value],
+                                )
+                                for axis_value in axis_times
+                            ),
+                            key=lambda item: item[0],
+                        )
+                        x, y, noise = map(list, zip(*series, strict=True))
 
-                    noise = list(plot_data[key + "_noise"][axis].values())
+                        p = plt.plot(x, y, shape, marker="o", label=label)
 
-                    top = [y[i] + y[i] * noise[i] for i in range(len(x))]
-                    bottom = [y[i] - y[i] * noise[i] for i in range(len(x))]
+                        def plot_confidence_band(first, last):
+                            if last - first < 2:
+                                return
 
-                    p = plt.plot(x, y, shape, marker="o", label=label)
-                    plt.fill_between(x, bottom, top, color=p[0].get_color(), alpha=0.1)
+                            band_x = x[first:last]
+                            band_y = y[first:last]
+                            band_noise = noise[first:last]
+                            top = [
+                                band_y[i] + band_y[i] * band_noise[i]
+                                for i in range(len(band_x))
+                            ]
+                            bottom = [
+                                max(
+                                    band_y[i] - band_y[i] * band_noise[i],
+                                    band_y[i] * 0.001,
+                                )
+                                for i in range(len(band_x))
+                            ]
+                            plt.fill_between(
+                                band_x, bottom, top, color=p[0].get_color(), alpha=0.1
+                            )
 
-                for axis in plot_data["cmp"].keys():
-                    plot_line("cmp", "-", axis)
-                    plot_line("ref", "--", axis + " ref")
+                        start = None
+                        for i, noise_value in enumerate(noise):
+                            if has_finite_noise(noise_value) and start is None:
+                                start = i
+                            if not has_finite_noise(noise_value) and start is not None:
+                                plot_confidence_band(start, i)
+                                start = None
 
-                plt.legend()
-                plt.show()
+                        if start is not None:
+                            plot_confidence_band(start, len(x))
+
+                    for axis in plot_data["cmp"].keys():
+                        plot_line("cmp", "-", axis, axis)
+                        plot_line("ref", "--", axis + " ref", axis)
+
+                    plt.legend()
+                    plt.show()
+                finally:
+                    plt.close(fig)
 
     if plot:
         title = "%SOL Bandwidth change"
@@ -574,7 +767,14 @@ def compare_benches(
         plot_comparison_entries(comparison_entries, title=title, dark=dark)
 
 
-def main():
+def main() -> int:
+    """
+    Returns a process exit code.
+      - 0 means the comparison completed successfully.
+      - 1 signals an error has occurred.
+
+    The number of detected regressions is reported in the summary output.
+    """
     help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
     parser = argparse.ArgumentParser(prog="nvbench_compare", usage=help_text)
     parser.add_argument(
@@ -628,16 +828,15 @@ def main():
     )
 
     args, files_or_dirs = parser.parse_known_args()
-    print(files_or_dirs)
     try:
         axis_filters = parse_axis_filters(args.axis)
     except ValueError as exc:
         print(str(exc))
-        sys.exit(1)
+        return 1
 
     if len(files_or_dirs) != 2:
         parser.print_help()
-        sys.exit(1)
+        return 1
 
     # if provided two directories, find all the exactly named files
     # in both and treat them as the reference and compare
@@ -679,26 +878,31 @@ def main():
                 )
             )
             if not args.ignore_devices:
-                sys.exit(1)
+                return 1
 
-        compare_benches(
-            ref_root["benchmarks"],
-            cmp_root["benchmarks"],
-            args.threshold,
-            args.plot_along,
-            args.plot,
-            args.dark,
-            axis_filters,
-            args.benchmark,
-            args.no_color,
-        )
+        try:
+            compare_benches(
+                ref_root["benchmarks"],
+                cmp_root["benchmarks"],
+                args.threshold,
+                args.plot_along,
+                args.plot,
+                args.dark,
+                axis_filters,
+                args.benchmark,
+                args.no_color,
+            )
+        except ValueError as exc:
+            print(str(exc))
+            return 1
 
     print("# Summary\n")
-    print("- Total Matches: %d" % config_count)
-    print("  - Pass    (diff <= min_noise): %d" % pass_count)
-    print("  - Unknown (infinite noise):    %d" % unknown_count)
-    print("  - Failure (diff > min_noise):  %d" % failure_count)
-    return failure_count
+    print(f"- Total Matches: {config_count}")
+    print(f"  - Pass        (abs(%Diff) <= max_noise): {pass_count}")
+    print(f"  - Improvement (abs(%Diff) > max_noise, %Diff < 0): {improvement_count}")
+    print(f"  - Regression  (abs(%Diff) > max_noise, %Diff > 0): {regression_count}")
+    print(f"  - Unknown     (infinite or unavailable noise): {unknown_count}")
+    return 0
 
 
 if __name__ == "__main__":
