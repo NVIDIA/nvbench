@@ -112,19 +112,20 @@ bool stdrel_criterion::do_is_finished()
   // check this.
   if (m_noise_tracker.size() > 64 && (m_cuda_times_summary.get_size() % 16 == 0))
   {
-    // Use the current noise as the stdev reference.
-    const auto current_noise = m_noise_tracker.back();
-    if (std::isfinite(current_noise) && current_noise > 0.0)
+    statistics::online_mean_variance noise_summary{};
+    for (const auto noise_v : m_noise_tracker)
     {
-      const auto noise_stdev     = statistics::standard_deviation(m_noise_tracker.cbegin(),
-                                                                  m_noise_tracker.cend(),
-                                                                  current_noise);
-      const auto noise_rel_stdev = noise_stdev / current_noise;
-
+      noise_summary.update(noise_v);
+    }
+    if (std::isfinite(noise_summary.get_mean()) &&
+        std::isfinite(noise_summary.get_sample_variance()))
+    {
       // If the rel stdev of the last N cuda noise measurements is less than
       // 5%, consider the result stable.
-      const auto noise_threshold = 0.05;
-      if (noise_rel_stdev < noise_threshold)
+      const auto noise_threshold    = 0.05;
+      const auto mean_scaled        = noise_summary.get_mean() * noise_threshold;
+      const auto variance_threshold = mean_scaled * mean_scaled;
+      if (noise_summary.get_sample_variance() < variance_threshold)
       {
         return true;
       }
