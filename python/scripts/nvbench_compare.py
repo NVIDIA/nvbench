@@ -46,6 +46,9 @@ GPU_TIME_MEDIAN_TAG = "nv/cold/time/gpu/median"
 GPU_TIME_IR_TAG = "nv/cold/time/gpu/ir/absolute"
 GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
 
+# These dataclasses are treated as parsed value objects. frozen=True prevents
+# accidental field reassignment but does not imply deep immutability.
+
 
 @dataclass(frozen=True)
 class GpuTimeSummary:
@@ -142,7 +145,7 @@ def select_devices(all_devices, device_filter, option_name):
 
 def resolve_benchmark_device_ids(bench, device_filter, option_name):
     if device_filter is None:
-        return bench["devices"]
+        return list(bench["devices"])
 
     benchmark_device_ids = set(bench["devices"])
     missing_ids = [
@@ -748,6 +751,7 @@ def compare_benches(
                     ),
                     None,
                 )
+                # defensive check
                 assert ref_state is not None, (
                     "invariant: count validation ensures match exists"
                 )
