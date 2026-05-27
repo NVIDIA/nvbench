@@ -212,18 +212,19 @@ void measure_cpu_only_base::generate_summaries()
     const auto cpu_ir = cpu_third_quartile - cpu_first_quartile;
     summ.set_float64("value", cpu_ir);
   }
-  const auto cpu_noise = nvbench::detail::statistics::compute_robust_noise(m_total_samples,
-                                                                           cpu_first_quartile,
-                                                                           cpu_median,
-                                                                           cpu_third_quartile);
-  if (cpu_noise)
+  const auto cpu_robust_noise =
+    nvbench::detail::statistics::compute_robust_noise(m_total_samples,
+                                                      cpu_first_quartile,
+                                                      cpu_median,
+                                                      cpu_third_quartile);
+  if (cpu_robust_noise)
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative interquartile range of CPU times of isolated kernel executions");
-    summ.set_float64("value", *cpu_noise);
+    summ.set_float64("value", *cpu_robust_noise);
   }
 
   if (const auto items = m_state.get_element_count(); items != 0)
@@ -278,14 +279,14 @@ void measure_cpu_only_base::generate_summaries()
       std::optional<nvbench::float64_t> min_time;
       get_param(min_time, "min-time");
 
-      if (max_noise && cpu_noise && *cpu_noise > *max_noise)
+      if (max_noise && cpu_stdev_noise && *cpu_stdev_noise > *max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
                                 "while over noise threshold ({:0.2f}% > "
                                 "{:0.2f}%)",
                                 timeout,
-                                *cpu_noise * 100,
+                                *cpu_stdev_noise * 100,
                                 *max_noise * 100));
       }
       if (m_total_samples < m_min_samples)
