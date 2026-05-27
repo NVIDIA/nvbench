@@ -426,6 +426,24 @@ def test_device_filter_parser_accepts_all_and_duplicate_ids(nvbench_compare):
     ]
 
 
+@pytest.mark.parametrize(
+    "device_arg",
+    [
+        "",
+        " ",
+        "gpu",
+        "-1",
+        "0,gpu",
+        "0,-1",
+        "0,",
+        ",0",
+    ],
+)
+def test_device_filter_parser_rejects_invalid_values(nvbench_compare, device_arg):
+    with pytest.raises(ValueError, match="must be 'all'"):
+        nvbench_compare.parse_device_filter(device_arg, "--reference-devices")
+
+
 def test_explicit_device_filters_downgrade_device_mismatch_to_warning(nvbench_compare):
     assert nvbench_compare.require_matching_device_sections(None, None)
     assert not nvbench_compare.require_matching_device_sections([0], None)
