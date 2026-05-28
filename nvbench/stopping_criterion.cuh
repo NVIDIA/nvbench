@@ -110,6 +110,14 @@ public:
   }
 
   /**
+   * Provide the GPU clock frequency (Hz) observed for the current sample. It is not called when
+   * doing CPU-only benchmarking (i.e.: using `nvbench::exec_tag::cpu_only` or
+   * `nvbench::exec_tag::no_gpu`) or profiling (`--profile` option). When called, it is done before
+   * calling `add_measurement` for the same sample.
+   */
+  void add_frequency(nvbench::float32_t frequency_hz) { this->do_add_frequency(frequency_hz); }
+
+  /**
    * Add the latest measurement to the criterion
    */
   void add_measurement(nvbench::float64_t measurement) { this->do_add_measurement(measurement); }
@@ -134,6 +142,11 @@ protected:
    * Check if the criterion has been met for all measurements processed by `add_measurement`
    */
   virtual bool do_is_finished() = 0;
+
+  /**
+   * Receive the GPU clock frequency (Hz) for the current sample. Default no-op.
+   */
+  virtual void do_add_frequency(nvbench::float32_t /*frequency_hz*/) {}
 };
 
 } // namespace nvbench
