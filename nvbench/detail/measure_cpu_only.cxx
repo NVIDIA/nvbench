@@ -27,7 +27,12 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <limits>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace nvbench::detail
 {

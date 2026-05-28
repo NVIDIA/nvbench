@@ -20,6 +20,9 @@
 
 #include <fmt/format.h>
 
+#include <cstddef>
+#include <string>
+
 namespace nvbench
 {
 

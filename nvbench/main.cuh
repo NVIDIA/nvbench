@@ -34,8 +34,12 @@
 #include <nvbench/option_parser.cuh>
 #include <nvbench/printer_base.cuh>
 
+#include <cstddef>
 #include <cstdlib>
+#include <exception>
 #include <iostream>
+#include <string>
+#include <vector>
 
 // Advanced users can rebuild NVBench's `main` function using the macros in this file, or replace
 // them with customized implementations.

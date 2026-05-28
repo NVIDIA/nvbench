@@ -32,7 +32,10 @@
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
 
+#include <cstddef>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace nvbench

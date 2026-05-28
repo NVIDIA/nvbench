@@ -28,6 +28,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
 
 namespace
 {

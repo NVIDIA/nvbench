@@ -33,7 +33,10 @@
 #include <nvbench/state.cuh>
 #include <nvbench/stopping_criterion.cuh>
 
+#include <cstddef>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace nvbench

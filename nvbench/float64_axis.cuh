@@ -31,6 +31,10 @@
 #include <nvbench/axis_base.cuh>
 #include <nvbench/types.cuh>
 
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace nvbench

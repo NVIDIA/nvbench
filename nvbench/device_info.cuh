@@ -33,7 +33,9 @@
 
 #include <cuda_runtime_api.h>
 
-#include <cstdint> // CHAR_BIT
+#include <climits>
+#include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <string_view>
 #include <utility>

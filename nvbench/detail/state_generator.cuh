@@ -32,6 +32,7 @@
 #include <nvbench/axis_base.cuh>
 #include <nvbench/state.cuh>
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <utility>

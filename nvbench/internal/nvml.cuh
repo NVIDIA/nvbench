@@ -36,7 +36,9 @@
 
 #include <fmt/format.h>
 
+#include <cstddef>
 #include <stdexcept>
+#include <string>
 
 namespace nvbench::nvml
 {

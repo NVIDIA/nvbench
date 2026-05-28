@@ -24,6 +24,9 @@
 
 #include <cuda_runtime_api.h>
 
+#include <cstddef>
+#include <stdexcept>
+
 #define UNUSED(x) (void)(x)
 
 namespace nvbench

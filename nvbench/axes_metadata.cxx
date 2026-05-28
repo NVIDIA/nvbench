@@ -24,7 +24,14 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <exception>
+#include <memory>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace nvbench
 {

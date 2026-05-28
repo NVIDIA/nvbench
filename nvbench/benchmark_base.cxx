@@ -21,7 +21,12 @@
 #include <nvbench/detail/transform_reduce.cuh>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace nvbench
 {

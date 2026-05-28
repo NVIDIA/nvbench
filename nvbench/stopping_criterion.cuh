@@ -34,6 +34,8 @@
 #include <initializer_list>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace nvbench
 {

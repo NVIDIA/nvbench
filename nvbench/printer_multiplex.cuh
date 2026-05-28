@@ -30,7 +30,10 @@
 
 #include <nvbench/printer_base.cuh>
 
+#include <cstddef>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace nvbench

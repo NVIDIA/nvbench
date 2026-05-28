@@ -28,6 +28,7 @@
 #pragma system_header
 #endif
 
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <string>

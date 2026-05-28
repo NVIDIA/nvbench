@@ -30,6 +30,7 @@
 
 #include <nvbench/types.cuh>
 
+#include <cstddef>
 #include <iosfwd>
 #include <memory>
 #include <stdexcept>

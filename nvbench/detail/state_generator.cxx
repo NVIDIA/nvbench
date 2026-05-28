@@ -25,8 +25,14 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <functional>
+#include <memory>
 #include <numeric>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace nvbench::detail
 {

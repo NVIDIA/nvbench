@@ -19,7 +19,9 @@
 #include <nvbench/detail/entropy_criterion.cuh>
 #include <nvbench/types.cuh>
 
+#include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace nvbench::detail
 {

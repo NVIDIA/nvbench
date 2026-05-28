@@ -25,9 +25,14 @@
 
 #include <fmt/format.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <iterator>
+#include <optional>
 #include <ostream>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 

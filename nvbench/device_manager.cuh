@@ -30,6 +30,7 @@
 
 #include <nvbench/device_info.cuh>
 
+#include <utility>
 #include <vector>
 
 namespace nvbench

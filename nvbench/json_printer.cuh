@@ -31,7 +31,10 @@
 #include <nvbench/printer_base.cuh>
 #include <nvbench/types.cuh>
 
+#include <cstddef>
+#include <iosfwd>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace nvbench

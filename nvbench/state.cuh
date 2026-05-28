@@ -36,8 +36,11 @@
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
+#include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 namespace nvbench

@@ -26,10 +26,15 @@
 #include <cupti_range_profiler.h>
 #include <cupti_target.h>
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace nvbench::detail
 {

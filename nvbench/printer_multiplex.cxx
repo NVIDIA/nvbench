@@ -18,7 +18,10 @@
 
 #include <nvbench/printer_multiplex.cuh>
 
+#include <cstddef>
 #include <iostream>
+#include <string>
+#include <vector>
 
 namespace nvbench
 {

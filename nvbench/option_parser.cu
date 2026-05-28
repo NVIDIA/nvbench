@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <exception>
 #include <fstream>
@@ -50,6 +51,7 @@
 #include <string_view>
 #include <system_error>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #if __has_include(<filesystem>)

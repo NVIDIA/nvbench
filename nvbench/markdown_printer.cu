@@ -26,11 +26,16 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 
+#include <cstddef>
 #include <functional>
+#include <iterator>
 #include <numeric>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <variant>
 #include <vector>
 
 namespace nvbench

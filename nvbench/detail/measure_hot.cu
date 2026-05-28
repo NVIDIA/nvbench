@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <stdexcept>
+#include <utility>
 #include <variant>
 
 namespace nvbench::detail
