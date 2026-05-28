@@ -19,6 +19,11 @@
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/stopping_criterion.cuh>
 
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
 namespace nvbench
 {
 

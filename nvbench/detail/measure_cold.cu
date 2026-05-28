@@ -29,9 +29,13 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <limits>
 #include <optional>
+#include <stdexcept>
+#include <string>
 #include <thread>
+#include <utility>
 
 namespace nvbench::detail
 {

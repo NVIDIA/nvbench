@@ -34,6 +34,8 @@
 
 #include <cuda_runtime.h>
 
+#include <cstddef>
+
 /*!
  * @file test_kernels.cuh
  * A collection of simple kernels for testing purposes.

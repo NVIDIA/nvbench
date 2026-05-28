@@ -31,6 +31,7 @@
 #include <nvbench/type_list.cuh>
 #include <nvbench/type_strings.cuh>
 
+#include <string>
 #include <type_traits>
 
 namespace nvbench

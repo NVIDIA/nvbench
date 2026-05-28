@@ -30,6 +30,7 @@
 
 #include <nvbench/device_info.cuh>
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>

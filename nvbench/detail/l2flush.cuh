@@ -32,6 +32,8 @@
 
 #include <cuda_runtime_api.h>
 
+#include <cstddef>
+
 namespace nvbench::detail
 {
 

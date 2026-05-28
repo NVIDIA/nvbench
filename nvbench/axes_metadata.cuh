@@ -32,12 +32,15 @@
 #include <nvbench/int64_axis.cuh>
 #include <nvbench/string_axis.cuh>
 #include <nvbench/type_axis.cuh>
+#include <nvbench/type_list.cuh>
 #include <nvbench/types.cuh>
 
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace nvbench

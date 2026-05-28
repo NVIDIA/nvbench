@@ -32,6 +32,7 @@
 #include <nvbench/types.cuh>
 
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <iterator>
 #include <limits>

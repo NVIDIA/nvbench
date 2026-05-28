@@ -31,6 +31,7 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
+#include <cstddef>
 #include <string>
 
 /// Throws a std::runtime_error if `call` doesn't return `cudaSuccess`.

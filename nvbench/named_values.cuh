@@ -30,6 +30,7 @@
 
 #include <nvbench/types.cuh>
 
+#include <cstddef>
 #include <string>
 #include <variant>
 #include <vector>

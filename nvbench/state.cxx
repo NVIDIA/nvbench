@@ -25,8 +25,15 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <variant>
+#include <vector>
 
 namespace nvbench
 {

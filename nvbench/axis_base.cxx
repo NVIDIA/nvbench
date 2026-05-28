@@ -18,6 +18,8 @@
 
 #include <nvbench/axis_base.cuh>
 
+#include <memory>
+
 namespace nvbench
 {
 

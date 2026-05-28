@@ -30,6 +30,7 @@
 
 #include <nvbench/types.cuh>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <utility>

@@ -25,7 +25,11 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cstddef>
+#include <exception>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace nvbench::detail
 {

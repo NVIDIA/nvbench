@@ -22,7 +22,11 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 namespace nvbench

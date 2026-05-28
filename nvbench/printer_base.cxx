@@ -18,7 +18,10 @@
 
 #include <nvbench/printer_base.cuh>
 
+#include <cstddef>
 #include <ostream>
+#include <string>
+#include <utility>
 
 namespace nvbench
 {

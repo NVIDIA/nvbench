@@ -44,7 +44,9 @@
 #include <nvbench/detail/measure_cupti.cuh>
 #endif // NVBENCH_HAS_CUPTI
 
+#include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 namespace nvbench
 {

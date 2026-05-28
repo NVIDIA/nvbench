@@ -31,10 +31,13 @@
 #include <nvbench/detail/timestamps_kernel.cuh>
 #include <nvbench/types.cuh>
 
+namespace nvbench
+{
+struct cuda_stream;
+}
+
 namespace nvbench::detail
 {
-
-struct cuda_stream;
 
 struct gpu_frequency
 {

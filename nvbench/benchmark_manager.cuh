@@ -30,7 +30,9 @@
 
 #include <nvbench/benchmark_base.cuh>
 
+#include <cstddef>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace nvbench

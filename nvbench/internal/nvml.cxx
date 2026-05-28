@@ -18,6 +18,8 @@
 
 #include <nvbench/internal/nvml.cuh>
 
+#include <exception>
+
 namespace nvbench::nvml
 {
 NVMLLifetimeManager::NVMLLifetimeManager()

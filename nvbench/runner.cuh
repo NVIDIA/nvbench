@@ -31,6 +31,9 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/detail/state_generator.cuh>
 
+#include <cstddef>
+#include <exception>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 

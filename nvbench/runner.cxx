@@ -24,6 +24,7 @@
 #include <fmt/format.h>
 
 #include <cstdio>
+#include <exception>
 #include <stdexcept>
 
 namespace nvbench

@@ -33,6 +33,7 @@
 #include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
+#include <utility>
 #include <vector>
 
 namespace nvbench::detail

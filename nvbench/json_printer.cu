@@ -32,8 +32,12 @@
 
 #include <fmt/format.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <exception>
 #include <fstream>
+#include <ios>
 #include <iterator>
 #include <ostream>
 #include <stdexcept>

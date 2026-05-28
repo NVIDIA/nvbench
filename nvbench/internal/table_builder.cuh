@@ -28,9 +28,13 @@
 #pragma system_header
 #endif
 
+#include <nvbench/detail/transform_reduce.cuh>
+
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace nvbench::internal
