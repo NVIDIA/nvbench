@@ -40,7 +40,7 @@ class stdrel_criterion final : public stopping_criterion_base
 {
   // state
   nvbench::int64_t m_consecutive_invalid_noise_estimates{};
-  nvbench::detail::statistics::online_mean_variance m_cuda_times_summary{};
+  nvbench::detail::statistics::online_mean_variance m_measurements_summary{};
   nvbench::detail::ring_buffer<nvbench::float64_t> m_noise_tracker{512};
 
 public:

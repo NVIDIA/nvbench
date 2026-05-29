@@ -27,13 +27,29 @@
 
 namespace statistics = nvbench::detail::statistics;
 
+inline constexpr nvbench::float64_t default_atol = 1.0e-14;
+inline constexpr nvbench::float64_t default_rtol = 1.0e-14;
+
+inline bool is_close(nvbench::float64_t actual,
+                     nvbench::float64_t expected,
+                     nvbench::float64_t atol,
+                     nvbench::float64_t rtol)
+{
+  return std::abs(actual - expected) < std::max(atol, rtol * std::abs(expected));
+}
+
+inline bool is_close(nvbench::float64_t actual, nvbench::float64_t expected)
+{
+  return is_close(actual, expected, default_atol, default_rtol);
+}
+
 void test_mean()
 {
   {
     std::vector<nvbench::float64_t> data{1.0, 2.0, 3.0, 4.0, 5.0};
     const nvbench::float64_t actual   = statistics::compute_mean(std::begin(data), std::end(data));
     const nvbench::float64_t expected = 3.0;
-    ASSERT(std::abs(actual - expected) < 0.001);
+    ASSERT(is_close(actual, expected));
   }
 
   {
@@ -71,10 +87,9 @@ void test_online_mean_variance()
     }
 
     ASSERT(stats.get_size() == 5);
-    constexpr nvbench::float64_t eps = 1e-14;
-    ASSERT(std::abs(stats.get_mean() - 3.0) < eps);
-    ASSERT(std::abs(stats.get_sample_variance() - 2.0) < eps);
-    ASSERT(std::abs(stats.get_unbiased_variance() - 2.5) < eps);
+    ASSERT(is_close(stats.get_mean(), 3.0));
+    ASSERT(is_close(stats.get_sample_variance(), 2.0));
+    ASSERT(is_close(stats.get_unbiased_variance(), 2.5));
   }
 
   {
@@ -112,10 +127,9 @@ void test_online_mean_variance()
     }
 
     ASSERT(merged.get_size() == expected.get_size());
-    constexpr nvbench::float64_t eps = 1e-14;
-    ASSERT(std::abs(merged.get_mean() - expected.get_mean()) < eps);
-    ASSERT(std::abs(merged.get_sample_variance() - expected.get_sample_variance()) < eps);
-    ASSERT(std::abs(merged.get_unbiased_variance() - expected.get_unbiased_variance()) < eps);
+    ASSERT(is_close(merged.get_mean(), expected.get_mean()));
+    ASSERT(is_close(merged.get_sample_variance(), expected.get_sample_variance()));
+    ASSERT(is_close(merged.get_unbiased_variance(), expected.get_unbiased_variance()));
   }
 
   {
@@ -160,7 +174,7 @@ void test_std()
     const nvbench::float64_t actual =
       statistics::standard_deviation(std::begin(data), std::end(data), mean);
     const nvbench::float64_t expected = 1.581;
-    ASSERT(std::abs(actual - expected) < 0.001);
+    ASSERT(is_close(actual, expected, 0.001, 0.0));
   }
 
   {
@@ -202,7 +216,7 @@ void test_r2()
     const nvbench::float64_t actual =
       statistics::compute_r2(std::begin(ys), std::end(ys), slope, intercept);
     const nvbench::float64_t expected = 1.0;
-    ASSERT(std::abs(actual - expected) < 0.001);
+    ASSERT(is_close(actual, expected, 0.001, 0.0));
   }
   {
     std::vector<nvbench::float64_t> signal{1.0, 2.0, 3.0, 4.0, 5.0};
@@ -219,7 +233,7 @@ void test_r2()
     const nvbench::float64_t expected = 0.675;
     const nvbench::float64_t actual =
       statistics::compute_r2(std::begin(ys), std::end(ys), slope, intercept);
-    ASSERT(std::abs(actual - expected) < 0.001);
+    ASSERT(is_close(actual, expected, 0.001, 0.0));
   }
 }
 
@@ -228,17 +242,17 @@ void test_slope_conversion()
   {
     const nvbench::float64_t actual   = statistics::slope2deg(0.0);
     const nvbench::float64_t expected = 0.0;
-    ASSERT(std::abs(actual - expected) < 0.001);
+    ASSERT(is_close(actual, expected, 0.001, 0.0));
   }
   {
     const nvbench::float64_t actual   = statistics::slope2deg(1.0);
     const nvbench::float64_t expected = 45.0;
-    ASSERT(std::abs(actual - expected) < 0.001);
+    ASSERT(is_close(actual, expected, 0.001, 0.0));
   }
   {
     const nvbench::float64_t actual   = statistics::slope2deg(5.0);
     const nvbench::float64_t expected = 78.69;
-    ASSERT(std::abs(actual - expected) < 0.001);
+    ASSERT(is_close(actual, expected, 0.001, 0.0));
   }
 }
 

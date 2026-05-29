@@ -100,7 +100,19 @@ class online_mean_variance
 {
   nvbench::int64_t m_size{};       // number of samples
   nvbench::float64_t m_mean{};     // sample mean
-  nvbench::float64_t m_variance{}; // unbiased (MLE) sample variance
+  nvbench::float64_t m_variance{}; // biased (MLE) sample variance
+
+  nvbench::float64_t update_mean_increment(nvbench::float64_t diff, nvbench::float64_t f) const
+  {
+    return f * diff;
+  }
+
+  nvbench::float64_t update_variance_increment(nvbench::float64_t var,
+                                               nvbench::float64_t diff2,
+                                               nvbench::float64_t f) const
+  {
+    return f * ((diff2 - var) - f * diff2);
+  }
 
 public:
   void update(nvbench::float64_t measurement) noexcept
@@ -109,16 +121,16 @@ public:
 
     if (m_size > 2)
     {
-      const auto diff    = measurement - m_mean;
       constexpr auto one = nvbench::float64_t{1};
       const auto f       = one / static_cast<nvbench::float64_t>(m_size);
 
       // mu_{n+1} = mu_{n} + (x_{n+1} - mu_{n}) / (n+1)
-      m_mean += diff * f;
+      const auto diff = measurement - m_mean;
+      m_mean += update_mean_increment(diff, f);
 
       // var_{n+1} = var_{n} + (n/(n+1) * diff * diff - var_{n}) / (n+1)
       const auto diff2 = diff * diff;
-      m_variance += f * ((diff2 - m_variance) - f * diff2);
+      m_variance += update_variance_increment(m_variance, diff2, f);
     }
     else if (m_size == 2)
     {
@@ -152,18 +164,17 @@ public:
       return;
     }
 
-    const auto merged_size = m_size + other.m_size;
-    const auto diff        = other.m_mean - m_mean;
-    const auto f           = static_cast<nvbench::float64_t>(other.m_size) /
-                             static_cast<nvbench::float64_t>(merged_size);
+    m_size += other.m_size;
+    const auto f = static_cast<nvbench::float64_t>(other.m_size) /
+                   static_cast<nvbench::float64_t>(m_size);
 
     // mu_{n+m} = mu_n + (m / (n + m)) * (mu_m - mu_n)
-    m_mean += f * diff;
+    const auto diff = other.m_mean - m_mean;
+    m_mean += update_mean_increment(diff, f);
 
     // var_{n+m} = var_n + (m / (n + m)) * (var_m - var_n + (n / (n + m)) * (mu_n - mu_m)^2)
     const auto diff2 = diff * diff;
-    m_variance += f * ((other.m_variance - m_variance + diff2) - f * diff2);
-    m_size = merged_size;
+    m_variance += update_variance_increment(m_variance - other.m_variance, diff2, f);
   }
 
   [[nodiscard]] nvbench::int64_t get_size() const noexcept { return m_size; }
