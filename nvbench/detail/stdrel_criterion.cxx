@@ -100,8 +100,8 @@ bool stdrel_criterion::do_is_finished()
     return true;
   }
 
-  constexpr std::size_t min_noise_stability_window     = 64;
-  constexpr std::size_t noise_stability_check_interval = 16;
+  constexpr std::size_t min_noise_stability_window          = 64;
+  constexpr nvbench::int64_t noise_stability_check_interval = 16;
 
   // Check if the noise has converged by inspecting a
   // trailing window of recorded noise measurements.
