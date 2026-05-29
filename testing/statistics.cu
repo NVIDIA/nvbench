@@ -319,7 +319,7 @@ void test_relative_interquartile_range()
   {
     const auto actual = statistics::compute_relative_dispersion(6.0, 3.0);
     ASSERT(actual);
-    ASSERT(std::abs(*actual - 2.0) < 0.001);
+    ASSERT(is_close(*actual, 2.0));
   }
 
   {
@@ -355,7 +355,7 @@ void test_relative_interquartile_range()
   {
     const auto actual = statistics::compute_relative_interquartile_range(2.0, 4.0, 6.0);
     ASSERT(actual);
-    ASSERT(std::abs(*actual - 1.0) < 0.001);
+    ASSERT(is_close(*actual, 1.0));
   }
 
   {
@@ -371,7 +371,7 @@ void test_relative_interquartile_range()
     const auto actual =
       statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, 2.0, 4.0, 6.0);
     ASSERT(actual);
-    ASSERT(std::abs(*actual - 1.0) < 0.001);
+    ASSERT(is_close(*actual, 1.0));
   }
 
   {
