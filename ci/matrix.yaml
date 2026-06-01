@@ -1,9 +1,10 @@
-cuda_curr_min: &cuda_prev_min '12.0'
-cuda_curr_max: &cuda_prev_max '12.9'
-cuda_curr_max: &cuda_curr_max '13.0'
+cuda_prev_min: &cuda_prev_min '12.0'
+cuda_prev_max: &cuda_prev_max '12.9'
+cuda_curr_min: &cuda_curr_min '13.0'
+cuda_curr_max: &cuda_curr_max '13.2'
 
 # The version of the devcontainer images to use from https://hub.docker.com/r/rapidsai/devcontainers
-devcontainer_version: '25.12'
+devcontainer_version: '26.08'
 
 # gcc compiler configurations
 gcc7: &gcc7 { name: 'gcc', version: '7', exe: 'g++' }
@@ -14,6 +15,7 @@ gcc11: &gcc11 { name: 'gcc', version: '11', exe: 'g++' }
 gcc12: &gcc12 { name: 'gcc', version: '12', exe: 'g++' }
 gcc13: &gcc13 { name: 'gcc', version: '13', exe: 'g++' }
 gcc14: &gcc14 { name: 'gcc', version: '14', exe: 'g++' }
+gcc15: &gcc15 { name: 'gcc', version: '15', exe: 'g++' }
 
 # LLVM Compiler configurations
 llvm14: &llvm14 { name: 'llvm', version: '14', exe: 'clang++' }
@@ -23,6 +25,7 @@ llvm17: &llvm17 { name: 'llvm', version: '17', exe: 'clang++' }
 llvm18: &llvm18 { name: 'llvm', version: '18', exe: 'clang++' }
 llvm19: &llvm19 { name: 'llvm', version: '19', exe: 'clang++' }
 llvm20: &llvm20 { name: 'llvm', version: '20', exe: 'clang++' }
+llvm21: &llvm21 { name: 'llvm', version: '21', exe: 'clang++' }
 
 # MSVC compiler configurations
 msvc2022: &msvc2022 { name: 'cl', version: '14.44', exe: 'cl' }
@@ -61,17 +64,23 @@ pull_request:
     - {cuda: *cuda_prev_max, compiler: *llvm17, cpu: 'amd64'}
     - {cuda: *cuda_prev_max, compiler: *llvm18, cpu: 'amd64'}
     - {cuda: *cuda_prev_max, compiler: *llvm19, cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *gcc11,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *gcc12,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *gcc13,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *gcc14,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *llvm15, cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *llvm16, cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *llvm17, cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *llvm18, cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *llvm19, cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, compiler: *llvm20, cpu: 'amd64'}
     - {cuda: *cuda_curr_max, compiler: *gcc11,  cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, compiler: *gcc12,  cpu: 'amd64'}
     - {cuda: *cuda_curr_max, compiler: *gcc13,  cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, compiler: *gcc14,  cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *gcc15,  cpu: 'amd64'}
     - {cuda: *cuda_curr_max, compiler: *llvm15, cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, compiler: *llvm16, cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, compiler: *llvm17, cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, compiler: *llvm18, cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, compiler: *llvm19, cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, compiler: *llvm20, cpu: 'amd64'}
+    - {cuda: *cuda_curr_max, compiler: *llvm21, cpu: 'amd64'}
   windows:
+    - {cuda: *cuda_curr_min, compiler: *msvc2022, cpu: 'amd64', std: '17'}
     - {cuda: *cuda_curr_max, compiler: *msvc2022, cpu: 'amd64', std: '17'}
 
 # Python wheel builds
@@ -81,7 +90,7 @@ python_wheels:
     - {cuda: *cuda_prev_max, py_version: '3.11', cpu: 'amd64'}
     - {cuda: *cuda_prev_max, py_version: '3.12', cpu: 'amd64'}
     - {cuda: *cuda_prev_max, py_version: '3.13', cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, py_version: '3.10', cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, py_version: '3.11', cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, py_version: '3.12', cpu: 'amd64'}
-    - {cuda: *cuda_curr_max, py_version: '3.13', cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, py_version: '3.10', cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, py_version: '3.11', cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, py_version: '3.12', cpu: 'amd64'}
+    - {cuda: *cuda_curr_min, py_version: '3.13', cpu: 'amd64'}
