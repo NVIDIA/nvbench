@@ -182,7 +182,7 @@ void measure_cpu_only_base::generate_summaries()
     statistics::compute_quartiles(m_cpu_times.cbegin(), m_cpu_times.cend());
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/q1");
-    summ.set_string("name", "Q1");
+    summ.set_string("name", "Q1 CPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "First quartile of CPU times of isolated kernel executions");
     summ.set_float64("value", cpu_first_quartile);
@@ -190,7 +190,7 @@ void measure_cpu_only_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/median");
-    summ.set_string("name", "CPU Time");
+    summ.set_string("name", "Median CPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Median of CPU times of isolated kernel executions");
     summ.set_float64("value", cpu_median);
@@ -198,7 +198,7 @@ void measure_cpu_only_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/q3");
-    summ.set_string("name", "Q3");
+    summ.set_string("name", "Q3 CPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Third quartile of CPU times of isolated kernel executions");
     summ.set_float64("value", cpu_third_quartile);
@@ -206,7 +206,7 @@ void measure_cpu_only_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/absolute");
-    summ.set_string("name", "IR");
+    summ.set_string("name", "IQR");
     summ.set_string("hint", "duration");
     summ.set_string("description",
                     "Interquartile range of CPU times of isolated kernel executions");
@@ -221,7 +221,7 @@ void measure_cpu_only_base::generate_summaries()
   if (cpu_robust_noise)
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
-    summ.set_string("name", "Noise");
+    summ.set_string("name", "Rel IQR");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative interquartile range of CPU times of isolated kernel executions");

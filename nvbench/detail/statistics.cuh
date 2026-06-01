@@ -209,15 +209,16 @@ public:
 inline std::size_t percentile_rank(int percentile, std::size_t size)
 {
   assert(size > 0 && "percentile_rank requires non-empty sample set");
-  const auto p        = std::clamp(percentile, 0, 100);
+  const auto p = std::clamp(percentile, 0, 100);
+  const auto q = static_cast<nvbench::float64_t>(p) / 100.0;
+
   const auto max_rank = static_cast<nvbench::float64_t>(size - 1);
-  const auto q        = static_cast<nvbench::float64_t>(p) / 100.0;
   return static_cast<std::size_t>(std::round(q * max_rank));
 }
 
 template <typename ValueType, std::size_t N>
-std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> samples,
-                                                        std::array<int, N> percentiles)
+std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> &&samples,
+                                                        const std::array<int, N> &percentiles)
 {
   std::array<ValueType, N> result{};
   if (samples.empty())
@@ -230,7 +231,9 @@ std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> s
 
   for (std::size_t i = 0; i < N; ++i)
   {
-    result[i] = samples[percentile_rank(percentiles[i], samples.size())];
+    const auto rank = ::nvbench::detail::statistics::percentile_rank(percentiles[i],
+                                                                     samples.size());
+    result[i]       = samples[rank];
   }
   return result;
 }
@@ -244,33 +247,41 @@ std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> s
 template <typename Iter,
           std::size_t N,
           typename ValueType = typename std::iterator_traits<Iter>::value_type>
-std::array<ValueType, N> compute_percentiles(Iter first, Iter last, std::array<int, N> percentiles)
+std::array<ValueType, N> compute_percentiles(Iter first,
+                                             Iter last,
+                                             const std::array<int, N> &percentiles)
 {
   static_assert(std::is_floating_point_v<ValueType>,
                 "compute_percentiles requires a floating-point value type.");
 
   std::vector<ValueType> samples(first, last);
-  return compute_percentiles_by_sorting(std::move(samples), percentiles);
+  return ::nvbench::detail::statistics::compute_percentiles_by_sorting(std::move(samples),
+                                                                       percentiles);
 }
 
 template <typename T>
 struct quartiles_t
 {
+  static_assert(std::is_arithmetic_v<T>,
+                "Template parameter used for quartiles_t must be arithmetic type");
+
   T first_quartile;
   T median;
   T third_quartile;
 };
 
 template <typename ValueType>
-quartiles_t<ValueType> compute_quartiles_by_sorting(std::vector<ValueType> samples)
+quartiles_t<ValueType> compute_quartiles_by_sorting(std::vector<ValueType> &&samples)
 {
   constexpr std::array<int, 3> qs{25, 50, 75};
-  const auto r = compute_percentiles_by_sorting(std::move(samples), qs);
+  const auto r = ::nvbench::detail::statistics::compute_percentiles_by_sorting(
+    std::forward<std::vector<ValueType>>(samples),
+    qs);
   return {r[0], r[1], r[2]};
 }
 
 template <typename ValueType>
-quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> samples)
+quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> &&samples)
 {
   if (samples.empty())
   {
@@ -279,7 +290,7 @@ quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> sam
   }
 
   const auto select = [](auto first, std::size_t rank, auto last) {
-    auto nth = first + static_cast<std::ptrdiff_t>(rank);
+    const auto nth = first + static_cast<std::ptrdiff_t>(rank);
     std::nth_element(first, nth, last);
     return nth;
   };
@@ -312,10 +323,10 @@ quartiles_t<ValueType> compute_quartiles(Iter first, Iter last)
 
   if (samples.size() >= selection_threshold)
   {
-    return compute_quartiles_by_selection(std::move(samples));
+    return ::nvbench::detail::statistics::compute_quartiles_by_selection(std::move(samples));
   }
 
-  return compute_quartiles_by_sorting(std::move(samples));
+  return ::nvbench::detail::statistics::compute_quartiles_by_sorting(std::move(samples));
 }
 
 // Returns nullopt for invalid inputs. A +inf result is allowed: it represents
@@ -343,7 +354,7 @@ compute_relative_interquartile_range(nvbench::float64_t first_quartile,
     return std::nullopt;
   }
 
-  return compute_relative_dispersion(interquartile_range, median);
+  return ::nvbench::detail::statistics::compute_relative_dispersion(interquartile_range, median);
 }
 
 // Returns nullopt until there are enough samples for a meaningful robust noise estimate.
@@ -357,7 +368,9 @@ inline std::optional<nvbench::float64_t> compute_robust_noise(nvbench::int64_t n
     return std::nullopt;
   }
 
-  return compute_relative_interquartile_range(first_quartile, median, third_quartile);
+  return ::nvbench::detail::statistics::compute_relative_interquartile_range(first_quartile,
+                                                                             median,
+                                                                             third_quartile);
 }
 
 /**

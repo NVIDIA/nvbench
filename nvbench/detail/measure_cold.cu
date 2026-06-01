@@ -272,7 +272,7 @@ void measure_cold_base::generate_summaries()
     statistics::compute_quartiles(m_cpu_times.cbegin(), m_cpu_times.cend());
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/q1");
-    summ.set_string("name", "Q1");
+    summ.set_string("name", "Q1 CPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "First quartile of isolated kernel execution CPU times");
     summ.set_float64("value", cpu_time_first_quartile);
@@ -280,7 +280,7 @@ void measure_cold_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/median");
-    summ.set_string("name", "CPU Time");
+    summ.set_string("name", "Median CPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Median of isolated kernel execution CPU times");
     summ.set_float64("value", cpu_time_median);
@@ -288,7 +288,7 @@ void measure_cold_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/q3");
-    summ.set_string("name", "Q3");
+    summ.set_string("name", "Q3 CPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Third quartile of isolated kernel execution CPU times");
     summ.set_float64("value", cpu_time_third_quartile);
@@ -296,7 +296,7 @@ void measure_cold_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/ir/absolute");
-    summ.set_string("name", "IR");
+    summ.set_string("name", "IQR");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Interquartile range of isolated kernel execution CPU times");
     const auto cpu_time_ir = cpu_time_third_quartile - cpu_time_first_quartile;
@@ -310,7 +310,7 @@ void measure_cold_base::generate_summaries()
   if (cpu_robust_noise)
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/ir/relative");
-    summ.set_string("name", "Noise");
+    summ.set_string("name", "Rel IQR");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative interquartile range of isolated kernel execution CPU times");
@@ -378,7 +378,7 @@ void measure_cold_base::generate_summaries()
     statistics::compute_quartiles(m_cuda_times.cbegin(), m_cuda_times.cend());
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/q1");
-    summ.set_string("name", "Q1");
+    summ.set_string("name", "Q1 GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "First quartile of isolated kernel execution GPU times");
     summ.set_float64("value", cuda_time_first_quartile);
@@ -386,7 +386,7 @@ void measure_cold_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/median");
-    summ.set_string("name", "GPU Time");
+    summ.set_string("name", "Median GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Median of isolated kernel execution GPU times");
     summ.set_float64("value", cuda_time_median);
@@ -394,7 +394,7 @@ void measure_cold_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/q3");
-    summ.set_string("name", "Q3");
+    summ.set_string("name", "Q3 GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Third quartile of isolated kernel execution GPU times");
     summ.set_float64("value", cuda_time_third_quartile);
@@ -402,7 +402,7 @@ void measure_cold_base::generate_summaries()
   }
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/ir/absolute");
-    summ.set_string("name", "IR");
+    summ.set_string("name", "IQR");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Interquartile range of isolated kernel execution GPU times");
     const auto cuda_time_ir = cuda_time_third_quartile - cuda_time_first_quartile;
@@ -416,7 +416,7 @@ void measure_cold_base::generate_summaries()
   if (cuda_robust_noise)
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/ir/relative");
-    summ.set_string("name", "Noise");
+    summ.set_string("name", "Rel IQR");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative interquartile range of isolated kernel execution GPU times");

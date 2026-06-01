@@ -261,40 +261,25 @@ void test_percentiles()
   }
 }
 
-void test_quartiles()
+void test_quartiles_methods_agree()
 {
   {
     const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
-    const auto sorting   = statistics::compute_quartiles_by_sorting(data);
-    const auto selection = statistics::compute_quartiles_by_selection(data);
+    const auto sorting =
+      statistics::compute_quartiles_by_sorting(std::vector<nvbench::float64_t>(data));
+    const auto selection =
+      statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
     assert_quartiles_equal(selection, sorting);
     assert_quartiles_equal(sorting, statistics::quartiles_t<nvbench::float64_t>{20.0, 30.0, 30.0});
   }
 
   {
     const std::vector<nvbench::float64_t> data{5.0, -1.0, 5.0, 2.0, 9.0, 2.0, 5.0};
-    const auto sorting   = statistics::compute_quartiles_by_sorting(data);
-    const auto selection = statistics::compute_quartiles_by_selection(data);
+    const auto sorting =
+      statistics::compute_quartiles_by_sorting(std::vector<nvbench::float64_t>(data));
+    const auto selection =
+      statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
     assert_quartiles_equal(selection, sorting);
-  }
-
-  {
-    const std::vector<nvbench::float64_t> data{42.0};
-    assert_quartiles_equal(statistics::compute_quartiles(data.cbegin(), data.cend()),
-                           statistics::quartiles_t<nvbench::float64_t>{42.0, 42.0, 42.0});
-  }
-
-  {
-    const std::vector<nvbench::float64_t> data;
-    assert_quartiles_nan(statistics::compute_quartiles(data.cbegin(), data.cend()));
-  }
-
-  {
-    std::istringstream data{"40 10 30 20"};
-    const auto actual =
-      statistics::compute_quartiles(std::istream_iterator<nvbench::float64_t>{data},
-                                    std::istream_iterator<nvbench::float64_t>{});
-    assert_quartiles_equal(actual, statistics::quartiles_t<nvbench::float64_t>{20.0, 30.0, 30.0});
   }
 
   // test around threshold when public API switches between implementations
@@ -307,14 +292,40 @@ void test_quartiles()
     }
 
     const auto public_api = statistics::compute_quartiles(data.cbegin(), data.cend());
-    const auto sorting    = statistics::compute_quartiles_by_sorting(data);
-    const auto selection  = statistics::compute_quartiles_by_selection(data);
+    const auto sorting =
+      statistics::compute_quartiles_by_sorting(std::vector<nvbench::float64_t>(data));
+    const auto selection =
+      statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
     assert_quartiles_equal(selection, sorting);
     assert_quartiles_equal(public_api, sorting);
   }
 }
 
-void test_relative_interquartile_range()
+void test_quartiles()
+{
+  // special case inputs produce expected results
+  {
+    const std::vector<nvbench::float64_t> data{42.0};
+    assert_quartiles_equal(statistics::compute_quartiles(data.cbegin(), data.cend()),
+                           statistics::quartiles_t<nvbench::float64_t>{42.0, 42.0, 42.0});
+  }
+
+  {
+    const std::vector<nvbench::float64_t> data;
+    assert_quartiles_nan(statistics::compute_quartiles(data.cbegin(), data.cend()));
+  }
+
+  // works with input iterators
+  {
+    std::istringstream data{"40 10 30 20"};
+    const auto actual =
+      statistics::compute_quartiles(std::istream_iterator<nvbench::float64_t>{data},
+                                    std::istream_iterator<nvbench::float64_t>{});
+    assert_quartiles_equal(actual, statistics::quartiles_t<nvbench::float64_t>{20.0, 30.0, 30.0});
+  }
+}
+
+void test_compute_relative_dispersion_nominal_input()
 {
   {
     const auto actual = statistics::compute_relative_dispersion(6.0, 3.0);
@@ -322,6 +333,18 @@ void test_relative_interquartile_range()
     ASSERT(is_close(*actual, 2.0));
   }
 
+  // infinite dispersion is tolerated
+  {
+    const auto actual =
+      statistics::compute_relative_dispersion(std::numeric_limits<nvbench::float64_t>::infinity(),
+                                              1.0);
+    ASSERT(actual);
+    ASSERT(!std::isfinite(*actual));
+  }
+}
+
+void test_compute_relative_dispersion_invalid_inputs()
+{
   {
     const auto actual = statistics::compute_relative_dispersion(1.0, 0.0);
     ASSERT(!actual);
@@ -343,21 +366,10 @@ void test_relative_interquartile_range()
     const auto actual = statistics::compute_relative_dispersion(-1.0, 1.0);
     ASSERT(!actual);
   }
+}
 
-  {
-    const auto actual =
-      statistics::compute_relative_dispersion(std::numeric_limits<nvbench::float64_t>::infinity(),
-                                              1.0);
-    ASSERT(actual);
-    ASSERT(!std::isfinite(*actual));
-  }
-
-  {
-    const auto actual = statistics::compute_relative_interquartile_range(2.0, 4.0, 6.0);
-    ASSERT(actual);
-    ASSERT(is_close(*actual, 1.0));
-  }
-
+void test_compute_robust_noise()
+{
   {
     const auto actual =
       statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate - 1,
@@ -370,6 +382,15 @@ void test_relative_interquartile_range()
   {
     const auto actual =
       statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, 2.0, 4.0, 6.0);
+    ASSERT(actual);
+    ASSERT(is_close(*actual, 1.0));
+  }
+}
+
+void test_relative_interquartile_range()
+{
+  {
+    const auto actual = statistics::compute_relative_interquartile_range(2.0, 4.0, 6.0);
     ASSERT(actual);
     ASSERT(is_close(*actual, 1.0));
   }
@@ -474,7 +495,11 @@ int main()
   test_std();
   test_percentiles();
   test_quartiles();
+  test_quartiles_methods_agree();
+  test_compute_relative_dispersion_nominal_input();
+  test_compute_relative_dispersion_invalid_inputs();
   test_relative_interquartile_range();
+  test_compute_robust_noise();
   test_lin_regression();
   test_r2();
   test_slope_conversion();
