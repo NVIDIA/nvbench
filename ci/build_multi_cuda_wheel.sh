@@ -28,13 +28,14 @@ ci_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage="Usage: $0 -py-version <python_version> [additional options...]"
 
+# shellcheck source=ci/util/python/common_arg_parser.sh
 source "$ci_dir/util/python/common_arg_parser.sh"
 parse_python_args "$@"
 
 # Check if py_version was provided (this script requires it)
 require_py_version "$usage" || exit 1
 
-echo "Docker socket: " $(ls /var/run/docker.sock)
+echo "Docker socket: $(ls /var/run/docker.sock)"
 
 # Set HOST_WORKSPACE if not already set (for local runs)
 if [[ -z "${HOST_WORKSPACE:-}" ]]; then
@@ -48,9 +49,6 @@ fi
 # We build separate wheels using separate containers for each CUDA version,
 # then merge them into a single wheel.
 
-readonly cuda12_version=12.9.1
-readonly cuda13_version=13.0.1
-readonly devcontainer_version=25.12
 readonly devcontainer_distro=rockylinux8
 
 if [[ "$(uname -m)" == "aarch64" ]]; then
@@ -59,26 +57,53 @@ else
   readonly host_arch_suffix=""
 fi
 
-readonly cuda12_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda12_version}-${devcontainer_distro}-py${py_version}${host_arch_suffix}
-readonly cuda13_image=rapidsai/ci-wheel:${devcontainer_version}-cuda${cuda13_version}-${devcontainer_distro}-py${py_version}${host_arch_suffix}
+rapids_ci_wheel_version() {
+  if [[ "${py_version}" == "3.10" ]]; then
+    echo "25.12"
+  else
+    echo "26.08"
+  fi
+}
+
+ci_wheel_image() {
+  local ctk="$1"
+  local rapids_ci_wheel_version=""
+  local cuda_version=""
+
+  case "${ctk}" in
+    12)
+      cuda_version="12.9.1"
+      ;;
+    13)
+      cuda_version="13.0.2"
+      ;;
+    *)
+      echo "Error: Unsupported CUDA version: ${ctk}" >&2
+      return 1
+      ;;
+  esac
+
+  rapids_ci_wheel_version="$(rapids_ci_wheel_version)"
+  echo "rapidsai/ci-wheel:${rapids_ci_wheel_version}-cuda${cuda_version}-${devcontainer_distro}-py${py_version}${host_arch_suffix}"
+}
 
 mkdir -p wheelhouse
 
 for ctk in 12 13; do
-  image=$(eval echo \$cuda${ctk}_image)
+  image="$(ci_wheel_image "${ctk}")"
   echo "::group::⚒️ Building CUDA ${ctk} wheel on ${image}"
   (
     set -x
-    docker pull $image
+    docker pull "${image}"
     docker run --rm -i \
         --workdir /workspace/python \
-        --mount type=bind,source=${HOST_WORKSPACE},target=/workspace/ \
-        --env py_version=${py_version} \
-        $image \
+        --mount "type=bind,source=${HOST_WORKSPACE},target=/workspace/" \
+        --env "py_version=${py_version}" \
+        "${image}" \
         /workspace/ci/build_cuda_bench_wheel_for_cuda.sh
     # Prevent GHA runners from exhausting available storage with leftover images:
     if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-      docker rmi -f $image
+      docker rmi -f "${image}"
     fi
   )
   echo "::endgroup::"

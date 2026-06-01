@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.10', '3.11', '3.12', '3.13']
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
       - name: Checkout repository
@@ -55,7 +55,7 @@ jobs:
       fail-fast: false
       matrix:
         cuda: ['12', '13']
-        python: ['3.10', '3.11', '3.12', '3.13']
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
       - name: Checkout repository
@@ -72,24 +72,9 @@ jobs:
 
       - name: Test wheel
         run: |
-          # Use the same rapidsai/ci-wheel Docker image as build
-          if [[ "${{ matrix.cuda }}" == "12" ]]; then
-            cuda_full_version="12.9.1"
-            cuda_extra="cu12"
-          else
-            cuda_full_version="13.0.1"
-            cuda_extra="cu13"
-          fi
-
-          docker run --rm \
-            --workdir /workspace \
-            --gpus all \
-            --mount type=bind,source=$(pwd),target=/workspace/ \
-            --env py_version=${{ matrix.python }} \
-            --env cuda_version=${{ matrix.cuda }} \
-            --env cuda_extra="${cuda_extra}" \
-            rapidsai/ci-wheel:25.12-cuda${cuda_full_version}-rockylinux8-py${{ matrix.python }} \
-            /workspace/ci/test_cuda_bench_inner.sh
+          bash ci/test_cuda_bench.sh \
+            -py-version ${{ matrix.python }} \
+            -cuda-version ${{ matrix.cuda }}
 
   verify-workflow:
     name: Verify all builds and tests succeeded
