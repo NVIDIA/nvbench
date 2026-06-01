@@ -82,15 +82,3 @@ pull_request:
   windows:
     - {cuda: *cuda_curr_min, compiler: *msvc2022, cpu: 'amd64', std: '17'}
     - {cuda: *cuda_curr_max, compiler: *msvc2022, cpu: 'amd64', std: '17'}
-
-# Python wheel builds
-python_wheels:
-  nvcc:
-    - {cuda: *cuda_prev_max, py_version: '3.10', cpu: 'amd64'}
-    - {cuda: *cuda_prev_max, py_version: '3.11', cpu: 'amd64'}
-    - {cuda: *cuda_prev_max, py_version: '3.12', cpu: 'amd64'}
-    - {cuda: *cuda_prev_max, py_version: '3.13', cpu: 'amd64'}
-    - {cuda: *cuda_curr_min, py_version: '3.10', cpu: 'amd64'}
-    - {cuda: *cuda_curr_min, py_version: '3.11', cpu: 'amd64'}
-    - {cuda: *cuda_curr_min, py_version: '3.12', cpu: 'amd64'}
-    - {cuda: *cuda_curr_min, py_version: '3.13', cpu: 'amd64'}
