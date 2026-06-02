@@ -328,7 +328,9 @@ def test_compare_benches_skips_non_finite_centers(monkeypatch, nvbench_compare):
     assert run_data.stats.unknown_count == 0
 
 
-def test_gpu_timing_data_loads_samples_and_frequencies(tmp_path, nvbench_compare):
+def test_gpu_timing_data_loads_samples_and_frequencies_lazily(
+    tmp_path, nvbench_compare
+):
     samples_dir = tmp_path / "result.json-bin"
     freqs_dir = tmp_path / "result.json-freqs-bin"
     samples_dir.mkdir()
@@ -338,6 +340,16 @@ def test_gpu_timing_data_loads_samples_and_frequencies(tmp_path, nvbench_compare
 
     np.array([1.0, 2.0, 4.0], dtype="<f4").tofile(samples_file)
     np.array([100.0, 200.0, 400.0], dtype="<f4").tofile(freqs_file)
+
+    reader_calls = []
+    buffers = {
+        str(samples_file): np.array([1.0, 2.0, 4.0], dtype="<f4").tobytes(),
+        str(freqs_file): np.array([100.0, 200.0, 400.0], dtype="<f4").tobytes(),
+    }
+
+    def tracking_reader(filename):
+        reader_calls.append(filename)
+        return buffers[filename]
 
     timing = nvbench_compare.extract_gpu_timing_data(
         [
@@ -356,15 +368,24 @@ def test_gpu_timing_data_loads_samples_and_frequencies(tmp_path, nvbench_compare
             ),
         ],
         str(tmp_path),
+        float32_reader=tracking_reader,
     )
+
+    assert reader_calls == []
 
     assert timing.samples is not None
     assert list(timing.samples) == pytest.approx([1.0, 2.0, 4.0])
+    assert reader_calls == [str(samples_file)]
+
+    assert list(timing.samples) == pytest.approx([1.0, 2.0, 4.0])
+    assert reader_calls == [str(samples_file)]
+
     assert timing.frequencies is not None
     assert list(timing.frequencies) == pytest.approx([100.0, 200.0, 400.0])
+    assert reader_calls == [str(samples_file), str(freqs_file)]
 
 
-def test_gpu_timing_data_rejects_mismatched_sample_and_frequency_counts(
+def test_gpu_timing_data_treats_mismatched_sample_and_frequency_counts_as_unavailable(
     tmp_path, nvbench_compare
 ):
     samples_file = tmp_path / "samples.bin"
@@ -372,8 +393,8 @@ def test_gpu_timing_data_rejects_mismatched_sample_and_frequency_counts(
     np.array([1.0, 2.0], dtype="<f4").tofile(samples_file)
     np.array([100.0, 200.0, 300.0], dtype="<f4").tofile(freqs_file)
 
-    with pytest.raises(ValueError, match="sample count .* frequency count"):
-        nvbench_compare.extract_gpu_timing_data(
+    with pytest.warns(RuntimeWarning, match="sample count .* frequency count"):
+        timing = nvbench_compare.extract_gpu_timing_data(
             [
                 make_binary_summary(
                     nvbench_compare, "SAMPLE_TIMES_TAG", str(samples_file), 2
@@ -384,6 +405,27 @@ def test_gpu_timing_data_rejects_mismatched_sample_and_frequency_counts(
             ],
             str(tmp_path),
         )
+
+    assert timing.samples is None
+    assert timing.frequencies is None
+
+
+def test_gpu_timing_data_warns_when_lazy_sample_read_fails(tmp_path, nvbench_compare):
+    missing_file = tmp_path / "missing.bin"
+
+    timing = nvbench_compare.extract_gpu_timing_data(
+        [
+            make_binary_summary(
+                nvbench_compare, "SAMPLE_TIMES_TAG", str(missing_file), 3
+            ),
+        ],
+        str(tmp_path),
+    )
+
+    with pytest.warns(RuntimeWarning, match="failed to read"):
+        assert timing.samples is None
+
+    assert timing.samples is None
 
 
 def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
