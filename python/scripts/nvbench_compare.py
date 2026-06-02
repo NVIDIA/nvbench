@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 import jsondiff
+import numpy as np
 import tabulate
 from colorama import Fore
 
@@ -44,6 +45,8 @@ GPU_TIME_STDEV_RELATIVE_TAG = "nv/cold/time/gpu/stdev/relative"
 GPU_TIME_MEDIAN_TAG = "nv/cold/time/gpu/median"
 GPU_TIME_IR_TAG = "nv/cold/time/gpu/ir/absolute"
 GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
+SAMPLE_TIMES_TAG = "nv/json/bin:nv/cold/sample_times"
+SAMPLE_FREQUENCIES_TAG = "nv/json/freqs-bin:nv/cold/sample_freqs"
 
 # These dataclasses are treated as parsed value objects. frozen=True prevents
 # accidental field reassignment but does not imply deep immutability.
@@ -59,6 +62,8 @@ class GpuTimeSummary:
     median: float | None
     interquartile_range: float | None
     interquartile_range_relative: float | None
+    samples: np.ndarray | None = None
+    frequencies: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -205,23 +210,27 @@ def lookup_summary(summaries, tag):
     return next((summary for summary in summaries if summary["tag"] == tag), None)
 
 
-def extract_summary_value(summary):
+def extract_summary_data_value(summary, name, expected_type):
     summary_tag = summary.get("tag", "<unknown>")
     for value_data in summary.get("data", []):
-        if value_data.get("name") != "value":
+        if value_data.get("name") != name:
             continue
 
         value_type = value_data.get("type")
-        if value_type != "float64":
+        if value_type != expected_type:
             raise ValueError(
-                f"summary {summary_tag!r} field 'value' has type "
-                f"{value_type!r}; expected 'float64'"
+                f"summary {summary_tag!r} field {name!r} has type "
+                f"{value_type!r}; expected {expected_type!r}"
             )
         if "value" not in value_data:
-            raise ValueError(f"summary {summary_tag!r} field 'value' is missing value")
+            raise ValueError(f"summary {summary_tag!r} field {name!r} is missing value")
         return value_data["value"]
 
-    raise ValueError(f"summary {summary_tag!r} is missing field 'value'")
+    raise ValueError(f"summary {summary_tag!r} is missing field {name!r}")
+
+
+def extract_summary_value(summary):
+    return extract_summary_data_value(summary, "value", "float64")
 
 
 def normalize_float_value(value, *, null_value=None):
@@ -237,7 +246,92 @@ def extract_summary_float(summaries, tag, *, null_value=None):
     return normalize_float_value(extract_summary_value(summary), null_value=null_value)
 
 
-def extract_gpu_time_summary(summaries):
+def extract_binary_filename(summary):
+    value = extract_summary_data_value(summary, "filename", "string")
+    if not isinstance(value, str):
+        raise ValueError(
+            f"summary {summary.get('tag', '<unknown>')!r} field 'filename' "
+            "value must be a string"
+        )
+    return value
+
+
+def extract_binary_size(summary):
+    value = extract_summary_data_value(summary, "size", "int64")
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
+            f"value {value!r} is not an int64"
+        ) from exc
+
+
+def extract_binary_meta(summaries, tag):
+    summary = lookup_summary(summaries, tag)
+    if summary is None:
+        return None, None
+    return extract_binary_size(summary), extract_binary_filename(summary)
+
+
+def resolve_binary_filename(json_dir, binary_filename):
+    if os.path.isabs(binary_filename):
+        return binary_filename
+
+    json_relative_filename = os.path.join(json_dir, binary_filename)
+    if os.path.exists(json_relative_filename):
+        return json_relative_filename
+
+    parent_relative_filename = os.path.join(os.path.dirname(json_dir), binary_filename)
+    if os.path.exists(parent_relative_filename):
+        return parent_relative_filename
+
+    if os.path.exists(binary_filename):
+        return binary_filename
+
+    return json_relative_filename
+
+
+def read_float32_binary(count, filename, json_dir):
+    if count is None or filename is None or json_dir is None:
+        return None
+
+    filename = resolve_binary_filename(json_dir, filename)
+    try:
+        values = np.fromfile(filename, dtype="<f4")
+    except FileNotFoundError:
+        return None
+
+    if count != len(values):
+        raise ValueError(f"expected {count} values in {filename}, found {len(values)}")
+    return values
+
+
+def extract_sample_times(summaries, json_dir):
+    sample_count, samples_filename = extract_binary_meta(summaries, SAMPLE_TIMES_TAG)
+    return read_float32_binary(sample_count, samples_filename, json_dir)
+
+
+def extract_sample_frequencies(summaries, json_dir):
+    frequency_count, frequencies_filename = extract_binary_meta(
+        summaries, SAMPLE_FREQUENCIES_TAG
+    )
+    return read_float32_binary(frequency_count, frequencies_filename, json_dir)
+
+
+def extract_gpu_time_summary(summaries, json_dir=None):
+    samples = extract_sample_times(summaries, json_dir)
+    frequencies = extract_sample_frequencies(summaries, json_dir)
+    if (
+        samples is not None
+        and frequencies is not None
+        and len(samples) != len(frequencies)
+    ):
+        raise ValueError(
+            f"sample count ({len(samples)}) does not match "
+            f"frequency count ({len(frequencies)})"
+        )
+
     return GpuTimeSummary(
         minimum=extract_summary_float(summaries, GPU_TIME_MIN_TAG),
         maximum=extract_summary_float(summaries, GPU_TIME_MAX_TAG),
@@ -253,6 +347,8 @@ def extract_gpu_time_summary(summaries):
         interquartile_range_relative=extract_summary_float(
             summaries, GPU_TIME_IR_RELATIVE_TAG, null_value=math.inf
         ),
+        samples=samples,
+        frequencies=frequencies,
     )
 
 
@@ -663,6 +759,8 @@ def compare_benches(
     no_color,
     reference_device_filter=None,
     compare_device_filter=None,
+    ref_json_dir=None,
+    cmp_json_dir=None,
 ):
     if plot_along:
         import matplotlib.pyplot as plt
@@ -776,8 +874,8 @@ def compare_benches(
 
                 # TODO: Use other timings, too. Maybe multiple rows, with a
                 # "Timing" column + values "CPU/GPU/Batch"?
-                cmp_gpu_time = extract_gpu_time_summary(cmp_summaries)
-                ref_gpu_time = extract_gpu_time_summary(ref_summaries)
+                cmp_gpu_time = extract_gpu_time_summary(cmp_summaries, cmp_json_dir)
+                ref_gpu_time = extract_gpu_time_summary(ref_summaries, ref_json_dir)
                 ref_estimate, cmp_estimate = compute_common_time_estimates(
                     ref_gpu_time, cmp_gpu_time
                 )
@@ -1151,6 +1249,8 @@ def main() -> int:
                 args.no_color,
                 reference_device_filter,
                 compare_device_filter,
+                os.path.dirname(ref),
+                os.path.dirname(comp),
             )
         except ValueError as exc:
             print(str(exc))

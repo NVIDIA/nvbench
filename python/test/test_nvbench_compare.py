@@ -6,6 +6,7 @@ import sys
 import types
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 
@@ -96,6 +97,16 @@ def make_summary(nvbench_compare, tag, value):
     return {
         "tag": getattr(nvbench_compare, tag),
         "data": [{"name": "value", "type": "float64", "value": value}],
+    }
+
+
+def make_binary_summary(nvbench_compare, tag, filename, size):
+    return {
+        "tag": getattr(nvbench_compare, tag),
+        "data": [
+            {"name": "filename", "type": "string", "value": filename},
+            {"name": "size", "type": "int64", "value": str(size)},
+        ],
     }
 
 
@@ -299,6 +310,64 @@ def test_compare_benches_skips_non_finite_centers(monkeypatch, nvbench_compare):
     assert nvbench_compare.improvement_count == 0
     assert nvbench_compare.regression_count == 0
     assert nvbench_compare.unknown_count == 0
+
+
+def test_gpu_time_summary_loads_samples_and_frequencies(tmp_path, nvbench_compare):
+    samples_dir = tmp_path / "result.json-bin"
+    freqs_dir = tmp_path / "result.json-freqs-bin"
+    samples_dir.mkdir()
+    freqs_dir.mkdir()
+    samples_file = samples_dir / "0.bin"
+    freqs_file = freqs_dir / "0.bin"
+
+    np.array([1.0, 2.0, 4.0], dtype="<f4").tofile(samples_file)
+    np.array([100.0, 200.0, 400.0], dtype="<f4").tofile(freqs_file)
+
+    summary = nvbench_compare.extract_gpu_time_summary(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "2.0"),
+            make_binary_summary(
+                nvbench_compare,
+                "SAMPLE_TIMES_TAG",
+                str(samples_file.relative_to(tmp_path)),
+                3,
+            ),
+            make_binary_summary(
+                nvbench_compare,
+                "SAMPLE_FREQUENCIES_TAG",
+                str(freqs_file.relative_to(tmp_path)),
+                3,
+            ),
+        ],
+        str(tmp_path),
+    )
+
+    assert summary.samples is not None
+    assert list(summary.samples) == pytest.approx([1.0, 2.0, 4.0])
+    assert summary.frequencies is not None
+    assert list(summary.frequencies) == pytest.approx([100.0, 200.0, 400.0])
+
+
+def test_gpu_time_summary_rejects_mismatched_sample_and_frequency_counts(
+    tmp_path, nvbench_compare
+):
+    samples_file = tmp_path / "samples.bin"
+    freqs_file = tmp_path / "freqs.bin"
+    np.array([1.0, 2.0], dtype="<f4").tofile(samples_file)
+    np.array([100.0, 200.0, 300.0], dtype="<f4").tofile(freqs_file)
+
+    with pytest.raises(ValueError, match="sample count .* frequency count"):
+        nvbench_compare.extract_gpu_time_summary(
+            [
+                make_binary_summary(
+                    nvbench_compare, "SAMPLE_TIMES_TAG", str(samples_file), 2
+                ),
+                make_binary_summary(
+                    nvbench_compare, "SAMPLE_FREQUENCIES_TAG", str(freqs_file), 3
+                ),
+            ],
+            str(tmp_path),
+        )
 
 
 def test_compare_benches_prefers_median_and_iqr_when_available(
