@@ -119,6 +119,7 @@ def make_gpu_timing_data(
     median=None,
     interquartile_range=None,
     interquartile_range_relative=None,
+    sm_clock_rate_mean=None,
 ):
     return nvbench_compare.GpuTimingData(
         minimum=None,
@@ -129,6 +130,7 @@ def make_gpu_timing_data(
         median=median,
         interquartile_range=interquartile_range,
         interquartile_range_relative=interquartile_range_relative,
+        sm_clock_rate_mean=sm_clock_rate_mean,
     )
 
 
@@ -383,6 +385,18 @@ def test_gpu_timing_data_loads_samples_and_frequencies_lazily(
     assert timing.frequencies is not None
     assert list(timing.frequencies) == pytest.approx([100.0, 200.0, 400.0])
     assert reader_calls == [str(samples_file), str(freqs_file)]
+
+
+def test_gpu_timing_data_parses_sm_clock_rate_mean(nvbench_compare):
+    timing = nvbench_compare.extract_gpu_timing_data(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "2.0"),
+            make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "1.5e9"),
+        ],
+    )
+
+    assert timing.sm_clock_rate_mean == pytest.approx(1.5e9)
+    assert timing.frequencies is None
 
 
 def test_gpu_timing_data_treats_mismatched_sample_and_frequency_counts_as_unavailable(

@@ -40,6 +40,7 @@ GPU_TIME_STDEV_RELATIVE_TAG = "nv/cold/time/gpu/stdev/relative"
 GPU_TIME_MEDIAN_TAG = "nv/cold/time/gpu/median"
 GPU_TIME_IR_TAG = "nv/cold/time/gpu/ir/absolute"
 GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
+GPU_SM_CLOCK_RATE_MEAN_TAG = "nv/cold/sm_clock_rate/mean"
 SAMPLE_TIMES_TAG = "nv/json/bin:nv/cold/sample_times"
 SAMPLE_FREQUENCIES_TAG = "nv/json/freqs-bin:nv/cold/sample_freqs"
 
@@ -81,6 +82,7 @@ class GpuTimingData:
     median: float | None
     interquartile_range: float | None
     interquartile_range_relative: float | None
+    sm_clock_rate_mean: float | None = None
     sample_source: Float32BinarySource | None = None
     frequency_source: Float32BinarySource | None = None
 
@@ -466,6 +468,7 @@ def extract_gpu_timing_data(summaries, json_dir=None, float32_reader=read_float3
         interquartile_range_relative=extract_summary_float(
             summaries, GPU_TIME_IR_RELATIVE_TAG, null_value=math.inf
         ),
+        sm_clock_rate_mean=extract_summary_float(summaries, GPU_SM_CLOCK_RATE_MEAN_TAG),
         sample_source=sample_source,
         frequency_source=frequency_source,
     )
