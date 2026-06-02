@@ -423,6 +423,19 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert unknown.status == nvbench_compare.ComparisonStatus.UNKNOWN
 
 
+def test_comparison_stats_records_undecided_status(nvbench_compare):
+    stats = nvbench_compare.ComparisonStats()
+
+    stats.record(nvbench_compare.ComparisonStatus.UNDECIDED)
+
+    assert stats.config_count == 1
+    assert stats.pass_count == 0
+    assert stats.improvement_count == 0
+    assert stats.regression_count == 0
+    assert stats.undecided_count == 1
+    assert stats.unknown_count == 0
+
+
 @pytest.mark.parametrize("ref_time, cmp_time", [(None, 1.0), (1.0, None), (0.0, 1.0)])
 def test_compare_gpu_timings_rejects_unusable_centers(
     nvbench_compare, ref_time, cmp_time

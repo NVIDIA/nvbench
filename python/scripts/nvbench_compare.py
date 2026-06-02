@@ -67,6 +67,7 @@ class TimeEstimate:
 
 class ComparisonStatus(str, Enum):
     UNKNOWN = "????"
+    UNDECIDED = "UNDECIDED"
     SAME = "SAME"
     FAST = "FAST"
     SLOW = "SLOW"
@@ -92,12 +93,15 @@ class ComparisonStats:
     pass_count: int = 0
     improvement_count: int = 0
     regression_count: int = 0
+    undecided_count: int = 0
     unknown_count: int = 0
 
     def record(self, status: ComparisonStatus) -> None:
         self.config_count += 1
         if status == ComparisonStatus.UNKNOWN:
             self.unknown_count += 1
+        elif status == ComparisonStatus.UNDECIDED:
+            self.undecided_count += 1
         elif status == ComparisonStatus.SAME:
             self.pass_count += 1
         elif status == ComparisonStatus.FAST:
@@ -753,6 +757,8 @@ def has_finite_noise(noise):
 def colorize_comparison_status(status, no_color):
     if status == ComparisonStatus.UNKNOWN:
         return colorize(status.value, Fore.YELLOW, Emoji.YELLOW, no_color)
+    if status == ComparisonStatus.UNDECIDED:
+        return colorize(status.value, Fore.YELLOW, Emoji.YELLOW, no_color)
     if status == ComparisonStatus.SAME:
         return colorize(status.value, Fore.BLUE, Emoji.BLUE, no_color)
     if status == ComparisonStatus.FAST:
@@ -1350,6 +1356,9 @@ def main() -> int:
     )
     print(
         f"  - Regression  (abs(%Diff) > max_noise, %Diff > 0): {stats.regression_count}"
+    )
+    print(
+        f"  - Undecided   (comparison requires more evidence): {stats.undecided_count}"
     )
     print(f"  - Unknown     (infinite or unavailable noise): {stats.unknown_count}")
     return 0
