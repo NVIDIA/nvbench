@@ -480,6 +480,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
         third_quartile=1.3,
         mean=1.2,
         stdev_relative=0.05,
+        interquartile_range_relative=0.01,
         sm_clock_rate_mean=100.0,
     )
 
@@ -514,6 +515,91 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert slow is not None
     assert slow.status == nvbench_compare.ComparisonStatus.SLOW
+
+    same = nvbench_compare.compare_gpu_timings(
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.02,
+            first_quartile=1.1,
+            median=1.204,
+            third_quartile=1.28,
+            mean=1.204,
+            interquartile_range_relative=0.01,
+            sm_clock_rate_mean=100.0,
+        ),
+    )
+    assert same is not None
+    assert same.status == nvbench_compare.ComparisonStatus.SAME
+
+    weak_overlap = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.0,
+            first_quartile=1.19,
+            median=1.195,
+            third_quartile=1.2,
+            mean=1.195,
+            interquartile_range_relative=0.01,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.2,
+            first_quartile=1.2,
+            median=1.2,
+            third_quartile=1.4,
+            mean=1.2,
+            interquartile_range_relative=0.01,
+        ),
+    )
+    assert weak_overlap is not None
+    assert weak_overlap.status == nvbench_compare.ComparisonStatus.UNDECIDED
+
+    center_too_far = nvbench_compare.compare_gpu_timings(
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.0,
+            first_quartile=1.1,
+            median=1.21,
+            third_quartile=1.3,
+            mean=1.21,
+            interquartile_range_relative=0.01,
+        ),
+    )
+    assert center_too_far is not None
+    assert center_too_far.status == nvbench_compare.ComparisonStatus.UNDECIDED
+
+    noisy_same = nvbench_compare.compare_gpu_timings(
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.02,
+            first_quartile=1.1,
+            median=1.204,
+            third_quartile=1.28,
+            mean=1.204,
+            interquartile_range_relative=0.03,
+        ),
+    )
+    assert noisy_same is not None
+    assert noisy_same.status == nvbench_compare.ComparisonStatus.UNDECIDED
+
+    clock_disagreement = nvbench_compare.compare_gpu_timings(
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.02,
+            first_quartile=1.1,
+            median=1.204,
+            third_quartile=1.28,
+            mean=1.204,
+            interquartile_range_relative=0.01,
+            sm_clock_rate_mean=200.0,
+        ),
+    )
+    assert clock_disagreement is not None
+    assert clock_disagreement.status == nvbench_compare.ComparisonStatus.UNDECIDED
 
     missing_clock = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -902,6 +988,4 @@ def test_main_returns_success_exit_code_when_regressions_are_detected(
     monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
 
     assert nvbench_compare.main() == 0
-    assert (
-        "Regression  (abs(%Diff) > max_noise, %Diff > 0): 1" in capsys.readouterr().out
-    )
+    assert "Regression  (clear timing gap, %Diff > 0): 1" in capsys.readouterr().out

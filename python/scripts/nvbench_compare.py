@@ -46,6 +46,9 @@ GPU_SM_CLOCK_RATE_MEAN_TAG = "nv/cold/sm_clock_rate/mean"
 SAMPLE_TIMES_TAG = "nv/json/bin:nv/cold/sample_times"
 SAMPLE_FREQUENCIES_TAG = "nv/json/freqs-bin:nv/cold/sample_freqs"
 CLEAR_GAP_RELATIVE_THRESHOLD = 0.005
+SAME_CENTER_RELATIVE_THRESHOLD = 0.005
+SAME_OVERLAP_FRACTION_THRESHOLD = 0.5
+SAME_RELATIVE_DISPERSION_CEILING = 0.02
 
 # The reader returns an object supporting the buffer protocol. Python 3.10 does
 # not provide a standard Buffer type annotation.
@@ -564,6 +567,49 @@ def compare_intervals_for_clear_gap(ref_interval, cmp_interval):
     return None
 
 
+def centers_are_close(ref_center, cmp_center):
+    if not is_positive_finite(ref_center) or not is_positive_finite(cmp_center):
+        return False
+    return (
+        abs(ref_center - cmp_center) / min(ref_center, cmp_center)
+        <= SAME_CENTER_RELATIVE_THRESHOLD
+    )
+
+
+def interval_overlap_fraction(ref_interval, cmp_interval):
+    intersection_lower = max(ref_interval.lower, cmp_interval.lower)
+    intersection_upper = min(ref_interval.upper, cmp_interval.upper)
+    if intersection_upper < intersection_lower:
+        return 0.0
+
+    ref_width = ref_interval.upper - ref_interval.lower
+    cmp_width = cmp_interval.upper - cmp_interval.lower
+    min_width = min(ref_width, cmp_width)
+    if min_width > 0.0:
+        return (intersection_upper - intersection_lower) / min_width
+
+    if ref_width == 0.0 and cmp_width == 0.0:
+        return 1.0 if ref_interval.lower == cmp_interval.lower else 0.0
+
+    if ref_width == 0.0:
+        return (
+            1.0
+            if cmp_interval.lower <= ref_interval.lower <= cmp_interval.upper
+            else 0.0
+        )
+
+    return (
+        1.0 if ref_interval.lower <= cmp_interval.lower <= ref_interval.upper else 0.0
+    )
+
+
+def intervals_overlap_strongly(ref_interval, cmp_interval):
+    return (
+        interval_overlap_fraction(ref_interval, cmp_interval)
+        >= SAME_OVERLAP_FRACTION_THRESHOLD
+    )
+
+
 def scale_interval(interval, scale):
     if not is_positive_finite(scale):
         return None
@@ -603,6 +649,46 @@ def compare_timings_for_clear_gap(ref_timing, cmp_timing):
 
     return confirm_clear_gap_with_clock_rate(
         status, ref_timing, cmp_timing, ref_interval, cmp_interval
+    )
+
+
+def compare_intervals_for_same(ref_interval, cmp_interval):
+    if not centers_are_close(ref_interval.center, cmp_interval.center):
+        return ComparisonStatus.UNDECIDED
+    if not intervals_overlap_strongly(ref_interval, cmp_interval):
+        return ComparisonStatus.UNDECIDED
+    return ComparisonStatus.SAME
+
+
+def confirm_same_with_clock_rate(ref_timing, cmp_timing, ref_interval, cmp_interval):
+    if ref_timing.sm_clock_rate_mean is None or cmp_timing.sm_clock_rate_mean is None:
+        return ComparisonStatus.SAME
+
+    ref_cycles = scale_interval(ref_interval, ref_timing.sm_clock_rate_mean)
+    cmp_cycles = scale_interval(cmp_interval, cmp_timing.sm_clock_rate_mean)
+    if ref_cycles is None or cmp_cycles is None:
+        return ComparisonStatus.UNDECIDED
+
+    return compare_intervals_for_same(ref_cycles, cmp_cycles)
+
+
+def compare_timings_for_same(ref_timing, cmp_timing, ref_noise, cmp_noise):
+    if not has_finite_noise(ref_noise) or not has_finite_noise(cmp_noise):
+        return ComparisonStatus.UNDECIDED
+    if max(ref_noise, cmp_noise) > SAME_RELATIVE_DISPERSION_CEILING:
+        return ComparisonStatus.UNDECIDED
+
+    ref_interval = compute_timing_interval(ref_timing)
+    cmp_interval = compute_timing_interval(cmp_timing)
+    if ref_interval is None or cmp_interval is None:
+        return ComparisonStatus.UNDECIDED
+
+    status = compare_intervals_for_same(ref_interval, cmp_interval)
+    if status != ComparisonStatus.SAME:
+        return status
+
+    return confirm_same_with_clock_rate(
+        ref_timing, cmp_timing, ref_interval, cmp_interval
     )
 
 
@@ -705,6 +791,8 @@ def compare_gpu_timings(ref_timing, cmp_timing):
         max_noise = max(ref_noise, cmp_noise)
 
     status = compare_timings_for_clear_gap(ref_timing, cmp_timing)
+    if status == ComparisonStatus.UNDECIDED:
+        status = compare_timings_for_same(ref_timing, cmp_timing, ref_noise, cmp_noise)
 
     return SummaryComparison(
         ref_estimate=ref_estimate,
@@ -1535,14 +1623,9 @@ def main() -> int:
 
     print("# Summary\n")
     print(f"- Total Matches: {stats.config_count}")
-    print(f"  - Pass        (abs(%Diff) <= max_noise): {stats.pass_count}")
-    print(
-        "  - Improvement (abs(%Diff) > max_noise, %Diff < 0): "
-        f"{stats.improvement_count}"
-    )
-    print(
-        f"  - Regression  (abs(%Diff) > max_noise, %Diff > 0): {stats.regression_count}"
-    )
+    print(f"  - Pass        (centers close and intervals overlap): {stats.pass_count}")
+    print(f"  - Improvement (clear timing gap, %Diff < 0): {stats.improvement_count}")
+    print(f"  - Regression  (clear timing gap, %Diff > 0): {stats.regression_count}")
     print(
         f"  - Undecided   (comparison requires more evidence): {stats.undecided_count}"
     )
