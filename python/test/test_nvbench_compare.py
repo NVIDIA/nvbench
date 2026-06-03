@@ -714,8 +714,8 @@ def test_compare_gpu_timings_keeps_bulk_mismatch_undecided(nvbench_compare):
     assert comparison is not None
     assert comparison.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert comparison.reason.code == "bulk_time_support_mismatch"
-    assert "sample ref=" in comparison.reason.message
-    assert "support ref=" in comparison.reason.message
+    assert "sample: min(ref=0.0%, cmp=0.0%) >= 99.0%" in comparison.reason.message
+    assert "support: min(ref=0.0%, cmp=0.0%) >= 80.0%" in comparison.reason.message
     assert "99.0%" in comparison.reason.message
     assert "80.0%" in comparison.reason.message
 
@@ -756,11 +756,11 @@ def test_bulk_same_reports_sample_weight_coverage_mismatch(nvbench_compare):
 
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert decision.reason.code == "bulk_time_support_mismatch"
-    assert "sample ref=3.8%" in decision.reason.message
-    assert "support ref=80.0%" in decision.reason.message
+    assert "sample: min(ref=3.8%, cmp=100.0%) >= 99.0%" in decision.reason.message
+    assert "support: min(ref=80.0%, cmp=100.0%) >= 80.0%" in decision.reason.message
 
 
-def test_bulk_same_reports_unique_support_coverage_mismatch(nvbench_compare):
+def test_bulk_same_filters_rare_values_from_support_coverage(nvbench_compare):
     ref_values = [1.0] * 1000 + [1.02 + 0.01 * i for i in range(10)]
     cmp_values = [1.0]
 
@@ -771,10 +771,47 @@ def test_bulk_same_reports_unique_support_coverage_mismatch(nvbench_compare):
         thresholds=nvbench_compare.ComparisonThresholds(),
     )
 
+    assert decision.status == nvbench_compare.ComparisonStatus.SAME
+    assert decision.reason.code == "bulk_time_same"
+
+
+def test_bulk_same_reports_unique_support_coverage_mismatch(nvbench_compare):
+    ref_values = [1.0] * 1000 + [1.02 + 0.01 * i for i in range(10)]
+    cmp_values = [1.0]
+
+    decision = nvbench_compare.compare_values_for_bulk_same(
+        ref_values,
+        cmp_values,
+        label="time",
+        thresholds=nvbench_compare.ComparisonThresholds(
+            bulk_support_max_removed_sample_fraction=0.005
+        ),
+    )
+
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert decision.reason.code == "bulk_time_support_mismatch"
-    assert "sample ref=99.0%" in decision.reason.message
-    assert "support ref=9.1%" in decision.reason.message
+    assert "sample: min(ref=99.0%, cmp=100.0%) >= 99.0%" in decision.reason.message
+    assert "support: min(ref=9.1%, cmp=100.0%) >= 80.0%" in decision.reason.message
+
+
+def test_bulk_same_retains_full_support_when_all_values_are_unique(nvbench_compare):
+    coverages = nvbench_compare.compute_nearest_neighbor_coverages(
+        [1.0, 1.02],
+        [1.0],
+        thresholds=nvbench_compare.ComparisonThresholds(
+            bulk_support_rare_sample_fraction=1.0,
+            bulk_support_max_removed_sample_fraction=1.0,
+        ),
+    )
+
+    assert coverages is not None
+    assert coverages["ref_sample"] == 0.5
+    assert coverages["ref_support"] == 0.5
+    assert coverages["ref_support_filter"] == nvbench_compare.SupportFilterInfo(
+        activated=False,
+        reason="all_values_unique",
+        removed_sample_fraction=0.0,
+    )
 
 
 def test_comparison_stats_records_undecided_status(nvbench_compare):
@@ -1221,3 +1258,43 @@ def test_main_prints_undecided_reason_summary(monkeypatch, capsys, nvbench_compa
     output = capsys.readouterr().out
     assert "Undecided   (comparison requires more evidence): 1" in output
     assert "noise_too_high: 1" in output
+
+
+def test_get_comparison_thresholds_returns_named_presets(nvbench_compare):
+    default = nvbench_compare.get_comparison_thresholds("default")
+    strict = nvbench_compare.get_comparison_thresholds("strict")
+    permissive = nvbench_compare.get_comparison_thresholds("permissive")
+
+    assert default == nvbench_compare.ComparisonThresholds()
+    assert strict.clear_gap_relative > default.clear_gap_relative
+    assert strict.same_center_relative < default.same_center_relative
+    assert strict.bulk_same_sample_coverage > default.bulk_same_sample_coverage
+    assert permissive.clear_gap_relative < default.clear_gap_relative
+    assert permissive.same_center_relative > default.same_center_relative
+    assert permissive.bulk_same_support_coverage < default.bulk_same_support_coverage
+
+
+def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_compare):
+    devices = [{"id": 0, "name": "Test GPU"}]
+    root = {
+        "devices": devices,
+        "benchmarks": [],
+    }
+    captured = {}
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+
+    def fake_compare_benches(*args, **kwargs):
+        captured["comparison_thresholds"] = args[-1]
+
+    monkeypatch.setattr(nvbench_compare, "compare_benches", fake_compare_benches)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["nvbench_compare", "--preset", "strict", "ref.json", "cmp.json"],
+    )
+
+    assert nvbench_compare.main() == 0
+    assert captured[
+        "comparison_thresholds"
+    ] == nvbench_compare.get_comparison_thresholds("strict")
