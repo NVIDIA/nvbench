@@ -45,6 +45,7 @@ GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
 GPU_SM_CLOCK_RATE_MEAN_TAG = "nv/cold/sm_clock_rate/mean"
 SAMPLE_TIMES_TAG = "nv/json/bin:nv/cold/sample_times"
 SAMPLE_FREQUENCIES_TAG = "nv/json/freqs-bin:nv/cold/sample_freqs"
+CLEAR_GAP_RELATIVE_THRESHOLD = 0.005
 
 # The reader returns an object supporting the buffer protocol. Python 3.10 does
 # not provide a standard Buffer type annotation.
@@ -107,6 +108,13 @@ class GpuTimingData:
 class TimeEstimate:
     center: float | None
     relative_dispersion: float | None
+
+
+@dataclass(frozen=True)
+class TimingInterval:
+    lower: float
+    upper: float
+    center: float
 
 
 class ComparisonStatus(str, Enum):
@@ -493,6 +501,111 @@ def compute_relative_dispersion(dispersion, center):
     return dispersion / center
 
 
+def is_positive_finite(value):
+    return value is not None and value > 0.0 and math.isfinite(value)
+
+
+def make_timing_interval(lower, upper, center):
+    if (
+        not is_positive_finite(lower)
+        or not is_positive_finite(upper)
+        or not is_positive_finite(center)
+        or lower > center
+        or center > upper
+    ):
+        return None
+    return TimingInterval(lower=lower, upper=upper, center=center)
+
+
+def compute_timing_interval(timing):
+    if (
+        is_positive_finite(timing.minimum)
+        and is_positive_finite(timing.first_quartile)
+        and is_positive_finite(timing.median)
+        and is_positive_finite(timing.third_quartile)
+        and timing.minimum <= timing.first_quartile
+        and timing.first_quartile <= timing.median
+        and timing.median <= timing.third_quartile
+    ):
+        return make_timing_interval(
+            lower=timing.minimum,
+            upper=timing.third_quartile,
+            center=timing.median,
+        )
+
+    if (
+        is_positive_finite(timing.minimum)
+        and is_positive_finite(timing.maximum)
+        and is_positive_finite(timing.mean)
+        and is_positive_finite(timing.stdev)
+        and timing.minimum <= timing.mean
+        and timing.mean <= timing.maximum
+    ):
+        return make_timing_interval(
+            lower=max(timing.minimum, timing.mean - timing.stdev),
+            upper=min(timing.maximum, timing.mean + timing.stdev),
+            center=timing.mean,
+        )
+
+    return None
+
+
+def compare_intervals_for_clear_gap(ref_interval, cmp_interval):
+    # These ratios are equivalent to log(ref/cmp) >= log(1 + delta), but avoid
+    # evaluating logarithms on every comparison.
+    if cmp_interval.upper < ref_interval.lower:
+        gap = ref_interval.lower - cmp_interval.upper
+        if gap / cmp_interval.upper >= CLEAR_GAP_RELATIVE_THRESHOLD:
+            return ComparisonStatus.FAST
+    if cmp_interval.lower > ref_interval.upper:
+        gap = cmp_interval.lower - ref_interval.upper
+        if gap / ref_interval.upper >= CLEAR_GAP_RELATIVE_THRESHOLD:
+            return ComparisonStatus.SLOW
+    return None
+
+
+def scale_interval(interval, scale):
+    if not is_positive_finite(scale):
+        return None
+    return make_timing_interval(
+        lower=interval.lower * scale,
+        upper=interval.upper * scale,
+        center=interval.center * scale,
+    )
+
+
+def confirm_clear_gap_with_clock_rate(
+    status, ref_timing, cmp_timing, ref_interval, cmp_interval
+):
+    if ref_timing.sm_clock_rate_mean is None or cmp_timing.sm_clock_rate_mean is None:
+        return ComparisonStatus.UNDECIDED
+
+    ref_cycles = scale_interval(ref_interval, ref_timing.sm_clock_rate_mean)
+    cmp_cycles = scale_interval(cmp_interval, cmp_timing.sm_clock_rate_mean)
+    if ref_cycles is None or cmp_cycles is None:
+        return ComparisonStatus.UNDECIDED
+
+    cycle_status = compare_intervals_for_clear_gap(ref_cycles, cmp_cycles)
+    if cycle_status == status:
+        return status
+    return ComparisonStatus.UNDECIDED
+
+
+def compare_timings_for_clear_gap(ref_timing, cmp_timing):
+    ref_interval = compute_timing_interval(ref_timing)
+    cmp_interval = compute_timing_interval(cmp_timing)
+    if ref_interval is None or cmp_interval is None:
+        return ComparisonStatus.UNDECIDED
+
+    status = compare_intervals_for_clear_gap(ref_interval, cmp_interval)
+    if status is None:
+        return ComparisonStatus.UNDECIDED
+
+    return confirm_clear_gap_with_clock_rate(
+        status, ref_timing, cmp_timing, ref_interval, cmp_interval
+    )
+
+
 def has_robust_estimate(summary):
     return summary.median is not None and (
         summary.interquartile_range_relative is not None
@@ -588,15 +701,10 @@ def compare_gpu_timings(ref_timing, cmp_timing):
 
     if not has_finite_noise(ref_noise) or not has_finite_noise(cmp_noise):
         max_noise = None
-        status = ComparisonStatus.UNKNOWN
     else:
         max_noise = max(ref_noise, cmp_noise)
-        if abs(frac_diff) <= max_noise:
-            status = ComparisonStatus.SAME
-        elif diff < 0:
-            status = ComparisonStatus.FAST
-        else:
-            status = ComparisonStatus.SLOW
+
+    status = compare_timings_for_clear_gap(ref_timing, cmp_timing)
 
     return SummaryComparison(
         ref_estimate=ref_estimate,

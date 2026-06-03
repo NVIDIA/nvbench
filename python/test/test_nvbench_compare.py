@@ -113,6 +113,8 @@ def make_binary_summary(nvbench_compare, tag, filename, size):
 def make_gpu_timing_data(
     nvbench_compare,
     *,
+    minimum=None,
+    maximum=None,
     mean=1.0,
     stdev=None,
     stdev_relative=0.01,
@@ -124,8 +126,8 @@ def make_gpu_timing_data(
     sm_clock_rate_mean=None,
 ):
     return nvbench_compare.GpuTimingData(
-        minimum=None,
-        maximum=None,
+        minimum=minimum,
+        maximum=maximum,
         mean=mean,
         stdev=stdev,
         stdev_relative=stdev_relative,
@@ -204,9 +206,10 @@ def test_compare_benches_accepts_matching_duplicate_state_counts(
     )
 
     assert run_data.stats.config_count == 3
-    assert run_data.stats.pass_count == 3
+    assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
+    assert run_data.stats.undecided_count == 3
     assert run_data.stats.unknown_count == 0
 
 
@@ -287,9 +290,10 @@ def test_compare_benches_matches_duplicate_states_after_axis_filter(
     )
 
     assert run_data.stats.config_count == 1
-    assert run_data.stats.pass_count == 1
+    assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
+    assert run_data.stats.undecided_count == 1
     assert run_data.stats.unknown_count == 0
 
 
@@ -328,9 +332,10 @@ def test_compare_benches_skips_non_finite_centers(monkeypatch, nvbench_compare):
     )
 
     assert run_data.stats.config_count == 1
-    assert run_data.stats.pass_count == 1
+    assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
+    assert run_data.stats.undecided_count == 1
     assert run_data.stats.unknown_count == 0
 
 
@@ -455,38 +460,99 @@ def test_gpu_timing_data_warns_when_lazy_sample_read_fails(tmp_path, nvbench_com
 def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     ref_timing = make_gpu_timing_data(nvbench_compare, mean=1.0, stdev_relative=0.05)
 
-    same = nvbench_compare.compare_gpu_timings(
+    undecided = nvbench_compare.compare_gpu_timings(
         ref_timing,
         make_gpu_timing_data(nvbench_compare, mean=1.03, stdev_relative=0.05),
     )
-    assert same is not None
-    assert same.status == nvbench_compare.ComparisonStatus.SAME
-    assert same.ref_time == pytest.approx(1.0)
-    assert same.cmp_time == pytest.approx(1.03)
-    assert same.diff == pytest.approx(0.03)
-    assert same.frac_diff == pytest.approx(0.03)
-    assert same.max_noise == pytest.approx(0.05)
+    assert undecided is not None
+    assert undecided.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert undecided.ref_time == pytest.approx(1.0)
+    assert undecided.cmp_time == pytest.approx(1.03)
+    assert undecided.diff == pytest.approx(0.03)
+    assert undecided.frac_diff == pytest.approx(0.03)
+    assert undecided.max_noise == pytest.approx(0.05)
+
+    ref_interval_timing = make_gpu_timing_data(
+        nvbench_compare,
+        minimum=1.0,
+        first_quartile=1.1,
+        median=1.2,
+        third_quartile=1.3,
+        mean=1.2,
+        stdev_relative=0.05,
+        sm_clock_rate_mean=100.0,
+    )
 
     fast = nvbench_compare.compare_gpu_timings(
-        ref_timing,
-        make_gpu_timing_data(nvbench_compare, mean=0.8, stdev_relative=0.05),
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+            sm_clock_rate_mean=100.0,
+        ),
     )
     assert fast is not None
     assert fast.status == nvbench_compare.ComparisonStatus.FAST
 
     slow = nvbench_compare.compare_gpu_timings(
-        ref_timing,
-        make_gpu_timing_data(nvbench_compare, mean=1.2, stdev_relative=0.05),
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.4,
+            first_quartile=1.45,
+            median=1.5,
+            third_quartile=1.55,
+            mean=1.5,
+            stdev_relative=0.05,
+            sm_clock_rate_mean=100.0,
+        ),
     )
     assert slow is not None
     assert slow.status == nvbench_compare.ComparisonStatus.SLOW
 
-    unknown = nvbench_compare.compare_gpu_timings(
+    missing_clock = nvbench_compare.compare_gpu_timings(
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+        ),
+    )
+    assert missing_clock is not None
+    assert missing_clock.status == nvbench_compare.ComparisonStatus.UNDECIDED
+
+    frequency_shift = nvbench_compare.compare_gpu_timings(
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+            sm_clock_rate_mean=200.0,
+        ),
+    )
+    assert frequency_shift is not None
+    assert frequency_shift.status == nvbench_compare.ComparisonStatus.UNDECIDED
+
+    missing_noise = nvbench_compare.compare_gpu_timings(
         ref_timing,
         make_gpu_timing_data(nvbench_compare, mean=1.2, stdev_relative=None),
     )
-    assert unknown is not None
-    assert unknown.status == nvbench_compare.ComparisonStatus.UNKNOWN
+    assert missing_noise is not None
+    assert missing_noise.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert missing_noise.max_noise is None
 
 
 def test_comparison_stats_records_undecided_status(nvbench_compare):
@@ -515,7 +581,7 @@ def test_compare_gpu_timings_rejects_unusable_centers(
     )
 
 
-def test_compare_benches_prefers_median_and_iqr_when_available(
+def test_compare_benches_reports_regression_when_robust_intervals_and_clock_confirm(
     monkeypatch, nvbench_compare
 ):
     run_data = make_comparison_run_data(nvbench_compare)
@@ -523,15 +589,23 @@ def test_compare_benches_prefers_median_and_iqr_when_available(
     ref_state = make_state(nvbench_compare, "state", mean="1.0", noise="0.01")
     ref_state["summaries"].extend(
         [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "0.9"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "0.95"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.0"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.05"),
             make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+            make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )
     cmp_state = make_state(nvbench_compare, "state", mean="1.0", noise="0.01")
     cmp_state["summaries"].extend(
         [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "1.15"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.18"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.2"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.25"),
             make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+            make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )
 
@@ -551,10 +625,13 @@ def test_compare_benches_prefers_median_and_iqr_when_available(
     assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 1
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
 
 
-def test_compare_benches_marks_unavailable_noise_unknown(monkeypatch, nvbench_compare):
+def test_compare_benches_marks_unavailable_noise_undecided(
+    monkeypatch, nvbench_compare
+):
     run_data = make_comparison_run_data(nvbench_compare)
 
     missing_noise_ref = make_state(nvbench_compare, "missing_noise")
@@ -593,7 +670,8 @@ def test_compare_benches_marks_unavailable_noise_unknown(monkeypatch, nvbench_co
     assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.unknown_count == 2
+    assert run_data.stats.undecided_count == 2
+    assert run_data.stats.unknown_count == 0
 
 
 def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_compare):
@@ -629,9 +707,10 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
     )
 
     assert run_data.stats.config_count == 2
-    assert run_data.stats.pass_count == 2
+    assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
+    assert run_data.stats.undecided_count == 2
     assert run_data.stats.unknown_count == 0
 
 
@@ -717,9 +796,10 @@ def test_compare_benches_pairs_filtered_devices_by_position(
     )
 
     assert run_data.stats.config_count == 1
-    assert run_data.stats.pass_count == 1
+    assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
+    assert run_data.stats.undecided_count == 1
     assert run_data.stats.unknown_count == 0
 
 
@@ -775,9 +855,10 @@ def test_axis_filter_applies_to_most_recent_benchmark(monkeypatch, nvbench_compa
     )
 
     assert run_data.stats.config_count == 3
-    assert run_data.stats.pass_count == 3
+    assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
+    assert run_data.stats.undecided_count == 3
     assert run_data.stats.unknown_count == 0
 
 
@@ -785,17 +866,33 @@ def test_main_returns_success_exit_code_when_regressions_are_detected(
     monkeypatch, capsys, nvbench_compare
 ):
     devices = [{"id": 0, "name": "Test GPU"}]
+    ref_state = make_state(nvbench_compare, "state", mean="1.0")
+    ref_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "0.9"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "0.95"),
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.0"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.05"),
+            make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
+        ]
+    )
+    cmp_state = make_state(nvbench_compare, "state", mean="1.2")
+    cmp_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "1.15"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.18"),
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.2"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.25"),
+            make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
+        ]
+    )
     ref_root = {
         "devices": devices,
-        "benchmarks": [
-            make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])
-        ],
+        "benchmarks": [make_benchmark([ref_state])],
     }
     cmp_root = {
         "devices": devices,
-        "benchmarks": [
-            make_benchmark([make_state(nvbench_compare, "state", mean="1.2")])
-        ],
+        "benchmarks": [make_benchmark([cmp_state])],
     }
 
     def read_file(path):
