@@ -49,6 +49,8 @@ CLEAR_GAP_RELATIVE_THRESHOLD = 0.005
 SAME_CENTER_RELATIVE_THRESHOLD = 0.005
 SAME_OVERLAP_FRACTION_THRESHOLD = 0.5
 SAME_RELATIVE_DISPERSION_CEILING = 0.02
+BULK_SAME_SAMPLE_COVERAGE_THRESHOLD = 0.99
+BULK_SAME_SUPPORT_COVERAGE_THRESHOLD = 0.80
 
 # The reader returns an object supporting the buffer protocol. Python 3.10 does
 # not provide a standard Buffer type annotation.
@@ -132,6 +134,7 @@ class ComparisonStatus(str, Enum):
 class DecisionReason:
     code: str
     message: str
+    severity: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -156,6 +159,13 @@ class SummaryComparison:
 
 
 @dataclass
+class DecisionReasonSummary:
+    count: int = 0
+    message: str = ""
+    severity: float = 0.0
+
+
+@dataclass
 class ComparisonStats:
     config_count: int = 0
     pass_count: int = 0
@@ -163,7 +173,7 @@ class ComparisonStats:
     regression_count: int = 0
     undecided_count: int = 0
     unknown_count: int = 0
-    undecided_reasons: Counter[DecisionReason] = field(default_factory=Counter)
+    undecided_reasons: dict[str, DecisionReasonSummary] = field(default_factory=dict)
 
     def record(
         self, status: ComparisonStatus, reason: DecisionReason | None = None
@@ -174,7 +184,13 @@ class ComparisonStats:
         elif status == ComparisonStatus.UNDECIDED:
             self.undecided_count += 1
             if reason is not None:
-                self.undecided_reasons[reason] += 1
+                summary = self.undecided_reasons.setdefault(
+                    reason.code, DecisionReasonSummary()
+                )
+                if summary.count == 0 or reason.severity > summary.severity:
+                    summary.message = reason.message
+                    summary.severity = reason.severity
+                summary.count += 1
         elif status == ComparisonStatus.SAME:
             self.pass_count += 1
         elif status == ComparisonStatus.FAST:
@@ -571,9 +587,10 @@ def compute_timing_interval(timing):
     return None
 
 
-def make_decision(status, code, message):
+def make_decision(status, code, message, *, severity=0.0):
     return TimingDecision(
-        status=status, reason=DecisionReason(code=code, message=message)
+        status=status,
+        reason=DecisionReason(code=code, message=message, severity=severity),
     )
 
 
@@ -632,6 +649,111 @@ def intervals_overlap_strongly(ref_interval, cmp_interval):
         interval_overlap_fraction(ref_interval, cmp_interval)
         >= SAME_OVERLAP_FRACTION_THRESHOLD
     )
+
+
+def nearest_distances_to_sorted(target, source):
+    pos = np.searchsorted(source, target, side="left")
+    left = np.clip(pos - 1, 0, len(source) - 1)
+    right = np.clip(pos, 0, len(source) - 1)
+    return np.minimum(
+        np.abs(target - source[left]),
+        np.abs(target - source[right]),
+    )
+
+
+def symmetric_nearest_distances(x, y):
+    # This is O(N log M + M log N), but runs in NumPy C code and operates on
+    # unique supports. If this becomes a bottleneck for very large supports,
+    # add an optional O(N + M) two-pass merge helper to cuda.bench and fall back
+    # to this implementation when cuda.bench is unavailable.
+    return nearest_distances_to_sorted(x, y), nearest_distances_to_sorted(y, x)
+
+
+def symmetric_nearest_log_distances(x, y):
+    return symmetric_nearest_distances(np.log(x), np.log(y))
+
+
+def compute_nearest_neighbor_coverages(ref_values, cmp_values):
+    ref_unique, ref_counts = np.unique_counts(ref_values)
+    cmp_unique, cmp_counts = np.unique_counts(cmp_values)
+    if len(ref_unique) == 0 or len(cmp_unique) == 0:
+        return None
+
+    ref_distances, cmp_distances = symmetric_nearest_log_distances(
+        ref_unique, cmp_unique
+    )
+    tolerance = math.log1p(SAME_CENTER_RELATIVE_THRESHOLD)
+    ref_covered = ref_distances <= tolerance
+    cmp_covered = cmp_distances <= tolerance
+
+    return {
+        "ref_sample": np.sum(ref_counts[ref_covered]) / np.sum(ref_counts),
+        "cmp_sample": np.sum(cmp_counts[cmp_covered]) / np.sum(cmp_counts),
+        "ref_support": np.mean(ref_covered),
+        "cmp_support": np.mean(cmp_covered),
+    }
+
+
+def coverages_support_same(coverages):
+    return (
+        coverages["ref_sample"] >= BULK_SAME_SAMPLE_COVERAGE_THRESHOLD
+        and coverages["cmp_sample"] >= BULK_SAME_SAMPLE_COVERAGE_THRESHOLD
+        and coverages["ref_support"] >= BULK_SAME_SUPPORT_COVERAGE_THRESHOLD
+        and coverages["cmp_support"] >= BULK_SAME_SUPPORT_COVERAGE_THRESHOLD
+    )
+
+
+def format_coverage_threshold(threshold):
+    return f"{threshold * 100.0:.1f}%"
+
+
+def format_coverage(value):
+    return f"{value * 100.0:.1f}%"
+
+
+def make_bulk_coverage_mismatch_decision(label, coverages):
+    sample_threshold = format_coverage_threshold(BULK_SAME_SAMPLE_COVERAGE_THRESHOLD)
+    support_threshold = format_coverage_threshold(BULK_SAME_SUPPORT_COVERAGE_THRESHOLD)
+    sample_deficit = max(
+        BULK_SAME_SAMPLE_COVERAGE_THRESHOLD - coverages["ref_sample"],
+        BULK_SAME_SAMPLE_COVERAGE_THRESHOLD - coverages["cmp_sample"],
+        0.0,
+    )
+    support_deficit = max(
+        BULK_SAME_SUPPORT_COVERAGE_THRESHOLD - coverages["ref_support"],
+        BULK_SAME_SUPPORT_COVERAGE_THRESHOLD - coverages["cmp_support"],
+        0.0,
+    )
+    severity = max(sample_deficit, support_deficit)
+    return make_decision(
+        ComparisonStatus.UNDECIDED,
+        f"bulk_{label}_support_mismatch",
+        f"sample ref={format_coverage(coverages['ref_sample'])} "
+        f"cmp={format_coverage(coverages['cmp_sample'])} >= {sample_threshold}; "
+        f"support ref={format_coverage(coverages['ref_support'])} "
+        f"cmp={format_coverage(coverages['cmp_support'])} >= {support_threshold}",
+        severity=severity,
+    )
+
+
+def positive_finite_array(values):
+    if values is None or len(values) == 0:
+        return None
+
+    array = np.asarray(values, dtype=np.float64)
+    if np.all(np.isfinite(array) & (array > 0.0)):
+        return array
+    return None
+
+
+def get_bulk_time_and_cycles(timing):
+    samples = positive_finite_array(timing.samples)
+    frequencies = positive_finite_array(timing.frequencies)
+    if samples is None or frequencies is None:
+        return None
+    if len(samples) != len(frequencies):
+        return None
+    return samples, samples * frequencies
 
 
 def scale_interval(interval, scale):
@@ -748,6 +870,51 @@ def confirm_same_with_clock_rate(ref_timing, cmp_timing, ref_interval, cmp_inter
         ComparisonStatus.UNDECIDED,
         "cycle_same_not_confirmed",
         "same decision was not confirmed by SM-clock-adjusted cycle intervals",
+    )
+
+
+def compare_values_for_bulk_same(ref_values, cmp_values, *, label):
+    coverages = compute_nearest_neighbor_coverages(ref_values, cmp_values)
+    if coverages is None:
+        return make_decision(
+            ComparisonStatus.UNDECIDED,
+            f"bulk_{label}_data_unusable",
+            f"bulk {label} data is empty or unusable",
+        )
+    if coverages_support_same(coverages):
+        return make_decision(
+            ComparisonStatus.SAME,
+            f"bulk_{label}_same",
+            f"bulk {label} nearest-neighbor coverage supports same",
+        )
+    return make_bulk_coverage_mismatch_decision(label, coverages)
+
+
+def compare_timings_for_bulk_same(ref_timing, cmp_timing):
+    ref_bulk = get_bulk_time_and_cycles(ref_timing)
+    cmp_bulk = get_bulk_time_and_cycles(cmp_timing)
+    if ref_bulk is None or cmp_bulk is None:
+        return make_decision(
+            ComparisonStatus.UNDECIDED,
+            "bulk_data_unavailable",
+            "bulk sample time and frequency data are unavailable",
+        )
+
+    ref_times, ref_cycles = ref_bulk
+    cmp_times, cmp_cycles = cmp_bulk
+
+    time_decision = compare_values_for_bulk_same(ref_times, cmp_times, label="time")
+    if time_decision.status != ComparisonStatus.SAME:
+        return time_decision
+
+    cycle_decision = compare_values_for_bulk_same(ref_cycles, cmp_cycles, label="cycle")
+    if cycle_decision.status != ComparisonStatus.SAME:
+        return cycle_decision
+
+    return make_decision(
+        ComparisonStatus.SAME,
+        "bulk_same",
+        "bulk time and cycle nearest-neighbor coverage both support same",
     )
 
 
@@ -886,9 +1053,13 @@ def compare_gpu_timings(ref_timing, cmp_timing):
         "no_clear_gap",
         "missing_interval",
     }:
-        decision = compare_timings_for_same(
-            ref_timing, cmp_timing, ref_noise, cmp_noise
-        )
+        bulk_decision = compare_timings_for_bulk_same(ref_timing, cmp_timing)
+        if bulk_decision.reason.code == "bulk_data_unavailable":
+            decision = compare_timings_for_same(
+                ref_timing, cmp_timing, ref_noise, cmp_noise
+            )
+        else:
+            decision = bulk_decision
 
     return SummaryComparison(
         ref_estimate=ref_estimate,
@@ -1728,8 +1899,12 @@ def main() -> int:
     )
     if stats.undecided_reasons:
         print("    - Reasons:")
-        for reason, count in stats.undecided_reasons.most_common():
-            print(f"      - {reason.code}: {count} ({reason.message})")
+        for code, reason_summary in sorted(
+            stats.undecided_reasons.items(),
+            key=lambda item: item[1].count,
+            reverse=True,
+        ):
+            print(f"      - {code}: {reason_summary.count} ({reason_summary.message})")
     print(f"  - Unknown     (infinite or unavailable noise): {stats.unknown_count}")
     return 0
 

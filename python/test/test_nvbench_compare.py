@@ -124,6 +124,8 @@ def make_gpu_timing_data(
     interquartile_range=None,
     interquartile_range_relative=None,
     sm_clock_rate_mean=None,
+    sample_values=None,
+    frequency_values=None,
 ):
     return nvbench_compare.GpuTimingData(
         minimum=minimum,
@@ -137,6 +139,14 @@ def make_gpu_timing_data(
         interquartile_range=interquartile_range,
         interquartile_range_relative=interquartile_range_relative,
         sm_clock_rate_mean=sm_clock_rate_mean,
+        sample_source=None
+        if sample_values is None
+        else types.SimpleNamespace(values=np.asarray(sample_values, dtype=np.float32)),
+        frequency_source=None
+        if frequency_values is None
+        else types.SimpleNamespace(
+            values=np.asarray(frequency_values, dtype=np.float32)
+        ),
     )
 
 
@@ -652,6 +662,115 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert missing_noise.reason.code == "noise_unavailable"
 
 
+def test_compare_gpu_timings_uses_bulk_data_to_confirm_same(nvbench_compare):
+    ref_timing = make_gpu_timing_data(
+        nvbench_compare,
+        mean=1.0,
+        stdev_relative=0.05,
+        sample_values=[1.0] * 8 + [1.004] * 2,
+        frequency_values=[100.0] * 10,
+    )
+    cmp_timing = make_gpu_timing_data(
+        nvbench_compare,
+        mean=1.0,
+        stdev_relative=0.05,
+        sample_values=[1.0] * 2 + [1.004] * 8,
+        frequency_values=[100.0] * 10,
+    )
+
+    comparison = nvbench_compare.compare_gpu_timings(ref_timing, cmp_timing)
+
+    assert comparison is not None
+    assert comparison.status == nvbench_compare.ComparisonStatus.SAME
+    assert comparison.reason.code == "bulk_same"
+
+
+def test_compare_gpu_timings_keeps_bulk_mismatch_undecided(nvbench_compare):
+    ref_timing = make_gpu_timing_data(
+        nvbench_compare,
+        minimum=1.0,
+        first_quartile=1.1,
+        median=1.2,
+        third_quartile=1.3,
+        mean=1.2,
+        interquartile_range_relative=0.01,
+        sample_values=[1.0, 1.0, 1.004, 1.004],
+        frequency_values=[100.0] * 4,
+    )
+    cmp_timing = make_gpu_timing_data(
+        nvbench_compare,
+        minimum=1.02,
+        first_quartile=1.1,
+        median=1.204,
+        third_quartile=1.28,
+        mean=1.204,
+        interquartile_range_relative=0.01,
+        sample_values=[1.02, 1.02, 1.024, 1.024],
+        frequency_values=[100.0] * 4,
+    )
+
+    comparison = nvbench_compare.compare_gpu_timings(ref_timing, cmp_timing)
+
+    assert comparison is not None
+    assert comparison.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert comparison.reason.code == "bulk_time_support_mismatch"
+    assert "sample ref=" in comparison.reason.message
+    assert "support ref=" in comparison.reason.message
+    assert "99.0%" in comparison.reason.message
+    assert "80.0%" in comparison.reason.message
+
+
+def test_compare_gpu_timings_requires_bulk_cycle_coverage(nvbench_compare):
+    ref_timing = make_gpu_timing_data(
+        nvbench_compare,
+        mean=1.0,
+        stdev_relative=0.01,
+        sample_values=[1.0, 1.0, 1.004, 1.004],
+        frequency_values=[100.0] * 4,
+    )
+    cmp_timing = make_gpu_timing_data(
+        nvbench_compare,
+        mean=1.0,
+        stdev_relative=0.01,
+        sample_values=[1.0, 1.0, 1.004, 1.004],
+        frequency_values=[200.0] * 4,
+    )
+
+    comparison = nvbench_compare.compare_gpu_timings(ref_timing, cmp_timing)
+
+    assert comparison is not None
+    assert comparison.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert comparison.reason.code == "bulk_cycle_support_mismatch"
+
+
+def test_bulk_same_reports_sample_weight_coverage_mismatch(nvbench_compare):
+    ref_values = [1.0, 1.001, 1.002, 1.003] + [1.02] * 100
+    cmp_values = [1.0, 1.001, 1.002, 1.003]
+
+    decision = nvbench_compare.compare_values_for_bulk_same(
+        ref_values, cmp_values, label="time"
+    )
+
+    assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert decision.reason.code == "bulk_time_support_mismatch"
+    assert "sample ref=3.8%" in decision.reason.message
+    assert "support ref=80.0%" in decision.reason.message
+
+
+def test_bulk_same_reports_unique_support_coverage_mismatch(nvbench_compare):
+    ref_values = [1.0] * 1000 + [1.02 + 0.01 * i for i in range(10)]
+    cmp_values = [1.0]
+
+    decision = nvbench_compare.compare_values_for_bulk_same(
+        ref_values, cmp_values, label="time"
+    )
+
+    assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert decision.reason.code == "bulk_time_support_mismatch"
+    assert "sample ref=99.0%" in decision.reason.message
+    assert "support ref=9.1%" in decision.reason.message
+
+
 def test_comparison_stats_records_undecided_status(nvbench_compare):
     stats = nvbench_compare.ComparisonStats()
 
@@ -667,14 +786,23 @@ def test_comparison_stats_records_undecided_status(nvbench_compare):
 
 def test_comparison_stats_records_undecided_reason(nvbench_compare):
     stats = nvbench_compare.ComparisonStats()
-    reason = nvbench_compare.DecisionReason(
+    less_severe_reason = nvbench_compare.DecisionReason(
         code="test_reason",
-        message="test reason",
+        message="less severe reason",
+        severity=1.0,
+    )
+    more_severe_reason = nvbench_compare.DecisionReason(
+        code="test_reason",
+        message="more severe reason",
+        severity=2.0,
     )
 
-    stats.record(nvbench_compare.ComparisonStatus.UNDECIDED, reason)
+    stats.record(nvbench_compare.ComparisonStatus.UNDECIDED, less_severe_reason)
+    stats.record(nvbench_compare.ComparisonStatus.UNDECIDED, more_severe_reason)
 
-    assert stats.undecided_reasons[reason] == 1
+    summary = stats.undecided_reasons["test_reason"]
+    assert summary.count == 2
+    assert summary.message == "more severe reason"
 
 
 @pytest.mark.parametrize("ref_time, cmp_time", [(None, 1.0), (1.0, None), (0.0, 1.0)])
