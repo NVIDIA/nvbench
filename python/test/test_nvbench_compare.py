@@ -748,7 +748,10 @@ def test_bulk_same_reports_sample_weight_coverage_mismatch(nvbench_compare):
     cmp_values = [1.0, 1.001, 1.002, 1.003]
 
     decision = nvbench_compare.compare_values_for_bulk_same(
-        ref_values, cmp_values, label="time"
+        ref_values,
+        cmp_values,
+        label="time",
+        thresholds=nvbench_compare.ComparisonThresholds(),
     )
 
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
@@ -762,7 +765,10 @@ def test_bulk_same_reports_unique_support_coverage_mismatch(nvbench_compare):
     cmp_values = [1.0]
 
     decision = nvbench_compare.compare_values_for_bulk_same(
-        ref_values, cmp_values, label="time"
+        ref_values,
+        cmp_values,
+        label="time",
+        thresholds=nvbench_compare.ComparisonThresholds(),
     )
 
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
@@ -864,6 +870,52 @@ def test_compare_benches_reports_regression_when_robust_intervals_and_clock_conf
     assert run_data.stats.regression_count == 1
     assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
+
+
+def test_compare_benches_accepts_custom_comparison_thresholds(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+
+    ref_state = make_state(nvbench_compare, "state", mean="1.0", noise="0.01")
+    ref_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "0.99"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "0.995"),
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.0"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.01"),
+            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+        ]
+    )
+    cmp_state = make_state(nvbench_compare, "state", mean="1.01", noise="0.01")
+    cmp_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "1.0"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.005"),
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.01"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.02"),
+            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+        ]
+    )
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([ref_state])],
+        [make_benchmark([cmp_state])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        comparison_thresholds=nvbench_compare.ComparisonThresholds(
+            same_center_relative=0.02
+        ),
+    )
+
+    assert run_data.stats.config_count == 1
+    assert run_data.stats.pass_count == 1
+    assert run_data.stats.undecided_count == 0
 
 
 def test_compare_benches_marks_unavailable_noise_undecided(
