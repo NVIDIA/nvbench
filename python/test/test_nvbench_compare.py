@@ -471,6 +471,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert undecided.diff == pytest.approx(0.03)
     assert undecided.frac_diff == pytest.approx(0.03)
     assert undecided.max_noise == pytest.approx(0.05)
+    assert undecided.reason.code == "noise_too_high"
 
     ref_interval_timing = make_gpu_timing_data(
         nvbench_compare,
@@ -499,6 +500,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert fast is not None
     assert fast.status == nvbench_compare.ComparisonStatus.FAST
+    assert fast.reason.code == "clear_gap_confirmed_by_cycles"
 
     slow = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -515,6 +517,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert slow is not None
     assert slow.status == nvbench_compare.ComparisonStatus.SLOW
+    assert slow.reason.code == "clear_gap_confirmed_by_cycles"
 
     same = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -531,6 +534,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert same is not None
     assert same.status == nvbench_compare.ComparisonStatus.SAME
+    assert same.reason.code == "same_confirmed_by_cycles"
 
     weak_overlap = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(
@@ -554,6 +558,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert weak_overlap is not None
     assert weak_overlap.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert weak_overlap.reason.code == "weak_interval_overlap"
 
     center_too_far = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -569,6 +574,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert center_too_far is not None
     assert center_too_far.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert center_too_far.reason.code == "centers_not_close"
 
     noisy_same = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -584,6 +590,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert noisy_same is not None
     assert noisy_same.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert noisy_same.reason.code == "noise_too_high"
 
     clock_disagreement = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -600,6 +607,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert clock_disagreement is not None
     assert clock_disagreement.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert clock_disagreement.reason.code == "cycle_same_not_confirmed"
 
     missing_clock = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -615,6 +623,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert missing_clock is not None
     assert missing_clock.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert missing_clock.reason.code == "missing_clock_rate"
 
     frequency_shift = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -631,6 +640,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert frequency_shift is not None
     assert frequency_shift.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert frequency_shift.reason.code == "cycle_gap_not_confirmed"
 
     missing_noise = nvbench_compare.compare_gpu_timings(
         ref_timing,
@@ -639,6 +649,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert missing_noise is not None
     assert missing_noise.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert missing_noise.max_noise is None
+    assert missing_noise.reason.code == "noise_unavailable"
 
 
 def test_comparison_stats_records_undecided_status(nvbench_compare):
@@ -652,6 +663,18 @@ def test_comparison_stats_records_undecided_status(nvbench_compare):
     assert stats.regression_count == 0
     assert stats.undecided_count == 1
     assert stats.unknown_count == 0
+
+
+def test_comparison_stats_records_undecided_reason(nvbench_compare):
+    stats = nvbench_compare.ComparisonStats()
+    reason = nvbench_compare.DecisionReason(
+        code="test_reason",
+        message="test reason",
+    )
+
+    stats.record(nvbench_compare.ComparisonStatus.UNDECIDED, reason)
+
+    assert stats.undecided_reasons[reason] == 1
 
 
 @pytest.mark.parametrize("ref_time, cmp_time", [(None, 1.0), (1.0, None), (0.0, 1.0)])
@@ -989,3 +1012,32 @@ def test_main_returns_success_exit_code_when_regressions_are_detected(
 
     assert nvbench_compare.main() == 0
     assert "Regression  (clear timing gap, %Diff > 0): 1" in capsys.readouterr().out
+
+
+def test_main_prints_undecided_reason_summary(monkeypatch, capsys, nvbench_compare):
+    devices = [{"id": 0, "name": "Test GPU"}]
+    ref_root = {
+        "devices": devices,
+        "benchmarks": [
+            make_benchmark([make_state(nvbench_compare, "state", noise="0.05")])
+        ],
+    }
+    cmp_root = {
+        "devices": devices,
+        "benchmarks": [
+            make_benchmark(
+                [make_state(nvbench_compare, "state", mean="1.01", noise="0.05")]
+            )
+        ],
+    }
+
+    def read_file(path):
+        return ref_root if path == "ref.json" else cmp_root
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", read_file)
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 0
+    output = capsys.readouterr().out
+    assert "Undecided   (comparison requires more evidence): 1" in output
+    assert "noise_too_high: 1" in output
