@@ -116,7 +116,9 @@ def make_gpu_timing_data(
     mean=1.0,
     stdev=None,
     stdev_relative=0.01,
+    first_quartile=None,
     median=None,
+    third_quartile=None,
     interquartile_range=None,
     interquartile_range_relative=None,
     sm_clock_rate_mean=None,
@@ -127,7 +129,9 @@ def make_gpu_timing_data(
         mean=mean,
         stdev=stdev,
         stdev_relative=stdev_relative,
+        first_quartile=first_quartile,
         median=median,
+        third_quartile=third_quartile,
         interquartile_range=interquartile_range,
         interquartile_range_relative=interquartile_range_relative,
         sm_clock_rate_mean=sm_clock_rate_mean,
@@ -387,14 +391,20 @@ def test_gpu_timing_data_loads_samples_and_frequencies_lazily(
     assert reader_calls == [str(samples_file), str(freqs_file)]
 
 
-def test_gpu_timing_data_parses_sm_clock_rate_mean(nvbench_compare):
+def test_gpu_timing_data_parses_quartiles_and_sm_clock_rate_mean(nvbench_compare):
     timing = nvbench_compare.extract_gpu_timing_data(
         [
             make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "2.0"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.5"),
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "2.0"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "2.5"),
             make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "1.5e9"),
         ],
     )
 
+    assert timing.first_quartile == pytest.approx(1.5)
+    assert timing.median == pytest.approx(2.0)
+    assert timing.third_quartile == pytest.approx(2.5)
     assert timing.sm_clock_rate_mean == pytest.approx(1.5e9)
     assert timing.frequencies is None
 
