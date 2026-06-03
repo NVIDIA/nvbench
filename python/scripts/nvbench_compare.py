@@ -646,6 +646,19 @@ def compute_timing_interval(timing):
     return None
 
 
+def compute_timing_interval_from_samples(samples):
+    values = positive_finite_array(samples)
+    if values is None:
+        return None
+
+    first_quartile, median, third_quartile = np.quantile(values, [0.25, 0.5, 0.75])
+    return make_timing_interval(
+        lower=np.min(values),
+        upper=third_quartile,
+        center=median,
+    )
+
+
 def make_decision(status, code, message, *, severity=0.0):
     return TimingDecision(
         status=status,
@@ -932,13 +945,42 @@ def confirm_clear_gap_with_clock_rate(
     if cycle_status == status:
         return make_decision(
             status,
-            "clear_gap_confirmed_by_cycles",
+            "clear_gap_confirmed_by_summary_cycles",
             "clear timing gap was confirmed by SM-clock-adjusted cycle intervals",
         )
     return make_decision(
         ComparisonStatus.UNDECIDED,
-        "cycle_gap_not_confirmed",
+        "summary_cycle_gap_not_confirmed",
         "clear timing gap was not confirmed by SM-clock-adjusted cycle intervals",
+    )
+
+
+def confirm_clear_gap_with_bulk_cycles(status, ref_timing, cmp_timing, thresholds):
+    ref_bulk = get_bulk_time_and_cycles(ref_timing)
+    cmp_bulk = get_bulk_time_and_cycles(cmp_timing)
+    if ref_bulk is None or cmp_bulk is None:
+        return None
+
+    _, ref_cycles = ref_bulk
+    _, cmp_cycles = cmp_bulk
+    ref_cycle_interval = compute_timing_interval_from_samples(ref_cycles)
+    cmp_cycle_interval = compute_timing_interval_from_samples(cmp_cycles)
+    if ref_cycle_interval is None or cmp_cycle_interval is None:
+        return None
+
+    cycle_status = compare_intervals_for_clear_gap(
+        ref_cycle_interval, cmp_cycle_interval, thresholds
+    )
+    if cycle_status == status:
+        return make_decision(
+            status,
+            "clear_gap_confirmed_by_bulk_cycles",
+            "clear timing gap was confirmed by bulk cycle intervals",
+        )
+    return make_decision(
+        ComparisonStatus.UNDECIDED,
+        "bulk_cycle_gap_not_confirmed",
+        "clear timing gap was not confirmed by bulk cycle intervals",
     )
 
 
@@ -959,6 +1001,12 @@ def compare_timings_for_clear_gap(ref_timing, cmp_timing, thresholds):
             "no_clear_gap",
             "timing intervals do not have a sufficient clear gap",
         )
+
+    bulk_decision = confirm_clear_gap_with_bulk_cycles(
+        status, ref_timing, cmp_timing, thresholds
+    )
+    if bulk_decision is not None:
+        return bulk_decision
 
     return confirm_clear_gap_with_clock_rate(
         status, ref_timing, cmp_timing, ref_interval, cmp_interval, thresholds

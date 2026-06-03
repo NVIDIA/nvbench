@@ -510,7 +510,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert fast is not None
     assert fast.status == nvbench_compare.ComparisonStatus.FAST
-    assert fast.reason.code == "clear_gap_confirmed_by_cycles"
+    assert fast.reason.code == "clear_gap_confirmed_by_summary_cycles"
 
     slow = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -527,7 +527,7 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert slow is not None
     assert slow.status == nvbench_compare.ComparisonStatus.SLOW
-    assert slow.reason.code == "clear_gap_confirmed_by_cycles"
+    assert slow.reason.code == "clear_gap_confirmed_by_summary_cycles"
 
     same = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -650,7 +650,63 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     )
     assert frequency_shift is not None
     assert frequency_shift.status == nvbench_compare.ComparisonStatus.UNDECIDED
-    assert frequency_shift.reason.code == "cycle_gap_not_confirmed"
+    assert frequency_shift.reason.code == "summary_cycle_gap_not_confirmed"
+
+    bulk_cycle_fast = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.0,
+            first_quartile=1.1,
+            median=1.2,
+            third_quartile=1.3,
+            mean=1.2,
+            stdev_relative=0.05,
+            sample_values=[1.0, 1.1, 1.2, 1.3],
+            frequency_values=[100.0] * 4,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+            sample_values=[0.8, 0.85, 0.9, 0.95],
+            frequency_values=[100.0] * 4,
+        ),
+    )
+    assert bulk_cycle_fast is not None
+    assert bulk_cycle_fast.status == nvbench_compare.ComparisonStatus.FAST
+    assert bulk_cycle_fast.reason.code == "clear_gap_confirmed_by_bulk_cycles"
+
+    bulk_cycle_shift = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.0,
+            first_quartile=1.1,
+            median=1.2,
+            third_quartile=1.3,
+            mean=1.2,
+            stdev_relative=0.05,
+            sample_values=[1.0, 1.1, 1.2, 1.3],
+            frequency_values=[100.0] * 4,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+            sample_values=[0.8, 0.85, 0.9, 0.95],
+            frequency_values=[200.0] * 4,
+        ),
+    )
+    assert bulk_cycle_shift is not None
+    assert bulk_cycle_shift.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert bulk_cycle_shift.reason.code == "bulk_cycle_gap_not_confirmed"
 
     missing_noise = nvbench_compare.compare_gpu_timings(
         ref_timing,
