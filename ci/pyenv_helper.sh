@@ -2,6 +2,27 @@
 
 setup_python_env() {
     local py_version=$1
+    local python_bin=""
+    local python_bin_quoted=""
+    local python_shim_dir=""
+
+    if command -v "python${py_version}" &> /dev/null; then
+        python_bin="$(command -v "python${py_version}")"
+    elif command -v python &> /dev/null &&
+         [[ "$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" == "${py_version}" ]]; then
+        python_bin="$(command -v python)"
+    fi
+
+    if [[ -n "${python_bin}" ]]; then
+        python_shim_dir="${TMPDIR:-/tmp}/nvbench-python-${py_version}/bin"
+        mkdir -p "${python_shim_dir}"
+        python_bin_quoted="$(printf '%q' "${python_bin}")"
+        printf '#!/bin/bash\nexec %s "$@"\n' "${python_bin_quoted}" > "${python_shim_dir}/python"
+        chmod +x "${python_shim_dir}/python"
+        export PATH="${python_shim_dir}:$PATH"
+        python -m pip install --upgrade pip
+        return 0
+    fi
 
     # check if pyenv is installed
     if ! command -v pyenv &> /dev/null; then

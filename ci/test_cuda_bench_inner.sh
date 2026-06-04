@@ -7,13 +7,16 @@ set -euo pipefail
 # Install GCC 13 toolset (needed for builds that might happen during testing)
 /workspace/ci/util/retry.sh 5 30 dnf -y install gcc-toolset-13-gcc gcc-toolset-13-gcc-c++
 echo -e "#!/bin/bash\nsource /opt/rh/gcc-toolset-13/enable" >/etc/profile.d/enable_devtools.sh
+# shellcheck source=/dev/null
 source /etc/profile.d/enable_devtools.sh
 
-# Set up Python environment (only if not already available)
+: "${py_version:?py_version must be set}"
+: "${cuda_version:?cuda_version must be set}"
+
+# Set up Python environment.
+# shellcheck source=ci/pyenv_helper.sh
 source /workspace/ci/pyenv_helper.sh
-if ! command -v python${py_version} &> /dev/null; then
-    setup_python_env "${py_version}"
-fi
+setup_python_env "${py_version}"
 
 # Upgrade pip
 python -m pip install --upgrade pip
@@ -26,9 +29,9 @@ WHEELHOUSE_DIR="/workspace/wheelhouse"
 
 # Find the cuda-bench wheel (multi-CUDA wheel)
 # Prefer manylinux wheels, fall back to any wheel
-CUDA_BENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/cuda_bench-*manylinux*.whl 2>/dev/null | head -1)"
+CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*manylinux*.whl' -print -quit)"
 if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
-    CUDA_BENCH_WHEEL_PATH="$(ls ${WHEELHOUSE_DIR}/cuda_bench-*.whl 2>/dev/null | head -1)"
+    CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*.whl' -print -quit)"
 fi
 
 if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
@@ -38,8 +41,7 @@ if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
     exit 1
 fi
 
-# Determine which CUDA extra to install (defaults to cu12 if not specified)
-CUDA_EXTRA="${cuda_extra:-cu${cuda_version}}"
+# Determine which CUDA extra to install.
 TEST_EXTRA="test-cu${cuda_version}"
 
 echo "Installing wheel: $CUDA_BENCH_WHEEL_PATH with extras: ${TEST_EXTRA}"
