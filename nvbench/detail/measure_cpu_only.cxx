@@ -205,13 +205,13 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
   {
-    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/absolute");
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/iqr/absolute");
     summ.set_string("name", "IQR");
     summ.set_string("hint", "duration");
     summ.set_string("description",
                     "Interquartile range of CPU times of isolated kernel executions");
-    const auto cpu_ir = cpu_third_quartile - cpu_first_quartile;
-    summ.set_float64("value", cpu_ir);
+    const auto cpu_iqr = cpu_third_quartile - cpu_first_quartile;
+    summ.set_float64("value", cpu_iqr);
     summ.set_string("hide", "Hidden by default.");
   }
   const auto cpu_robust_noise = statistics::compute_robust_noise(m_total_samples,
@@ -220,7 +220,7 @@ void measure_cpu_only_base::generate_summaries()
                                                                  cpu_third_quartile);
   if (cpu_robust_noise)
   {
-    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/ir/relative");
+    auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/iqr/relative");
     summ.set_string("name", "Rel IQR");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
