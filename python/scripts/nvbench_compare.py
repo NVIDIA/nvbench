@@ -41,8 +41,10 @@ GPU_TIME_STDEV_RELATIVE_TAG = "nv/cold/time/gpu/stdev/relative"
 GPU_TIME_Q1_TAG = "nv/cold/time/gpu/q1"
 GPU_TIME_MEDIAN_TAG = "nv/cold/time/gpu/median"
 GPU_TIME_Q3_TAG = "nv/cold/time/gpu/q3"
-GPU_TIME_IR_TAG = "nv/cold/time/gpu/ir/absolute"
-GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
+GPU_TIME_IQR_TAG = "nv/cold/time/gpu/iqr/absolute"
+GPU_TIME_IQR_RELATIVE_TAG = "nv/cold/time/gpu/iqr/relative"
+LEGACY_GPU_TIME_IR_TAG = "nv/cold/time/gpu/ir/absolute"
+LEGACY_GPU_TIME_IR_RELATIVE_TAG = "nv/cold/time/gpu/ir/relative"
 GPU_SM_CLOCK_RATE_MEAN_TAG = "nv/cold/sm_clock_rate/mean"
 SAMPLE_TIMES_TAG = "nv/json/bin:nv/cold/sample_times"
 SAMPLE_FREQUENCIES_TAG = "nv/json/freqs-bin:nv/cold/sample_freqs"
@@ -681,6 +683,19 @@ def extract_summary_float(summaries, tag, *, null_value=None):
     return normalize_float_value(extract_summary_value(summary), null_value=null_value)
 
 
+def extract_summary_float_with_fallback(
+    summaries: list[dict[str, Any]],
+    primary_tag: str,
+    fallback_tag: str,
+    *,
+    null_value: float | None = None,
+) -> float | None:
+    value = extract_summary_float(summaries, primary_tag, null_value=null_value)
+    if value is not None:
+        return value
+    return extract_summary_float(summaries, fallback_tag, null_value=null_value)
+
+
 def extract_binary_filename(summary):
     value = extract_summary_data_value(summary, "filename", "string")
     if not isinstance(value, str):
@@ -809,11 +824,17 @@ def extract_gpu_timing_data(summaries, json_dir=None, float32_reader=read_float3
         first_quartile=extract_summary_float(summaries, GPU_TIME_Q1_TAG),
         median=extract_summary_float(summaries, GPU_TIME_MEDIAN_TAG),
         third_quartile=extract_summary_float(summaries, GPU_TIME_Q3_TAG),
-        interquartile_range=extract_summary_float(
-            summaries, GPU_TIME_IR_TAG, null_value=math.inf
+        interquartile_range=extract_summary_float_with_fallback(
+            summaries,
+            GPU_TIME_IQR_TAG,
+            LEGACY_GPU_TIME_IR_TAG,
+            null_value=math.inf,
         ),
-        interquartile_range_relative=extract_summary_float(
-            summaries, GPU_TIME_IR_RELATIVE_TAG, null_value=math.inf
+        interquartile_range_relative=extract_summary_float_with_fallback(
+            summaries,
+            GPU_TIME_IQR_RELATIVE_TAG,
+            LEGACY_GPU_TIME_IR_RELATIVE_TAG,
+            null_value=math.inf,
         ),
         sm_clock_rate_mean=extract_summary_float(summaries, GPU_SM_CLOCK_RATE_MEAN_TAG),
         sample_source=sample_source,

@@ -424,6 +424,18 @@ def test_gpu_timing_data_parses_quartiles_and_sm_clock_rate_mean(nvbench_compare
     assert timing.frequencies is None
 
 
+def test_gpu_timing_data_accepts_legacy_ir_tags(nvbench_compare):
+    timing = nvbench_compare.extract_gpu_timing_data(
+        [
+            make_summary(nvbench_compare, "LEGACY_GPU_TIME_IR_TAG", "0.5"),
+            make_summary(nvbench_compare, "LEGACY_GPU_TIME_IR_RELATIVE_TAG", "0.25"),
+        ],
+    )
+
+    assert timing.interquartile_range == pytest.approx(0.5)
+    assert timing.interquartile_range_relative == pytest.approx(0.25)
+
+
 def test_gpu_timing_data_treats_mismatched_sample_and_frequency_counts_as_unavailable(
     tmp_path, nvbench_compare
 ):
@@ -977,7 +989,7 @@ def test_compare_benches_reports_regression_when_robust_intervals_and_clock_conf
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "0.95"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.0"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.05"),
-            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
             make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )
@@ -988,7 +1000,7 @@ def test_compare_benches_reports_regression_when_robust_intervals_and_clock_conf
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.18"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.2"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.25"),
-            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
             make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )
@@ -1025,7 +1037,7 @@ def test_compare_benches_accepts_custom_comparison_thresholds(
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "0.995"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.0"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.01"),
-            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
         ]
     )
     cmp_state = make_state(nvbench_compare, "state", mean="1.01", noise="0.01")
@@ -1035,7 +1047,7 @@ def test_compare_benches_accepts_custom_comparison_thresholds(
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.005"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.01"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.02"),
-            make_summary(nvbench_compare, "GPU_TIME_IR_RELATIVE_TAG", "0.01"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
         ]
     )
 
