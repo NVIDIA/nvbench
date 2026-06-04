@@ -876,6 +876,30 @@ def test_format_diff_and_percent_ranges(nvbench_compare):
     )
 
 
+def test_format_change_only_reports_fast_and_slow_rows(nvbench_compare):
+    fast = types.SimpleNamespace(
+        status=nvbench_compare.ComparisonStatus.FAST,
+        frac_diff_interval=(-0.3, -0.05),
+    )
+    slow = types.SimpleNamespace(
+        status=nvbench_compare.ComparisonStatus.SLOW,
+        frac_diff_interval=(0.07, 0.55),
+    )
+    same = types.SimpleNamespace(
+        status=nvbench_compare.ComparisonStatus.SAME,
+        frac_diff_interval=(-0.01, 0.01),
+    )
+    undecided = types.SimpleNamespace(
+        status=nvbench_compare.ComparisonStatus.UNDECIDED,
+        frac_diff_interval=(-0.01, 0.01),
+    )
+
+    assert nvbench_compare.format_change(fast) == "<= -5.0%"
+    assert nvbench_compare.format_change(slow) == ">= +7.0%"
+    assert nvbench_compare.format_change(same) == ""
+    assert nvbench_compare.format_change(undecided) == ""
+
+
 def test_format_timing_with_interval(nvbench_compare):
     interval = nvbench_compare.TimingInterval(
         lower=0.002237, upper=0.002389, center=0.0023
@@ -883,6 +907,14 @@ def test_format_timing_with_interval(nvbench_compare):
     assert (
         nvbench_compare.format_timing_with_interval(0.0023, interval)
         == "2.300 ms [-63, +89] us"
+    )
+
+    interval = nvbench_compare.TimingInterval(
+        lower=19.380e-6, upper=20.508e-6, center=19.944e-6
+    )
+    assert (
+        nvbench_compare.format_timing_with_interval(19.944e-6, interval)
+        == "19.944 [-0.564, +0.564] us"
     )
 
 
@@ -894,6 +926,93 @@ def test_format_timing_with_explicit_interval(nvbench_compare):
         nvbench_compare.format_timing_with_explicit_interval(0.001446, interval)
         == "1.4[34 | 46 | 58] ms"
     )
+
+    interval = nvbench_compare.TimingInterval(
+        lower=18.400e-6, upper=19.464e-6, center=18.736e-6
+    )
+    assert (
+        nvbench_compare.format_timing_with_explicit_interval(18.736e-6, interval)
+        == "[18.400 | 18.736 | 19.464] us"
+    )
+
+    interval = nvbench_compare.TimingInterval(
+        lower=19.380e-6, upper=20.508e-6, center=19.944e-6
+    )
+    assert (
+        nvbench_compare.format_timing_with_explicit_interval(19.944e-6, interval)
+        == "[19.380 | 19.944 | 20.508] us"
+    )
+
+    interval = nvbench_compare.TimingInterval(
+        lower=99.094e-6, upper=100.882e-6, center=99.988e-6
+    )
+    assert (
+        nvbench_compare.format_timing_with_explicit_interval(99.988e-6, interval)
+        == "[ 99.094 |  99.988 | 100.882] us"
+    )
+
+
+def test_align_explain_interval_columns_pads_values_across_rows(nvbench_compare):
+    rows = [["", ""], ["", ""]]
+    comparisons = [
+        types.SimpleNamespace(
+            ref_time=19.944e-6,
+            ref_interval=nvbench_compare.TimingInterval(
+                lower=19.380e-6, center=19.944e-6, upper=20.508e-6
+            ),
+            cmp_time=97.712e-6,
+            cmp_interval=nvbench_compare.TimingInterval(
+                lower=96.849e-6, center=97.712e-6, upper=98.574e-6
+            ),
+        ),
+        types.SimpleNamespace(
+            ref_time=103.466e-6,
+            ref_interval=nvbench_compare.TimingInterval(
+                lower=102.739e-6, center=103.466e-6, upper=104.193e-6
+            ),
+            cmp_time=101.868e-6,
+            cmp_interval=nvbench_compare.TimingInterval(
+                lower=100.916e-6, center=101.868e-6, upper=102.819e-6
+            ),
+        ),
+    ]
+
+    nvbench_compare.align_explain_interval_columns(rows, comparisons, axis_count=0)
+
+    assert rows[0][0] == "[ 19.380 |  19.944 |  20.508] us"
+    assert rows[1][0] == "[102.739 | 103.466 | 104.193] us"
+    assert rows[0][1] == "[ 96.849 |  97.712 |  98.574] us"
+    assert rows[1][1] == "[100.916 | 101.868 | 102.819] us"
+
+
+def test_align_timing_interval_columns_reserves_missing_interval_slot(nvbench_compare):
+    rows = [["", ""], ["", ""]]
+    comparisons = [
+        types.SimpleNamespace(
+            ref_time=19.944e-6,
+            ref_interval=nvbench_compare.TimingInterval(
+                lower=19.380e-6, center=19.944e-6, upper=20.508e-6
+            ),
+            cmp_time=18.736e-6,
+            cmp_interval=nvbench_compare.TimingInterval(
+                lower=18.400e-6, center=18.736e-6, upper=19.464e-6
+            ),
+        ),
+        types.SimpleNamespace(
+            ref_time=20.390e-6,
+            ref_interval=nvbench_compare.TimingInterval(
+                lower=19.659e-6, center=20.390e-6, upper=21.121e-6
+            ),
+            cmp_time=20.480e-6,
+            cmp_interval=None,
+        ),
+    ]
+
+    nvbench_compare.align_timing_interval_columns(rows, comparisons, axis_count=0)
+
+    cmp_interval_slot = len("[-0.336, +0.728]")
+    assert rows[0][1] == "18.736 [-0.336, +0.728] us"
+    assert rows[1][1] == f"20.480 {' ' * cmp_interval_slot} us"
 
 
 def test_compare_gpu_timings_keeps_bulk_mismatch_undecided(nvbench_compare):
@@ -1057,6 +1176,19 @@ def test_comparison_stats_records_undecided_reason(nvbench_compare):
     summary = stats.undecided_reasons["test_reason"]
     assert summary.count == 2
     assert summary.message == "more severe reason"
+
+
+def test_reason_legend_omits_trivial_aliases(nvbench_compare):
+    reason_legend = {
+        "bulk-same": nvbench_compare.DecisionReasonSummary(canonical_code="bulk_same"),
+        "bt-sup-miss": nvbench_compare.DecisionReasonSummary(
+            canonical_code="bulk_time_support_mismatch"
+        ),
+    }
+
+    assert nvbench_compare.format_reason_legend_entries(reason_legend) == [
+        "bt-sup-miss = bulk_time_support_mismatch"
+    ]
 
 
 @pytest.mark.parametrize("ref_time, cmp_time", [(None, 1.0), (1.0, None), (0.0, 1.0)])
@@ -1463,12 +1595,15 @@ def test_main_prints_undecided_reason_summary(monkeypatch, capsys, nvbench_compa
         return ref_root if path == "ref.json" else cmp_root
 
     monkeypatch.setattr(nvbench_compare.reader, "read_file", read_file)
-    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+    monkeypatch.setattr(
+        sys, "argv", ["nvbench_compare", "--display", "explain", "ref.json", "cmp.json"]
+    )
 
     assert nvbench_compare.main() == 0
     output = capsys.readouterr().out
     assert "Undecided   (comparison requires more evidence): 1" in output
     assert "noise_too_high: 1" in output
+    assert "Reason legend: noise-high = noise_too_high" in output
 
 
 def test_get_comparison_thresholds_returns_named_presets(nvbench_compare):
@@ -1733,10 +1868,11 @@ def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compa
         no_color=True,
     )
 
-    assert captured["headers"][-3:] == ["Ref", "Cmp", "Status"]
+    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
     row = captured["rows"][0]
-    assert row[-3].startswith("1.000 s")
-    assert row[-2].startswith("1.010 s")
+    assert row[-4].startswith("1.000 s")
+    assert row[-3].startswith("1.010 s")
+    assert row[-2] == ""
 
 
 def test_compare_benches_legacy_display_uses_scalar_diff(monkeypatch, nvbench_compare):
@@ -1829,17 +1965,20 @@ def test_compare_benches_explain_display_uses_explicit_intervals(
         display="explain",
     )
 
-    assert captured["headers"][-6:] == [
-        "Ref [L | C | H]",
-        "Cmp [L | C | H]",
+    assert captured["headers"][-7:] == [
+        "Ref [Lo | Ce | Hi]",
+        "Cmp [Lo | Ce | Hi]",
         "Ref Noise",
         "Cmp Noise",
         "Reason",
+        "Change",
         "Status",
     ]
     row = captured["rows"][0]
-    assert row[-6] == "1.0[00 | 20 | 30] s"
-    assert row[-5] == "1.0[10 | 30 | 40] s"
+    assert row[-7] == "1.0[00 | 20 | 30] s"
+    assert row[-6] == "1.0[10 | 30 | 40] s"
+    assert row[-3] == "centers-far"
+    assert row[-2] == ""
 
 
 def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_compare):
