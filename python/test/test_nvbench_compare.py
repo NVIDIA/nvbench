@@ -1380,6 +1380,181 @@ def test_get_comparison_thresholds_returns_named_presets(nvbench_compare):
     assert permissive.bulk_same_support_coverage < default.bulk_same_support_coverage
 
 
+def test_dump_comparison_config_uses_grouped_toml(nvbench_compare):
+    config = nvbench_compare.dump_comparison_config(
+        "default", nvbench_compare.get_comparison_thresholds("default")
+    )
+
+    assert "version = 1\n" in config
+    assert '[preset]\nname = "default"\n' in config
+    assert "[clear_gap]\nrelative = 0.005\n" in config
+    assert "[same]\n" in config
+    assert "[bulk]\n" in config
+    assert "sample_coverage = 0.97\n" in config
+    assert "[bulk.rare_support]\n" in config
+
+
+def test_resolve_comparison_thresholds_applies_config_overrides(
+    monkeypatch, nvbench_compare
+):
+    def read_config(_):
+        return (
+            "strict",
+            {
+                "bulk_same_sample_coverage": 0.93,
+                "bulk_support_max_removed_sample_fraction": 0.02,
+            },
+        )
+
+    monkeypatch.setattr(nvbench_compare, "read_comparison_config_file", read_config)
+
+    preset, thresholds = nvbench_compare.resolve_comparison_thresholds(
+        None, "settings.toml"
+    )
+    assert preset == "strict"
+    assert thresholds.clear_gap_relative == pytest.approx(
+        nvbench_compare.get_comparison_thresholds("strict").clear_gap_relative
+    )
+    assert thresholds.bulk_same_sample_coverage == pytest.approx(0.93)
+    assert thresholds.bulk_support_max_removed_sample_fraction == pytest.approx(0.02)
+
+    preset, thresholds = nvbench_compare.resolve_comparison_thresholds(
+        "permissive", "settings.toml"
+    )
+    assert preset == "permissive"
+    assert thresholds.clear_gap_relative == pytest.approx(
+        nvbench_compare.get_comparison_thresholds("permissive").clear_gap_relative
+    )
+    assert thresholds.bulk_same_sample_coverage == pytest.approx(0.93)
+    assert thresholds.bulk_support_max_removed_sample_fraction == pytest.approx(0.02)
+
+
+def test_parse_comparison_config_data_validates_grouped_thresholds(nvbench_compare):
+    preset, overrides = nvbench_compare.parse_comparison_config_data(
+        {
+            "version": 1,
+            "preset": {"name": "strict"},
+            "clear_gap": {"relative": 0.01},
+            "same": {
+                "center_relative": 0.002,
+                "overlap_fraction": 0.75,
+                "relative_dispersion_ceiling": 0.02,
+            },
+            "bulk": {
+                "sample_coverage": 0.99,
+                "support_coverage": 0.8,
+                "rare_support": {
+                    "sample_fraction": 0.001,
+                    "max_removed_sample_fraction": 0.01,
+                },
+            },
+        }
+    )
+
+    assert preset == "strict"
+    assert overrides == {
+        "clear_gap_relative": 0.01,
+        "same_center_relative": 0.002,
+        "same_overlap_fraction": 0.75,
+        "same_relative_dispersion_ceiling": 0.02,
+        "bulk_same_sample_coverage": 0.99,
+        "bulk_same_support_coverage": 0.8,
+        "bulk_support_rare_sample_fraction": 0.001,
+        "bulk_support_max_removed_sample_fraction": 0.01,
+    }
+
+
+@pytest.mark.parametrize(
+    "config_data, match",
+    [
+        ({}, "version"),
+        ({"version": 2}, "unsupported"),
+        ({"version": 1, "rare_support": {}}, "unknown top-level"),
+        ({"version": 1, "bulk": {"unknown": 0.1}}, r"\[bulk\]"),
+        ({"version": 1, "clear_gap": {"rare_support": {}}}, r"\[clear_gap\]"),
+        ({"version": 1, "bulk": {"sample_coverage": 1.5}}, "<= 1"),
+        ({"version": 1, "same": {"center_relative": "tight"}}, "finite number"),
+        ({"version": 1, "preset": {"name": "aggressive"}}, "unknown comparison preset"),
+    ],
+)
+def test_parse_comparison_config_data_rejects_invalid_config(
+    nvbench_compare, config_data, match
+):
+    with pytest.raises(ValueError, match=match):
+        nvbench_compare.parse_comparison_config_data(config_data)
+
+
+def test_read_comparison_config_file_parses_toml_when_parser_is_available(
+    tmp_path, nvbench_compare
+):
+    parser_module = "tomllib" if sys.version_info >= (3, 11) else "tomli"
+    pytest.importorskip(parser_module)
+    config_path = tmp_path / "settings.toml"
+    config_path.write_text(
+        """
+version = 1
+
+[preset]
+name = "strict"
+
+[bulk]
+sample_coverage = 0.93
+""",
+        encoding="utf-8",
+    )
+
+    preset, overrides = nvbench_compare.read_comparison_config_file(config_path)
+
+    assert preset == "strict"
+    assert overrides == {"bulk_same_sample_coverage": 0.93}
+
+
+def test_main_dump_config_does_not_require_input_files(
+    monkeypatch, capsys, nvbench_compare
+):
+    def read_file(_):
+        raise AssertionError("dump-config should not read JSON files")
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", read_file)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["nvbench_compare", "--preset", "strict", "--dump-config"],
+    )
+
+    assert nvbench_compare.main() == 0
+    output = capsys.readouterr().out
+    assert 'name = "strict"' in output
+    assert "[bulk.rare_support]" in output
+
+
+def test_main_dump_config_merges_config_and_cli_preset(
+    monkeypatch, capsys, nvbench_compare
+):
+    def read_config(_):
+        return ("strict", {"bulk_same_sample_coverage": 0.93})
+
+    monkeypatch.setattr(nvbench_compare, "read_comparison_config_file", read_config)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--config",
+            "settings.toml",
+            "--preset",
+            "permissive",
+            "--dump-config",
+        ],
+    )
+
+    assert nvbench_compare.main() == 0
+    output = capsys.readouterr().out
+    assert 'name = "permissive"' in output
+    assert "relative = 0.0025" in output
+    assert "sample_coverage = 0.93" in output
+
+
 def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     captured = {}

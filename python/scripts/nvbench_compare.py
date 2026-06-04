@@ -9,10 +9,11 @@ import os
 import sys
 import warnings
 from collections import Counter
-from dataclasses import dataclass, field
+from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import cached_property
-from typing import Any, Callable, Mapping
+from typing import Any, BinaryIO, Callable, Protocol
 
 import jsondiff
 import numpy as np
@@ -49,6 +50,15 @@ SAMPLE_FREQUENCIES_TAG = "nv/json/freqs-bin:nv/cold/sample_freqs"
 # The reader returns an object supporting the buffer protocol. Python 3.10 does
 # not provide a standard Buffer type annotation.
 Float32Reader = Callable[[str], object]
+
+
+class TomlModule(Protocol):
+    # TOML support is imported lazily. This protocol documents the narrow
+    # tomllib/tomli module surface used by this script.
+    @property
+    def TOMLDecodeError(self) -> type[BaseException]: ...
+
+    def load(self, fp: BinaryIO, /) -> dict[str, Any]: ...
 
 
 def read_float32_file(filename: str) -> object:
@@ -109,12 +119,235 @@ COMPARISON_THRESHOLD_PRESETS = {
     for name, values in COMPARISON_THRESHOLD_PRESET_VALUES.items()
 }
 
+COMPARISON_CONFIG_VERSION = 1
+COMPARISON_DEFAULT_PRESET = "default"
+COMPARISON_CONFIG_TABLES = {
+    "preset",
+    "clear_gap",
+    "same",
+    "bulk",
+}
+COMPARISON_CONFIG_KEYS = {
+    "clear_gap": {
+        "relative": "clear_gap_relative",
+    },
+    "same": {
+        "center_relative": "same_center_relative",
+        "overlap_fraction": "same_overlap_fraction",
+        "relative_dispersion_ceiling": "same_relative_dispersion_ceiling",
+    },
+    "bulk": {
+        "sample_coverage": "bulk_same_sample_coverage",
+        "support_coverage": "bulk_same_support_coverage",
+    },
+    "bulk.rare_support": {
+        "sample_fraction": "bulk_support_rare_sample_fraction",
+        "max_removed_sample_fraction": "bulk_support_max_removed_sample_fraction",
+    },
+}
+COMPARISON_THRESHOLD_RANGES = {
+    "clear_gap_relative": (0.0, None),
+    "same_center_relative": (0.0, None),
+    "same_overlap_fraction": (0.0, 1.0),
+    "same_relative_dispersion_ceiling": (0.0, None),
+    "bulk_same_sample_coverage": (0.0, 1.0),
+    "bulk_same_support_coverage": (0.0, 1.0),
+    "bulk_support_rare_sample_fraction": (0.0, 1.0),
+    "bulk_support_max_removed_sample_fraction": (0.0, 1.0),
+}
+
 
 def get_comparison_thresholds(preset_name: str) -> ComparisonThresholds:
     try:
         return COMPARISON_THRESHOLD_PRESETS[preset_name]
     except KeyError as exc:
         raise ValueError(f"unknown comparison preset {preset_name!r}") from exc
+
+
+def load_toml_module() -> TomlModule:
+    try:
+        import tomllib
+
+        return tomllib
+    except ModuleNotFoundError:
+        try:
+            import tomli
+
+            return tomli
+        except ModuleNotFoundError as exc:
+            raise ValueError(
+                "TOML config support requires Python 3.11+ or the tomli package"
+            ) from exc
+
+
+def validate_config_table(value: object, table_name: str) -> None:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"config table [{table_name}] must be a TOML table")
+
+
+def validate_config_float(value: object, key: str, field_name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ValueError(f"config value {key!r} must be a finite number")
+
+    value = float(value)
+    if not math.isfinite(value):
+        raise ValueError(f"config value {key!r} must be finite")
+
+    minimum, maximum = COMPARISON_THRESHOLD_RANGES[field_name]
+    if value < minimum:
+        raise ValueError(f"config value {key!r} must be >= {minimum:g}")
+    if maximum is not None and value > maximum:
+        raise ValueError(f"config value {key!r} must be <= {maximum:g}")
+    return value
+
+
+def parse_config_section(
+    table: Mapping[str, Any], section_name: str
+) -> dict[str, float]:
+    validate_config_table(table, section_name)
+    known_keys = COMPARISON_CONFIG_KEYS[section_name]
+    unknown_keys = set(table) - set(known_keys)
+    if unknown_keys:
+        unknown = ", ".join(sorted(unknown_keys))
+        raise ValueError(f"unknown config key(s) in [{section_name}]: {unknown}")
+
+    overrides = {}
+    for key, field_name in known_keys.items():
+        if key not in table:
+            continue
+        full_key = f"{section_name}.{key}"
+        overrides[field_name] = validate_config_float(table[key], full_key, field_name)
+    return overrides
+
+
+def parse_comparison_config_data(
+    config_data: Mapping[str, Any],
+) -> tuple[str | None, dict[str, float]]:
+    if not isinstance(config_data, Mapping):
+        raise ValueError("comparison config must be a TOML table")
+
+    unknown_top_level = set(config_data) - ({"version"} | COMPARISON_CONFIG_TABLES)
+    if unknown_top_level:
+        unknown = ", ".join(sorted(unknown_top_level))
+        raise ValueError(f"unknown top-level config key(s): {unknown}")
+
+    version = config_data.get("version")
+    if isinstance(version, bool) or not isinstance(version, int):
+        raise ValueError(
+            f"comparison config must specify integer version = {COMPARISON_CONFIG_VERSION}"
+        )
+    if version != COMPARISON_CONFIG_VERSION:
+        raise ValueError(
+            f"unsupported comparison config version {version!r}; "
+            f"expected {COMPARISON_CONFIG_VERSION}"
+        )
+
+    preset_name = None
+    if "preset" in config_data:
+        preset_table = config_data["preset"]
+        validate_config_table(preset_table, "preset")
+        unknown_keys = set(preset_table) - {"name"}
+        if unknown_keys:
+            unknown = ", ".join(sorted(unknown_keys))
+            raise ValueError(f"unknown config key(s) in [preset]: {unknown}")
+        if "name" in preset_table:
+            preset_name = preset_table["name"]
+            if not isinstance(preset_name, str):
+                raise ValueError("config value 'preset.name' must be a string")
+            get_comparison_thresholds(preset_name)
+
+    overrides = {}
+    for section_name in ("clear_gap", "same"):
+        if section_name in config_data:
+            overrides.update(
+                parse_config_section(config_data[section_name], section_name)
+            )
+
+    if "bulk" in config_data:
+        bulk_table = config_data["bulk"]
+        validate_config_table(bulk_table, "bulk")
+        known_bulk_keys = set(COMPARISON_CONFIG_KEYS["bulk"]) | {"rare_support"}
+        unknown_keys = set(bulk_table) - known_bulk_keys
+        if unknown_keys:
+            unknown = ", ".join(sorted(unknown_keys))
+            raise ValueError(f"unknown config key(s) in [bulk]: {unknown}")
+
+        bulk_values = {
+            key: value for key, value in bulk_table.items() if key != "rare_support"
+        }
+        overrides.update(parse_config_section(bulk_values, "bulk"))
+        if "rare_support" in bulk_table:
+            overrides.update(
+                parse_config_section(bulk_table["rare_support"], "bulk.rare_support")
+            )
+
+    return preset_name, overrides
+
+
+def read_comparison_config_file(
+    config_path: str | os.PathLike[str],
+) -> tuple[str | None, dict[str, float]]:
+    toml_module = load_toml_module()
+    try:
+        with open(config_path, "rb") as config_file:
+            config_data = toml_module.load(config_file)
+    except toml_module.TOMLDecodeError as exc:
+        raise ValueError(
+            f"failed to parse comparison config {config_path!r}: {exc}"
+        ) from exc
+    except OSError as exc:
+        raise ValueError(
+            f"failed to read comparison config {config_path!r}: {exc}"
+        ) from exc
+
+    return parse_comparison_config_data(config_data)
+
+
+def resolve_comparison_thresholds(
+    cli_preset_name: str | None = None,
+    config_path: str | os.PathLike[str] | None = None,
+) -> tuple[str, ComparisonThresholds]:
+    config_preset_name = None
+    config_overrides: dict[str, float] = {}
+    if config_path is not None:
+        config_preset_name, config_overrides = read_comparison_config_file(config_path)
+
+    preset_name = cli_preset_name or config_preset_name or COMPARISON_DEFAULT_PRESET
+    thresholds = replace(get_comparison_thresholds(preset_name), **config_overrides)
+    return preset_name, thresholds
+
+
+def format_toml_float(value: float) -> str:
+    return repr(float(value))
+
+
+def dump_comparison_config(preset_name: str, thresholds: ComparisonThresholds) -> str:
+    lines = [
+        f"version = {COMPARISON_CONFIG_VERSION}",
+        "",
+        "[preset]",
+        f'name = "{preset_name}"',
+        "",
+        "[clear_gap]",
+        f"relative = {format_toml_float(thresholds.clear_gap_relative)}",
+        "",
+        "[same]",
+        f"center_relative = {format_toml_float(thresholds.same_center_relative)}",
+        f"overlap_fraction = {format_toml_float(thresholds.same_overlap_fraction)}",
+        "relative_dispersion_ceiling = "
+        f"{format_toml_float(thresholds.same_relative_dispersion_ceiling)}",
+        "",
+        "[bulk]",
+        f"sample_coverage = {format_toml_float(thresholds.bulk_same_sample_coverage)}",
+        f"support_coverage = {format_toml_float(thresholds.bulk_same_support_coverage)}",
+        "",
+        "[bulk.rare_support]",
+        "sample_fraction = "
+        f"{format_toml_float(thresholds.bulk_support_rare_sample_fraction)}",
+        "max_removed_sample_fraction = "
+        f"{format_toml_float(thresholds.bulk_support_max_removed_sample_fraction)}",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 @dataclass(frozen=True)
@@ -2109,8 +2342,18 @@ def main() -> int:
     parser.add_argument(
         "--preset",
         choices=sorted(COMPARISON_THRESHOLD_PRESETS),
-        default="default",
+        default=None,
         help="comparison threshold preset",
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="comparison threshold TOML config",
+    )
+    parser.add_argument(
+        "--dump-config",
+        action="store_true",
+        help="print the effective comparison threshold config and exit",
     )
     parser.add_argument(
         "--display",
@@ -2170,6 +2413,18 @@ def main() -> int:
 
     args, files_or_dirs = parser.parse_known_args()
     try:
+        comparison_preset, comparison_thresholds = resolve_comparison_thresholds(
+            args.preset, args.config
+        )
+    except ValueError as exc:
+        print(str(exc))
+        return 1
+
+    if args.dump_config:
+        print(dump_comparison_config(comparison_preset, comparison_thresholds), end="")
+        return 0
+
+    try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
         reference_device_filter = parse_device_filter(
             args.reference_devices, "--reference-devices"
@@ -2177,7 +2432,6 @@ def main() -> int:
         compare_device_filter = parse_device_filter(
             args.compare_devices, "--compare-devices"
         )
-        comparison_thresholds = get_comparison_thresholds(args.preset)
     except ValueError as exc:
         print(str(exc))
         return 1
