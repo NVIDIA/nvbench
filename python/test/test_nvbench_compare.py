@@ -406,6 +406,101 @@ def test_gpu_timing_data_loads_samples_and_frequencies_lazily(
     assert reader_calls == [str(samples_file), str(freqs_file)]
 
 
+def test_compare_benches_collects_bulk_debug_rows(tmp_path, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    ref_samples_file = tmp_path / "ref-samples.bin"
+    ref_freqs_file = tmp_path / "ref-freqs.bin"
+    cmp_samples_file = tmp_path / "cmp-samples.bin"
+    cmp_freqs_file = tmp_path / "cmp-freqs.bin"
+    np.array([1.0, 1.0], dtype="<f4").tofile(ref_samples_file)
+    np.array([100.0, 100.0], dtype="<f4").tofile(ref_freqs_file)
+    np.array([1.0, 1.0], dtype="<f4").tofile(cmp_samples_file)
+    np.array([100.0, 100.0], dtype="<f4").tofile(cmp_freqs_file)
+
+    ref_state = make_state(nvbench_compare, "state", mean="1.0")
+    ref_state["summaries"].extend(
+        [
+            make_binary_summary(
+                nvbench_compare, "SAMPLE_TIMES_TAG", str(ref_samples_file), 2
+            ),
+            make_binary_summary(
+                nvbench_compare, "SAMPLE_FREQUENCIES_TAG", str(ref_freqs_file), 2
+            ),
+        ]
+    )
+    cmp_state = make_state(nvbench_compare, "state", mean="1.01")
+    cmp_state["summaries"].extend(
+        [
+            make_binary_summary(
+                nvbench_compare, "SAMPLE_TIMES_TAG", str(cmp_samples_file), 2
+            ),
+            make_binary_summary(
+                nvbench_compare, "SAMPLE_FREQUENCIES_TAG", str(cmp_freqs_file), 2
+            ),
+        ]
+    )
+    bulk_debug_rows = []
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([ref_state])],
+        [make_benchmark([cmp_state])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        ref_json_dir=str(tmp_path),
+        cmp_json_dir=str(tmp_path),
+        ref_json_path="ref.json",
+        cmp_json_path="cmp.json",
+        bulk_debug_rows=bulk_debug_rows,
+    )
+
+    assert len(bulk_debug_rows) == 1
+    row = bulk_debug_rows[0]
+    assert row["row_index"] == 0
+    assert row["table_row_index"] == 0
+    assert row["benchmark"] == "bench"
+    assert row["reference_json"] == "ref.json"
+    assert row["compare_json"] == "cmp.json"
+    assert row["status"] == nvbench_compare.ComparisonStatus.SAME.value
+    assert row["occurrence"] == 0
+    assert row["occurrence_count"] == 1
+    assert row["reference_sample_filename"] == str(ref_samples_file)
+    assert row["reference_sample_count"] == 2
+    assert row["reference_frequency_filename"] == str(ref_freqs_file)
+    assert row["compare_sample_filename"] == str(cmp_samples_file)
+    assert row["compare_frequency_filename"] == str(cmp_freqs_file)
+
+
+def test_format_bulk_debug_python_loads_arrays(tmp_path, nvbench_compare):
+    samples_file = tmp_path / "samples.bin"
+    np.array([1.0, 2.0], dtype="<f4").tofile(samples_file)
+    script = nvbench_compare.format_bulk_debug_python(
+        [
+            {
+                "reference_sample_filename": str(samples_file),
+                "reference_sample_count": 2,
+                "reference_frequency_filename": None,
+                "reference_frequency_count": None,
+                "compare_sample_filename": None,
+                "compare_sample_count": None,
+                "compare_frequency_filename": None,
+                "compare_frequency_count": None,
+            }
+        ]
+    )
+    namespace = {}
+
+    exec(script, namespace)
+
+    arrays = namespace["load_bulk_data"](namespace["bulk_rows"][0])
+    assert list(arrays["reference_samples"]) == pytest.approx([1.0, 2.0])
+    assert arrays["reference_frequencies"] is None
+
+
 def test_gpu_timing_data_parses_quartiles_and_sm_clock_rate_mean(nvbench_compare):
     timing = nvbench_compare.extract_gpu_timing_data(
         [
@@ -1565,6 +1660,51 @@ def test_main_dump_config_merges_config_and_cli_preset(
     assert 'name = "permissive"' in output
     assert "relative = 0.0025" in output
     assert "sample_coverage = 0.93" in output
+
+
+def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_compare):
+    devices = [{"id": 0, "name": "Test GPU"}]
+    root = {
+        "devices": devices,
+        "benchmarks": [],
+    }
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+
+    def fake_compare_benches(*args, **kwargs):
+        kwargs["bulk_debug_rows"].append(
+            {
+                "row_index": 0,
+                "status": "UNDECIDED",
+                "reference_sample_filename": None,
+                "reference_sample_count": None,
+                "reference_frequency_filename": None,
+                "reference_frequency_count": None,
+                "compare_sample_filename": None,
+                "compare_sample_count": None,
+                "compare_frequency_filename": None,
+                "compare_frequency_count": None,
+            }
+        )
+
+    monkeypatch.setattr(nvbench_compare, "compare_benches", fake_compare_benches)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--bulk-debug-python",
+            "STDOUT",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 0
+    output = capsys.readouterr().out
+    assert "bulk_rows = [" in output
+    assert "'status': 'UNDECIDED'" in output
+    assert "def load_bulk_data(row):" in output
 
 
 def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compare):

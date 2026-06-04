@@ -43,6 +43,13 @@ Show interval details and decision reasons in the table:
 nvbench-compare --display explain reference.json compare.json
 ```
 
+Generate Python code with bulk sample/frequency filenames for every displayed
+row:
+
+```bash
+nvbench-compare --bulk-debug-python /path/to/output.py reference.json compare.json
+```
+
 Compare selected devices. Device filters are paired by position, so this
 compares reference device `0` against compare device `1`:
 
@@ -147,6 +154,55 @@ bulk-data confirmation.
 
 Bulk data read failures are treated as unavailable data and reported as
 warnings.
+
+## Bulk Debug Python Output
+
+`--bulk-debug-python /path/to/output.py` writes a Python script to the specified
+file. The generated script contains a `bulk_rows` list. Each entry corresponds
+to one row that `nvbench-compare` prints in its display tables after all
+benchmark, axis, device, and threshold filters are applied.
+
+Use `stdout` instead of a file path to print the generated Python code:
+
+```bash
+nvbench-compare --bulk-debug-python stdout reference.json compare.json
+```
+
+Each `bulk_rows` entry includes:
+
+- `row_index`: zero-based index among displayed comparison rows
+- `table_row_index`: zero-based index within the displayed table for a device
+  section
+- `benchmark`
+- `reference_json` and `compare_json`
+- `reference_device_id` and `compare_device_id`
+- `state_key`
+- `occurrence` and `occurrence_count`, which disambiguate duplicate states
+- `axis_values`
+- `status`, `reason`, and `reason_message`
+- sample and frequency filenames and counts for reference and compare data
+
+The generated script also defines `load_bulk_data(row)`, which reads the
+float32 sample and frequency files for a selected row.
+
+Select the first displayed row:
+
+```python
+row = bulk_rows[0]
+arrays = load_bulk_data(row)
+```
+
+Select the second undecided row:
+
+```python
+undecided = [row for row in bulk_rows if row["status"] == "UNDECIDED"]
+row = undecided[1]
+arrays = load_bulk_data(row)
+```
+
+If `-b` and `-a` narrow the report to one comparison of interest, the desired
+entry is usually available positionally as `bulk_rows[0]`. If duplicate states
+remain after filtering, use `occurrence` to distinguish them.
 
 ## Time Estimates And Intervals
 
@@ -281,6 +337,8 @@ uses `cuda.bench`.
 
 - Use `--display explain` to inspect the interval, noise, and decision reason
   for each compared state.
+- Use `--bulk-debug-python /path/to/output.py` to generate Python code that
+  identifies sample and frequency files for every displayed row.
 - If cold-start effects are expected, adjust cold warmup controls such as
   `--cold-warmup-runs` and `--cold-max-warmup-walltime`.
 - Try a different stopping criterion when the default does not collect useful
