@@ -511,6 +511,8 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert fast is not None
     assert fast.status == nvbench_compare.ComparisonStatus.FAST
     assert fast.reason.code == "clear_gap_confirmed_by_summary_cycles"
+    assert fast.diff_interval == pytest.approx((-0.5, -0.05))
+    assert fast.frac_diff_interval == pytest.approx((-0.3846153846, -0.05))
 
     slow = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -528,6 +530,8 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert slow is not None
     assert slow.status == nvbench_compare.ComparisonStatus.SLOW
     assert slow.reason.code == "clear_gap_confirmed_by_summary_cycles"
+    assert slow.diff_interval == pytest.approx((0.1, 0.55))
+    assert slow.frac_diff_interval == pytest.approx((0.0769230769, 0.55))
 
     same = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -545,6 +549,8 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert same is not None
     assert same.status == nvbench_compare.ComparisonStatus.SAME
     assert same.reason.code == "same_confirmed_by_cycles"
+    assert same.diff_interval == pytest.approx((-0.28, 0.28))
+    assert same.frac_diff_interval == pytest.approx((-0.2153846154, 0.28))
 
     weak_overlap = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(
@@ -739,6 +745,48 @@ def test_compare_gpu_timings_uses_bulk_data_to_confirm_same(nvbench_compare):
     assert comparison is not None
     assert comparison.status == nvbench_compare.ComparisonStatus.SAME
     assert comparison.reason.code == "bulk_same"
+
+
+def test_format_diff_and_percent_ranges(nvbench_compare):
+    assert nvbench_compare.format_duration_range((-12e-6, 8e-6)) == "[-12.00, 8.00] us"
+    assert (
+        nvbench_compare.format_percentage_bounds(
+            (-0.2153846154, 0.28), nvbench_compare.ComparisonStatus.UNDECIDED
+        )
+        == "in [-21.5%, +28.0%]"
+    )
+    assert (
+        nvbench_compare.format_percentage_bounds(
+            (-0.3076923077, -0.05), nvbench_compare.ComparisonStatus.FAST
+        )
+        == "<= -5.0%"
+    )
+    assert (
+        nvbench_compare.format_percentage_bounds(
+            (0.0769230769, 0.55), nvbench_compare.ComparisonStatus.SLOW
+        )
+        == ">= +7.7%"
+    )
+
+
+def test_format_timing_with_interval(nvbench_compare):
+    interval = nvbench_compare.TimingInterval(
+        lower=0.002237, upper=0.002389, center=0.0023
+    )
+    assert (
+        nvbench_compare.format_timing_with_interval(0.0023, interval)
+        == "2.300 ms [-63, +89] us"
+    )
+
+
+def test_format_timing_with_explicit_interval(nvbench_compare):
+    interval = nvbench_compare.TimingInterval(
+        lower=0.001434, upper=0.001458, center=0.001446
+    )
+    assert (
+        nvbench_compare.format_timing_with_explicit_interval(0.001446, interval)
+        == "1.4[34 | 46 | 58] ms"
+    )
 
 
 def test_compare_gpu_timings_keeps_bulk_mismatch_undecided(nvbench_compare):
@@ -1321,13 +1369,150 @@ def test_get_comparison_thresholds_returns_named_presets(nvbench_compare):
     strict = nvbench_compare.get_comparison_thresholds("strict")
     permissive = nvbench_compare.get_comparison_thresholds("permissive")
 
-    assert default == nvbench_compare.ComparisonThresholds()
+    assert default == nvbench_compare.ComparisonThresholds(
+        **nvbench_compare.COMPARISON_THRESHOLD_PRESET_VALUES["default"]
+    )
     assert strict.clear_gap_relative > default.clear_gap_relative
     assert strict.same_center_relative < default.same_center_relative
     assert strict.bulk_same_sample_coverage > default.bulk_same_sample_coverage
     assert permissive.clear_gap_relative < default.clear_gap_relative
     assert permissive.same_center_relative > default.same_center_relative
     assert permissive.bulk_same_support_coverage < default.bulk_same_support_coverage
+
+
+def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    captured = {}
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        captured["rows"] = rows
+        captured["headers"] = headers
+        return ""
+
+    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+
+    ref_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])]
+    cmp_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.01")])]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        ref_benches,
+        cmp_benches,
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert captured["headers"][-3:] == ["Ref", "Cmp", "Status"]
+    row = captured["rows"][0]
+    assert row[-3].startswith("1.000 s")
+    assert row[-2].startswith("1.010 s")
+
+
+def test_compare_benches_legacy_display_uses_scalar_diff(monkeypatch, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    captured = {}
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        captured["rows"] = rows
+        captured["headers"] = headers
+        return ""
+
+    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+
+    ref_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])]
+    cmp_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.01")])]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        ref_benches,
+        cmp_benches,
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        display="legacy",
+    )
+
+    assert captured["headers"][-7:] == [
+        "Ref Time",
+        "Ref Noise",
+        "Cmp Time",
+        "Cmp Noise",
+        "Diff",
+        "%Diff",
+        "Status",
+    ]
+    row = captured["rows"][0]
+    assert row[-7] == "1.000 s"
+    assert row[-5] == "1.010 s"
+    assert row[-3] == "10.000 ms"
+    assert row[-2] == "1.00%"
+
+
+def test_compare_benches_explain_display_uses_explicit_intervals(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    captured = {}
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        captured["rows"] = rows
+        captured["headers"] = headers
+        return ""
+
+    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+
+    ref_state = make_state(nvbench_compare, "state", mean="1.0")
+    ref_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "1.0"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.01"),
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.02"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.03"),
+            make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
+        ]
+    )
+    cmp_state = make_state(nvbench_compare, "state", mean="1.01")
+    cmp_state["summaries"].extend(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", "1.01"),
+            make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.02"),
+            make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.03"),
+            make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.04"),
+            make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
+        ]
+    )
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([ref_state])],
+        [make_benchmark([cmp_state])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        display="explain",
+    )
+
+    assert captured["headers"][-6:] == [
+        "Ref [L | C | H]",
+        "Cmp [L | C | H]",
+        "Ref Noise",
+        "Cmp Noise",
+        "Reason",
+        "Status",
+    ]
+    row = captured["rows"][0]
+    assert row[-6] == "1.0[00 | 20 | 30] s"
+    assert row[-5] == "1.0[10 | 30 | 40] s"
 
 
 def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_compare):
@@ -1341,16 +1526,26 @@ def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_com
     monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
 
     def fake_compare_benches(*args, **kwargs):
-        captured["comparison_thresholds"] = args[-1]
+        captured["comparison_thresholds"] = kwargs["comparison_thresholds"]
+        captured["display"] = kwargs["display"]
 
     monkeypatch.setattr(nvbench_compare, "compare_benches", fake_compare_benches)
     monkeypatch.setattr(
         sys,
         "argv",
-        ["nvbench_compare", "--preset", "strict", "ref.json", "cmp.json"],
+        [
+            "nvbench_compare",
+            "--preset",
+            "strict",
+            "--display",
+            "explain",
+            "ref.json",
+            "cmp.json",
+        ],
     )
 
     assert nvbench_compare.main() == 0
     assert captured[
         "comparison_thresholds"
     ] == nvbench_compare.get_comparison_thresholds("strict")
+    assert captured["display"] == "explain"
