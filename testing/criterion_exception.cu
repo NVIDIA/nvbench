@@ -24,9 +24,6 @@
 // Verifies that an exception thrown by a stopping criterion aborts the
 // benchmark (the state is marked as failed) instead of being silently swallowed.
 
-namespace
-{
-
 __global__ void spin_kernel(nvbench::uint64_t target_cycles)
 {
   const auto start = static_cast<nvbench::uint64_t>(clock64());
@@ -163,8 +160,6 @@ void test_add_frequency_exception_stops_benchmark()
   ASSERT(g_probe.frequency_calls == 1);
   ASSERT(g_probe.measurement_calls == 0);
 }
-
-} // namespace
 
 int main()
 try

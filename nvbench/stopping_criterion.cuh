@@ -113,7 +113,8 @@ public:
    * Provide the GPU clock frequency (Hz) observed for the current sample. It is not called when
    * doing CPU-only benchmarking (i.e.: using `nvbench::exec_tag::cpu_only` or
    * `nvbench::exec_tag::no_gpu`) or profiling (`--profile` option). When called, it is done before
-   * calling `add_measurement` for the same sample.
+   * calling `add_measurement` for the same sample. The number of frequency measurements will be
+   * either 0 or equal to the number of calls to `add_measurement`.
    */
   void add_frequency(nvbench::float32_t frequency_hz) { this->do_add_frequency(frequency_hz); }
 
