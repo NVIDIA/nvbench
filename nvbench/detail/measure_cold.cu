@@ -295,12 +295,12 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
   {
-    auto &summ = m_state.add_summary("nv/cold/time/cpu/ir/absolute");
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/iqr/absolute");
     summ.set_string("name", "IQR");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Interquartile range of isolated kernel execution CPU times");
-    const auto cpu_time_ir = cpu_time_third_quartile - cpu_time_first_quartile;
-    summ.set_float64("value", cpu_time_ir);
+    const auto cpu_time_iqr = cpu_time_third_quartile - cpu_time_first_quartile;
+    summ.set_float64("value", cpu_time_iqr);
     summ.set_string("hide", "Hidden by default.");
   }
   const auto cpu_robust_noise = statistics::compute_robust_noise(m_total_samples,
@@ -309,7 +309,7 @@ void measure_cold_base::generate_summaries()
                                                                  cpu_time_third_quartile);
   if (cpu_robust_noise)
   {
-    auto &summ = m_state.add_summary("nv/cold/time/cpu/ir/relative");
+    auto &summ = m_state.add_summary("nv/cold/time/cpu/iqr/relative");
     summ.set_string("name", "Rel IQR");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
@@ -401,12 +401,12 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
   {
-    auto &summ = m_state.add_summary("nv/cold/time/gpu/ir/absolute");
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/iqr/absolute");
     summ.set_string("name", "IQR");
     summ.set_string("hint", "duration");
     summ.set_string("description", "Interquartile range of isolated kernel execution GPU times");
-    const auto cuda_time_ir = cuda_time_third_quartile - cuda_time_first_quartile;
-    summ.set_float64("value", cuda_time_ir);
+    const auto cuda_time_iqr = cuda_time_third_quartile - cuda_time_first_quartile;
+    summ.set_float64("value", cuda_time_iqr);
     summ.set_string("hide", "Hidden by default.");
   }
   const auto cuda_robust_noise = statistics::compute_robust_noise(m_total_samples,
@@ -415,7 +415,7 @@ void measure_cold_base::generate_summaries()
                                                                   cuda_time_third_quartile);
   if (cuda_robust_noise)
   {
-    auto &summ = m_state.add_summary("nv/cold/time/gpu/ir/relative");
+    auto &summ = m_state.add_summary("nv/cold/time/gpu/iqr/relative");
     summ.set_string("name", "Rel IQR");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
