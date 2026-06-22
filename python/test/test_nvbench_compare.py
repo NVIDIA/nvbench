@@ -495,6 +495,8 @@ def test_format_bulk_debug_python_loads_arrays(tmp_path, nvbench_compare):
     )
     namespace = {}
 
+    assert script.startswith("# NVB-BULK-BEGIN\n")
+    assert script.endswith("# NVB-BULK-END\n")
     exec(script, namespace)
 
     arrays = namespace["load_bulk_data"](namespace["bulk_rows"][0])
@@ -1847,9 +1849,11 @@ def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_co
 
     assert nvbench_compare.main() == 0
     output = capsys.readouterr().out
+    assert "# NVB-BULK-BEGIN" in output
     assert "bulk_rows = [" in output
     assert "'status': 'AMBG'" in output
     assert "def load_bulk_data(row):" in output
+    assert "# NVB-BULK-END" in output
 
 
 def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compare):

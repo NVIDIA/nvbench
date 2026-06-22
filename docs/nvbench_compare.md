@@ -168,6 +168,34 @@ Use `stdout` instead of a file path to print the generated Python code:
 nvbench-compare --bulk-debug-python stdout reference.json compare.json
 ```
 
+Generated bulk-debug Python is enclosed in comment markers:
+
+```python
+# NVB-BULK-BEGIN
+...
+# NVB-BULK-END
+```
+
+Because the markers are valid Python comments, the generated helpers can be
+filtered directly into the standard Python REPL:
+
+```bash
+python -i <(
+  nvbench-compare --bulk-debug-python stdout reference.json compare.json \
+    | sed -n '/^# NVB-BULK-BEGIN$/,/^# NVB-BULK-END$/p'
+)
+```
+
+IPython does not reliably accept process-substitution paths as startup files.
+For IPython, write the generated code to a temporary file directly:
+
+```bash
+tmp=$(mktemp --suffix=.py)
+nvbench-compare --bulk-debug-python "$tmp" reference.json compare.json
+ipython -i "$tmp"
+rm -f "$tmp"
+```
+
 Each `bulk_rows` entry includes:
 
 - `row_index`: zero-based index among displayed comparison rows
