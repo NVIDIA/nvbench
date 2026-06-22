@@ -55,6 +55,7 @@ def nvbench_compare(monkeypatch):
             Fore=types.SimpleNamespace(
                 BLUE="",
                 GREEN="",
+                LIGHTBLACK_EX="",
                 RED="",
                 RESET="",
                 YELLOW="",
@@ -900,6 +901,15 @@ def test_format_change_only_reports_fast_and_slow_rows(nvbench_compare):
     assert nvbench_compare.format_change(undecided) == ""
 
 
+def test_ambiguous_status_uses_shrug_marker(nvbench_compare):
+    assert (
+        nvbench_compare.colorize_comparison_status(
+            nvbench_compare.ComparisonStatus.UNDECIDED, no_color=True
+        )
+        == "\U0001f937 AMBG"
+    )
+
+
 def test_format_timing_with_interval(nvbench_compare):
     interval = nvbench_compare.TimingInterval(
         lower=0.002237, upper=0.002389, center=0.0023
@@ -1601,7 +1611,7 @@ def test_main_prints_undecided_reason_summary(monkeypatch, capsys, nvbench_compa
 
     assert nvbench_compare.main() == 0
     output = capsys.readouterr().out
-    assert "Undecided   (comparison requires more evidence): 1" in output
+    assert "Ambiguous (comparison requires more evidence): 1" in output
     assert "noise_too_high: 1" in output
     assert "Reason legend: noise-high = noise_too_high" in output
 
@@ -1810,7 +1820,7 @@ def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_co
         kwargs["bulk_debug_rows"].append(
             {
                 "row_index": 0,
-                "status": "UNDECIDED",
+                "status": "AMBG",
                 "reference_sample_filename": None,
                 "reference_sample_count": None,
                 "reference_frequency_filename": None,
@@ -1838,7 +1848,7 @@ def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_co
     assert nvbench_compare.main() == 0
     output = capsys.readouterr().out
     assert "bulk_rows = [" in output
-    assert "'status': 'UNDECIDED'" in output
+    assert "'status': 'AMBG'" in output
     assert "def load_bulk_data(row):" in output
 
 

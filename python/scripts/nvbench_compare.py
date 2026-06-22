@@ -428,7 +428,7 @@ class TimingInterval:
 
 class ComparisonStatus(str, Enum):
     UNKNOWN = "????"
-    UNDECIDED = "UNDECIDED"
+    UNDECIDED = "AMBG"
     SAME = "SAME"
     FAST = "FAST"
     SLOW = "SLOW"
@@ -702,6 +702,7 @@ class Emoji(str, Enum):
     BLUE = "\U0001f535"
     GREEN = "\U0001f7e2"
     RED = "\U0001f534"
+    SHRUG = "\U0001f937"
     NONE = ""
 
 
@@ -1026,7 +1027,7 @@ def format_bulk_debug_python(bulk_rows: list[dict[str, Any]]) -> str:
         "# Examples:\n"
         "# row = bulk_rows[0]\n"
         "# arrays = load_bulk_data(row)\n"
-        "# undecided = [row for row in bulk_rows if row['status'] == 'UNDECIDED']\n"
+        "# ambiguous = [row for row in bulk_rows if row['status'] == 'AMBG']\n"
     )
 
 
@@ -2288,7 +2289,7 @@ def colorize_comparison_status(status, no_color):
     if status == ComparisonStatus.UNKNOWN:
         return colorize(status.value, Fore.YELLOW, Emoji.YELLOW, no_color)
     if status == ComparisonStatus.UNDECIDED:
-        return colorize(status.value, Fore.YELLOW, Emoji.YELLOW, no_color)
+        return colorize(status.value, Fore.LIGHTBLACK_EX, Emoji.SHRUG, no_color)
     if status == ComparisonStatus.SAME:
         return colorize(status.value, Fore.BLUE, Emoji.BLUE, no_color)
     if status == ComparisonStatus.FAST:
@@ -2954,9 +2955,7 @@ def main() -> int:
     print(f"  - Pass        (centers close and intervals overlap): {stats.pass_count}")
     print(f"  - Improvement (clear timing gap, %Diff < 0): {stats.improvement_count}")
     print(f"  - Regression  (clear timing gap, %Diff > 0): {stats.regression_count}")
-    print(
-        f"  - Undecided   (comparison requires more evidence): {stats.undecided_count}"
-    )
+    print(f"  - Ambiguous (comparison requires more evidence): {stats.undecided_count}")
     if stats.undecided_reasons:
         print("    - Reasons:")
         for code, reason_summary in sorted(

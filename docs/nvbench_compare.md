@@ -1,7 +1,7 @@
 # NVBench Compare
 
 `nvbench-compare` compares two NVBench JSON outputs and classifies matching
-benchmark states as `SAME`, `FAST`, `SLOW`, `UNDECIDED`, or `????`.
+benchmark states as `SAME`, `FAST`, `SLOW`, `AMBG`, or `????`.
 
 NVBench treats benchmark performance data as describing a timing interval over
 which measured timings varied. The interval is not intended as a precise
@@ -11,7 +11,7 @@ separated, clearly compatible, or ambiguous.
 
 The comparison is intentionally conservative. It reports `FAST` or `SLOW` only
 when the timing intervals have a clear gap and the gap is confirmed in cycle
-space when clock information is available. Ambiguous cases stay `UNDECIDED`
+space when clock information is available. Ambiguous cases stay `AMBG`
 instead of forcing a pass or regression.
 
 ## Common Invocations
@@ -192,11 +192,11 @@ row = bulk_rows[0]
 arrays = load_bulk_data(row)
 ```
 
-Select the second undecided row:
+Select the second ambiguous row:
 
 ```python
-undecided = [row for row in bulk_rows if row["status"] == "UNDECIDED"]
-row = undecided[1]
+ambiguous = [row for row in bulk_rows if row["status"] == "AMBG"]
+row = ambiguous[1]
 arrays = load_bulk_data(row)
 ```
 
@@ -224,7 +224,7 @@ centers are not compared.
 
 ## Decision Tree
 
-The comparison logic starts from `UNDECIDED` and upgrades only when enough
+The comparison logic starts from `AMBG` and upgrades only when enough
 evidence is available.
 
 ### 1. Check For A Clear Gap
@@ -260,11 +260,11 @@ cycles = sample_time * sample_frequency
 
 It then builds cycle intervals from the bulk cycle samples and requires the
 cycle interval comparison to agree with the timing interval comparison. A timing
-gap that is not confirmed by bulk cycle intervals is `UNDECIDED`.
+gap that is not confirmed by bulk cycle intervals is `AMBG`.
 
 If bulk data are unavailable, `nvbench-compare` falls back to summary clock-rate
 confirmation using `sm_clock_rate/mean`. If that clock-rate summary is missing
-or invalid, the clear-gap decision remains `UNDECIDED`.
+or invalid, the clear-gap decision remains `AMBG`.
 
 ### 3. Check Bulk-Data Compatibility For SAME
 
@@ -311,14 +311,14 @@ If `sm_clock_rate/mean` is available on both sides, the same check must also be
 confirmed in summary cycle space. If clock-rate summaries are unavailable, the
 summary timing decision can still report `SAME`.
 
-### 5. Otherwise Report UNDECIDED
+### 5. Otherwise Report AMBG
 
 If none of the clear-gap or same-result paths has enough evidence,
-`nvbench-compare` reports `UNDECIDED` and records a reason in the summary.
+`nvbench-compare` reports `AMBG` and records a reason in the summary.
 
-## What To Do With UNDECIDED Results
+## What To Do With AMBG Results
 
-`UNDECIDED` does not mean a benchmark improved or regressed. It means
+`AMBG` does not mean a benchmark improved or regressed. It means
 `nvbench-compare` did not find enough evidence to classify the result as
 `SAME`, `FAST`, or `SLOW`.
 
