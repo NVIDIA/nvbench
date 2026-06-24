@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import importlib.util
+import math
 import sys
 import types
 from pathlib import Path
@@ -308,7 +309,9 @@ def test_compare_benches_matches_duplicate_states_after_axis_filter(
     assert run_data.stats.unknown_count == 0
 
 
-def test_compare_benches_skips_non_finite_centers(monkeypatch, nvbench_compare):
+def test_compare_benches_counts_non_finite_centers_as_unknown(
+    monkeypatch, nvbench_compare
+):
     run_data = make_comparison_run_data(nvbench_compare)
 
     ref_benches = [
@@ -342,12 +345,12 @@ def test_compare_benches_skips_non_finite_centers(monkeypatch, nvbench_compare):
         no_color=True,
     )
 
-    assert run_data.stats.config_count == 1
+    assert run_data.stats.config_count == 3
     assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
     assert run_data.stats.undecided_count == 1
-    assert run_data.stats.unknown_count == 0
+    assert run_data.stats.unknown_count == 2
 
 
 def test_gpu_timing_data_loads_samples_and_frequencies_lazily(
@@ -858,6 +861,15 @@ def test_compare_gpu_timings_uses_bulk_data_to_confirm_same(nvbench_compare):
 
 
 def test_format_diff_and_percent_ranges(nvbench_compare):
+    assert nvbench_compare.format_duration(None) == "n/a"
+    assert nvbench_compare.format_duration(math.nan) == "n/a"
+    assert nvbench_compare.format_duration(math.inf) == "n/a"
+    assert nvbench_compare.format_duration(-1.0) == "n/a"
+    assert nvbench_compare.format_duration(0.0) == "n/a"
+    assert (
+        nvbench_compare.format_duration(-1.0, allow_negative=True) == "-1000000.000 us"
+    )
+    assert nvbench_compare.format_duration(0.0, allow_zero=True) == "0.000 us"
     assert nvbench_compare.format_duration_range((-12e-6, 8e-6)) == "[-12.00, 8.00] us"
     assert (
         nvbench_compare.format_percentage_bounds(
@@ -1056,9 +1068,15 @@ def test_compare_gpu_timings_keeps_bulk_mismatch_undecided(nvbench_compare):
     assert comparison is not None
     assert comparison.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert comparison.reason.code == "bulk_time_support_mismatch"
-    assert "sample: min(ref=0.0%, cmp=0.0%) >= 99.0%" in comparison.reason.message
+    sample_threshold = (
+        nvbench_compare.get_default_thresholds().bulk_same_sample_coverage * 100.0
+    )
+    assert (
+        f"sample: min(ref=0.0%, cmp=0.0%) >= {sample_threshold:0.1f}%"
+        in comparison.reason.message
+    )
     assert "support: min(ref=0.0%, cmp=0.0%) >= 80.0%" in comparison.reason.message
-    assert "99.0%" in comparison.reason.message
+    assert f"{sample_threshold:0.1f}%" in comparison.reason.message
     assert "80.0%" in comparison.reason.message
 
 
@@ -1203,17 +1221,30 @@ def test_reason_legend_omits_trivial_aliases(nvbench_compare):
     ]
 
 
-@pytest.mark.parametrize("ref_time, cmp_time", [(None, 1.0), (1.0, None), (0.0, 1.0)])
-def test_compare_gpu_timings_rejects_unusable_centers(
-    nvbench_compare, ref_time, cmp_time
+@pytest.mark.parametrize(
+    "ref_time, cmp_time, reason_code",
+    [
+        (None, 1.0, "timing_center_missing"),
+        (1.0, None, "timing_center_missing"),
+        (math.nan, 1.0, "timing_center_nonfinite"),
+        (math.inf, 1.0, "timing_center_nonfinite"),
+        (0.0, 1.0, "timing_center_nonpositive"),
+        (-1.0, 1.0, "timing_center_nonpositive"),
+    ],
+)
+def test_compare_gpu_timings_reports_unusable_centers_as_unknown(
+    nvbench_compare, ref_time, cmp_time, reason_code
 ):
-    assert (
-        nvbench_compare.compare_gpu_timings(
-            make_gpu_timing_data(nvbench_compare, mean=ref_time),
-            make_gpu_timing_data(nvbench_compare, mean=cmp_time),
-        )
-        is None
+    comparison = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(nvbench_compare, mean=ref_time),
+        make_gpu_timing_data(nvbench_compare, mean=cmp_time),
     )
+
+    assert comparison is not None
+    assert comparison.status == nvbench_compare.ComparisonStatus.UNKNOWN
+    assert comparison.reason.code == reason_code
+    assert comparison.diff is None
+    assert comparison.frac_diff is None
 
 
 def test_compare_benches_reports_regression_when_robust_intervals_and_clock_confirm(
@@ -1854,6 +1885,128 @@ def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_co
     assert "'status': 'AMBG'" in output
     assert "def load_bulk_data(row):" in output
     assert "# NVB-BULK-END" in output
+
+
+def test_compare_benches_counts_unusable_timing_as_unknown(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    captured = {}
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        captured["rows"] = rows
+        captured["headers"] = headers
+        return ""
+
+    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+
+    ref_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="nan")])]
+    cmp_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        ref_benches,
+        cmp_benches,
+        threshold=1.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 1
+    assert run_data.stats.unknown_count == 1
+    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
+    row = captured["rows"][0]
+    assert row[-4] == "n/a"
+    assert row[-3] == "1.000 s"
+    assert row[-2] == ""
+    assert row[-1] == "\U0001f7e1 ????"
+
+
+def test_compare_benches_counts_skipped_state_as_unknown(monkeypatch, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    captured = {}
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        captured["rows"] = rows
+        captured["headers"] = headers
+        return ""
+
+    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+
+    ref_state = make_state(nvbench_compare, "state")
+    ref_state["summaries"] = None
+    ref_state["is_skipped"] = True
+    ref_state["skip_reason"] = "requested by benchmark"
+    cmp_state = make_state(nvbench_compare, "state", mean="1.0")
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([ref_state])],
+        [make_benchmark([cmp_state])],
+        threshold=1.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 1
+    assert run_data.stats.unknown_count == 1
+    reason_summary = run_data.stats.reason_legend["state-skip"]
+    assert reason_summary.canonical_code == "state_skipped"
+    assert reason_summary.message == "reference state skipped: requested by benchmark"
+    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
+    row = captured["rows"][0]
+    assert row[-4] == "n/a"
+    assert row[-3] == "1.000 s"
+    assert row[-2] == ""
+    assert row[-1] == "\U0001f7e1 ????"
+
+
+def test_compare_benches_counts_missing_summaries_as_unknown(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    captured = {}
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        captured["rows"] = rows
+        captured["headers"] = headers
+        return ""
+
+    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+
+    ref_state = make_state(nvbench_compare, "state")
+    del ref_state["summaries"]
+    cmp_state = make_state(nvbench_compare, "state", mean="1.0")
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([ref_state])],
+        [make_benchmark([cmp_state])],
+        threshold=1.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 1
+    assert run_data.stats.unknown_count == 1
+    reason_summary = run_data.stats.reason_legend["summ-miss"]
+    assert reason_summary.canonical_code == "gpu_timing_summaries_missing"
+    assert reason_summary.message == "reference GPU timing summaries are missing"
+    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
+    row = captured["rows"][0]
+    assert row[-4] == "n/a"
+    assert row[-3] == "1.000 s"
+    assert row[-2] == ""
+    assert row[-1] == "\U0001f7e1 ????"
 
 
 def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compare):
