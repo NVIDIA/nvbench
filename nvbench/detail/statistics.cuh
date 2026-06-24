@@ -205,10 +205,13 @@ public:
   }
 };
 
-// Compute percentile rank using nearest rank method
+// Use a rounded zero-based percentile rank
 inline std::size_t percentile_rank(int percentile, std::size_t size)
 {
+  // Precondition: sample_size > 0. Public percentile helpers handle empty
+  // inputs before calling this internal rank helper.
   assert(size > 0 && "percentile_rank requires non-empty sample set");
+
   const auto p = std::clamp(percentile, 0, 100);
   const auto q = static_cast<nvbench::float64_t>(p) / 100.0;
 
@@ -274,9 +277,8 @@ template <typename ValueType>
 quartiles_t<ValueType> compute_quartiles_by_sorting(std::vector<ValueType> &&samples)
 {
   constexpr std::array<int, 3> qs{25, 50, 75};
-  const auto r = ::nvbench::detail::statistics::compute_percentiles_by_sorting(
-    std::forward<std::vector<ValueType>>(samples),
-    qs);
+  const auto r = ::nvbench::detail::statistics::compute_percentiles_by_sorting(std::move(samples),
+                                                                               qs);
   return {r[0], r[1], r[2]};
 }
 
