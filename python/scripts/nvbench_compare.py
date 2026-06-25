@@ -74,14 +74,14 @@ def read_float32_file(filename: str) -> object:
 
 @dataclass(frozen=True)
 class ComparisonThresholds:
-    clear_gap_relative: float = 0.005
-    same_center_relative: float = 0.005
-    same_overlap_fraction: float = 0.5
-    same_relative_dispersion_ceiling: float = 0.02
-    bulk_same_sample_coverage: float = 0.99
-    bulk_same_support_coverage: float = 0.80
-    bulk_support_rare_sample_fraction: float = 0.001
-    bulk_support_max_removed_sample_fraction: float = 0.01
+    clear_gap_relative: float
+    same_center_relative: float
+    same_overlap_fraction: float
+    same_relative_dispersion_ceiling: float
+    bulk_same_sample_coverage: float
+    bulk_same_support_coverage: float
+    bulk_support_rare_sample_fraction: float
+    bulk_support_max_removed_sample_fraction: float
 
 
 COMPARISON_THRESHOLD_PRESET_VALUES = {

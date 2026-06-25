@@ -1235,12 +1235,12 @@ def test_bulk_same_reports_sample_weight_coverage_mismatch(nvbench_compare):
         ref_values,
         cmp_values,
         label="time",
-        thresholds=nvbench_compare.ComparisonThresholds(),
+        thresholds=nvbench_compare.get_default_thresholds(),
     )
 
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert decision.reason.code == "bulk_time_support_mismatch"
-    assert "sample: min(ref=3.8%, cmp=100.0%) >= 99.0%" in decision.reason.message
+    assert "sample: min(ref=3.8%, cmp=100.0%) >= 97.0%" in decision.reason.message
     assert "support: min(ref=80.0%, cmp=100.0%) >= 80.0%" in decision.reason.message
 
 
@@ -1252,7 +1252,7 @@ def test_bulk_same_filters_rare_values_from_support_coverage(nvbench_compare):
         ref_values,
         cmp_values,
         label="time",
-        thresholds=nvbench_compare.ComparisonThresholds(),
+        thresholds=nvbench_compare.get_default_thresholds(),
     )
 
     assert decision.status == nvbench_compare.ComparisonStatus.SAME
@@ -1267,14 +1267,15 @@ def test_bulk_same_reports_unique_support_coverage_mismatch(nvbench_compare):
         ref_values,
         cmp_values,
         label="time",
-        thresholds=nvbench_compare.ComparisonThresholds(
-            bulk_support_max_removed_sample_fraction=0.005
+        thresholds=replace(
+            nvbench_compare.get_default_thresholds(),
+            bulk_support_max_removed_sample_fraction=0.005,
         ),
     )
 
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert decision.reason.code == "bulk_time_support_mismatch"
-    assert "sample: min(ref=99.0%, cmp=100.0%) >= 99.0%" in decision.reason.message
+    assert "sample: min(ref=99.0%, cmp=100.0%) >= 97.0%" in decision.reason.message
     assert "support: min(ref=9.1%, cmp=100.0%) >= 80.0%" in decision.reason.message
 
 
@@ -1282,7 +1283,8 @@ def test_bulk_same_retains_full_support_when_all_values_are_unique(nvbench_compa
     coverages = nvbench_compare.compute_nearest_neighbor_coverages(
         [1.0, 1.02],
         [1.0],
-        thresholds=nvbench_compare.ComparisonThresholds(
+        thresholds=replace(
+            nvbench_compare.get_default_thresholds(),
             bulk_support_rare_sample_fraction=1.0,
             bulk_support_max_removed_sample_fraction=1.0,
         ),
@@ -1455,8 +1457,8 @@ def test_compare_benches_accepts_custom_comparison_thresholds(
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
         no_color=True,
-        comparison_thresholds=nvbench_compare.ComparisonThresholds(
-            same_center_relative=0.02
+        comparison_thresholds=replace(
+            nvbench_compare.get_default_thresholds(), same_center_relative=0.02
         ),
     )
 
