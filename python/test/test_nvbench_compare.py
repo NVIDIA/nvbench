@@ -5,6 +5,7 @@ import importlib.util
 import math
 import sys
 import types
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -548,6 +549,31 @@ def test_format_bulk_debug_python_loads_arrays(tmp_path, nvbench_compare):
     assert arrays["reference_frequencies"] is None
 
 
+def test_format_bulk_debug_python_handles_nonfinite_values(nvbench_compare):
+    script = nvbench_compare.format_bulk_debug_python(
+        [
+            {
+                "reference_time": math.nan,
+                "compare_time": math.inf,
+                "fractional_difference": -math.inf,
+            }
+        ]
+    )
+    namespace = {}
+
+    assert 'nan = float("nan")' in script
+    assert 'inf = float("inf")' in script
+    assert "'reference_time': nan" in script
+    assert "'compare_time': inf" in script
+    assert "'fractional_difference': -inf" in script
+    exec(script, namespace)
+
+    row = namespace["bulk_rows"][0]
+    assert math.isnan(row["reference_time"])
+    assert row["compare_time"] == math.inf
+    assert row["fractional_difference"] == -math.inf
+
+
 def test_gpu_timing_data_parses_quartiles_and_sm_clock_rate_mean(nvbench_compare):
     timing = nvbench_compare.extract_gpu_timing_data(
         [
@@ -621,7 +647,7 @@ def test_gpu_timing_data_warns_when_lazy_sample_read_fails(tmp_path, nvbench_com
     assert timing.samples is None
 
 
-def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
+def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     ref_timing = make_gpu_timing_data(nvbench_compare, mean=1.0, stdev_relative=0.05)
 
     undecided = nvbench_compare.compare_gpu_timings(
@@ -867,6 +893,33 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert bulk_cycle_shift is not None
     assert bulk_cycle_shift.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert bulk_cycle_shift.reason.code == "bulk_cycle_gap_not_confirmed"
+
+    missing_source = nvbench_compare.Float32BinarySource(
+        count=4,
+        filename="missing.bin",
+        json_dir=str(tmp_path),
+        description="test sample",
+    )
+    missing_bulk_files = nvbench_compare.compare_gpu_timings(
+        replace(
+            ref_interval_timing,
+            sample_source=missing_source,
+            frequency_source=missing_source,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+            sm_clock_rate_mean=100.0,
+        ),
+    )
+    assert missing_bulk_files is not None
+    assert missing_bulk_files.status == nvbench_compare.ComparisonStatus.FAST
+    assert missing_bulk_files.reason.code == "clear_gap_confirmed_by_summary_cycles"
 
     unusable_bulk_cycles = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(
