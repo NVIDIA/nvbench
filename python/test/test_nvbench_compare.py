@@ -1594,6 +1594,35 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
     assert run_data.stats.unknown_count == 0
 
 
+def test_plot_along_rejects_non_numeric_axis_values(monkeypatch, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+
+    ref_benches = [
+        make_benchmark([make_state(nvbench_compare, "state", axis_value="F32")])
+    ]
+    cmp_benches = [
+        make_benchmark([make_state(nvbench_compare, "state", axis_value="F32")])
+    ]
+    ref_benches[0]["axes"] = [{"name": "A", "type": "type", "flags": ""}]
+    cmp_benches[0]["axes"] = [{"name": "A", "type": "type", "flags": ""}]
+
+    with pytest.raises(
+        ValueError,
+        match="--plot-along requires numeric axis values; axis 'A' has value 'F32'",
+    ):
+        nvbench_compare.compare_benches(
+            run_data,
+            ref_benches,
+            cmp_benches,
+            threshold=0.0,
+            plot_along="A",
+            plot=False,
+            dark=False,
+            filter_plan=make_filter_plan(nvbench_compare),
+            no_color=True,
+        )
+
+
 def test_device_filter_parser_accepts_all_and_duplicate_ids(nvbench_compare):
     assert nvbench_compare.parse_device_filter(" all ", "--reference-devices") is None
     assert nvbench_compare.parse_device_filter("0", "--reference-devices") == [0]

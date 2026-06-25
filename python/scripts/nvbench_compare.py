@@ -1121,6 +1121,16 @@ def is_nonnegative_finite(value):
     return value is not None and math.isfinite(value) and value >= 0.0
 
 
+def parse_plot_axis_value(axis_name, axis_value):
+    try:
+        return float(axis_value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"--plot-along requires numeric axis values; "
+            f"axis {axis_name!r} has value {axis_value!r}"
+        ) from exc
+
+
 def make_timing_interval(lower, upper, center):
     if (
         not is_positive_finite(lower)
@@ -2783,7 +2793,7 @@ def compare_benches(
                         if av["name"] != plot_along:
                             axis_name_parts.append(f"""{av["name"]} = {av["value"]}""")
                         else:
-                            axis_value = float(av["value"])
+                            axis_value = parse_plot_axis_value(av["name"], av["value"])
                     if axis_value is not None:
                         axis_name = ", ".join(axis_name_parts)
 
