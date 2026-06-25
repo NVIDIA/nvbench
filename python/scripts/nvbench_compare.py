@@ -1331,7 +1331,7 @@ def format_support_filter_info(filter_info):
 
 
 def sorted_unique_counts(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    unique_values, unique_counts = np.unique_counts(values)
+    unique_values, unique_counts = np.unique(values, return_counts=True)
     # unique is not guaranteed to return sorted values
     # make sure to order them
     sorting_indices = np.argsort(unique_values)
