@@ -2807,7 +2807,11 @@ def compare_benches(
                                 comparison=comparison,
                             )
                         )
-                    if plot:
+                    if (
+                        plot
+                        and comparison.frac_diff is not None
+                        and math.isfinite(comparison.frac_diff)
+                    ):
                         axis_label = format_axis_values(axis_values, axes, axis_filters)
                         if axis_label:
                             label = f"""{cmp_bench["name"]} | {axis_label}"""
@@ -3038,7 +3042,7 @@ def main() -> int:
         dest="filter_actions",
         action=OrderedBenchmarkFilterAction,
         help=(
-            "Filter on axis value, e.g. -a Elements{io}=2^20. Applies to the "
+            "Filter on axis value, e.g. -a Elements{io}[pow2]=20. Applies to the "
             "most recent --benchmark, or all benchmarks if specified before any "
             "--benchmark arguments."
         ),

@@ -2117,6 +2117,39 @@ def test_compare_benches_counts_missing_summaries_as_unknown(
     assert row[-1] == "\U0001f7e1 ????"
 
 
+def test_compare_benches_plot_skips_unknown_rows(monkeypatch, nvbench_compare):
+    plotted_entries = []
+
+    def fake_plot_comparison_entries(entries, *args, **kwargs):
+        plotted_entries.extend(entries)
+        return 0
+
+    monkeypatch.setattr(
+        nvbench_compare, "plot_comparison_entries", fake_plot_comparison_entries
+    )
+
+    run_data = make_comparison_run_data(nvbench_compare)
+    ref_state = make_state(nvbench_compare, "state")
+    del ref_state["summaries"]
+    cmp_state = make_state(nvbench_compare, "state", mean="1.0")
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([ref_state])],
+        [make_benchmark([cmp_state])],
+        threshold=1.0,
+        plot_along=None,
+        plot=True,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 1
+    assert run_data.stats.unknown_count == 1
+    assert plotted_entries == []
+
+
 def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)

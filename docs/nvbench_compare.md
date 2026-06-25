@@ -37,10 +37,23 @@ nvbench-compare \
   reference.json compare.json
 ```
 
-Show interval details and decision reasons in the table:
+Choose a table display mode. The default `intervals` mode shows timing centers
+with compact intervals and the status. `legacy` shows the older time/noise/diff
+columns. `explain` adds explicit low/center/high interval endpoints and decision
+reason codes:
 
 ```bash
+nvbench-compare --display intervals reference.json compare.json
+nvbench-compare --display legacy reference.json compare.json
 nvbench-compare --display explain reference.json compare.json
+```
+
+Plot the comparison summary, or plot timings along a positive numeric axis. Add
+`--dark` to the summary plot when it should use a dark theme:
+
+```bash
+nvbench-compare --plot --dark reference.json compare.json
+nvbench-compare --plot-along "Elements{io}" reference.json compare.json
 ```
 
 Generate Python code with bulk sample/frequency filenames for every displayed
@@ -60,8 +73,8 @@ nvbench-compare \
   reference.json compare.json
 ```
 
-Use emoji status markers instead of ANSI colors, which is useful when pasting
-output into GitHub issues or pull requests:
+Disable ANSI color codes. In this mode, status values are prefixed with emoji
+markers so copied output still carries the status category:
 
 ```bash
 nvbench-compare --no-color reference.json compare.json
@@ -128,6 +141,14 @@ Benchmark and axis filters follow NVBench CLI scoping:
 nvbench-compare -b copy_type_sweep -a T=F32 reference.json compare.json
 ```
 
+For integer axes displayed with NVBench `pow2` formatting, filter by exponent
+with `NAME[pow2]=EXP`. For example, an axis value displayed as `2^20` is
+selected with:
+
+```bash
+nvbench-compare -b base -a "Elements{io}[pow2]=20" reference.json compare.json
+```
+
 `-a` / `--axis` applies to the most recent `-b` / `--benchmark`, or to all
 benchmarks if it appears before any benchmark filter.
 
@@ -152,8 +173,9 @@ When JSON output is generated with the NVBench `--jsonbin` option,
 sample-time and sample-frequency binary data are loaded lazily and used for
 bulk-data confirmation.
 
-Bulk data read failures are treated as unavailable data and reported as
-warnings.
+Missing or empty bulk data are treated as unavailable. Bulk files that are
+present and non-empty but fail lazy loading or validation are treated as
+unusable evidence and reported as warnings.
 
 ## Bulk Debug Python Output
 
@@ -177,7 +199,8 @@ Generated bulk-debug Python is enclosed in comment markers:
 ```
 
 Because the markers are valid Python comments, the generated helpers can be
-filtered directly into the standard Python REPL:
+filtered directly into the standard Python REPL. This example uses process
+substitution, which requires a shell such as Bash, Zsh, or Ksh:
 
 ```bash
 python -i <(
@@ -190,7 +213,7 @@ IPython does not reliably accept process-substitution paths as startup files.
 For IPython, write the generated code to a temporary file directly:
 
 ```bash
-tmp=$(mktemp --suffix=.py)
+tmp=$(mktemp "${TMPDIR:-/tmp}/nvbench-bulk.XXXXXX")
 nvbench-compare --bulk-debug-python "$tmp" reference.json compare.json
 ipython -i "$tmp"
 rm -f "$tmp"
@@ -250,6 +273,11 @@ summaries:
 Centers and interval endpoints must be positive and finite. States with unusable
 centers are not compared.
 
+Rows with `????` status could not form a valid timing comparison input. This
+status is emitted for skipped benchmark states, missing GPU timing summaries,
+or timing centers that are missing, non-finite, or non-positive. These rows are
+included in the total match count so data-collection issues remain visible.
+
 ## Decision Tree
 
 The comparison logic starts from `AMBG` and upgrades only when enough
@@ -290,9 +318,11 @@ It then builds cycle intervals from the bulk cycle samples and requires the
 cycle interval comparison to agree with the timing interval comparison. A timing
 gap that is not confirmed by bulk cycle intervals is `AMBG`.
 
-If bulk data are unavailable, `nvbench-compare` falls back to summary clock-rate
-confirmation using `sm_clock_rate/mean`. If that clock-rate summary is missing
-or invalid, the clear-gap decision remains `AMBG`.
+If bulk data are missing or empty, `nvbench-compare` falls back to summary
+clock-rate confirmation using `sm_clock_rate/mean`. If non-empty bulk data are
+present but fail lazy loading or validation, the clear-gap decision remains
+`AMBG` instead of falling back. If the clock-rate summary is missing or invalid,
+the clear-gap decision also remains `AMBG`.
 
 ### 3. Check Bulk-Data Compatibility For SAME
 
