@@ -114,6 +114,17 @@ def make_binary_summary(nvbench_compare, tag, filename, size):
     }
 
 
+def make_reader_for_roots(ref_root, cmp_root):
+    def read_file(path):
+        if path == "ref.json":
+            return ref_root
+        if path == "cmp.json":
+            return cmp_root
+        raise AssertionError(f"unexpected path: {path!r}")
+
+    return read_file
+
+
 def capture_tabulate_calls(monkeypatch, nvbench_compare):
     calls = []
 
@@ -1804,10 +1815,9 @@ def test_main_returns_success_exit_code_when_regressions_are_detected(
         "benchmarks": [make_benchmark([cmp_state])],
     }
 
-    def read_file(path):
-        return ref_root if path == "ref.json" else cmp_root
-
-    monkeypatch.setattr(nvbench_compare.reader, "read_file", read_file)
+    monkeypatch.setattr(
+        nvbench_compare.reader, "read_file", make_reader_for_roots(ref_root, cmp_root)
+    )
     monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
 
     assert nvbench_compare.main() == 0
@@ -1831,10 +1841,9 @@ def test_main_prints_undecided_reason_summary(monkeypatch, capsys, nvbench_compa
         ],
     }
 
-    def read_file(path):
-        return ref_root if path == "ref.json" else cmp_root
-
-    monkeypatch.setattr(nvbench_compare.reader, "read_file", read_file)
+    monkeypatch.setattr(
+        nvbench_compare.reader, "read_file", make_reader_for_roots(ref_root, cmp_root)
+    )
     monkeypatch.setattr(
         sys, "argv", ["nvbench_compare", "--display", "explain", "ref.json", "cmp.json"]
     )
