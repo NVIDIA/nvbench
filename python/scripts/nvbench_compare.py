@@ -3211,7 +3211,7 @@ def main() -> int:
 
     print("# Summary\n")
     print(f"- Total Matches: {stats.config_count}")
-    print(f"  - Pass        (centers close and intervals overlap): {stats.pass_count}")
+    print(f"  - Unchanged   (classified as SAME): {stats.pass_count}")
     print(f"  - Improvement (clear timing gap, %Diff < 0): {stats.improvement_count}")
     print(f"  - Regression  (clear timing gap, %Diff > 0): {stats.regression_count}")
     print(f"  - Ambiguous (comparison requires more evidence): {stats.undecided_count}")
