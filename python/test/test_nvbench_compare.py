@@ -732,6 +732,24 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert same.diff_interval == pytest.approx((-0.28, 0.28))
     assert same.frac_diff_interval == pytest.approx((-0.2153846154, 0.28))
 
+    negative_noise = nvbench_compare.compare_gpu_timings(
+        ref_interval_timing,
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.02,
+            first_quartile=1.1,
+            median=1.204,
+            third_quartile=1.28,
+            mean=1.204,
+            interquartile_range_relative=-0.01,
+            sm_clock_rate_mean=100.0,
+        ),
+    )
+    assert negative_noise is not None
+    assert negative_noise.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert negative_noise.max_noise is None
+    assert negative_noise.reason.code == "noise_unavailable"
+
     weak_overlap = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(
             nvbench_compare,

@@ -1676,11 +1676,11 @@ def compare_timings_for_bulk_same(ref_timing, cmp_timing, thresholds):
 
 
 def compare_timings_for_same(ref_timing, cmp_timing, ref_noise, cmp_noise, thresholds):
-    if not has_finite_noise(ref_noise) or not has_finite_noise(cmp_noise):
+    if not is_usable_noise(ref_noise) or not is_usable_noise(cmp_noise):
         return make_decision(
             ComparisonStatus.UNDECIDED,
             "noise_unavailable",
-            "relative dispersion is unavailable or non-finite",
+            "relative dispersion is unavailable, negative, or non-finite",
         )
     if max(ref_noise, cmp_noise) > thresholds.same_relative_dispersion_ceiling:
         return make_decision(
@@ -1850,7 +1850,7 @@ def compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
         diff_interval = compute_diff_interval(ref_interval, cmp_interval)
         frac_diff_interval = compute_frac_diff_interval(ref_interval, cmp_interval)
 
-    if not has_finite_noise(ref_noise) or not has_finite_noise(cmp_noise):
+    if not is_usable_noise(ref_noise) or not is_usable_noise(cmp_noise):
         max_noise = None
     else:
         max_noise = max(ref_noise, cmp_noise)
@@ -2488,8 +2488,8 @@ def align_timing_interval_columns(rows, comparisons, axis_count):
         )
 
 
-def has_finite_noise(noise):
-    return noise is not None and math.isfinite(noise)
+def is_usable_noise(noise):
+    return noise is not None and math.isfinite(noise) and noise >= 0.0
 
 
 def colorize_comparison_status(status, no_color):
@@ -2918,9 +2918,9 @@ def compare_benches(
 
                         start = None
                         for i, noise_value in enumerate(noise):
-                            if has_finite_noise(noise_value) and start is None:
+                            if is_usable_noise(noise_value) and start is None:
                                 start = i
-                            if not has_finite_noise(noise_value) and start is not None:
+                            if not is_usable_noise(noise_value) and start is not None:
                                 plot_confidence_band(start, i)
                                 start = None
 
