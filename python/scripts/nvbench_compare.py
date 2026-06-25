@@ -1427,6 +1427,10 @@ def get_bulk_time_and_cycles(timing):
     return samples, samples * frequencies
 
 
+def has_bulk_time_or_frequency_source(timing):
+    return timing.sample_source is not None or timing.frequency_source is not None
+
+
 def scale_interval(interval, scale):
     if not is_positive_finite(scale):
         return None
@@ -1471,17 +1475,31 @@ def confirm_clear_gap_with_clock_rate(
 
 
 def confirm_clear_gap_with_bulk_cycles(status, ref_timing, cmp_timing, thresholds):
+    has_bulk_sources = has_bulk_time_or_frequency_source(
+        ref_timing
+    ) or has_bulk_time_or_frequency_source(cmp_timing)
+    if not has_bulk_sources:
+        return None
+
     ref_bulk = get_bulk_time_and_cycles(ref_timing)
     cmp_bulk = get_bulk_time_and_cycles(cmp_timing)
     if ref_bulk is None or cmp_bulk is None:
-        return None
+        return make_decision(
+            ComparisonStatus.UNDECIDED,
+            "bulk_cycle_data_unusable",
+            "bulk sample time and frequency data are present but unusable for cycle confirmation",
+        )
 
     _, ref_cycles = ref_bulk
     _, cmp_cycles = cmp_bulk
     ref_cycle_interval = compute_timing_interval_from_samples(ref_cycles)
     cmp_cycle_interval = compute_timing_interval_from_samples(cmp_cycles)
     if ref_cycle_interval is None or cmp_cycle_interval is None:
-        return None
+        return make_decision(
+            ComparisonStatus.UNDECIDED,
+            "bulk_cycle_data_unusable",
+            "bulk cycle intervals could not be constructed",
+        )
 
     cycle_status = compare_intervals_for_clear_gap(
         ref_cycle_interval, cmp_cycle_interval, thresholds
@@ -3152,7 +3170,9 @@ def main() -> int:
         legend_entries = format_reason_legend_entries(stats.reason_legend)
         if legend_entries:
             print(f"  - Reason legend: {'; '.join(legend_entries)}")
-    print(f"  - Unknown     (infinite or unavailable noise): {stats.unknown_count}")
+    print(
+        f"  - Unknown     (input data unavailable or unusable): {stats.unknown_count}"
+    )
     try:
         write_bulk_debug_python(bulk_debug_output, bulk_debug_rows or [])
     except OSError as exc:
