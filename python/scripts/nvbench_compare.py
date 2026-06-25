@@ -68,6 +68,27 @@ def read_float32_file(filename: str) -> object:
     return np.fromfile(filename, dtype="<f4")
 
 
+def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
+    try:
+        root = reader.read_file(filename)
+    except (KeyError, OSError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"failed to read NVBench JSON file {filename!r}: {exc}"
+        ) from exc
+
+    if not isinstance(root, Mapping):
+        raise ValueError(f"NVBench JSON file {filename!r} root must be an object")
+
+    missing_keys = [key for key in ("devices", "benchmarks") if key not in root]
+    if missing_keys:
+        missing = ", ".join(repr(key) for key in missing_keys)
+        raise ValueError(
+            f"NVBench JSON file {filename!r} is missing required root key(s): {missing}"
+        )
+
+    return root
+
+
 # These dataclasses are treated as parsed value objects. frozen=True prevents
 # accidental field reassignment but does not imply deep immutability.
 
@@ -1096,6 +1117,10 @@ def is_positive_finite(value):
     return value is not None and value > 0.0 and math.isfinite(value)
 
 
+def is_nonnegative_finite(value):
+    return value is not None and math.isfinite(value) and value >= 0.0
+
+
 def make_timing_interval(lower, upper, center):
     if (
         not is_positive_finite(lower)
@@ -1128,7 +1153,7 @@ def compute_timing_interval(timing):
         is_positive_finite(timing.minimum)
         and is_positive_finite(timing.maximum)
         and is_positive_finite(timing.mean)
-        and is_positive_finite(timing.stdev)
+        and is_nonnegative_finite(timing.stdev)
         and timing.minimum <= timing.mean
         and timing.mean <= timing.maximum
     ):
@@ -2489,7 +2514,7 @@ def align_timing_interval_columns(rows, comparisons, axis_count):
 
 
 def is_usable_noise(noise):
-    return noise is not None and math.isfinite(noise) and noise >= 0.0
+    return is_nonnegative_finite(noise)
 
 
 def colorize_comparison_status(status, no_color):
@@ -3117,10 +3142,9 @@ def main() -> int:
     stats = ComparisonStats()
 
     for ref, comp in to_compare:
-        ref_root = reader.read_file(ref)
-        cmp_root = reader.read_file(comp)
-
         try:
+            ref_root = read_nvbench_json_root(ref)
+            cmp_root = read_nvbench_json_root(comp)
             selected_ref_devices = select_devices(
                 ref_root["devices"], reference_device_filter, "--reference-devices"
             )

@@ -732,6 +732,30 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert same.diff_interval == pytest.approx((-0.28, 0.28))
     assert same.frac_diff_interval == pytest.approx((-0.2153846154, 0.28))
 
+    deterministic_same = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.0,
+            maximum=1.0,
+            mean=1.0,
+            stdev=0.0,
+            stdev_relative=0.0,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.0,
+            maximum=1.0,
+            mean=1.0,
+            stdev=0.0,
+            stdev_relative=0.0,
+        ),
+    )
+    assert deterministic_same is not None
+    assert deterministic_same.status == nvbench_compare.ComparisonStatus.SAME
+    assert deterministic_same.reason.code == "same_without_clock_rate"
+    assert deterministic_same.diff_interval == pytest.approx((0.0, 0.0))
+    assert deterministic_same.frac_diff_interval == pytest.approx((0.0, 0.0))
+
     negative_noise = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
         make_gpu_timing_data(
@@ -1998,6 +2022,29 @@ def test_main_rejects_unknown_options(monkeypatch, nvbench_compare):
         nvbench_compare.main()
 
     assert exc_info.value.code == 2
+
+
+def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):
+    def read_file(_):
+        raise OSError("cannot open file")
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", read_file)
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "failed to read NVBench JSON file 'ref.json'" in output
+    assert "cannot open file" in output
+
+
+def test_main_reports_missing_required_root_keys(monkeypatch, capsys, nvbench_compare):
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: {"devices": []})
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "NVBench JSON file 'ref.json' is missing required root key(s)" in output
+    assert "'benchmarks'" in output
 
 
 def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_compare):
