@@ -1969,6 +1969,19 @@ def test_main_dump_config_merges_config_and_cli_preset(
     assert "sample_coverage = 0.93" in output
 
 
+def test_main_rejects_unknown_options(monkeypatch, nvbench_compare):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["nvbench_compare", "--dispaly", "explain", "ref.json", "cmp.json"],
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        nvbench_compare.main()
+
+    assert exc_info.value.code == 2
+
+
 def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {

@@ -2960,7 +2960,7 @@ def main() -> int:
     The number of detected regressions is reported in the summary output.
     """
     help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
-    parser = argparse.ArgumentParser(prog="nvbench_compare", usage=help_text)
+    parser = argparse.ArgumentParser(usage=help_text)
     parser.add_argument(
         "--ignore-devices",
         dest="ignore_devices",
@@ -3054,8 +3054,10 @@ def main() -> int:
         action=OrderedBenchmarkFilterAction,
         help="Filter by benchmark name (can repeat)",
     )
+    parser.add_argument("files_or_dirs", nargs="*")
 
-    args, files_or_dirs = parser.parse_known_args()
+    args = parser.parse_args()
+    files_or_dirs = args.files_or_dirs
     try:
         comparison_preset, comparison_thresholds = resolve_comparison_thresholds(
             args.preset, args.config
