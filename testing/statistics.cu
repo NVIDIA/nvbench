@@ -413,6 +413,77 @@ void test_compute_robust_noise()
     ASSERT(actual);
     ASSERT(is_close(*actual, 1.0));
   }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, 0.0, 0.0, 1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, -2.0, -1.0, 0.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate,
+                                       std::numeric_limits<nvbench::float64_t>::quiet_NaN(),
+                                       4.0,
+                                       6.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate,
+                                       2.0,
+                                       4.0,
+                                       std::numeric_limits<nvbench::float64_t>::infinity());
+    ASSERT(!actual);
+  }
+}
+
+void test_compute_standard_deviation_noise()
+{
+  ASSERT(!statistics::has_enough_samples_for_noise_estimate(
+    statistics::min_samples_for_noise_estimate - 1));
+  ASSERT(
+    statistics::has_enough_samples_for_noise_estimate(statistics::min_samples_for_noise_estimate));
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate - 1,
+                                                   2.0,
+                                                   1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual = statistics::compute_standard_deviation_noise(
+      statistics::min_samples_for_noise_estimate,
+      std::numeric_limits<nvbench::float64_t>::quiet_NaN(),
+      1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual = statistics::compute_standard_deviation_noise(
+      statistics::min_samples_for_noise_estimate,
+      std::numeric_limits<nvbench::float64_t>::infinity(),
+      1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   2.0,
+                                                   4.0);
+    ASSERT(actual);
+    ASSERT(is_close(*actual, 0.5));
+  }
 }
 
 void test_relative_interquartile_range()
@@ -528,6 +599,7 @@ int main()
   test_compute_relative_dispersion_nominal_input();
   test_compute_relative_dispersion_invalid_inputs();
   test_relative_interquartile_range();
+  test_compute_standard_deviation_noise();
   test_compute_robust_noise();
   test_lin_regression();
   test_r2();

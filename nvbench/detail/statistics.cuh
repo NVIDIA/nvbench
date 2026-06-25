@@ -54,6 +54,11 @@ namespace nvbench::detail::statistics
 
 inline constexpr nvbench::int64_t min_samples_for_noise_estimate = 5;
 
+inline constexpr bool has_enough_samples_for_noise_estimate(nvbench::int64_t num_samples)
+{
+  return num_samples >= min_samples_for_noise_estimate;
+}
+
 /**
  * Computes and returns the unbiased sample standard deviation.
  *
@@ -66,7 +71,7 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
 
   const auto num = std::distance(first, last);
 
-  if (num < min_samples_for_noise_estimate) // don't bother with low sample sizes.
+  if (!has_enough_samples_for_noise_estimate(num)) // don't bother with low sample sizes.
   {
     return std::numeric_limits<ValueType>::infinity();
   }
@@ -359,13 +364,31 @@ compute_relative_interquartile_range(nvbench::float64_t first_quartile,
   return ::nvbench::detail::statistics::compute_relative_dispersion(interquartile_range, median);
 }
 
+// Returns nullopt until there are enough samples for a meaningful standard deviation estimate.
+inline std::optional<nvbench::float64_t>
+compute_standard_deviation_noise(nvbench::int64_t num_samples,
+                                 nvbench::float64_t standard_deviation,
+                                 nvbench::float64_t center)
+{
+  if (!has_enough_samples_for_noise_estimate(num_samples))
+  {
+    return std::nullopt;
+  }
+  if (!std::isfinite(standard_deviation))
+  {
+    return std::nullopt;
+  }
+
+  return ::nvbench::detail::statistics::compute_relative_dispersion(standard_deviation, center);
+}
+
 // Returns nullopt until there are enough samples for a meaningful robust noise estimate.
 inline std::optional<nvbench::float64_t> compute_robust_noise(nvbench::int64_t num_samples,
                                                               nvbench::float64_t first_quartile,
                                                               nvbench::float64_t median,
                                                               nvbench::float64_t third_quartile)
 {
-  if (num_samples < min_samples_for_noise_estimate)
+  if (!has_enough_samples_for_noise_estimate(num_samples))
   {
     return std::nullopt;
   }

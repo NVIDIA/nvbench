@@ -46,12 +46,14 @@
 #include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
 
+#include <optional>
 #include <utility>
 #include <vector>
 
 namespace nvbench
 {
 
+struct printer_base;
 struct state;
 
 namespace detail
@@ -96,6 +98,11 @@ protected:
   __forceinline__ void unblock_stream() { m_blocker.unblock(); }
   __forceinline__ void unblock_stream_noexcept() noexcept { m_blocker.unblock_noexcept(); }
 
+private:
+  void log_timeout_warnings(nvbench::printer_base &printer,
+                            std::optional<nvbench::float64_t> cuda_stdev_noise = std::nullopt);
+
+protected:
   nvbench::state &m_state;
 
   nvbench::launch m_launch;

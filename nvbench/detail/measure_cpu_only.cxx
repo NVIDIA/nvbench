@@ -168,7 +168,8 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  const auto cpu_stdev_noise = statistics::compute_relative_dispersion(cpu_stdev, cpu_mean);
+  const auto cpu_stdev_noise =
+    statistics::compute_standard_deviation_noise(m_total_samples, cpu_stdev, cpu_mean);
   if (cpu_stdev_noise)
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/stdev/relative");
@@ -281,7 +282,18 @@ void measure_cpu_only_base::generate_summaries()
       std::optional<nvbench::float64_t> min_time;
       get_param(min_time, "min-time");
 
-      if (max_noise && cpu_stdev_noise && *cpu_stdev_noise > *max_noise)
+      const auto enough_samples_for_noise =
+        statistics::has_enough_samples_for_noise_estimate(m_total_samples);
+      if (max_noise && !enough_samples_for_noise)
+      {
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("Current measurement timed out ({:0.2f}s) "
+                                "before accumulating enough samples to estimate noise ({} < {})",
+                                timeout,
+                                m_total_samples,
+                                statistics::min_samples_for_noise_estimate));
+      }
+      else if (max_noise && cpu_stdev_noise && *cpu_stdev_noise > *max_noise)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
