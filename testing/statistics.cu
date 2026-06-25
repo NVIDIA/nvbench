@@ -24,6 +24,7 @@
 #include <cmath>
 #include <iterator>
 #include <limits>
+#include <random>
 #include <sstream>
 #include <vector>
 
@@ -301,6 +302,33 @@ void test_quartiles_methods_agree()
   }
 }
 
+void test_quartiles_methods_agree_with_duplicate_heavy_inputs()
+{
+  // Test around threshold when public API switches between implementations.
+  for (const auto n : std::array<std::size_t, 3>{4095, 4096, 4097})
+  {
+    for (const auto seed : std::array<unsigned int, 3>{17u, 12345u, 987654321u})
+    {
+      std::vector<nvbench::float64_t> data(n);
+      for (std::size_t i = 0; i < data.size(); ++i)
+      {
+        data[i] = static_cast<nvbench::float64_t>((4 * i) / data.size());
+      }
+
+      std::mt19937 rng{seed};
+      std::shuffle(data.begin(), data.end(), rng);
+
+      const auto public_api = statistics::compute_quartiles(data.cbegin(), data.cend());
+      const auto sorting =
+        statistics::compute_quartiles_by_sorting(std::vector<nvbench::float64_t>(data));
+      const auto selection =
+        statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
+      assert_quartiles_equal(selection, sorting);
+      assert_quartiles_equal(public_api, sorting);
+    }
+  }
+}
+
 void test_quartiles()
 {
   // special case inputs produce expected results
@@ -496,6 +524,7 @@ int main()
   test_percentiles();
   test_quartiles();
   test_quartiles_methods_agree();
+  test_quartiles_methods_agree_with_duplicate_heavy_inputs();
   test_compute_relative_dispersion_nominal_input();
   test_compute_relative_dispersion_invalid_inputs();
   test_relative_interquartile_range();
