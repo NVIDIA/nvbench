@@ -69,6 +69,7 @@ def nvbench_compare(monkeypatch):
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, spec.name, module)
     spec.loader.exec_module(module)
     return module
 
@@ -110,6 +111,46 @@ def make_binary_summary(nvbench_compare, tag, filename, size):
             {"name": "size", "type": "int64", "value": str(size)},
         ],
     }
+
+
+def capture_tabulate_calls(monkeypatch, nvbench_compare):
+    calls = []
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        calls.append({"rows": rows, "headers": headers})
+        return ""
+
+    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    return calls
+
+
+def find_tabulate_call(calls, expected_header_suffix):
+    return next(
+        call
+        for call in calls
+        if call["headers"][-len(expected_header_suffix) :] == expected_header_suffix
+    )
+
+
+INTERVAL_DISPLAY_HEADERS = ["Ref", "Cmp", "Change", "Status"]
+LEGACY_DISPLAY_HEADERS = [
+    "Ref Time",
+    "Ref Noise",
+    "Cmp Time",
+    "Cmp Noise",
+    "Diff",
+    "%Diff",
+    "Status",
+]
+EXPLAIN_DISPLAY_HEADERS = [
+    "Ref [Lo | Ce | Hi]",
+    "Cmp [Lo | Ce | Hi]",
+    "Ref Noise",
+    "Cmp Noise",
+    "Reason",
+    "Change",
+    "Status",
+]
 
 
 def make_gpu_timing_data(
@@ -826,6 +867,36 @@ def test_compare_gpu_timings_classifies_common_cases(nvbench_compare):
     assert bulk_cycle_shift is not None
     assert bulk_cycle_shift.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert bulk_cycle_shift.reason.code == "bulk_cycle_gap_not_confirmed"
+
+    unusable_bulk_cycles = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=1.0,
+            first_quartile=1.1,
+            median=1.2,
+            third_quartile=1.3,
+            mean=1.2,
+            stdev_relative=0.05,
+            sm_clock_rate_mean=100.0,
+            sample_values=[0.0, 1.1, 1.2, 1.3],
+            frequency_values=[100.0] * 4,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+            sm_clock_rate_mean=100.0,
+            sample_values=[0.8, 0.85, 0.9, 0.95],
+            frequency_values=[100.0] * 4,
+        ),
+    )
+    assert unusable_bulk_cycles is not None
+    assert unusable_bulk_cycles.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert unusable_bulk_cycles.reason.code == "bulk_cycle_data_unusable"
 
     missing_noise = nvbench_compare.compare_gpu_timings(
         ref_timing,
@@ -1769,11 +1840,14 @@ def test_parse_comparison_config_data_rejects_invalid_config(
         nvbench_compare.parse_comparison_config_data(config_data)
 
 
-def test_read_comparison_config_file_parses_toml_when_parser_is_available(
+def test_read_comparison_config_file_parses_toml_with_available_parser(
     tmp_path, nvbench_compare
 ):
     parser_module = "tomllib" if sys.version_info >= (3, 11) else "tomli"
+    # TOML config support is optional on Python 3.10 unless tomli is installed.
+    # Skip the test if parser_module is not available
     pytest.importorskip(parser_module)
+
     config_path = tmp_path / "settings.toml"
     config_path.write_text(
         """
@@ -1891,14 +1965,7 @@ def test_compare_benches_counts_unusable_timing_as_unknown(
     monkeypatch, nvbench_compare
 ):
     run_data = make_comparison_run_data(nvbench_compare)
-    captured = {}
-
-    def fake_tabulate(rows, headers, *args, **kwargs):
-        captured["rows"] = rows
-        captured["headers"] = headers
-        return ""
-
-    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
 
     ref_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="nan")])]
     cmp_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])]
@@ -1917,8 +1984,8 @@ def test_compare_benches_counts_unusable_timing_as_unknown(
 
     assert run_data.stats.config_count == 1
     assert run_data.stats.unknown_count == 1
-    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
-    row = captured["rows"][0]
+    table = find_tabulate_call(tabulate_calls, INTERVAL_DISPLAY_HEADERS)
+    row = table["rows"][0]
     assert row[-4] == "n/a"
     assert row[-3] == "1.000 s"
     assert row[-2] == ""
@@ -1927,14 +1994,7 @@ def test_compare_benches_counts_unusable_timing_as_unknown(
 
 def test_compare_benches_counts_skipped_state_as_unknown(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
-    captured = {}
-
-    def fake_tabulate(rows, headers, *args, **kwargs):
-        captured["rows"] = rows
-        captured["headers"] = headers
-        return ""
-
-    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
 
     ref_state = make_state(nvbench_compare, "state")
     ref_state["summaries"] = None
@@ -1959,8 +2019,8 @@ def test_compare_benches_counts_skipped_state_as_unknown(monkeypatch, nvbench_co
     reason_summary = run_data.stats.reason_legend["state-skip"]
     assert reason_summary.canonical_code == "state_skipped"
     assert reason_summary.message == "reference state skipped: requested by benchmark"
-    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
-    row = captured["rows"][0]
+    table = find_tabulate_call(tabulate_calls, INTERVAL_DISPLAY_HEADERS)
+    row = table["rows"][0]
     assert row[-4] == "n/a"
     assert row[-3] == "1.000 s"
     assert row[-2] == ""
@@ -1971,14 +2031,7 @@ def test_compare_benches_counts_missing_summaries_as_unknown(
     monkeypatch, nvbench_compare
 ):
     run_data = make_comparison_run_data(nvbench_compare)
-    captured = {}
-
-    def fake_tabulate(rows, headers, *args, **kwargs):
-        captured["rows"] = rows
-        captured["headers"] = headers
-        return ""
-
-    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
 
     ref_state = make_state(nvbench_compare, "state")
     del ref_state["summaries"]
@@ -2001,8 +2054,8 @@ def test_compare_benches_counts_missing_summaries_as_unknown(
     reason_summary = run_data.stats.reason_legend["summ-miss"]
     assert reason_summary.canonical_code == "gpu_timing_summaries_missing"
     assert reason_summary.message == "reference GPU timing summaries are missing"
-    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
-    row = captured["rows"][0]
+    table = find_tabulate_call(tabulate_calls, INTERVAL_DISPLAY_HEADERS)
+    row = table["rows"][0]
     assert row[-4] == "n/a"
     assert row[-3] == "1.000 s"
     assert row[-2] == ""
@@ -2011,14 +2064,7 @@ def test_compare_benches_counts_missing_summaries_as_unknown(
 
 def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
-    captured = {}
-
-    def fake_tabulate(rows, headers, *args, **kwargs):
-        captured["rows"] = rows
-        captured["headers"] = headers
-        return ""
-
-    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
 
     ref_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])]
     cmp_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.01")])]
@@ -2035,8 +2081,8 @@ def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compa
         no_color=True,
     )
 
-    assert captured["headers"][-4:] == ["Ref", "Cmp", "Change", "Status"]
-    row = captured["rows"][0]
+    table = find_tabulate_call(tabulate_calls, INTERVAL_DISPLAY_HEADERS)
+    row = table["rows"][0]
     assert row[-4].startswith("1.000 s")
     assert row[-3].startswith("1.010 s")
     assert row[-2] == ""
@@ -2044,14 +2090,7 @@ def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compa
 
 def test_compare_benches_legacy_display_uses_scalar_diff(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
-    captured = {}
-
-    def fake_tabulate(rows, headers, *args, **kwargs):
-        captured["rows"] = rows
-        captured["headers"] = headers
-        return ""
-
-    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
 
     ref_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])]
     cmp_benches = [make_benchmark([make_state(nvbench_compare, "state", mean="1.01")])]
@@ -2069,16 +2108,8 @@ def test_compare_benches_legacy_display_uses_scalar_diff(monkeypatch, nvbench_co
         display="legacy",
     )
 
-    assert captured["headers"][-7:] == [
-        "Ref Time",
-        "Ref Noise",
-        "Cmp Time",
-        "Cmp Noise",
-        "Diff",
-        "%Diff",
-        "Status",
-    ]
-    row = captured["rows"][0]
+    table = find_tabulate_call(tabulate_calls, LEGACY_DISPLAY_HEADERS)
+    row = table["rows"][0]
     assert row[-7] == "1.000 s"
     assert row[-5] == "1.010 s"
     assert row[-3] == "10.000 ms"
@@ -2089,14 +2120,7 @@ def test_compare_benches_explain_display_uses_explicit_intervals(
     monkeypatch, nvbench_compare
 ):
     run_data = make_comparison_run_data(nvbench_compare)
-    captured = {}
-
-    def fake_tabulate(rows, headers, *args, **kwargs):
-        captured["rows"] = rows
-        captured["headers"] = headers
-        return ""
-
-    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
 
     ref_state = make_state(nvbench_compare, "state", mean="1.0")
     ref_state["summaries"].extend(
@@ -2132,16 +2156,8 @@ def test_compare_benches_explain_display_uses_explicit_intervals(
         display="explain",
     )
 
-    assert captured["headers"][-7:] == [
-        "Ref [Lo | Ce | Hi]",
-        "Cmp [Lo | Ce | Hi]",
-        "Ref Noise",
-        "Cmp Noise",
-        "Reason",
-        "Change",
-        "Status",
-    ]
-    row = captured["rows"][0]
+    table = find_tabulate_call(tabulate_calls, EXPLAIN_DISPLAY_HEADERS)
+    row = table["rows"][0]
     assert row[-7] == "1.0[00 | 20 | 30] s"
     assert row[-6] == "1.0[10 | 30 | 40] s"
     assert row[-3] == "centers-far"
