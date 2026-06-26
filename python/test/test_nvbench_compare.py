@@ -2234,6 +2234,37 @@ def test_main_reports_missing_required_root_keys(monkeypatch, capsys, nvbench_co
     assert "'benchmarks'" in output
 
 
+def test_main_rejects_non_array_root_keys(monkeypatch, capsys, nvbench_compare):
+    monkeypatch.setattr(
+        nvbench_compare.reader,
+        "read_file",
+        lambda _: {"devices": {}, "benchmarks": []},
+    )
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "NVBench JSON file 'ref.json' root key 'devices' must be an array" in output
+
+
+def test_main_rejects_non_object_root_array_entries(
+    monkeypatch, capsys, nvbench_compare
+):
+    monkeypatch.setattr(
+        nvbench_compare.reader,
+        "read_file",
+        lambda _: {"devices": [None], "benchmarks": []},
+    )
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert (
+        "NVBench JSON file 'ref.json' root key 'devices' entry 0 must be an object"
+        in output
+    )
+
+
 def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {

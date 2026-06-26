@@ -86,6 +86,19 @@ def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
             f"NVBench JSON file {filename!r} is missing required root key(s): {missing}"
         )
 
+    for key in ("devices", "benchmarks"):
+        value = root[key]
+        if not isinstance(value, list):
+            raise ValueError(
+                f"NVBench JSON file {filename!r} root key {key!r} must be an array"
+            )
+        for index, entry in enumerate(value):
+            if not isinstance(entry, Mapping):
+                raise ValueError(
+                    f"NVBench JSON file {filename!r} root key {key!r} entry "
+                    f"{index} must be an object"
+                )
+
     return root
 
 
@@ -131,7 +144,7 @@ COMPARISON_THRESHOLD_PRESET_VALUES = {
         "same_center_relative": 0.01,
         "same_overlap_fraction": 0.25,
         "same_relative_dispersion_ceiling": 0.05,
-        "bulk_same_sample_coverage": 0.98,
+        "bulk_same_sample_coverage": 0.90,
         "bulk_same_support_coverage": 0.60,
         "bulk_support_rare_sample_fraction": 0.001,
         "bulk_support_max_removed_sample_fraction": 0.02,
