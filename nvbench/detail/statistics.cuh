@@ -339,6 +339,8 @@ quartiles_t<ValueType> compute_quartiles(Iter first, Iter last)
   static_assert(std::is_floating_point_v<ValueType>);
 
   std::vector<ValueType> samples(first, last);
+
+  // Heuristic crossover near L1-sized float64 data; tune if sorting remains faster.
   constexpr std::size_t selection_threshold = 4096;
 
   if (samples.size() >= selection_threshold)
