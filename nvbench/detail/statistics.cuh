@@ -236,6 +236,9 @@ template <typename ValueType, std::size_t N>
 std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> &&samples,
                                                         const std::array<int, N> &percentiles)
 {
+  static_assert(std::is_floating_point_v<ValueType>,
+                "compute_percentiles_by_sorting requires a floating-point value type.");
+
   std::array<ValueType, N> result{};
   if (samples.empty() || contains_nan(samples))
   {
@@ -289,6 +292,9 @@ struct quartiles_t
 template <typename ValueType>
 quartiles_t<ValueType> compute_quartiles_by_sorting(std::vector<ValueType> &&samples)
 {
+  static_assert(std::is_floating_point_v<ValueType>,
+                "compute_quartiles_by_sorting requires a floating-point value type.");
+
   constexpr std::array<int, 3> qs{25, 50, 75};
   const auto r = ::nvbench::detail::statistics::compute_percentiles_by_sorting(std::move(samples),
                                                                                qs);
@@ -298,6 +304,9 @@ quartiles_t<ValueType> compute_quartiles_by_sorting(std::vector<ValueType> &&sam
 template <typename ValueType>
 quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> &&samples)
 {
+  static_assert(std::is_floating_point_v<ValueType>,
+                "compute_quartiles_by_selection requires a floating-point value type.");
+
   if (samples.empty())
   {
     constexpr auto nan = std::numeric_limits<ValueType>::quiet_NaN();
