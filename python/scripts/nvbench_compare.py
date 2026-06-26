@@ -1239,13 +1239,21 @@ def compute_timing_interval_from_samples(samples):
     return interval
 
 
+def percentile_rank(percentile: int, sample_count: int) -> int:
+    clamped_percentile = min(max(percentile, 0), 100)
+    return round((clamped_percentile / 100.0) * (sample_count - 1))
+
+
 def compute_robust_timing_input_from_samples(samples):
     values = positive_finite_array(samples)
     if values is None:
         return None
-    first_quartile, median, third_quartile = np.quantile(values, [0.25, 0.5, 0.75])
+    sorted_values = np.sort(values)
+    first_quartile = sorted_values[percentile_rank(25, len(sorted_values))]
+    median = sorted_values[percentile_rank(50, len(sorted_values))]
+    third_quartile = sorted_values[percentile_rank(75, len(sorted_values))]
     interval = make_timing_interval(
-        lower=np.min(values),
+        lower=sorted_values[0],
         upper=third_quartile,
         center=median,
     )

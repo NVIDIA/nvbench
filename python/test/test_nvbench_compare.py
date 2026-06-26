@@ -801,14 +801,15 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
             mean=100.0,
             stdev=1.0,
             stdev_relative=0.01,
-            sample_values=[4.0, 5.0, 6.0],
+            sample_values=[4.0, 5.0, 6.0, 100.0],
         ),
     )
     assert mixed_robust_summary_and_bulk is not None
     assert mixed_robust_summary_and_bulk.ref_time == pytest.approx(10.0)
-    assert mixed_robust_summary_and_bulk.cmp_time == pytest.approx(5.0)
+    assert mixed_robust_summary_and_bulk.cmp_time == pytest.approx(6.0)
     assert mixed_robust_summary_and_bulk.ref_interval.center == pytest.approx(10.0)
-    assert mixed_robust_summary_and_bulk.cmp_interval.center == pytest.approx(5.0)
+    assert mixed_robust_summary_and_bulk.cmp_interval.center == pytest.approx(6.0)
+    assert mixed_robust_summary_and_bulk.cmp_interval.upper == pytest.approx(6.0)
 
     ref_interval_timing = make_gpu_timing_data(
         nvbench_compare,
