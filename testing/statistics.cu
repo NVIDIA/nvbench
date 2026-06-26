@@ -532,6 +532,30 @@ void test_compute_standard_deviation_noise()
   {
     const auto actual =
       statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   1.0,
+                                                   0.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   1.0,
+                                                   -1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   -1.0,
+                                                   1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
                                                    2.0,
                                                    4.0);
     ASSERT(actual);
