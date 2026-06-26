@@ -177,7 +177,7 @@ def make_gpu_timing_data(
     median=None,
     third_quartile=None,
     interquartile_range=None,
-    interquartile_range_relative=None,
+    interquartile_range_relative=0.01,
     sm_clock_rate_mean=None,
     sample_values=None,
     frequency_values=None,
@@ -726,6 +726,64 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert partial_robust.cmp_time == pytest.approx(1.05)
     assert partial_robust.ref_interval.center == pytest.approx(1.0)
     assert partial_robust.cmp_interval.center == pytest.approx(1.05)
+
+    mixed_summary_families = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            maximum=1.2,
+            mean=1.0,
+            stdev=0.1,
+            stdev_relative=0.1,
+            first_quartile=9.0,
+            median=10.0,
+            third_quartile=11.0,
+            interquartile_range_relative=0.01,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.85,
+            maximum=1.25,
+            mean=1.05,
+            stdev=0.1,
+            stdev_relative=0.1,
+        ),
+    )
+    assert mixed_summary_families is not None
+    assert mixed_summary_families.ref_time == pytest.approx(1.0)
+    assert mixed_summary_families.cmp_time == pytest.approx(1.05)
+    assert mixed_summary_families.ref_interval.center == pytest.approx(1.0)
+    assert mixed_summary_families.cmp_interval.center == pytest.approx(1.05)
+
+    mixed_robust_summary_and_bulk = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            maximum=1.2,
+            mean=1.0,
+            stdev=0.1,
+            stdev_relative=0.1,
+            first_quartile=9.0,
+            median=10.0,
+            third_quartile=11.0,
+            interquartile_range_relative=0.01,
+            sample_values=[1.0, 2.0, 3.0],
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=98.0,
+            maximum=102.0,
+            mean=100.0,
+            stdev=1.0,
+            stdev_relative=0.01,
+            sample_values=[4.0, 5.0, 6.0],
+        ),
+    )
+    assert mixed_robust_summary_and_bulk is not None
+    assert mixed_robust_summary_and_bulk.ref_time == pytest.approx(10.0)
+    assert mixed_robust_summary_and_bulk.cmp_time == pytest.approx(5.0)
+    assert mixed_robust_summary_and_bulk.ref_interval.center == pytest.approx(10.0)
+    assert mixed_robust_summary_and_bulk.cmp_interval.center == pytest.approx(5.0)
 
     ref_interval_timing = make_gpu_timing_data(
         nvbench_compare,
@@ -1995,6 +2053,7 @@ def test_main_returns_success_exit_code_when_regressions_are_detected(
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "0.95"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.0"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.05"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
             make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )
@@ -2005,6 +2064,7 @@ def test_main_returns_success_exit_code_when_regressions_are_detected(
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.18"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.2"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.25"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
             make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )
@@ -2610,6 +2670,7 @@ def test_compare_benches_explain_display_uses_explicit_intervals(
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.01"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.02"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.03"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
             make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )
@@ -2620,6 +2681,7 @@ def test_compare_benches_explain_display_uses_explicit_intervals(
             make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", "1.02"),
             make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", "1.03"),
             make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", "1.04"),
+            make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.01"),
             make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
         ]
     )

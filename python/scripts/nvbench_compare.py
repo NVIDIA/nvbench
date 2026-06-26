@@ -477,6 +477,14 @@ class TimingInterval:
     center: float
 
 
+@dataclass(frozen=True)
+class TimingComparisonInputs:
+    ref_estimate: TimeEstimate
+    cmp_estimate: TimeEstimate
+    ref_interval: TimingInterval | None
+    cmp_interval: TimingInterval | None
+
+
 class ComparisonStatus(str, Enum):
     UNKNOWN = "????"
     UNDECIDED = "AMBG"
@@ -1169,7 +1177,7 @@ def make_timing_interval(lower, upper, center):
     return TimingInterval(lower=lower, upper=upper, center=center)
 
 
-def compute_timing_interval(timing):
+def compute_robust_summary_interval(timing):
     if (
         is_positive_finite(timing.minimum)
         and is_positive_finite(timing.first_quartile)
@@ -1185,6 +1193,10 @@ def compute_timing_interval(timing):
             center=timing.median,
         )
 
+    return None
+
+
+def compute_mean_summary_interval(timing):
     if (
         is_positive_finite(timing.minimum)
         and is_positive_finite(timing.maximum)
@@ -1202,17 +1214,39 @@ def compute_timing_interval(timing):
     return None
 
 
+def compute_timing_interval(timing):
+    robust_interval = compute_robust_summary_interval(timing)
+    if robust_interval is not None:
+        return robust_interval
+    return compute_mean_summary_interval(timing)
+
+
 def compute_timing_interval_from_samples(samples):
+    timing_input = compute_robust_timing_input_from_samples(samples)
+    if timing_input is None:
+        return None
+    _, interval = timing_input
+    return interval
+
+
+def compute_robust_timing_input_from_samples(samples):
     values = positive_finite_array(samples)
     if values is None:
         return None
-
     first_quartile, median, third_quartile = np.quantile(values, [0.25, 0.5, 0.75])
-    return make_timing_interval(
+    interval = make_timing_interval(
         lower=np.min(values),
         upper=third_quartile,
         center=median,
     )
+    relative_dispersion = compute_relative_dispersion(
+        third_quartile - first_quartile, median
+    )
+    if interval is None or relative_dispersion is None:
+        return None
+    return TimeEstimate(
+        center=median, relative_dispersion=relative_dispersion
+    ), interval
 
 
 def make_decision(status, code, message, *, severity=0.0):
@@ -1605,9 +1639,9 @@ def confirm_clear_gap_with_bulk_cycles(status, ref_timing, cmp_timing, threshold
     )
 
 
-def compare_timings_for_clear_gap(ref_timing, cmp_timing, thresholds):
-    ref_interval = compute_timing_interval(ref_timing)
-    cmp_interval = compute_timing_interval(cmp_timing)
+def compare_timings_for_clear_gap(
+    ref_timing, cmp_timing, ref_interval, cmp_interval, thresholds
+):
     if ref_interval is None or cmp_interval is None:
         return make_decision(
             ComparisonStatus.UNDECIDED,
@@ -1736,7 +1770,9 @@ def compare_timings_for_bulk_same(ref_timing, cmp_timing, thresholds):
     )
 
 
-def compare_timings_for_same(ref_timing, cmp_timing, ref_noise, cmp_noise, thresholds):
+def compare_timings_for_same(
+    ref_timing, cmp_timing, ref_noise, cmp_noise, ref_interval, cmp_interval, thresholds
+):
     if not is_usable_noise(ref_noise) or not is_usable_noise(cmp_noise):
         return make_decision(
             ComparisonStatus.UNDECIDED,
@@ -1750,8 +1786,6 @@ def compare_timings_for_same(ref_timing, cmp_timing, ref_noise, cmp_noise, thres
             "relative dispersion is too high to declare same",
         )
 
-    ref_interval = compute_timing_interval(ref_timing)
-    cmp_interval = compute_timing_interval(cmp_timing)
     if ref_interval is None or cmp_interval is None:
         return make_decision(
             ComparisonStatus.UNDECIDED,
@@ -1796,47 +1830,74 @@ def select_relative_dispersion(relative_dispersion, absolute_dispersion, center)
     return compute_relative_dispersion(absolute_dispersion, center)
 
 
-def compute_common_time_estimates(ref_timing, cmp_timing):
-    if (
-        has_robust_estimate(ref_timing)
-        and has_robust_interval(ref_timing)
-        and has_robust_estimate(cmp_timing)
-        and has_robust_interval(cmp_timing)
-    ):
-        return (
-            TimeEstimate(
-                center=ref_timing.median,
-                relative_dispersion=select_relative_dispersion(
-                    ref_timing.interquartile_range_relative,
-                    ref_timing.interquartile_range,
-                    ref_timing.median,
-                ),
-            ),
-            TimeEstimate(
-                center=cmp_timing.median,
-                relative_dispersion=select_relative_dispersion(
-                    cmp_timing.interquartile_range_relative,
-                    cmp_timing.interquartile_range,
-                    cmp_timing.median,
-                ),
-            ),
-        )
+def compute_robust_summary_estimate(timing):
+    if not has_robust_estimate(timing):
+        return None
+    return TimeEstimate(
+        center=timing.median,
+        relative_dispersion=select_relative_dispersion(
+            timing.interquartile_range_relative,
+            timing.interquartile_range,
+            timing.median,
+        ),
+    )
 
-    if has_mean_estimate(ref_timing) and has_mean_estimate(cmp_timing):
-        return (
-            TimeEstimate(
-                center=ref_timing.mean,
-                relative_dispersion=select_relative_dispersion(
-                    ref_timing.stdev_relative, ref_timing.stdev, ref_timing.mean
-                ),
-            ),
-            TimeEstimate(
-                center=cmp_timing.mean,
-                relative_dispersion=select_relative_dispersion(
-                    cmp_timing.stdev_relative, cmp_timing.stdev, cmp_timing.mean
-                ),
-            ),
-        )
+
+def compute_mean_summary_estimate(timing):
+    if not has_mean_estimate(timing):
+        return None
+    return TimeEstimate(
+        center=timing.mean,
+        relative_dispersion=select_relative_dispersion(
+            timing.stdev_relative, timing.stdev, timing.mean
+        ),
+    )
+
+
+def compute_robust_summary_timing_input(timing):
+    estimate = compute_robust_summary_estimate(timing)
+    interval = compute_robust_summary_interval(timing)
+    if estimate is None or interval is None:
+        return None
+    return estimate, interval
+
+
+def compute_mean_summary_timing_input(timing):
+    estimate = compute_mean_summary_estimate(timing)
+    interval = compute_mean_summary_interval(timing)
+    if estimate is None or interval is None:
+        return None
+    return estimate, interval
+
+
+def make_timing_comparison_inputs(ref_input, cmp_input):
+    ref_estimate, ref_interval = ref_input
+    cmp_estimate, cmp_interval = cmp_input
+    return TimingComparisonInputs(
+        ref_estimate=ref_estimate,
+        cmp_estimate=cmp_estimate,
+        ref_interval=ref_interval,
+        cmp_interval=cmp_interval,
+    )
+
+
+def compute_robust_timing_input(timing):
+    robust_input = compute_robust_summary_timing_input(timing)
+    if robust_input is not None:
+        return robust_input
+    return compute_robust_timing_input_from_samples(timing.samples)
+
+
+def compute_common_time_estimates(ref_timing, cmp_timing):
+    ref_robust_estimate = compute_robust_summary_estimate(ref_timing)
+    cmp_robust_estimate = compute_robust_summary_estimate(cmp_timing)
+    if ref_robust_estimate is not None and cmp_robust_estimate is not None:
+        return ref_robust_estimate, cmp_robust_estimate
+
+    ref_mean_estimate = compute_mean_summary_estimate(ref_timing)
+    cmp_mean_estimate = compute_mean_summary_estimate(cmp_timing)
+    if ref_mean_estimate is not None and cmp_mean_estimate is not None:
+        return ref_mean_estimate, cmp_mean_estimate
 
     return (
         TimeEstimate(
@@ -1851,6 +1912,26 @@ def compute_common_time_estimates(ref_timing, cmp_timing):
                 cmp_timing.stdev, cmp_timing.mean
             ),
         ),
+    )
+
+
+def compute_timing_comparison_inputs(ref_timing, cmp_timing):
+    ref_robust_input = compute_robust_timing_input(ref_timing)
+    cmp_robust_input = compute_robust_timing_input(cmp_timing)
+    if ref_robust_input is not None and cmp_robust_input is not None:
+        return make_timing_comparison_inputs(ref_robust_input, cmp_robust_input)
+
+    ref_mean_input = compute_mean_summary_timing_input(ref_timing)
+    cmp_mean_input = compute_mean_summary_timing_input(cmp_timing)
+    if ref_mean_input is not None and cmp_mean_input is not None:
+        return make_timing_comparison_inputs(ref_mean_input, cmp_mean_input)
+
+    ref_estimate, cmp_estimate = compute_common_time_estimates(ref_timing, cmp_timing)
+    return TimingComparisonInputs(
+        ref_estimate=ref_estimate,
+        cmp_estimate=cmp_estimate,
+        ref_interval=None,
+        cmp_interval=None,
     )
 
 
@@ -1876,17 +1957,16 @@ def unusable_timing_center_decision(ref_time, cmp_time):
     return None
 
 
-def make_unavailable_timing_comparison(decision, ref_timing, cmp_timing):
-    ref_estimate, cmp_estimate = compute_common_time_estimates(ref_timing, cmp_timing)
+def make_unavailable_timing_comparison(decision, timing_inputs):
     return SummaryComparison(
-        ref_interval=compute_timing_interval(ref_timing),
-        cmp_interval=compute_timing_interval(cmp_timing),
-        ref_estimate=ref_estimate,
-        cmp_estimate=cmp_estimate,
-        ref_time=ref_estimate.center,
-        cmp_time=cmp_estimate.center,
-        ref_noise=ref_estimate.relative_dispersion,
-        cmp_noise=cmp_estimate.relative_dispersion,
+        ref_interval=timing_inputs.ref_interval,
+        cmp_interval=timing_inputs.cmp_interval,
+        ref_estimate=timing_inputs.ref_estimate,
+        cmp_estimate=timing_inputs.cmp_estimate,
+        ref_time=timing_inputs.ref_estimate.center,
+        cmp_time=timing_inputs.cmp_estimate.center,
+        ref_noise=timing_inputs.ref_estimate.relative_dispersion,
+        cmp_noise=timing_inputs.cmp_estimate.relative_dispersion,
         diff=None,
         frac_diff=None,
         diff_interval=None,
@@ -1901,7 +1981,9 @@ def compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
     if comparison_thresholds is None:
         comparison_thresholds = get_default_thresholds()
 
-    ref_estimate, cmp_estimate = compute_common_time_estimates(ref_timing, cmp_timing)
+    timing_inputs = compute_timing_comparison_inputs(ref_timing, cmp_timing)
+    ref_estimate = timing_inputs.ref_estimate
+    cmp_estimate = timing_inputs.cmp_estimate
 
     cmp_time = cmp_estimate.center
     ref_time = ref_estimate.center
@@ -1912,11 +1994,11 @@ def compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
     unusable_center_decision = unusable_timing_center_decision(ref_time, cmp_time)
     if unusable_center_decision is not None:
         return make_unavailable_timing_comparison(
-            unusable_center_decision, ref_timing, cmp_timing
+            unusable_center_decision, timing_inputs
         )
 
-    ref_interval = compute_timing_interval(ref_timing)
-    cmp_interval = compute_timing_interval(cmp_timing)
+    ref_interval = timing_inputs.ref_interval
+    cmp_interval = timing_inputs.cmp_interval
     diff = cmp_time - ref_time
     frac_diff = diff / ref_time
     diff_interval = None
@@ -1931,7 +2013,7 @@ def compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
         max_noise = max(ref_noise, cmp_noise)
 
     decision = compare_timings_for_clear_gap(
-        ref_timing, cmp_timing, comparison_thresholds
+        ref_timing, cmp_timing, ref_interval, cmp_interval, comparison_thresholds
     )
     if decision.status == ComparisonStatus.UNDECIDED and decision.reason.code in {
         "no_clear_gap",
@@ -1942,7 +2024,13 @@ def compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
         )
         if bulk_decision.reason.code == "bulk_data_unavailable":
             decision = compare_timings_for_same(
-                ref_timing, cmp_timing, ref_noise, cmp_noise, comparison_thresholds
+                ref_timing,
+                cmp_timing,
+                ref_noise,
+                cmp_noise,
+                ref_interval,
+                cmp_interval,
+                comparison_thresholds,
             )
         else:
             decision = bulk_decision
@@ -2819,8 +2907,11 @@ def compare_benches(
                         if ref_summaries
                         else make_empty_gpu_timing_data()
                     )
+                    timing_inputs = compute_timing_comparison_inputs(
+                        ref_gpu_time, cmp_gpu_time
+                    )
                     comparison = make_unavailable_timing_comparison(
-                        missing_summaries_decision, ref_gpu_time, cmp_gpu_time
+                        missing_summaries_decision, timing_inputs
                     )
                 if comparison is None:
                     continue
