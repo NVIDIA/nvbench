@@ -658,6 +658,31 @@ def test_gpu_timing_data_warns_when_lazy_sample_read_fails(tmp_path, nvbench_com
     assert timing.samples is None
 
 
+def test_bulk_file_resolution_does_not_fall_back_to_cwd(
+    monkeypatch, tmp_path, nvbench_compare
+):
+    json_dir = tmp_path / "json"
+    cwd = tmp_path / "cwd"
+    json_dir.mkdir()
+    cwd.mkdir()
+    np.array([123.0], dtype="<f4").tofile(cwd / "samples.bin")
+    monkeypatch.chdir(cwd)
+
+    assert nvbench_compare.resolve_binary_filename(str(json_dir), "samples.bin") == str(
+        json_dir / "samples.bin"
+    )
+
+    timing = nvbench_compare.extract_gpu_timing_data(
+        [
+            make_binary_summary(nvbench_compare, "SAMPLE_TIMES_TAG", "samples.bin", 1),
+        ],
+        str(json_dir),
+    )
+
+    with pytest.warns(RuntimeWarning, match="failed to read"):
+        assert timing.samples is None
+
+
 def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     ref_timing = make_gpu_timing_data(nvbench_compare, mean=1.0, stdev_relative=0.05)
 
@@ -673,6 +698,34 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert undecided.frac_diff == pytest.approx(0.03)
     assert undecided.max_noise == pytest.approx(0.05)
     assert undecided.reason.code == "noise_too_high"
+
+    partial_robust = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            maximum=1.2,
+            mean=1.0,
+            stdev=0.1,
+            stdev_relative=0.1,
+            median=10.0,
+            interquartile_range_relative=0.01,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.85,
+            maximum=1.25,
+            mean=1.05,
+            stdev=0.1,
+            stdev_relative=0.1,
+            median=11.0,
+            interquartile_range_relative=0.01,
+        ),
+    )
+    assert partial_robust is not None
+    assert partial_robust.ref_time == pytest.approx(1.0)
+    assert partial_robust.cmp_time == pytest.approx(1.05)
+    assert partial_robust.ref_interval.center == pytest.approx(1.0)
+    assert partial_robust.cmp_interval.center == pytest.approx(1.05)
 
     ref_interval_timing = make_gpu_timing_data(
         nvbench_compare,

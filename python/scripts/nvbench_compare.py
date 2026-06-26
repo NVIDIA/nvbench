@@ -865,9 +865,6 @@ def resolve_binary_filename(json_dir, binary_filename):
     if os.path.exists(parent_relative_filename):
         return parent_relative_filename
 
-    if os.path.exists(binary_filename):
-        return binary_filename
-
     return json_relative_filename
 
 
@@ -1778,6 +1775,15 @@ def has_robust_estimate(summary):
     )
 
 
+def has_robust_interval(summary):
+    return (
+        summary.minimum is not None
+        and summary.first_quartile is not None
+        and summary.median is not None
+        and summary.third_quartile is not None
+    )
+
+
 def has_mean_estimate(summary):
     return summary.mean is not None and (
         summary.stdev_relative is not None or summary.stdev is not None
@@ -1791,7 +1797,12 @@ def select_relative_dispersion(relative_dispersion, absolute_dispersion, center)
 
 
 def compute_common_time_estimates(ref_timing, cmp_timing):
-    if has_robust_estimate(ref_timing) and has_robust_estimate(cmp_timing):
+    if (
+        has_robust_estimate(ref_timing)
+        and has_robust_interval(ref_timing)
+        and has_robust_estimate(cmp_timing)
+        and has_robust_interval(cmp_timing)
+    ):
         return (
             TimeEstimate(
                 center=ref_timing.median,
