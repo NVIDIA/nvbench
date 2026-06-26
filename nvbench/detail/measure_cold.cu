@@ -19,6 +19,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/measure_cold.cuh>
+#include <nvbench/detail/measure_timeout_warnings.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
@@ -33,7 +34,6 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
-#include <string>
 #include <thread>
 #include <utility>
 
@@ -211,59 +211,13 @@ void measure_cold_base::log_timeout_warnings(nvbench::printer_base &printer,
 
   const auto timeout = m_walltime_timer.get_duration();
 
-  auto get_param = [this](std::optional<nvbench::float64_t> &param, const std::string &name) {
-    if (m_criterion_params.has_value(name))
-    {
-      param = m_criterion_params.get_float64(name);
-    }
-  };
-
-  std::optional<nvbench::float64_t> max_noise;
-  get_param(max_noise, "max-noise");
-
-  std::optional<nvbench::float64_t> min_time;
-  get_param(min_time, "min-time");
-
-  const auto enough_samples_for_noise =
-    statistics::has_enough_samples_for_noise_estimate(m_total_samples);
-  if (max_noise && !enough_samples_for_noise)
-  {
-    printer.log(nvbench::log_level::warn,
-                fmt::format("Current measurement timed out ({:0.2f}s) "
-                            "before accumulating enough samples to estimate noise ({} < {})",
-                            timeout,
-                            m_total_samples,
-                            statistics::min_samples_for_noise_estimate));
-  }
-  else if (max_noise && cuda_stdev_noise && *cuda_stdev_noise > *max_noise)
-  {
-    printer.log(nvbench::log_level::warn,
-                fmt::format("Current measurement timed out ({:0.2f}s) "
-                            "while over noise threshold ({:0.2f}% > "
-                            "{:0.2f}%)",
-                            timeout,
-                            *cuda_stdev_noise * 100,
-                            *max_noise * 100));
-  }
-  if (m_total_samples < m_min_samples)
-  {
-    printer.log(nvbench::log_level::warn,
-                fmt::format("Current measurement timed out ({:0.2f}s) "
-                            "before accumulating min_samples ({} < {})",
-                            timeout,
-                            m_total_samples,
-                            m_min_samples));
-  }
-  if (min_time && m_total_cuda_time < *min_time)
-  {
-    printer.log(nvbench::log_level::warn,
-                fmt::format("Current measurement timed out ({:0.2f}s) "
-                            "before accumulating min_time ({:0.2f}s < "
-                            "{:0.2f}s)",
-                            timeout,
-                            m_total_cuda_time,
-                            *min_time));
-  }
+  log_measurement_timeout_warnings(printer,
+                                   m_criterion_params,
+                                   timeout,
+                                   m_total_samples,
+                                   m_min_samples,
+                                   m_total_cuda_time,
+                                   cuda_stdev_noise);
 }
 
 void measure_cold_base::generate_summaries()
