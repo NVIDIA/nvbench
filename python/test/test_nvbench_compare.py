@@ -114,6 +114,13 @@ def make_binary_summary(nvbench_compare, tag, filename, size):
     }
 
 
+def make_raw_binary_size_summary(nvbench_compare, value):
+    return {
+        "tag": nvbench_compare.SAMPLE_TIMES_TAG,
+        "data": [{"name": "size", "type": "int64", "value": value}],
+    }
+
+
 def make_reader_for_roots(ref_root, cmp_root):
     def read_file(path):
         if path == "ref.json":
@@ -461,6 +468,24 @@ def test_gpu_timing_data_loads_samples_and_frequencies_lazily(
     assert timing.frequencies is not None
     assert list(timing.frequencies) == pytest.approx([100.0, 200.0, 400.0])
     assert reader_calls == [str(samples_file), str(freqs_file)]
+
+
+@pytest.mark.parametrize("value", [3, "3"])
+def test_extract_binary_size_accepts_integral_values(value, nvbench_compare):
+    assert (
+        nvbench_compare.extract_binary_size(
+            make_raw_binary_size_summary(nvbench_compare, value)
+        )
+        == 3
+    )
+
+
+@pytest.mark.parametrize("value", [True, False, 3.0, 3.5, "3.5"])
+def test_extract_binary_size_rejects_non_integral_values(value, nvbench_compare):
+    with pytest.raises(ValueError, match="is not an int64"):
+        nvbench_compare.extract_binary_size(
+            make_raw_binary_size_summary(nvbench_compare, value)
+        )
 
 
 def test_compare_benches_collects_bulk_debug_rows(tmp_path, nvbench_compare):

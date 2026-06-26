@@ -845,6 +845,16 @@ def extract_binary_filename(summary):
 
 def extract_binary_size(summary):
     value = extract_summary_data_value(summary, "size", "int64")
+    if isinstance(value, bool):
+        raise ValueError(
+            f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
+            f"value {value!r} is not an int64"
+        )
+    if isinstance(value, float):
+        raise ValueError(
+            f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
+            f"value {value!r} is not an int64"
+        )
     try:
         return int(value)
     except (TypeError, ValueError) as exc:
