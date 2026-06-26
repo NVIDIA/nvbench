@@ -1634,6 +1634,38 @@ def test_plot_along_rejects_non_numeric_axis_values(monkeypatch, nvbench_compare
         )
 
 
+@pytest.mark.parametrize("axis_value", ["0", "-1", "nan", "inf"])
+def test_plot_along_rejects_non_positive_or_non_finite_axis_values(
+    monkeypatch, nvbench_compare, axis_value
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+
+    ref_benches = [
+        make_benchmark([make_state(nvbench_compare, "state", axis_value=axis_value)])
+    ]
+    cmp_benches = [
+        make_benchmark([make_state(nvbench_compare, "state", axis_value=axis_value)])
+    ]
+    ref_benches[0]["axes"] = [{"name": "A", "type": "float64", "flags": ""}]
+    cmp_benches[0]["axes"] = [{"name": "A", "type": "float64", "flags": ""}]
+
+    with pytest.raises(
+        ValueError,
+        match="--plot-along requires positive finite axis values",
+    ):
+        nvbench_compare.compare_benches(
+            run_data,
+            ref_benches,
+            cmp_benches,
+            threshold=0.0,
+            plot_along="A",
+            plot=False,
+            dark=False,
+            filter_plan=make_filter_plan(nvbench_compare),
+            no_color=True,
+        )
+
+
 def test_device_filter_parser_accepts_all_and_duplicate_ids(nvbench_compare):
     assert nvbench_compare.parse_device_filter(" all ", "--reference-devices") is None
     assert nvbench_compare.parse_device_filter("0", "--reference-devices") == [0]
@@ -1779,6 +1811,67 @@ def test_axis_filter_applies_to_most_recent_benchmark(monkeypatch, nvbench_compa
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
     assert run_data.stats.undecided_count == 3
+    assert run_data.stats.unknown_count == 0
+
+
+def test_global_axis_filter_still_applies_after_benchmark_scope(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+
+    ref_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+                make_state(nvbench_compare, "state", mean="2.0", axis_value=2),
+            ],
+            name="bench1",
+        ),
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="3.0", axis_value=1),
+                make_state(nvbench_compare, "state", mean="4.0", axis_value=2),
+            ],
+            name="bench2",
+        ),
+    ]
+    cmp_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+                make_state(nvbench_compare, "state", mean="2.0", axis_value=2),
+            ],
+            name="bench1",
+        ),
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="3.0", axis_value=1),
+                make_state(nvbench_compare, "state", mean="4.0", axis_value=2),
+            ],
+            name="bench2",
+        ),
+    ]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        ref_benches,
+        cmp_benches,
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(
+            nvbench_compare,
+            [("axis", "A=2"), ("benchmark", "bench1")],
+        ),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 2
+    assert run_data.stats.pass_count == 0
+    assert run_data.stats.improvement_count == 0
+    assert run_data.stats.regression_count == 0
+    assert run_data.stats.undecided_count == 2
     assert run_data.stats.unknown_count == 0
 
 

@@ -1123,12 +1123,18 @@ def is_nonnegative_finite(value):
 
 def parse_plot_axis_value(axis_name, axis_value):
     try:
-        return float(axis_value)
+        value = float(axis_value)
     except (TypeError, ValueError) as exc:
         raise ValueError(
             f"--plot-along requires numeric axis values; "
             f"axis {axis_name!r} has value {axis_value!r}"
         ) from exc
+    if not is_positive_finite(value):
+        raise ValueError(
+            f"--plot-along requires positive finite axis values; "
+            f"axis {axis_name!r} has value {axis_value!r}"
+        )
+    return value
 
 
 def make_timing_interval(lower, upper, center):
@@ -2103,9 +2109,7 @@ def build_benchmark_filter_plan(filter_actions):
 
 
 def benchmark_is_selected(benchmark_name, filter_plan):
-    return not filter_plan.benchmark_scopes or any(
-        scope.benchmark_name == benchmark_name for scope in filter_plan.benchmark_scopes
-    )
+    return bool(axis_filter_groups_for_benchmark(benchmark_name, filter_plan))
 
 
 def axis_filter_groups_for_benchmark(benchmark_name, filter_plan):
@@ -2117,10 +2121,15 @@ def axis_filter_groups_for_benchmark(benchmark_name, filter_plan):
         for scope in filter_plan.benchmark_scopes
         if scope.benchmark_name == benchmark_name
     ]
-    return [
-        filter_plan.global_axis_filters + scope.axis_filters
-        for scope in matching_scopes
-    ]
+
+    if matching_scopes:
+        return [
+            filter_plan.global_axis_filters + scope.axis_filters
+            for scope in matching_scopes
+        ]
+    if filter_plan.global_axis_filters:
+        return [filter_plan.global_axis_filters]
+    return []
 
 
 def matches_axis_filters(state, axis_filters):
