@@ -224,12 +224,20 @@ inline std::size_t percentile_rank(int percentile, std::size_t size)
   return static_cast<std::size_t>(std::round(q * max_rank));
 }
 
+template <typename ValueType>
+bool contains_nan(const std::vector<ValueType> &samples)
+{
+  return std::any_of(samples.cbegin(), samples.cend(), [](ValueType value) {
+    return std::isnan(value);
+  });
+}
+
 template <typename ValueType, std::size_t N>
 std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> &&samples,
                                                         const std::array<int, N> &percentiles)
 {
   std::array<ValueType, N> result{};
-  if (samples.empty())
+  if (samples.empty() || contains_nan(samples))
   {
     result.fill(std::numeric_limits<ValueType>::quiet_NaN());
     return result;
@@ -291,6 +299,11 @@ template <typename ValueType>
 quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> &&samples)
 {
   if (samples.empty())
+  {
+    constexpr auto nan = std::numeric_limits<ValueType>::quiet_NaN();
+    return {nan, nan, nan};
+  }
+  if (contains_nan(samples))
   {
     constexpr auto nan = std::numeric_limits<ValueType>::quiet_NaN();
     return {nan, nan, nan};
