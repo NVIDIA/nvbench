@@ -2265,6 +2265,50 @@ def test_main_rejects_non_object_root_array_entries(
     )
 
 
+def test_main_reports_invalid_device_entry_structure(
+    monkeypatch, capsys, nvbench_compare
+):
+    monkeypatch.setattr(
+        nvbench_compare.reader,
+        "read_file",
+        lambda _: {"devices": [{}], "benchmarks": []},
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--reference-devices",
+            "0",
+            "--compare-devices",
+            "0",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "invalid NVBench JSON structure" in output
+    assert "missing key 'id'" in output
+
+
+def test_main_reports_invalid_benchmark_entry_structure(
+    monkeypatch, capsys, nvbench_compare
+):
+    monkeypatch.setattr(
+        nvbench_compare.reader,
+        "read_file",
+        lambda _: {"devices": [], "benchmarks": [{}]},
+    )
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "invalid NVBench JSON structure" in output
+    assert "missing key 'name'" in output
+
+
 def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {

@@ -102,6 +102,16 @@ def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
     return root
 
 
+def format_json_structure_error(ref: str, comp: str, exc: Exception) -> str:
+    if isinstance(exc, KeyError) and exc.args:
+        detail = f"missing key {exc.args[0]!r}"
+    else:
+        detail = str(exc) or exc.__class__.__name__
+    return (
+        f"invalid NVBench JSON structure while comparing {ref!r} and {comp!r}: {detail}"
+    )
+
+
 # These dataclasses are treated as parsed value objects. frozen=True prevents
 # accidental field reassignment but does not imply deep immutability.
 
@@ -3186,6 +3196,9 @@ def main() -> int:
         except ValueError as exc:
             print(str(exc))
             return 1
+        except (KeyError, TypeError, IndexError) as exc:
+            print(format_json_structure_error(ref, comp, exc))
+            return 1
 
         if len(selected_ref_devices) != len(selected_cmp_devices):
             print(
@@ -3239,6 +3252,9 @@ def main() -> int:
             )
         except ValueError as exc:
             print(str(exc))
+            return 1
+        except (KeyError, TypeError, IndexError) as exc:
+            print(format_json_structure_error(ref, comp, exc))
             return 1
 
     print("# Summary\n")
