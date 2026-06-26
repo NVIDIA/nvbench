@@ -64,6 +64,23 @@ void assert_quartiles_nan(statistics::quartiles_t<T> actual)
   ASSERT(std::isnan(actual.third_quartile));
 }
 
+statistics::quartiles_t<nvbench::float64_t> expected_rank_quartiles(std::size_t num_samples)
+{
+  return {static_cast<nvbench::float64_t>(statistics::percentile_rank(25, num_samples)),
+          static_cast<nvbench::float64_t>(statistics::percentile_rank(50, num_samples)),
+          static_cast<nvbench::float64_t>(statistics::percentile_rank(75, num_samples))};
+}
+
+statistics::quartiles_t<nvbench::float64_t>
+expected_duplicate_heavy_quartiles(std::size_t num_samples)
+{
+  const auto value_at_percentile = [num_samples](int percentile) {
+    const auto rank = statistics::percentile_rank(percentile, num_samples);
+    return static_cast<nvbench::float64_t>((4 * rank) / num_samples);
+  };
+  return {value_at_percentile(25), value_at_percentile(50), value_at_percentile(75)};
+}
+
 void test_mean()
 {
   {
@@ -274,12 +291,6 @@ void test_percentiles()
 
 void test_quartiles_methods_agree()
 {
-  struct threshold_case
-  {
-    std::size_t size;
-    statistics::quartiles_t<nvbench::float64_t> expected;
-  };
-
   {
     const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
     const auto sorting =
@@ -310,15 +321,21 @@ void test_quartiles_methods_agree()
   }
 
   // test around threshold when public API switches between implementations
-  for (const auto [n, expected] : std::array<threshold_case, 3>{{{4095, {1024.0, 2047.0, 3071.0}},
-                                                                 {4096, {1024.0, 2048.0, 3071.0}},
-                                                                 {4097, {1024.0, 2048.0, 3072.0}}}})
+  constexpr auto threshold = statistics::quartile_selection_threshold;
+  if constexpr (threshold < 2)
+  {
+    return;
+  }
+
+  for (const auto n : std::array<std::size_t, 3>{threshold - 1, threshold, threshold + 1})
   {
     std::vector<nvbench::float64_t> data(n);
     for (std::size_t i = 0; i < data.size(); ++i)
     {
-      data[i] = static_cast<nvbench::float64_t>((i * 37) % data.size());
+      data[i] = static_cast<nvbench::float64_t>(i);
     }
+    std::mt19937 rng{37u};
+    std::shuffle(data.begin(), data.end(), rng);
 
     const auto public_api = statistics::compute_quartiles(data.cbegin(), data.cend());
     const auto sorting =
@@ -327,21 +344,20 @@ void test_quartiles_methods_agree()
       statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
     assert_quartiles_equal(selection, sorting);
     assert_quartiles_equal(public_api, sorting);
-    assert_quartiles_equal(public_api, expected);
+    assert_quartiles_equal(public_api, expected_rank_quartiles(n));
   }
 }
 
 void test_quartiles_methods_agree_with_duplicate_heavy_inputs()
 {
-  struct threshold_case
-  {
-    std::size_t size;
-    statistics::quartiles_t<nvbench::float64_t> expected;
-  };
-
   // Test around threshold when public API switches between implementations.
-  for (const auto [n, expected] : std::array<threshold_case, 3>{
-         {{4095, {1.0, 1.0, 2.0}}, {4096, {1.0, 2.0, 2.0}}, {4097, {0.0, 1.0, 2.0}}}})
+  constexpr auto threshold = statistics::quartile_selection_threshold;
+  if constexpr (threshold < 2)
+  {
+    return;
+  }
+
+  for (const auto n : std::array<std::size_t, 3>{threshold - 1, threshold, threshold + 1})
   {
     for (const auto seed : std::array<unsigned int, 3>{17u, 12345u, 987654321u})
     {
@@ -361,7 +377,7 @@ void test_quartiles_methods_agree_with_duplicate_heavy_inputs()
         statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
       assert_quartiles_equal(selection, sorting);
       assert_quartiles_equal(public_api, sorting);
-      assert_quartiles_equal(public_api, expected);
+      assert_quartiles_equal(public_api, expected_duplicate_heavy_quartiles(n));
     }
   }
 }

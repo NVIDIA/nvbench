@@ -54,6 +54,9 @@ namespace nvbench::detail::statistics
 
 inline constexpr nvbench::int64_t min_samples_for_noise_estimate = 5;
 
+// Heuristic crossover near L1-sized float64 data; tune if sorting remains faster.
+inline constexpr std::size_t quartile_selection_threshold = 4096;
+
 inline constexpr bool has_enough_samples_for_noise_estimate(nvbench::int64_t num_samples)
 {
   return num_samples >= min_samples_for_noise_estimate;
@@ -349,10 +352,7 @@ quartiles_t<ValueType> compute_quartiles(Iter first, Iter last)
 
   std::vector<ValueType> samples(first, last);
 
-  // Heuristic crossover near L1-sized float64 data; tune if sorting remains faster.
-  constexpr std::size_t selection_threshold = 4096;
-
-  if (samples.size() >= selection_threshold)
+  if (samples.size() >= quartile_selection_threshold)
   {
     return ::nvbench::detail::statistics::compute_quartiles_by_selection(std::move(samples));
   }
