@@ -264,6 +264,12 @@ void test_percentiles()
 
 void test_quartiles_methods_agree()
 {
+  struct threshold_case
+  {
+    std::size_t size;
+    statistics::quartiles_t<nvbench::float64_t> expected;
+  };
+
   {
     const std::vector<nvbench::float64_t> data{40.0, 10.0, 30.0, 20.0};
     const auto sorting =
@@ -284,7 +290,9 @@ void test_quartiles_methods_agree()
   }
 
   // test around threshold when public API switches between implementations
-  for (const auto n : std::array<std::size_t, 3>{4095, 4096, 4097})
+  for (const auto [n, expected] : std::array<threshold_case, 3>{{{4095, {1024.0, 2047.0, 3071.0}},
+                                                                 {4096, {1024.0, 2048.0, 3071.0}},
+                                                                 {4097, {1024.0, 2048.0, 3072.0}}}})
   {
     std::vector<nvbench::float64_t> data(n);
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -299,13 +307,21 @@ void test_quartiles_methods_agree()
       statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
     assert_quartiles_equal(selection, sorting);
     assert_quartiles_equal(public_api, sorting);
+    assert_quartiles_equal(public_api, expected);
   }
 }
 
 void test_quartiles_methods_agree_with_duplicate_heavy_inputs()
 {
+  struct threshold_case
+  {
+    std::size_t size;
+    statistics::quartiles_t<nvbench::float64_t> expected;
+  };
+
   // Test around threshold when public API switches between implementations.
-  for (const auto n : std::array<std::size_t, 3>{4095, 4096, 4097})
+  for (const auto [n, expected] : std::array<threshold_case, 3>{
+         {{4095, {1.0, 1.0, 2.0}}, {4096, {1.0, 2.0, 2.0}}, {4097, {0.0, 1.0, 2.0}}}})
   {
     for (const auto seed : std::array<unsigned int, 3>{17u, 12345u, 987654321u})
     {
@@ -325,6 +341,7 @@ void test_quartiles_methods_agree_with_duplicate_heavy_inputs()
         statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
       assert_quartiles_equal(selection, sorting);
       assert_quartiles_equal(public_api, sorting);
+      assert_quartiles_equal(public_api, expected);
     }
   }
 }
