@@ -310,12 +310,7 @@ quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> &&s
   static_assert(std::is_floating_point_v<ValueType>,
                 "compute_quartiles_by_selection requires a floating-point value type.");
 
-  if (samples.empty())
-  {
-    constexpr auto nan = std::numeric_limits<ValueType>::quiet_NaN();
-    return {nan, nan, nan};
-  }
-  if (contains_nan(samples))
+  if (samples.empty() || contains_nan(samples))
   {
     constexpr auto nan = std::numeric_limits<ValueType>::quiet_NaN();
     return {nan, nan, nan};
