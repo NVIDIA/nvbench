@@ -1567,6 +1567,13 @@ def test_compare_benches_marks_unavailable_noise_undecided(
 
 def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
+    plot_calls = []
+
+    def fake_plot(x, y, shape, *args, **kwargs):
+        plot_calls.append({"x": x, "y": y, "shape": shape, "label": kwargs["label"]})
+        return [types.SimpleNamespace(get_color=lambda: "black")]
+
+    monkeypatch.setattr(sys.modules["matplotlib.pyplot"], "plot", fake_plot)
 
     ref_benches = [
         make_benchmark(
@@ -1603,6 +1610,8 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
     assert run_data.stats.regression_count == 0
     assert run_data.stats.undecided_count == 2
     assert run_data.stats.unknown_count == 0
+    assert [call["x"] for call in plot_calls] == [[1.0], [1.0]]
+    assert [call["shape"] for call in plot_calls] == ["-", "--"]
 
 
 def test_plot_along_rejects_non_numeric_axis_values(monkeypatch, nvbench_compare):
@@ -1699,6 +1708,50 @@ def test_explicit_device_filters_downgrade_device_mismatch_to_warning(nvbench_co
     assert not nvbench_compare.require_matching_device_sections([0], None)
     assert not nvbench_compare.require_matching_device_sections(None, [1])
     assert not nvbench_compare.require_matching_device_sections([0], [1])
+
+
+def test_main_warns_on_device_mismatch_with_explicit_device_filters(
+    monkeypatch, capsys, nvbench_compare
+):
+    ref_root = {
+        "devices": [{"id": 0, "name": "Reference GPU"}],
+        "benchmarks": [],
+    }
+    cmp_root = {
+        "devices": [{"id": 1, "name": "Compare GPU"}],
+        "benchmarks": [],
+    }
+
+    monkeypatch.setattr(
+        nvbench_compare.reader, "read_file", make_reader_for_roots(ref_root, cmp_root)
+    )
+    monkeypatch.setattr(
+        nvbench_compare.jsondiff,
+        "diff",
+        lambda *args, **kwargs: {"name": ["Reference GPU", "Compare GPU"]},
+    )
+    monkeypatch.setattr(
+        nvbench_compare, "compare_benches", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--reference-devices",
+            "0",
+            "--compare-devices",
+            "1",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 0
+    output = capsys.readouterr().out
+    assert "Device sections do not match" in output
+    assert "Reference GPU" in output
+    assert "Compare GPU" in output
 
 
 def test_compare_benches_pairs_filtered_devices_by_position(
@@ -2068,14 +2121,14 @@ def test_parse_comparison_config_data_rejects_invalid_config(
         nvbench_compare.parse_comparison_config_data(config_data)
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("tomllib") is None
+    and importlib.util.find_spec("tomli") is None,
+    reason="TOML config support requires tomllib or tomli",
+)
 def test_read_comparison_config_file_parses_toml_with_available_parser(
     tmp_path, nvbench_compare
 ):
-    parser_module = "tomllib" if sys.version_info >= (3, 11) else "tomli"
-    # TOML config support is optional on Python 3.10 unless tomli is installed.
-    # Skip the test if parser_module is not available
-    pytest.importorskip(parser_module)
-
     config_path = tmp_path / "settings.toml"
     config_path.write_text(
         """
