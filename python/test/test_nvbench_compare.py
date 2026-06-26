@@ -1574,6 +1574,9 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
         return [types.SimpleNamespace(get_color=lambda: "black")]
 
     monkeypatch.setattr(sys.modules["matplotlib.pyplot"], "plot", fake_plot)
+    monkeypatch.setattr(
+        nvbench_compare, "plot_comparison_entries", lambda *args, **kwargs: None
+    )
 
     ref_benches = [
         make_benchmark(
@@ -1598,7 +1601,7 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
         cmp_benches,
         threshold=0.0,
         plot_along="A",
-        plot=False,
+        plot=True,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
         no_color=True,
