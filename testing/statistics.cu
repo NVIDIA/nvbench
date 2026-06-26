@@ -260,6 +260,16 @@ void test_percentiles()
     ASSERT(std::isnan(actual[1]));
     ASSERT(std::isnan(actual[2]));
   }
+
+  {
+    constexpr auto nan = std::numeric_limits<nvbench::float64_t>::quiet_NaN();
+    const std::vector<nvbench::float64_t> data{10.0, nan, 30.0, 20.0};
+    const auto actual =
+      statistics::compute_percentiles(data.cbegin(), data.cend(), std::array<int, 3>{25, 50, 75});
+    ASSERT(std::isnan(actual[0]));
+    ASSERT(std::isnan(actual[1]));
+    ASSERT(std::isnan(actual[2]));
+  }
 }
 
 void test_quartiles_methods_agree()
@@ -287,6 +297,16 @@ void test_quartiles_methods_agree()
     const auto selection =
       statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
     assert_quartiles_equal(selection, sorting);
+  }
+
+  {
+    constexpr auto nan = std::numeric_limits<nvbench::float64_t>::quiet_NaN();
+    const std::vector<nvbench::float64_t> data{40.0, 10.0, nan, 20.0};
+    assert_quartiles_nan(
+      statistics::compute_quartiles_by_sorting(std::vector<nvbench::float64_t>(data)));
+    assert_quartiles_nan(
+      statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data)));
+    assert_quartiles_nan(statistics::compute_quartiles(data.cbegin(), data.cend()));
   }
 
   // test around threshold when public API switches between implementations
