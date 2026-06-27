@@ -369,6 +369,76 @@ def test_compare_benches_matches_duplicate_states_after_axis_filter(
     assert run_data.stats.unknown_count == 0
 
 
+def test_compare_benches_matches_duplicate_states_by_axis_values(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    observed_pairs = []
+
+    def fake_compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
+        del comparison_thresholds
+        observed_pairs.append((ref_timing.mean, cmp_timing.mean))
+        ref_estimate = nvbench_compare.TimeEstimate(
+            center=ref_timing.mean, relative_dispersion=ref_timing.stdev_relative
+        )
+        cmp_estimate = nvbench_compare.TimeEstimate(
+            center=cmp_timing.mean, relative_dispersion=cmp_timing.stdev_relative
+        )
+        return nvbench_compare.SummaryComparison(
+            ref_interval=None,
+            cmp_interval=None,
+            ref_estimate=ref_estimate,
+            cmp_estimate=cmp_estimate,
+            ref_time=ref_timing.mean,
+            cmp_time=cmp_timing.mean,
+            ref_noise=ref_timing.stdev_relative,
+            cmp_noise=cmp_timing.stdev_relative,
+            diff=cmp_timing.mean - ref_timing.mean,
+            frac_diff=0.0,
+            diff_interval=None,
+            frac_diff_interval=None,
+            max_noise=0.0,
+            status=nvbench_compare.ComparisonStatus.SAME,
+            reason=nvbench_compare.DecisionReason("test", "test"),
+        )
+
+    monkeypatch.setattr(
+        nvbench_compare, "compare_gpu_timings", fake_compare_gpu_timings
+    )
+
+    ref_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+                make_state(nvbench_compare, "state", mean="2.0", axis_value=2),
+            ]
+        )
+    ]
+    cmp_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", mean="2.0", axis_value=2),
+                make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+            ]
+        )
+    ]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        ref_benches,
+        cmp_benches,
+        threshold=1.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert observed_pairs == [(2.0, 2.0), (1.0, 1.0)]
+    assert run_data.stats.config_count == 2
+
+
 def test_compare_benches_counts_non_finite_centers_as_unknown(
     monkeypatch, nvbench_compare
 ):

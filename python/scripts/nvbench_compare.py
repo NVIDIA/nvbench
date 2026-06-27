@@ -676,10 +676,28 @@ def state_match_key(state):
     return state_name
 
 
+def normalized_axis_values(state):
+    axis_values = state.get("axis_values") or []
+    return tuple(
+        sorted(
+            (
+                axis_value.get("name"),
+                axis_value.get("type"),
+                repr(axis_value.get("value")),
+            )
+            for axis_value in axis_values
+        )
+    )
+
+
+def state_comparison_key(state):
+    return state_match_key(state), normalized_axis_values(state)
+
+
 def group_states_by_match_key(states):
     grouped = {}
     for state in states:
-        grouped.setdefault(state_match_key(state), []).append(state)
+        grouped.setdefault(state_comparison_key(state), []).append(state)
     return grouped
 
 
@@ -2882,15 +2900,16 @@ def compare_benches(
                 "cmp_noise": {},
                 "ref_noise": {},
             }
-            counters: dict[str, int] = {}
+            counters: dict[Any, int] = {}
 
             for cmp_state in cmp_device_states:
                 cmp_state_name = state_match_key(cmp_state)
-                occurrence = counters.get(cmp_state_name, 0)
-                counters[cmp_state_name] = occurrence + 1
-                # Duplicate state names are matched by occurrence order within
-                # the filtered device section.
-                ref_state = ref_states_by_name[cmp_state_name][occurrence]
+                cmp_state_key = state_comparison_key(cmp_state)
+                occurrence = counters.get(cmp_state_key, 0)
+                counters[cmp_state_key] = occurrence + 1
+                # Duplicate state names with identical axis values are matched
+                # by occurrence order within the filtered device section.
+                ref_state = ref_states_by_name[cmp_state_key][occurrence]
                 axis_values = cmp_state["axis_values"]
                 if not axis_values:
                     axis_values = []
@@ -2986,7 +3005,7 @@ def compare_benches(
                                 cmp_device_id=cmp_device_id,
                                 cmp_state_name=cmp_state_name,
                                 occurrence=occurrence,
-                                occurrence_count=cmp_state_counts[cmp_state_name],
+                                occurrence_count=cmp_state_counts[cmp_state_key],
                                 axis_values=axis_values,
                                 axes=axes,
                                 ref_timing=ref_gpu_time,
