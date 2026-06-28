@@ -655,6 +655,12 @@ def test_format_bulk_debug_python_loads_arrays(tmp_path, nvbench_compare):
     assert arrays["reference_frequencies"] is None
 
 
+def test_bulk_debug_output_stdout_token_is_case_insensitive(nvbench_compare):
+    assert nvbench_compare.BulkDebugOutput("stdout").is_stdout
+    assert nvbench_compare.BulkDebugOutput("STDOUT").is_stdout
+    assert not nvbench_compare.BulkDebugOutput("output.py").is_stdout
+
+
 def test_format_bulk_debug_python_handles_nonfinite_values(nvbench_compare):
     script = nvbench_compare.format_bulk_debug_python(
         [
@@ -2611,7 +2617,7 @@ def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_co
         [
             "nvbench_compare",
             "--bulk-debug-python",
-            "STDOUT",
+            "stdout",
             "ref.json",
             "cmp.json",
         ],
