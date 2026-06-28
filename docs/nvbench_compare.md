@@ -150,7 +150,9 @@ nvbench-compare -b base -a "Elements{io}[pow2]=20" reference.json compare.json
 ```
 
 `-a` / `--axis` applies to the most recent `-b` / `--benchmark`, or to all
-benchmarks if it appears before any benchmark filter.
+benchmarks if it appears before any benchmark filter. If any benchmark filters
+are provided, only those benchmarks are compared; leading axis filters are
+replayed onto each selected benchmark, matching NVBench CLI behavior.
 
 ## Timing Data Used
 

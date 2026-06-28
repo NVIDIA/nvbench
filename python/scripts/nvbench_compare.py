@@ -2285,8 +2285,6 @@ def axis_filter_groups_for_benchmark(benchmark_name, filter_plan):
             filter_plan.global_axis_filters + scope.axis_filters
             for scope in matching_scopes
         ]
-    if filter_plan.global_axis_filters:
-        return [filter_plan.global_axis_filters]
     return []
 
 
