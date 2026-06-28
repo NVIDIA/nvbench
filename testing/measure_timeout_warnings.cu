@@ -24,6 +24,7 @@
 
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -46,7 +47,8 @@ protected:
   }
 };
 
-void check_noise_warning(nvbench::float64_t stdev_noise, const std::string &expected_message)
+void check_noise_warning(std::optional<nvbench::float64_t> stdev_noise,
+                         const std::string &expected_message)
 {
   std::ostringstream stream;
   recording_printer printer{stream};
@@ -69,6 +71,7 @@ void check_noise_warning(nvbench::float64_t stdev_noise, const std::string &expe
 
 void test_non_finite_or_invalid_stdev_noise_timeout_warning()
 {
+  check_noise_warning(std::nullopt, "unable to estimate noise");
   check_noise_warning(std::numeric_limits<nvbench::float64_t>::quiet_NaN(),
                       "unable to estimate noise");
   check_noise_warning(-1.0, "unable to estimate noise");
