@@ -3179,7 +3179,7 @@ def main() -> int:
         type=float,
         dest="threshold",
         default=0.0,
-        help="only show benchmarks where percentage diff is >= THRESHOLD",
+        help="only show rows where abs(%%Diff) is >= THRESHOLD percent",
     )
     parser.add_argument(
         "--preset",
@@ -3373,7 +3373,7 @@ def main() -> int:
                 run_data,
                 ref_root["benchmarks"],
                 cmp_root["benchmarks"],
-                threshold=args.threshold,
+                threshold=args.threshold / 100.0,
                 plot_along=args.plot_along,
                 plot=args.plot,
                 dark=args.dark,

@@ -2961,3 +2961,34 @@ def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_com
         "comparison_thresholds"
     ] == nvbench_compare.get_comparison_thresholds("strict")
     assert captured["display"] == "explain"
+
+
+def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_compare):
+    devices = [{"id": 0, "name": "Test GPU"}]
+    root = {
+        "devices": devices,
+        "benchmarks": [],
+    }
+    captured = {}
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+
+    def fake_compare_benches(*args, **kwargs):
+        del args
+        captured["threshold"] = kwargs["threshold"]
+
+    monkeypatch.setattr(nvbench_compare, "compare_benches", fake_compare_benches)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--threshold-diff",
+            "5",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 0
+    assert captured["threshold"] == pytest.approx(0.05)
