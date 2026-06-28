@@ -16,6 +16,7 @@ set(test_srcs
   exception_safety.cu
   float64_axis.cu
   int64_axis.cu
+  measure_timeout_warnings.cu
   named_values.cu
   option_parser.cu
   range.cu

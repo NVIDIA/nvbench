@@ -35,6 +35,7 @@
 
 #include <fmt/format.h>
 
+#include <cmath>
 #include <optional>
 #include <string>
 
@@ -64,6 +65,8 @@ inline void log_measurement_timeout_warnings(nvbench::printer_base &printer,
 
   const auto enough_samples_for_noise =
     statistics::has_enough_samples_for_noise_estimate(total_samples);
+  const auto stdev_noise_unavailable = !stdev_noise || std::isnan(*stdev_noise) ||
+                                       *stdev_noise < nvbench::float64_t{};
   if (max_noise && !enough_samples_for_noise)
   {
     printer.log(nvbench::log_level::warn,
@@ -73,14 +76,14 @@ inline void log_measurement_timeout_warnings(nvbench::printer_base &printer,
                             total_samples,
                             statistics::min_samples_for_noise_estimate));
   }
-  else if (max_noise && !stdev_noise)
+  else if (max_noise && stdev_noise_unavailable)
   {
     printer.log(nvbench::log_level::warn,
                 fmt::format("Current measurement timed out ({:0.2f}s) "
                             "while unable to estimate noise for max-noise",
                             timeout));
   }
-  else if (max_noise && stdev_noise && *stdev_noise > *max_noise)
+  else if (max_noise && *stdev_noise > *max_noise)
   {
     printer.log(nvbench::log_level::warn,
                 fmt::format("Current measurement timed out ({:0.2f}s) "
