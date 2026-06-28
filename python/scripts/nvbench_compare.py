@@ -425,6 +425,19 @@ class Float32BinarySource:
             self.count, self.filename, self.json_dir, self.description, self.reader
         )
 
+    def has_material_payload(self) -> bool:
+        if self.count <= 0:
+            return False
+
+        if self.reader is not read_float32_file:
+            return True
+
+        filename = resolve_binary_filename(self.json_dir, self.filename)
+        try:
+            return os.path.getsize(filename) > 0
+        except OSError:
+            return False
+
 
 @dataclass(frozen=True)
 class GpuTimingData:
@@ -1568,15 +1581,9 @@ def has_material_bulk_source(source):
     if source is None:
         return False
 
-    if isinstance(source, Float32BinarySource):
-        if source.count <= 0:
-            return False
-
-        filename = resolve_binary_filename(source.json_dir, source.filename)
-        try:
-            return os.path.getsize(filename) > 0
-        except OSError:
-            return False
+    has_material_payload = getattr(source, "has_material_payload", None)
+    if callable(has_material_payload):
+        return has_material_payload()
 
     values = getattr(source, "values", None)
     return values is not None and len(values) > 0

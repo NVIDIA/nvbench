@@ -1220,6 +1220,37 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert missing_bulk_files.status == nvbench_compare.ComparisonStatus.FAST
     assert missing_bulk_files.reason.code == "clear_gap_confirmed_by_summary_cycles"
 
+    def virtual_reader(_):
+        return np.asarray([1.0, 1.1, 1.2, 1.3], dtype="<f4")
+
+    virtual_source = nvbench_compare.Float32BinarySource(
+        count=4,
+        filename="virtual.bin",
+        json_dir=str(tmp_path),
+        description="virtual sample",
+        reader=virtual_reader,
+    )
+    virtual_bulk_files = nvbench_compare.compare_gpu_timings(
+        replace(
+            ref_interval_timing,
+            sample_source=virtual_source,
+            frequency_source=virtual_source,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            minimum=0.8,
+            first_quartile=0.85,
+            median=0.9,
+            third_quartile=0.95,
+            mean=0.9,
+            stdev_relative=0.05,
+            sample_values=[0.8, 0.85, 0.9, 0.95],
+            frequency_values=[100.0] * 4,
+        ),
+    )
+    assert virtual_bulk_files is not None
+    assert virtual_bulk_files.reason.code == "bulk_cycle_gap_not_confirmed"
+
     unusable_bulk_cycles = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(
             nvbench_compare,
