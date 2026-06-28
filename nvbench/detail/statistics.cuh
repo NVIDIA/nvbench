@@ -62,6 +62,13 @@ inline constexpr bool has_enough_samples_for_noise_estimate(nvbench::int64_t num
   return num_samples >= min_samples_for_noise_estimate;
 }
 
+template <typename ValueType>
+constexpr ValueType standard_deviation_unavailable_sentinel()
+{
+  static_assert(std::is_floating_point_v<ValueType>);
+  return std::numeric_limits<ValueType>::infinity();
+}
+
 /**
  * Computes and returns the unbiased sample standard deviation.
  *
@@ -76,7 +83,7 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
 
   if (!has_enough_samples_for_noise_estimate(num)) // don't bother with low sample sizes.
   {
-    return std::numeric_limits<ValueType>::infinity();
+    return standard_deviation_unavailable_sentinel<ValueType>();
   }
 
   const auto variance = nvbench::detail::transform_reduce(first,
@@ -399,6 +406,11 @@ compute_standard_deviation_noise(nvbench::int64_t num_samples,
   }
 
   return ::nvbench::detail::statistics::compute_relative_dispersion(standard_deviation, center);
+}
+
+inline nvbench::float64_t stdev_noise_or_sentinel(std::optional<nvbench::float64_t> noise)
+{
+  return noise.value_or(standard_deviation_unavailable_sentinel<nvbench::float64_t>());
 }
 
 // Returns nullopt until there are enough samples for a meaningful robust noise estimate.

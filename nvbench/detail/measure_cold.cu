@@ -302,14 +302,13 @@ void measure_cold_base::generate_summaries()
 
   const auto cpu_stdev_noise =
     statistics::compute_standard_deviation_noise(m_total_samples, cpu_stdev, cpu_mean);
-  if (cpu_stdev_noise)
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative standard deviation of isolated kernel execution CPU times");
-    summ.set_float64("value", *cpu_stdev_noise);
+    summ.set_float64("value", statistics::stdev_noise_or_sentinel(cpu_stdev_noise));
   }
 
   const auto [cpu_time_first_quartile, cpu_time_median, cpu_time_third_quartile] =
@@ -409,14 +408,13 @@ void measure_cold_base::generate_summaries()
 
   const auto cuda_stdev_noise =
     statistics::compute_standard_deviation_noise(m_total_samples, cuda_stdev, cuda_mean);
-  if (cuda_stdev_noise)
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative standard deviation of isolated kernel execution GPU times");
-    summ.set_float64("value", *cuda_stdev_noise);
+    summ.set_float64("value", statistics::stdev_noise_or_sentinel(cuda_stdev_noise));
   }
 
   const auto [cuda_time_first_quartile, cuda_time_median, cuda_time_third_quartile] =

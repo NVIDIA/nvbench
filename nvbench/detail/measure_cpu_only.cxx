@@ -169,13 +169,12 @@ void measure_cpu_only_base::generate_summaries()
 
   const auto cpu_stdev_noise =
     statistics::compute_standard_deviation_noise(m_total_samples, cpu_stdev, cpu_mean);
-  if (cpu_stdev_noise)
   {
     auto &summ = m_state.add_summary("nv/cpu_only/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description", "Relative standard deviation of isolated CPU times");
-    summ.set_float64("value", *cpu_stdev_noise);
+    summ.set_float64("value", statistics::stdev_noise_or_sentinel(cpu_stdev_noise));
   }
 
   const auto [cpu_first_quartile, cpu_median, cpu_third_quartile] =

@@ -563,6 +563,24 @@ void test_compute_standard_deviation_noise()
   }
 }
 
+void test_stdev_noise_or_sentinel()
+{
+  {
+    const auto actual = statistics::standard_deviation_unavailable_sentinel<nvbench::float64_t>();
+    ASSERT(std::isinf(actual));
+  }
+
+  {
+    const auto actual = statistics::stdev_noise_or_sentinel(nvbench::float64_t{0.25});
+    ASSERT(is_close(actual, 0.25));
+  }
+
+  {
+    const auto actual = statistics::stdev_noise_or_sentinel(std::nullopt);
+    ASSERT(actual == statistics::standard_deviation_unavailable_sentinel<nvbench::float64_t>());
+  }
+}
+
 void test_relative_interquartile_range()
 {
   {
@@ -677,6 +695,7 @@ int main()
   test_compute_relative_dispersion_invalid_inputs();
   test_relative_interquartile_range();
   test_compute_standard_deviation_noise();
+  test_stdev_noise_or_sentinel();
   test_compute_robust_noise();
   test_lin_regression();
   test_r2();
