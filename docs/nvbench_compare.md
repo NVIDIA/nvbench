@@ -173,9 +173,14 @@ When JSON output is generated with the NVBench `--jsonbin` option,
 sample-time and sample-frequency binary data are loaded lazily and used for
 bulk-data confirmation.
 
-Missing or empty bulk data are treated as unavailable. Bulk files that are
-present and non-empty but fail lazy loading or validation are treated as
-unusable evidence and reported as warnings.
+Missing, empty, or unresolved bulk files are treated as unavailable. In that
+case, clear-gap decisions may fall back to summary `sm_clock_rate/mean`
+confirmation when those summaries are available.
+
+Bulk files that are resolved as present and non-empty, but fail lazy loading or
+validation, are treated as unusable evidence. In that case, `nvbench-compare`
+does not fall back to summary clock-rate confirmation for that row and reports
+the comparison as `AMBG`.
 
 ## Bulk Debug Python Output
 
