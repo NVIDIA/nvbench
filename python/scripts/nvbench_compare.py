@@ -828,6 +828,8 @@ def extract_summary_value(summary):
 def normalize_float_value(value, *, null_value=None):
     if value is None:
         return null_value
+    if isinstance(value, bool):
+        return null_value
     return float(value)
 
 

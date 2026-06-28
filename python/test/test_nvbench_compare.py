@@ -132,6 +132,15 @@ def make_reader_for_roots(ref_root, cmp_root):
     return read_file
 
 
+def test_normalize_float_value_accepts_nvbench_numeric_strings(nvbench_compare):
+    assert nvbench_compare.normalize_float_value("1.25") == pytest.approx(1.25)
+
+
+def test_normalize_float_value_rejects_bool(nvbench_compare):
+    assert nvbench_compare.normalize_float_value(True) is None
+    assert nvbench_compare.normalize_float_value(False, null_value=math.inf) == math.inf
+
+
 def capture_tabulate_calls(monkeypatch, nvbench_compare):
     calls = []
 
@@ -684,6 +693,30 @@ def test_format_bulk_debug_python_handles_nonfinite_values(nvbench_compare):
     assert math.isnan(row["reference_time"])
     assert row["compare_time"] == math.inf
     assert row["fractional_difference"] == -math.inf
+
+
+def test_format_bulk_debug_python_escapes_filenames(nvbench_compare):
+    filename = "dir/quoted'file\\name\nsamples.bin"
+    script = nvbench_compare.format_bulk_debug_python(
+        [
+            {
+                "reference_sample_filename": filename,
+                "reference_sample_count": 0,
+                "reference_frequency_filename": None,
+                "reference_frequency_count": None,
+                "compare_sample_filename": None,
+                "compare_sample_count": None,
+                "compare_frequency_filename": None,
+                "compare_frequency_count": None,
+            }
+        ]
+    )
+    namespace = {}
+
+    exec(script, namespace)
+
+    row = namespace["bulk_rows"][0]
+    assert row["reference_sample_filename"] == filename
 
 
 def test_gpu_timing_data_parses_quartiles_and_sm_clock_rate_mean(nvbench_compare):
@@ -1781,12 +1814,31 @@ def test_compare_benches_marks_unavailable_noise_undecided(
 def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     plot_calls = []
+    fill_between_calls = []
+    xscale_calls = []
+    yscale_calls = []
 
     def fake_plot(x, y, shape, *args, **kwargs):
         plot_calls.append({"x": x, "y": y, "shape": shape, "label": kwargs["label"]})
         return [types.SimpleNamespace(get_color=lambda: "black")]
 
+    def fake_fill_between(x, bottom, top, *args, **kwargs):
+        fill_between_calls.append({"x": x, "bottom": bottom, "top": top})
+
     monkeypatch.setattr(sys.modules["matplotlib.pyplot"], "plot", fake_plot)
+    monkeypatch.setattr(
+        sys.modules["matplotlib.pyplot"], "fill_between", fake_fill_between
+    )
+    monkeypatch.setattr(
+        sys.modules["matplotlib.pyplot"],
+        "xscale",
+        lambda scale: xscale_calls.append(scale),
+    )
+    monkeypatch.setattr(
+        sys.modules["matplotlib.pyplot"],
+        "yscale",
+        lambda scale: yscale_calls.append(scale),
+    )
     monkeypatch.setattr(
         nvbench_compare, "plot_comparison_entries", lambda *args, **kwargs: None
     )
@@ -1795,6 +1847,7 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
         make_benchmark(
             [
                 make_state(nvbench_compare, "with_axis", axis_value=1),
+                make_state(nvbench_compare, "with_axis", axis_value=2),
                 make_state(nvbench_compare, "without_axis"),
             ]
         )
@@ -1803,6 +1856,7 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
         make_benchmark(
             [
                 make_state(nvbench_compare, "with_axis", axis_value=1),
+                make_state(nvbench_compare, "with_axis", axis_value=2),
                 make_state(nvbench_compare, "without_axis"),
             ]
         )
@@ -1820,14 +1874,17 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
         no_color=True,
     )
 
-    assert run_data.stats.config_count == 2
+    assert run_data.stats.config_count == 3
     assert run_data.stats.pass_count == 0
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 2
+    assert run_data.stats.undecided_count == 3
     assert run_data.stats.unknown_count == 0
-    assert [call["x"] for call in plot_calls] == [[1.0], [1.0]]
+    assert xscale_calls == ["log"]
+    assert yscale_calls == ["log"]
+    assert [call["x"] for call in plot_calls] == [[1.0, 2.0], [1.0, 2.0]]
     assert [call["shape"] for call in plot_calls] == ["-", "--"]
+    assert [call["x"] for call in fill_between_calls] == [[1.0, 2.0], [1.0, 2.0]]
 
 
 def test_plot_along_rejects_non_numeric_axis_values(monkeypatch, nvbench_compare):
