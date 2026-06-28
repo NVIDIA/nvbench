@@ -66,16 +66,20 @@ void assert_quartiles_nan(statistics::quartiles_t<T> actual)
 
 statistics::quartiles_t<nvbench::float64_t> expected_rank_quartiles(std::size_t num_samples)
 {
-  return {static_cast<nvbench::float64_t>(statistics::percentile_rank(25, num_samples)),
-          static_cast<nvbench::float64_t>(statistics::percentile_rank(50, num_samples)),
-          static_cast<nvbench::float64_t>(statistics::percentile_rank(75, num_samples))};
+  const auto expected_value = [num_samples](int percentile) {
+    const auto q = static_cast<nvbench::float64_t>(percentile) / 100.0;
+    return std::round(q * static_cast<nvbench::float64_t>(num_samples - 1));
+  };
+  return {expected_value(25), expected_value(50), expected_value(75)};
 }
 
 statistics::quartiles_t<nvbench::float64_t>
 expected_duplicate_heavy_quartiles(std::size_t num_samples)
 {
   const auto value_at_percentile = [num_samples](int percentile) {
-    const auto rank = statistics::percentile_rank(percentile, num_samples);
+    const auto q = static_cast<nvbench::float64_t>(percentile) / 100.0;
+    const auto rank =
+      static_cast<std::size_t>(std::round(q * static_cast<nvbench::float64_t>(num_samples - 1)));
     return static_cast<nvbench::float64_t>((4 * rank) / num_samples);
   };
   return {value_at_percentile(25), value_at_percentile(50), value_at_percentile(75)};

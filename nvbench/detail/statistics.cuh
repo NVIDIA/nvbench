@@ -271,7 +271,8 @@ std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> &
  * Computes exact percentile values using rank round(p / 100 * (S - 1)).
  *
  * The input range is copied before sorting, so const iterators are supported.
- * If the input has fewer than 1 sample, all percentiles are returned as quiet NaNs.
+ * If the input has fewer than 1 sample or contains a NaN, all percentiles are returned as quiet
+ * NaNs.
  */
 template <typename Iter,
           std::size_t N,

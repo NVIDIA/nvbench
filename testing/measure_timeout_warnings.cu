@@ -47,22 +47,23 @@ protected:
   }
 };
 
-void check_noise_warning(std::optional<nvbench::float64_t> stdev_noise,
-                         const std::string &expected_message)
+void check_noise_warning(
+  std::optional<nvbench::float64_t> stdev_noise,
+  const std::string &expected_message,
+  nvbench::int64_t total_samples = nvbench::detail::statistics::min_samples_for_noise_estimate)
 {
   std::ostringstream stream;
   recording_printer printer{stream};
   nvbench::criterion_params params;
   params.set_float64("max-noise", 0.01);
 
-  nvbench::detail::log_measurement_timeout_warnings(
-    printer,
-    params,
-    1.0,
-    nvbench::detail::statistics::min_samples_for_noise_estimate,
-    1,
-    1.0,
-    stdev_noise);
+  nvbench::detail::log_measurement_timeout_warnings(printer,
+                                                    params,
+                                                    1.0,
+                                                    total_samples,
+                                                    1,
+                                                    1.0,
+                                                    stdev_noise);
 
   ASSERT(printer.logs.size() == 1);
   ASSERT(printer.logs[0].first == nvbench::log_level::warn);
@@ -71,6 +72,9 @@ void check_noise_warning(std::optional<nvbench::float64_t> stdev_noise,
 
 void test_non_finite_or_invalid_stdev_noise_timeout_warning()
 {
+  check_noise_warning(std::nullopt,
+                      "before accumulating enough samples to estimate noise",
+                      nvbench::detail::statistics::min_samples_for_noise_estimate - 1);
   check_noise_warning(std::nullopt, "unable to estimate noise");
   check_noise_warning(std::numeric_limits<nvbench::float64_t>::quiet_NaN(),
                       "unable to estimate noise");
