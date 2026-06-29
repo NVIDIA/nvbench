@@ -197,17 +197,23 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
         nvbench_compare, "require_tooling_dependency", fake_require_tooling_dependency
     )
 
+    nvbench_compare.load_nvbench_compare_tooling(load_color=False)
+
+    assert nvbench_compare.np is not None
+    assert nvbench_compare.Fore is None
+    assert attempts == [("numpy", "nvbench-compare")]
+
+    attempts.clear()
+
     with pytest.raises(nvbench_compare.MissingToolingDependencyError):
         nvbench_compare.load_nvbench_compare_tooling()
 
-    assert nvbench_compare.np is not None
     assert nvbench_compare.Fore is None
 
     nvbench_compare.load_nvbench_compare_tooling()
 
     assert nvbench_compare.Fore is not None
     assert attempts == [
-        ("numpy", "nvbench-compare"),
         ("colorama", "nvbench-compare"),
         ("colorama", "nvbench-compare"),
     ]
@@ -2738,6 +2744,39 @@ def test_main_validates_device_filters_before_loading_tooling(
 
     assert nvbench_compare.main() == 1
     assert "--reference-devices" in capsys.readouterr().out
+
+
+def test_main_no_color_does_not_require_colorama(monkeypatch, nvbench_compare):
+    calls = []
+
+    def fake_load_tooling(*, load_color=True):
+        calls.append(load_color)
+        nvbench_compare.np = np
+        if load_color:
+            raise AssertionError("color tooling should not load")
+
+    monkeypatch.setattr(
+        nvbench_compare, "load_nvbench_compare_tooling", fake_load_tooling
+    )
+    monkeypatch.setattr(
+        nvbench_compare.reader,
+        "read_file",
+        make_reader_for_roots(
+            {"devices": [], "benchmarks": []},
+            {"devices": [], "benchmarks": []},
+        ),
+    )
+    monkeypatch.setattr(
+        nvbench_compare, "compare_benches", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["nvbench_compare", "--no-color", "ref.json", "cmp.json"],
+    )
+
+    assert nvbench_compare.main() == 0
+    assert calls == [False]
 
 
 def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):

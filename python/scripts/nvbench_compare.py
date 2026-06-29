@@ -43,7 +43,7 @@ np: Any = None
 Fore: Any = None
 
 
-def load_nvbench_compare_tooling() -> None:
+def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
     global Fore, np
 
     if np is None:
@@ -51,7 +51,7 @@ def load_nvbench_compare_tooling() -> None:
             ToolingDependency("numpy", "numpy", "bulk timing analysis"),
             tool_name="nvbench-compare",
         )
-    if Fore is None:
+    if load_color and Fore is None:
         colorama = require_tooling_dependency(
             ToolingDependency("colorama", "colorama", "colored status output"),
             tool_name="nvbench-compare",
@@ -3366,7 +3366,7 @@ def main() -> int:
         return 1
 
     try:
-        load_nvbench_compare_tooling()
+        load_nvbench_compare_tooling(load_color=not args.no_color)
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -3432,7 +3432,10 @@ def main() -> int:
                 print(str(exc), file=sys.stderr)
                 return 1
 
-            warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
+            if args.no_color:
+                warn_fore = ""
+            else:
+                warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
             print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
             print(": ", end="")
