@@ -198,6 +198,9 @@ def make_gpu_timing_data(
     sample_values=None,
     frequency_values=None,
 ):
+    if stdev is None:
+        stdev = nvbench_compare.derive_absolute_dispersion(stdev_relative, mean)
+
     return nvbench_compare.GpuTimingData(
         minimum=minimum,
         maximum=maximum,
@@ -287,10 +290,10 @@ def test_compare_benches_accepts_matching_duplicate_state_counts(
     )
 
     assert run_data.stats.config_count == 3
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 3
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 3
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
 
 
@@ -371,10 +374,10 @@ def test_compare_benches_matches_duplicate_states_after_axis_filter(
     )
 
     assert run_data.stats.config_count == 1
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 1
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 1
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
 
 
@@ -485,10 +488,10 @@ def test_compare_benches_counts_non_finite_centers_as_unknown(
     )
 
     assert run_data.stats.config_count == 3
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 1
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 1
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 2
 
 
@@ -737,6 +740,18 @@ def test_gpu_timing_data_parses_quartiles_and_sm_clock_rate_mean(nvbench_compare
     assert timing.frequencies is None
 
 
+def test_gpu_timing_data_derives_stdev_from_relative_stdev(nvbench_compare):
+    timing = nvbench_compare.extract_gpu_timing_data(
+        [
+            make_summary(nvbench_compare, "GPU_TIME_MEAN_TAG", "2.0"),
+            make_summary(nvbench_compare, "GPU_TIME_STDEV_RELATIVE_TAG", "0.25"),
+        ],
+    )
+
+    assert timing.stdev == pytest.approx(0.5)
+    assert timing.stdev_relative == pytest.approx(0.25)
+
+
 def test_gpu_timing_data_accepts_legacy_ir_tags(nvbench_compare):
     timing = nvbench_compare.extract_gpu_timing_data(
         [
@@ -832,6 +847,17 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert undecided.frac_diff == pytest.approx(0.03)
     assert undecided.max_noise == pytest.approx(0.05)
     assert undecided.reason.code == "noise_too_high"
+
+    legacy_same = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(nvbench_compare, mean=1.0, stdev_relative=0.005),
+        make_gpu_timing_data(nvbench_compare, mean=1.001, stdev_relative=0.005),
+    )
+    assert legacy_same is not None
+    assert legacy_same.status == nvbench_compare.ComparisonStatus.SAME
+    assert legacy_same.reason.code == "same_without_clock_rate"
+    assert legacy_same.ref_interval is not None
+    assert legacy_same.ref_interval.lower == pytest.approx(0.995)
+    assert legacy_same.ref_interval.upper == pytest.approx(1.005)
 
     partial_robust = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(
@@ -1906,10 +1932,10 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
     )
 
     assert run_data.stats.config_count == 3
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 3
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 3
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
     assert xscale_calls == ["log"]
     assert yscale_calls == ["log"]
@@ -2105,10 +2131,10 @@ def test_compare_benches_pairs_filtered_devices_by_position(
     )
 
     assert run_data.stats.config_count == 1
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 1
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 1
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
 
 
@@ -2164,10 +2190,10 @@ def test_axis_filter_applies_to_most_recent_benchmark(monkeypatch, nvbench_compa
     )
 
     assert run_data.stats.config_count == 3
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 3
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 3
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
 
 
@@ -2225,10 +2251,10 @@ def test_global_axis_filter_does_not_select_unmatched_benchmark(
     )
 
     assert run_data.stats.config_count == 1
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 1
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 1
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
 
 
@@ -2286,10 +2312,10 @@ def test_global_axis_filter_applies_to_each_selected_benchmark(
     )
 
     assert run_data.stats.config_count == 2
-    assert run_data.stats.pass_count == 0
+    assert run_data.stats.pass_count == 2
     assert run_data.stats.improvement_count == 0
     assert run_data.stats.regression_count == 0
-    assert run_data.stats.undecided_count == 2
+    assert run_data.stats.undecided_count == 0
     assert run_data.stats.unknown_count == 0
 
 

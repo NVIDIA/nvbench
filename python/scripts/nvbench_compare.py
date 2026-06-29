@@ -990,14 +990,20 @@ def extract_gpu_timing_data(summaries, json_dir=None, float32_reader=read_float3
         sample_source = None
         frequency_source = None
 
+    mean = extract_summary_float(summaries, GPU_TIME_MEAN_TAG)
+    stdev = extract_summary_float(summaries, GPU_TIME_STDEV_TAG, null_value=math.inf)
+    stdev_relative = extract_summary_float(
+        summaries, GPU_TIME_STDEV_RELATIVE_TAG, null_value=math.inf
+    )
+    if stdev is None:
+        stdev = derive_absolute_dispersion(stdev_relative, mean)
+
     return GpuTimingData(
         minimum=extract_summary_float(summaries, GPU_TIME_MIN_TAG),
         maximum=extract_summary_float(summaries, GPU_TIME_MAX_TAG),
-        mean=extract_summary_float(summaries, GPU_TIME_MEAN_TAG),
-        stdev=extract_summary_float(summaries, GPU_TIME_STDEV_TAG, null_value=math.inf),
-        stdev_relative=extract_summary_float(
-            summaries, GPU_TIME_STDEV_RELATIVE_TAG, null_value=math.inf
-        ),
+        mean=mean,
+        stdev=stdev,
+        stdev_relative=stdev_relative,
         first_quartile=extract_summary_float(summaries, GPU_TIME_Q1_TAG),
         median=extract_summary_float(summaries, GPU_TIME_MEDIAN_TAG),
         third_quartile=extract_summary_float(summaries, GPU_TIME_Q3_TAG),
@@ -1192,6 +1198,12 @@ def is_nonnegative_finite(value):
     return value is not None and math.isfinite(value) and value >= 0.0
 
 
+def derive_absolute_dispersion(relative_dispersion, center):
+    if is_nonnegative_finite(relative_dispersion) and is_positive_finite(center):
+        return relative_dispersion * center
+    return None
+
+
 def parse_plot_axis_value(axis_name, axis_value):
     try:
         value = float(axis_value)
@@ -1240,21 +1252,17 @@ def compute_robust_summary_interval(timing):
 
 
 def compute_mean_summary_interval(timing):
-    if (
-        is_positive_finite(timing.minimum)
-        and is_positive_finite(timing.maximum)
-        and is_positive_finite(timing.mean)
-        and is_nonnegative_finite(timing.stdev)
-        and timing.minimum <= timing.mean
-        and timing.mean <= timing.maximum
-    ):
-        return make_timing_interval(
-            lower=max(timing.minimum, timing.mean - timing.stdev),
-            upper=min(timing.maximum, timing.mean + timing.stdev),
-            center=timing.mean,
-        )
+    if not is_positive_finite(timing.mean) or not is_nonnegative_finite(timing.stdev):
+        return None
 
-    return None
+    lower = max(timing.mean - timing.stdev, timing.mean * 0.001)
+    upper = timing.mean + timing.stdev
+    if is_positive_finite(timing.minimum):
+        lower = max(lower, timing.minimum)
+    if is_positive_finite(timing.maximum):
+        upper = min(upper, timing.maximum)
+
+    return make_timing_interval(lower=lower, upper=upper, center=timing.mean)
 
 
 def compute_timing_interval(timing):
