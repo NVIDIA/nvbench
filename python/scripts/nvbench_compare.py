@@ -16,7 +16,17 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import cached_property
-from typing import Any, BinaryIO, Callable, Protocol
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Protocol, TypeAlias
+
+if TYPE_CHECKING:
+    import numpy as _np
+    from numpy.typing import NDArray
+
+    Float32Array: TypeAlias = NDArray[_np.float32]
+    NumpyArray: TypeAlias = NDArray[Any]
+else:
+    Float32Array: TypeAlias = Any
+    NumpyArray: TypeAlias = Any
 
 if __package__:
     from .nvbench_json import reader
@@ -460,7 +470,7 @@ class Float32BinarySource:
     reader: Float32Reader = read_float32_file
 
     @cached_property
-    def values(self) -> np.ndarray | None:
+    def values(self) -> Float32Array | None:
         return read_float32_binary(
             self.count, self.filename, self.json_dir, self.description, self.reader
         )
@@ -496,13 +506,13 @@ class GpuTimingData:
     frequency_source: Float32BinarySource | None = None
 
     @cached_property
-    def samples(self) -> np.ndarray | None:
+    def samples(self) -> Float32Array | None:
         if self.sample_source is None:
             return None
         return self.sample_source.values
 
     @cached_property
-    def frequencies(self) -> np.ndarray | None:
+    def frequencies(self) -> Float32Array | None:
         if self.frequency_source is None:
             return None
         return self.frequency_source.values
@@ -1525,7 +1535,7 @@ def format_support_filter_info(filter_info):
     return "off(disabled)"
 
 
-def sorted_unique_counts(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def sorted_unique_counts(values: Float32Array) -> tuple[NumpyArray, NumpyArray]:
     unique_values, unique_counts = np.unique(values, return_counts=True)
     # unique is not guaranteed to return sorted values
     # make sure to order them
@@ -1534,7 +1544,7 @@ def sorted_unique_counts(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def compute_nearest_neighbor_coverages(
-    ref_values: np.ndarray, cmp_values: np.ndarray, thresholds: ComparisonThresholds
+    ref_values: Float32Array, cmp_values: Float32Array, thresholds: ComparisonThresholds
 ) -> dict[str, Any] | None:
     ref_unique, ref_counts = sorted_unique_counts(ref_values)
     cmp_unique, cmp_counts = sorted_unique_counts(cmp_values)
