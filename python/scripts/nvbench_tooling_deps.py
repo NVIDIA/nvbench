@@ -27,7 +27,10 @@ def require_tooling_dependency(
 ) -> ModuleType:
     try:
         return importlib.import_module(dependency.import_name)
-    except ImportError as exc:
+    except ModuleNotFoundError as exc:
+        top_level_package = dependency.import_name.partition(".")[0]
+        if exc.name != top_level_package:
+            raise
         raise MissingToolingDependencyError(
             f"{tool_name} requires {dependency.package_name!r} for "
             f"{dependency.purpose}.\n\n"

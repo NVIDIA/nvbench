@@ -60,3 +60,44 @@ def test_require_tooling_dependency_reports_install_recipe(tooling_deps):
     assert "testing graceful failures" in message
     assert "python -m pip install 'cuda-bench[tools]'" in message
     assert missing_name in message
+
+
+def test_require_tooling_dependency_reraises_broken_package_import_error(
+    tmp_path, monkeypatch, tooling_deps
+):
+    package_dir = tmp_path / "nvbench_broken_tooling_dependency_for_test"
+    package_dir.mkdir()
+    (package_dir / "__init__.py").write_text(
+        "raise ImportError('broken package')\n", encoding="utf-8"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    with pytest.raises(ImportError, match="broken package"):
+        tooling_deps.require_tooling_dependency(
+            tooling_deps.ToolingDependency(
+                package_dir.name, package_dir.name, "testing broken imports"
+            ),
+            tool_name="test-tool",
+        )
+
+
+def test_require_tooling_dependency_reraises_transitive_module_not_found(
+    tmp_path, monkeypatch, tooling_deps
+):
+    package_dir = tmp_path / "nvbench_transitive_missing_dependency_for_test"
+    package_dir.mkdir()
+    (package_dir / "__init__.py").write_text(
+        "import nvbench_missing_transitive_dependency_for_test\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    with pytest.raises(ModuleNotFoundError) as exc_info:
+        tooling_deps.require_tooling_dependency(
+            tooling_deps.ToolingDependency(
+                package_dir.name, package_dir.name, "testing transitive imports"
+            ),
+            tool_name="test-tool",
+        )
+
+    assert exc_info.value.name == "nvbench_missing_transitive_dependency_for_test"
