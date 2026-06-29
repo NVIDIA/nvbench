@@ -46,21 +46,15 @@ test-cu13 = ["cuda-bench[cu13]", "pytest", "cupy-cuda13x", "numba"]
 
 # Generic test dependencies (defaults to CUDA 12)
 test = ["pytest", "cupy-cuda12x", "numba"]
-tools = [
-  "colorama",
-  "jsondiff",
-  "matplotlib",
-  "numpy",
-  "pandas",
-  "seaborn",
-  "tabulate",
-]
+compare = ["colorama", "jsondiff", "numpy", "tabulate"]
+plot = ["matplotlib", "numpy", "pandas", "seaborn"]
+tools = ["cuda-bench[compare,plot]"]
 
 [project.scripts]
-nvbench-compare = "scripts.nvbench_compare:main"
-nvbench-histogram = "scripts.nvbench_histogram:main"
-nvbench-json-summary = "scripts.nvbench_json_summary:main"
-nvbench-walltime = "scripts.nvbench_walltime:main"
+nvbench-compare = "cuda.bench.scripts.nvbench_compare:main"
+nvbench-histogram = "cuda.bench.scripts.nvbench_histogram:main"
+nvbench-json-summary = "cuda.bench.scripts.nvbench_json_summary:main"
+nvbench-walltime = "cuda.bench.scripts.nvbench_walltime:main"
 
 [project.urls]
 Homepage = "https://github.com/NVIDIA/nvbench"
@@ -94,4 +88,4 @@ fallback_version = "0.0.0"
 "cuda" = "cuda"
 "cuda/bench" = "cuda/bench"
 "cuda/bench/results" = "cuda/bench/results"
-"scripts" = "scripts"
+"cuda/bench/scripts" = "scripts"
