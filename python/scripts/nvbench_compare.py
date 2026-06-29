@@ -1332,8 +1332,8 @@ def compute_timing_interval_from_samples(samples):
 
 def percentile_rank(percentile: int, sample_count: int) -> int:
     clamped_percentile = min(max(percentile, 0), 100)
-    rank = (clamped_percentile / 100.0) * (sample_count - 1)
-    return math.floor(rank + 0.5)
+    # Use integer round-half-up arithmetic to match C++ std::round behavior.
+    return (clamped_percentile * (sample_count - 1) + 50) // 100
 
 
 def compute_robust_timing_input_from_samples(samples):
