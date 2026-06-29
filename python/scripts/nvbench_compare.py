@@ -3350,12 +3350,6 @@ def main() -> int:
         return 0
 
     try:
-        load_nvbench_compare_tooling()
-    except MissingToolingDependencyError as exc:
-        print(str(exc), file=sys.stderr)
-        return 1
-
-    try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
         reference_device_filter = parse_device_filter(
             args.reference_devices, "--reference-devices"
@@ -3369,6 +3363,12 @@ def main() -> int:
 
     if len(files_or_dirs) != 2:
         parser.print_help()
+        return 1
+
+    try:
+        load_nvbench_compare_tooling()
+    except MissingToolingDependencyError as exc:
+        print(str(exc), file=sys.stderr)
         return 1
 
     bulk_debug_output = (

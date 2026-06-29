@@ -2649,6 +2649,44 @@ def test_main_rejects_unknown_options(monkeypatch, nvbench_compare):
     assert exc_info.value.code == 2
 
 
+def test_main_validates_input_count_before_loading_tooling(
+    monkeypatch, capsys, nvbench_compare
+):
+    monkeypatch.setattr(
+        nvbench_compare,
+        "load_nvbench_compare_tooling",
+        lambda: (_ for _ in ()).throw(AssertionError("tooling should not load")),
+    )
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json"])
+
+    assert nvbench_compare.main() == 1
+    assert "usage:" in capsys.readouterr().out
+
+
+def test_main_validates_device_filters_before_loading_tooling(
+    monkeypatch, capsys, nvbench_compare
+):
+    monkeypatch.setattr(
+        nvbench_compare,
+        "load_nvbench_compare_tooling",
+        lambda: (_ for _ in ()).throw(AssertionError("tooling should not load")),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--reference-devices",
+            "-1",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 1
+    assert "--reference-devices" in capsys.readouterr().out
+
+
 def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):
     def read_file(_):
         raise OSError("cannot open file")
