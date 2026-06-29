@@ -1322,7 +1322,8 @@ def compute_timing_interval_from_samples(samples):
 
 def percentile_rank(percentile: int, sample_count: int) -> int:
     clamped_percentile = min(max(percentile, 0), 100)
-    return round((clamped_percentile / 100.0) * (sample_count - 1))
+    rank = (clamped_percentile / 100.0) * (sample_count - 1)
+    return math.floor(rank + 0.5)
 
 
 def compute_robust_timing_input_from_samples(samples):

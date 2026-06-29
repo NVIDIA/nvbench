@@ -850,6 +850,19 @@ def test_gpu_timing_data_accepts_legacy_ir_tags(nvbench_compare):
     assert timing.interquartile_range_relative == pytest.approx(0.25)
 
 
+def test_sample_percentile_rank_matches_cpp_rounding(nvbench_compare):
+    assert nvbench_compare.percentile_rank(50, 2) == 1
+    assert nvbench_compare.percentile_rank(25, 3) == 1
+    assert nvbench_compare.percentile_rank(50, 6) == 3
+
+    timing_input = nvbench_compare.compute_robust_timing_input_from_samples([1.0, 2.0])
+
+    assert timing_input is not None
+    estimate, interval = timing_input
+    assert estimate.center == pytest.approx(2.0)
+    assert interval.center == pytest.approx(2.0)
+
+
 def test_gpu_timing_data_treats_mismatched_sample_and_frequency_counts_as_unavailable(
     tmp_path, nvbench_compare
 ):
