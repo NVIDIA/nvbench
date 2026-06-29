@@ -1240,12 +1240,16 @@ def compute_relative_dispersion(dispersion, center):
     return dispersion / center
 
 
+def is_finite(value):
+    return value is not None and math.isfinite(value)
+
+
 def is_positive_finite(value):
-    return value is not None and value > 0.0 and math.isfinite(value)
+    return is_finite(value) and value > 0.0
 
 
 def is_nonnegative_finite(value):
-    return value is not None and math.isfinite(value) and value >= 0.0
+    return is_finite(value) and value >= 0.0
 
 
 def derive_absolute_dispersion(relative_dispersion, center):
@@ -1305,6 +1309,7 @@ def compute_mean_summary_interval(timing):
     if not is_positive_finite(timing.mean) or not is_nonnegative_finite(timing.stdev):
         return None
 
+    # Keep the lower bound positive so later ratio/log-distance checks are defined.
     lower = max(timing.mean - timing.stdev, timing.mean * 0.001)
     upper = timing.mean + timing.stdev
     if is_positive_finite(timing.minimum):
@@ -3332,7 +3337,7 @@ def main() -> int:
         dest="filter_actions",
         action=OrderedBenchmarkFilterAction,
         help=(
-            "Filter on axis value, e.g. -a Elements{io}[pow2]=20. Applies to the "
+            "Filter on axis value, e.g. -a 'Elements{io}[pow2]=20'. Applies to the "
             "most recent --benchmark, or all benchmarks if specified before any "
             "--benchmark arguments."
         ),
