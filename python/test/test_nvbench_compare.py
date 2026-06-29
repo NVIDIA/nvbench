@@ -3,6 +3,7 @@
 
 import importlib.util
 import math
+import shutil
 import sys
 import types
 from dataclasses import replace
@@ -77,6 +78,35 @@ def nvbench_compare(monkeypatch):
     # the tooling dependencies that main() normally loads after parsing arguments.
     module.load_nvbench_compare_tooling()
     return module
+
+
+def test_nvbench_compare_imports_from_packaged_script_path(tmp_path, monkeypatch):
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    package_dir = tmp_path / "cuda" / "bench" / "scripts"
+    package_dir.mkdir(parents=True)
+    for package in [tmp_path / "cuda", tmp_path / "cuda" / "bench", package_dir]:
+        (package / "__init__.py").write_text("", encoding="utf-8")
+    for filename in [
+        "nvbench_compare.py",
+        "nvbench_tooling_deps.py",
+    ]:
+        shutil.copy(scripts_dir / filename, package_dir / filename)
+    shutil.copytree(scripts_dir / "nvbench_json", package_dir / "nvbench_json")
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    for module_name in [
+        "cuda",
+        "cuda.bench",
+        "cuda.bench.scripts",
+        "cuda.bench.scripts.nvbench_compare",
+        "cuda.bench.scripts.nvbench_json",
+        "cuda.bench.scripts.nvbench_tooling_deps",
+    ]:
+        monkeypatch.delitem(sys.modules, module_name, raising=False)
+
+    module = importlib.import_module("cuda.bench.scripts.nvbench_compare")
+
+    assert module.GPU_TIME_MEAN_TAG == "nv/cold/time/gpu/mean"
 
 
 def make_state(
@@ -204,6 +234,10 @@ def find_tabulate_call(calls, expected_header_suffix):
         for call in calls
         if call["headers"][-len(expected_header_suffix) :] == expected_header_suffix
     )
+
+
+def format_test_percent(value):
+    return f"{value * 100.0:0.1f}%"
 
 
 INTERVAL_DISPLAY_HEADERS = ["Ref", "Cmp", "Change", "Status"]
@@ -1594,16 +1628,17 @@ def test_compare_gpu_timings_keeps_bulk_mismatch_undecided(nvbench_compare):
     assert comparison is not None
     assert comparison.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert comparison.reason.code == "bulk_time_support_mismatch"
-    sample_threshold = (
-        nvbench_compare.get_default_thresholds().bulk_same_sample_coverage * 100.0
-    )
+    thresholds = nvbench_compare.get_default_thresholds()
     assert (
-        f"sample: min(ref=0.0%, cmp=0.0%) >= {sample_threshold:0.1f}%"
+        "sample: min(ref=0.0%, cmp=0.0%) >= "
+        f"{format_test_percent(thresholds.bulk_same_sample_coverage)}"
         in comparison.reason.message
     )
-    assert "support: min(ref=0.0%, cmp=0.0%) >= 80.0%" in comparison.reason.message
-    assert f"{sample_threshold:0.1f}%" in comparison.reason.message
-    assert "80.0%" in comparison.reason.message
+    assert (
+        "support: min(ref=0.0%, cmp=0.0%) >= "
+        f"{format_test_percent(thresholds.bulk_same_support_coverage)}"
+        in comparison.reason.message
+    )
 
 
 def test_compare_gpu_timings_requires_bulk_cycle_coverage(nvbench_compare):
@@ -1642,8 +1677,17 @@ def test_bulk_same_reports_sample_weight_coverage_mismatch(nvbench_compare):
 
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert decision.reason.code == "bulk_time_support_mismatch"
-    assert "sample: min(ref=3.8%, cmp=100.0%) >= 97.0%" in decision.reason.message
-    assert "support: min(ref=80.0%, cmp=100.0%) >= 80.0%" in decision.reason.message
+    thresholds = nvbench_compare.get_default_thresholds()
+    assert (
+        "sample: min(ref=3.8%, cmp=100.0%) >= "
+        f"{format_test_percent(thresholds.bulk_same_sample_coverage)}"
+        in decision.reason.message
+    )
+    assert (
+        "support: min(ref=80.0%, cmp=100.0%) >= "
+        f"{format_test_percent(thresholds.bulk_same_support_coverage)}"
+        in decision.reason.message
+    )
 
 
 def test_bulk_same_filters_rare_values_from_support_coverage(nvbench_compare):
@@ -1677,8 +1721,17 @@ def test_bulk_same_reports_unique_support_coverage_mismatch(nvbench_compare):
 
     assert decision.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert decision.reason.code == "bulk_time_support_mismatch"
-    assert "sample: min(ref=99.0%, cmp=100.0%) >= 97.0%" in decision.reason.message
-    assert "support: min(ref=9.1%, cmp=100.0%) >= 80.0%" in decision.reason.message
+    thresholds = nvbench_compare.get_default_thresholds()
+    assert (
+        "sample: min(ref=99.0%, cmp=100.0%) >= "
+        f"{format_test_percent(thresholds.bulk_same_sample_coverage)}"
+        in decision.reason.message
+    )
+    assert (
+        "support: min(ref=9.1%, cmp=100.0%) >= "
+        f"{format_test_percent(thresholds.bulk_same_support_coverage)}"
+        in decision.reason.message
+    )
 
 
 def test_bulk_same_retains_full_support_when_all_values_are_unique(nvbench_compare):
