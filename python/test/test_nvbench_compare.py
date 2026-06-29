@@ -66,12 +66,16 @@ def nvbench_compare(monkeypatch):
     )
 
     module_path = Path(__file__).resolve().parents[1] / "scripts" / "nvbench_compare.py"
+    monkeypatch.syspath_prepend(str(module_path.parent))
     spec = importlib.util.spec_from_file_location("nvbench_compare", module_path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     monkeypatch.setitem(sys.modules, spec.name, module)
     spec.loader.exec_module(module)
+    # Tests call nvbench_compare internals directly, bypassing main(), so initialize
+    # the tooling dependencies that main() normally loads after parsing arguments.
+    module.load_nvbench_compare_tooling()
     return module
 
 
@@ -141,6 +145,44 @@ def test_normalize_float_value_rejects_bool(nvbench_compare):
     assert nvbench_compare.normalize_float_value(False, null_value=math.inf) == math.inf
 
 
+def test_compare_tooling_loader_recovers_after_partial_failure(
+    monkeypatch, nvbench_compare
+):
+    attempts = []
+    nvbench_compare.np = None
+    nvbench_compare.Fore = None
+
+    def fake_require_tooling_dependency(dependency, *, tool_name):
+        attempts.append((dependency.import_name, tool_name))
+        if dependency.import_name == "numpy":
+            return types.SimpleNamespace()
+        if (
+            dependency.import_name == "colorama"
+            and attempts.count(("colorama", "nvbench-compare")) == 1
+        ):
+            raise nvbench_compare.MissingToolingDependencyError("missing colorama")
+        return types.SimpleNamespace(Fore=types.SimpleNamespace(RESET=""))
+
+    monkeypatch.setattr(
+        nvbench_compare, "require_tooling_dependency", fake_require_tooling_dependency
+    )
+
+    with pytest.raises(nvbench_compare.MissingToolingDependencyError):
+        nvbench_compare.load_nvbench_compare_tooling()
+
+    assert nvbench_compare.np is not None
+    assert nvbench_compare.Fore is None
+
+    nvbench_compare.load_nvbench_compare_tooling()
+
+    assert nvbench_compare.Fore is not None
+    assert attempts == [
+        ("numpy", "nvbench-compare"),
+        ("colorama", "nvbench-compare"),
+        ("colorama", "nvbench-compare"),
+    ]
+
+
 def capture_tabulate_calls(monkeypatch, nvbench_compare):
     calls = []
 
@@ -148,7 +190,11 @@ def capture_tabulate_calls(monkeypatch, nvbench_compare):
         calls.append({"rows": rows, "headers": headers})
         return ""
 
-    monkeypatch.setattr(nvbench_compare.tabulate, "tabulate", fake_tabulate)
+    monkeypatch.setattr(
+        nvbench_compare,
+        "load_tabulate_for_table_output",
+        lambda: (types.SimpleNamespace(tabulate=fake_tabulate), (0, 8, 10)),
+    )
     return calls
 
 
@@ -2056,9 +2102,11 @@ def test_main_warns_on_device_mismatch_with_explicit_device_filters(
         nvbench_compare.reader, "read_file", make_reader_for_roots(ref_root, cmp_root)
     )
     monkeypatch.setattr(
-        nvbench_compare.jsondiff,
-        "diff",
-        lambda *args, **kwargs: {"name": ["Reference GPU", "Compare GPU"]},
+        nvbench_compare,
+        "load_jsondiff_for_device_diff",
+        lambda: types.SimpleNamespace(
+            diff=lambda *args, **kwargs: {"name": ["Reference GPU", "Compare GPU"]}
+        ),
     )
     monkeypatch.setattr(
         nvbench_compare, "compare_benches", lambda *args, **kwargs: None

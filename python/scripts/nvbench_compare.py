@@ -3,6 +3,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+from __future__ import annotations
+
 import argparse
 import math
 import os
@@ -16,15 +18,20 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, BinaryIO, Callable, Protocol
 
-import jsondiff
-import numpy as np
-import tabulate
-from colorama import Fore
-
-try:
-    from nvbench_json import reader
-except ImportError:
-    from scripts.nvbench_json import reader
+if __package__:
+    from .nvbench_json import reader
+    from .nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+else:
+    from nvbench_json import reader  # type: ignore[no-redef]
+    from nvbench_tooling_deps import (  # type: ignore[no-redef]
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
 
 
 # Parse version string into tuple, "x.y.z" -> (x, y, z)
@@ -32,7 +39,40 @@ def version_tuple(v):
     return tuple(map(int, (v.split("."))))
 
 
-tabulate_version = version_tuple(tabulate.__version__)
+np: Any = None
+Fore: Any = None
+
+
+def load_nvbench_compare_tooling() -> None:
+    global Fore, np
+
+    if np is None:
+        np = require_tooling_dependency(
+            ToolingDependency("numpy", "numpy", "bulk timing analysis"),
+            tool_name="nvbench-compare",
+        )
+    if Fore is None:
+        colorama = require_tooling_dependency(
+            ToolingDependency("colorama", "colorama", "colored status output"),
+            tool_name="nvbench-compare",
+        )
+        Fore = colorama.Fore
+
+
+def load_tabulate_for_table_output() -> tuple[Any, tuple[int, ...]]:
+    tabulate_module = require_tooling_dependency(
+        ToolingDependency("tabulate", "tabulate", "table output"),
+        tool_name="nvbench-compare",
+    )
+    return tabulate_module, version_tuple(tabulate_module.__version__)
+
+
+def load_jsondiff_for_device_diff() -> Any:
+    return require_tooling_dependency(
+        ToolingDependency("jsondiff", "jsondiff", "device metadata diffs"),
+        tool_name="nvbench-compare",
+    )
+
 
 GPU_TIME_MIN_TAG = "nv/cold/time/gpu/min"
 GPU_TIME_MAX_TAG = "nv/cold/time/gpu/max"
@@ -801,7 +841,7 @@ class Emoji(str, Enum):
     NONE = ""
 
 
-def colorize(msg: str, fore: Fore, emoji: Emoji, no_color: bool) -> str:
+def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
     if no_color:
         prefix = ""
         if emoji_s := emoji.value:
@@ -2746,13 +2786,22 @@ def plot_comparison_entries(entries, title=None, dark=False):
         print("No comparison data to plot.")
         return 1
 
+    matplotlib = require_tooling_dependency(
+        ToolingDependency("matplotlib", "matplotlib", "plot rendering"),
+        tool_name="nvbench-compare",
+    )
     if not os.environ.get("DISPLAY"):
-        import matplotlib
-
         matplotlib.use("Agg")
 
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import PercentFormatter
+    plt = require_tooling_dependency(
+        ToolingDependency("matplotlib.pyplot", "matplotlib", "plot rendering"),
+        tool_name="nvbench-compare",
+    )
+    ticker = require_tooling_dependency(
+        ToolingDependency("matplotlib.ticker", "matplotlib", "plot axis formatting"),
+        tool_name="nvbench-compare",
+    )
+    PercentFormatter = ticker.PercentFormatter
 
     labels, values, statuses, bench_names = map(list, zip(*entries))
 
@@ -2836,8 +2885,16 @@ def compare_benches(
         comparison_thresholds = get_default_thresholds()
 
     if plot_along:
-        import matplotlib.pyplot as plt
-        import seaborn as sns
+        plt = require_tooling_dependency(
+            ToolingDependency(
+                "matplotlib.pyplot", "matplotlib", "per-axis plot rendering"
+            ),
+            tool_name="nvbench-compare",
+        )
+        sns = require_tooling_dependency(
+            ToolingDependency("seaborn", "seaborn", "per-axis plot styling"),
+            tool_name="nvbench-compare",
+        )
 
         sns.set_theme()
 
@@ -3074,6 +3131,7 @@ def compare_benches(
                     f"## [{ref_device['id']}] {ref_device['name']} vs. "
                     f"[{cmp_device['id']}] {cmp_device['name']}\n"
                 )
+            tabulate, tabulate_version = load_tabulate_for_table_output()
             # colalign and github format require tabulate 0.8.3
             if tabulate_version >= (0, 8, 3):
                 print(
@@ -3292,6 +3350,12 @@ def main() -> int:
         return 0
 
     try:
+        load_nvbench_compare_tooling()
+    except MissingToolingDependencyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
         reference_device_filter = parse_device_filter(
             args.reference_devices, "--reference-devices"
@@ -3362,6 +3426,12 @@ def main() -> int:
             return 1
 
         if selected_ref_devices != selected_cmp_devices:
+            try:
+                jsondiff = load_jsondiff_for_device_diff()
+            except MissingToolingDependencyError as exc:
+                print(str(exc), file=sys.stderr)
+                return 1
+
             warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
             print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
@@ -3404,6 +3474,9 @@ def main() -> int:
                 display=args.display,
                 bulk_debug_rows=bulk_debug_rows,
             )
+        except MissingToolingDependencyError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         except ValueError as exc:
             print(str(exc))
             return 1
