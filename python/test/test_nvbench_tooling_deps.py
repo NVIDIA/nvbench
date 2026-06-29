@@ -29,10 +29,17 @@ def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
     )
 
     monkeypatch.syspath_prepend(str(tmp_path))
-    sys.modules.pop("cuda.bench.scripts.nvbench_tooling_deps", None)
+    for module_name in [
+        "cuda",
+        "cuda.bench",
+        "cuda.bench.scripts",
+        "cuda.bench.scripts.nvbench_tooling_deps",
+    ]:
+        monkeypatch.delitem(sys.modules, module_name, raising=False)
 
     module = importlib.import_module("cuda.bench.scripts.nvbench_tooling_deps")
 
+    assert Path(module.__file__) == package_dir / "nvbench_tooling_deps.py"
     assert module.ToolingDependency("math", "math", "testing").extra == "tools"
 
 
