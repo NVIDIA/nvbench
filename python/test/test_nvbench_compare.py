@@ -1494,7 +1494,11 @@ def test_format_change_only_reports_fast_and_slow_rows(nvbench_compare):
     assert nvbench_compare.format_change(undecided) == ""
 
 
-def test_ambiguous_status_uses_shrug_marker(nvbench_compare):
+def test_ambiguous_status_uses_shrug_marker_without_colorama(
+    monkeypatch, nvbench_compare
+):
+    monkeypatch.setattr(nvbench_compare, "Fore", None)
+
     assert (
         nvbench_compare.colorize_comparison_status(
             nvbench_compare.ComparisonStatus.UNDECIDED, no_color=True

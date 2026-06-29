@@ -2767,14 +2767,23 @@ def is_usable_noise(noise):
 
 def colorize_comparison_status(status, no_color):
     if status == ComparisonStatus.UNKNOWN:
-        return colorize(status.value, Fore.YELLOW, Emoji.YELLOW, no_color)
-    if status == ComparisonStatus.UNDECIDED:
-        return colorize(status.value, Fore.LIGHTBLACK_EX, Emoji.SHRUG, no_color)
-    if status == ComparisonStatus.SAME:
-        return colorize(status.value, Fore.BLUE, Emoji.BLUE, no_color)
-    if status == ComparisonStatus.FAST:
-        return colorize(status.value, Fore.GREEN, Emoji.GREEN, no_color)
-    return colorize(status.value, Fore.RED, Emoji.RED, no_color)
+        fore_name = "YELLOW"
+        emoji = Emoji.YELLOW
+    elif status == ComparisonStatus.UNDECIDED:
+        fore_name = "LIGHTBLACK_EX"
+        emoji = Emoji.SHRUG
+    elif status == ComparisonStatus.SAME:
+        fore_name = "BLUE"
+        emoji = Emoji.BLUE
+    elif status == ComparisonStatus.FAST:
+        fore_name = "GREEN"
+        emoji = Emoji.GREEN
+    else:
+        fore_name = "RED"
+        emoji = Emoji.RED
+
+    fore = "" if no_color else getattr(Fore, fore_name)
+    return colorize(status.value, fore, emoji, no_color)
 
 
 def format_axis_values(axis_values, axes, axis_filters=None):

@@ -17,30 +17,86 @@ def tooling_deps(monkeypatch):
     return importlib.import_module("nvbench_tooling_deps")
 
 
-def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
+def make_packaged_scripts_tree(tmp_path: Path) -> Path:
     scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
     package_dir = tmp_path / "cuda" / "bench" / "scripts"
+    results_dir = tmp_path / "cuda" / "bench" / "results"
     package_dir.mkdir(parents=True)
-    for package in [tmp_path / "cuda", tmp_path / "cuda" / "bench", package_dir]:
+    results_dir.mkdir()
+    for package in [
+        tmp_path / "cuda",
+        tmp_path / "cuda" / "bench",
+        package_dir,
+        results_dir,
+    ]:
         (package / "__init__.py").write_text("", encoding="utf-8")
-    shutil.copy(
-        scripts_dir / "nvbench_tooling_deps.py",
-        package_dir / "nvbench_tooling_deps.py",
+    for filename in [
+        "nvbench_compare.py",
+        "nvbench_histogram.py",
+        "nvbench_json_summary.py",
+        "nvbench_tooling_deps.py",
+        "nvbench_walltime.py",
+    ]:
+        shutil.copy(scripts_dir / filename, package_dir / filename)
+    shutil.copytree(
+        scripts_dir / "nvbench_json",
+        package_dir / "nvbench_json",
+        ignore=shutil.ignore_patterns("__pycache__"),
     )
+    (results_dir / "__init__.py").write_text(
+        "class BenchmarkResult:\n"
+        "    pass\n"
+        "class BenchmarkResultSummary:\n"
+        "    pass\n"
+        "class SubBenchmarkResult:\n"
+        "    pass\n"
+        "class SubBenchmarkState:\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+    return package_dir
+
+
+def clear_packaged_cuda_modules(monkeypatch):
+    for module_name in list(sys.modules):
+        if module_name == "cuda" or module_name.startswith("cuda."):
+            monkeypatch.delitem(sys.modules, module_name, raising=False)
+
+
+def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
+    package_dir = make_packaged_scripts_tree(tmp_path)
 
     monkeypatch.syspath_prepend(str(tmp_path))
-    for module_name in [
-        "cuda",
-        "cuda.bench",
-        "cuda.bench.scripts",
-        "cuda.bench.scripts.nvbench_tooling_deps",
-    ]:
-        monkeypatch.delitem(sys.modules, module_name, raising=False)
+    clear_packaged_cuda_modules(monkeypatch)
 
     module = importlib.import_module("cuda.bench.scripts.nvbench_tooling_deps")
 
     assert Path(module.__file__) == package_dir / "nvbench_tooling_deps.py"
     assert module.ToolingDependency("math", "math", "testing").extra == "tools"
+
+
+@pytest.mark.parametrize(
+    ("module_name", "expected_entry"),
+    [
+        ("cuda.bench.scripts.nvbench_compare", "main"),
+        ("cuda.bench.scripts.nvbench_histogram", "main"),
+        ("cuda.bench.scripts.nvbench_json_summary", "main"),
+        ("cuda.bench.scripts.nvbench_walltime", "main"),
+    ],
+)
+def test_console_script_modules_import_from_packaged_paths(
+    tmp_path, monkeypatch, module_name, expected_entry
+):
+    package_dir = make_packaged_scripts_tree(tmp_path)
+    leaf_module = module_name.rsplit(".", 1)[-1]
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    clear_packaged_cuda_modules(monkeypatch)
+
+    module = importlib.import_module(module_name)
+
+    assert Path(module.__file__) == package_dir / f"{leaf_module}.py"
+    assert callable(getattr(module, expected_entry))
 
 
 def test_require_tooling_dependency_returns_loaded_module(tooling_deps):
