@@ -2,67 +2,37 @@
 
 setup_python_env() {
     local py_version=$1
-    local python_bin=""
-    local python_bin_quoted=""
-    local python_shim_dir=""
+    local script_dir=""
+    local uv_installer=""
+    local venv_dir=""
+    local actual_py_version=""
 
-    if command -v "python${py_version}" &> /dev/null; then
-        python_bin="$(command -v "python${py_version}")"
-    elif command -v python &> /dev/null &&
-         [[ "$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" == "${py_version}" ]]; then
-        python_bin="$(command -v python)"
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    export PATH="$HOME/.local/bin:$PATH"
+
+    if ! command -v uv &> /dev/null; then
+        uv_installer="$(mktemp)"
+        "${script_dir}/util/retry.sh" 5 30 curl -LsSf https://astral.sh/uv/install.sh -o "${uv_installer}"
+        sh "${uv_installer}"
+        rm -f "${uv_installer}"
+        export PATH="$HOME/.local/bin:$PATH"
     fi
 
-    if [[ -n "${python_bin}" ]]; then
-        python_shim_dir="${TMPDIR:-/tmp}/nvbench-python-${py_version}/bin"
-        mkdir -p "${python_shim_dir}"
-        python_bin_quoted="$(printf '%q' "${python_bin}")"
-        printf '#!/bin/bash\nexec %s "$@"\n' "${python_bin_quoted}" > "${python_shim_dir}/python"
-        chmod +x "${python_shim_dir}/python"
-        export PATH="${python_shim_dir}:$PATH"
-        python -m pip install --upgrade pip
-        return 0
+    venv_dir="${NVBENCH_PYTHON_VENV:-${HOME}/.nvbench-venv-${py_version}}"
+    uv venv --seed --python "${py_version}" "${venv_dir}"
+
+    if [[ -f "${venv_dir}/Scripts/activate" ]]; then
+        # Windows venvs use Scripts/.
+        # shellcheck source=/dev/null
+        source "${venv_dir}/Scripts/activate"
+    else
+        # shellcheck source=/dev/null
+        source "${venv_dir}/bin/activate"
     fi
 
-    # check if pyenv is installed
-    if ! command -v pyenv &> /dev/null; then
-        rm -f /pyenv
-        curl -fsSL https://pyenv.run | bash
+    actual_py_version="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+    if [[ "${actual_py_version}" != "${py_version}" ]]; then
+        echo "Error: expected Python ${py_version}, got ${actual_py_version}"
+        exit 1
     fi
-
-    # Install the build dependencies, check /etc/os-release to see if we are on ubuntu or rocky
-    if [ -f /etc/os-release ]; then
-        source /etc/os-release
-        if [ "$ID" = "ubuntu" ]; then
-            # Use the retry helper to mitigate issues with apt network errors:
-            script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-            retry() {
-              "${script_dir}/util/retry.sh" 5 30 "$@"
-            }
-
-            retry sudo apt update
-            retry sudo apt install -y make libssl-dev zlib1g-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev curl git \
-            libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-        elif [ "$ID" = "rocky" ]; then
-            # we're inside the rockylinux container, sudo not required/available
-            dnf install -y make patch zlib-devel bzip2 bzip2-devel readline-devel \
-            sqlite sqlite-devel openssl-devel tk-devel libffi-devel xz-devel libuuid-devel \
-            gdbm-libs libnsl2
-        else
-            echo "Unsupported Linux distribution"
-            exit 1
-        fi
-    fi
-
-    # Always set up pyenv environment
-    export PYENV_ROOT="$HOME/.pyenv"
-    [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init - bash)"
-
-    # Using pyenv, install the Python version
-    PYENV_DEBUG=1 pyenv install -v "${py_version}"
-    pyenv local "${py_version}"
-
-    pip install --upgrade pip
 }

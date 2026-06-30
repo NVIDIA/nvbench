@@ -111,18 +111,13 @@ done
 
 echo "Merging CUDA wheels..."
 
-# Detect python command
-if command -v python &> /dev/null; then
-  PYTHON=python
-elif command -v python3 &> /dev/null; then
-  PYTHON=python3
-else
-  echo "Error: No python found"
-  exit 1
-fi
+# Use the requested Python version for wheel merge/repair operations too.
+# shellcheck source=ci/pyenv_helper.sh
+source "$ci_dir/pyenv_helper.sh"
+setup_python_env "${py_version}"
 
 # Needed for unpacking and repacking wheels.
-$PYTHON -m pip install --break-system-packages wheel
+python -m pip install wheel
 
 # Find the built wheels (temporarily suffixed with .cu12/.cu13 to avoid collision)
 cu12_wheel=$(find wheelhouse -name "*cu12*.whl" | head -1)
@@ -158,13 +153,13 @@ mkdir -p wheelhouse_merged
 cd wheelhouse_merged
 
 # Unpack CUDA 12 wheel (this will be our base)
-$PYTHON -m wheel unpack "$cu12_wheel"
+python -m wheel unpack "$cu12_wheel"
 base_dir=$(find . -maxdepth 1 -type d -name "cuda_bench-*" | head -1)
 
 # Unpack CUDA 13 wheel into a temporary subdirectory
 mkdir cu13_tmp
 cd cu13_tmp
-$PYTHON -m wheel unpack "$cu13_wheel"
+python -m wheel unpack "$cu13_wheel"
 cu13_dir=$(find . -maxdepth 1 -type d -name "cuda_bench-*" | head -1)
 
 # Copy the cu13/ directory from CUDA 13 wheel into the base wheel
@@ -178,15 +173,15 @@ rm -rf cu13_tmp
 rm -f "$base_dir"/*.dist-info/RECORD
 
 # Repack the merged wheel
-$PYTHON -m wheel pack "$base_dir"
+python -m wheel pack "$base_dir"
 
 cd ..
 
 # Install auditwheel and repair the merged wheel
-$PYTHON -m pip install --break-system-packages auditwheel
+python -m pip install auditwheel
 for wheel in wheelhouse_merged/cuda_bench-*.whl; do
     echo "Repairing merged wheel: $wheel"
-    $PYTHON -m auditwheel repair \
+    python -m auditwheel repair \
         --exclude 'libcuda.so.1' \
         --exclude 'libnvidia-ml.so.1' \
         --exclude 'libcupti.so.12' \
