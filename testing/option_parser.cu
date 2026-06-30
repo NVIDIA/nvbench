@@ -105,8 +105,8 @@ struct temp_tree
   std::string table_format = "| {:^5} | {:^10} | {:^4} | {:^4} | {:^4} "
                              "| {:^4} | {:^6} | {:^8} |\n";
 
-  fmt::format_to(std::back_inserter(buffer), "\n");
-  fmt::format_to(std::back_inserter(buffer),
+  fmt::format_to(fmt::appender(buffer), "\n");
+  fmt::format_to(fmt::appender(buffer),
                  table_format,
                  "State",
                  "TypeConfig",
@@ -120,7 +120,7 @@ struct temp_tree
   std::size_t config = 0;
   for (const auto &state : states)
   {
-    fmt::format_to(std::back_inserter(buffer),
+    fmt::format_to(fmt::appender(buffer),
                    table_format,
                    config++,
                    state.get_type_config_index(),
