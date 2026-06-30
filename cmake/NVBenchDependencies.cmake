@@ -8,10 +8,10 @@ if(NOT BUILD_SHARED_LIBS AND NVBench_ENABLE_INSTALL_RULES)
   set(install_fmt ON)
 endif()
 
-rapids_cpm_find(fmt 11.2.0 ${export_set_details}
+rapids_cpm_find(fmt 12.2.0 ${export_set_details}
   CPM_ARGS
     GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
-    GIT_TAG "11.2.0"
+    GIT_TAG "12.2.0"
     OPTIONS
       # Force static to keep fmt internal.
       "BUILD_SHARED_LIBS OFF"
