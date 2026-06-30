@@ -34,6 +34,7 @@ def make_packaged_scripts_tree(tmp_path: Path) -> Path:
         "nvbench_compare.py",
         "nvbench_histogram.py",
         "nvbench_json_summary.py",
+        "nvbench_plot_bwutil.py",
         "nvbench_tooling_deps.py",
         "nvbench_walltime.py",
     ]:
@@ -81,6 +82,7 @@ def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
         ("cuda.bench.scripts.nvbench_compare", "main"),
         ("cuda.bench.scripts.nvbench_histogram", "main"),
         ("cuda.bench.scripts.nvbench_json_summary", "main"),
+        ("cuda.bench.scripts.nvbench_plot_bwutil", "main"),
         ("cuda.bench.scripts.nvbench_walltime", "main"),
     ],
 )
