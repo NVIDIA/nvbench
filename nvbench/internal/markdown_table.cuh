@@ -73,15 +73,15 @@ struct markdown_table : private table_builder
 
     this->fix_row_lengths();
 
-    std::vector<char> buffer;
+    fmt::memory_buffer buffer;
     buffer.reserve(4096);
-    auto iter = std::back_inserter(buffer);
+    auto iter = fmt::appender(buffer);
 
     iter = this->print_header(iter);
     iter = this->print_divider(iter);
     iter = this->print_rows(iter);
 
-    return std::string(buffer.data(), buffer.size());
+    return fmt::to_string(buffer);
   }
 
 private:

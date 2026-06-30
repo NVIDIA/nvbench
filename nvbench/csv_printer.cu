@@ -161,9 +161,9 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
     std::size_t remaining = table.m_columns.size();
     for (const auto &col : table.m_columns)
     {
-      fmt::format_to(std::back_inserter(buffer), "{}{}", col.header, (--remaining == 0) ? "" : ",");
+      fmt::format_to(fmt::appender(buffer), "{}{}", col.header, (--remaining == 0) ? "" : ",");
     }
-    fmt::format_to(std::back_inserter(buffer), "\n");
+    fmt::format_to(fmt::appender(buffer), "\n");
   }
 
   { // Rows
@@ -172,12 +172,9 @@ void csv_printer::do_print_benchmark_results(const benchmark_vector &benches)
       std::size_t remaining = table.m_columns.size();
       for (const auto &col : table.m_columns)
       {
-        fmt::format_to(std::back_inserter(buffer),
-                       "{}{}",
-                       col.rows[i],
-                       (--remaining == 0) ? "" : ",");
+        fmt::format_to(fmt::appender(buffer), "{}{}", col.rows[i], (--remaining == 0) ? "" : ",");
       }
-      fmt::format_to(std::back_inserter(buffer), "\n");
+      fmt::format_to(fmt::appender(buffer), "\n");
     }
   }
 
