@@ -82,8 +82,37 @@ void test_non_finite_or_invalid_stdev_noise_timeout_warning()
   check_noise_warning(std::numeric_limits<nvbench::float64_t>::infinity(), "over noise threshold");
 }
 
+void test_min_samples_timeout_warning()
+{
+  std::ostringstream stream;
+  recording_printer printer{stream};
+  nvbench::criterion_params params;
+
+  nvbench::detail::log_measurement_timeout_warnings(printer, params, 1.0, 4, 5, 1.0, std::nullopt);
+
+  ASSERT(printer.logs.size() == 1);
+  ASSERT(printer.logs[0].first == nvbench::log_level::warn);
+  ASSERT(printer.logs[0].second.find("before accumulating min_samples") != std::string::npos);
+}
+
+void test_min_time_timeout_warning()
+{
+  std::ostringstream stream;
+  recording_printer printer{stream};
+  nvbench::criterion_params params;
+  params.set_float64("min-time", 2.0);
+
+  nvbench::detail::log_measurement_timeout_warnings(printer, params, 1.0, 5, 1, 1.5, std::nullopt);
+
+  ASSERT(printer.logs.size() == 1);
+  ASSERT(printer.logs[0].first == nvbench::log_level::warn);
+  ASSERT(printer.logs[0].second.find("before accumulating min_time") != std::string::npos);
+}
+
 int main()
 {
   test_non_finite_or_invalid_stdev_noise_timeout_warning();
+  test_min_samples_timeout_warning();
+  test_min_time_timeout_warning();
   return 0;
 }
