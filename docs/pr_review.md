@@ -7,9 +7,9 @@ This workflow gives Codex and human reviewers a consistent way to review NVBench
 Start from the checked-out PR branch in the repository root. Use the repo-local `review-nvbench` skill with an explicit mode:
 
 ```text
-/review-nvbench context
-/review-nvbench feedback
-/review-nvbench adversarial
+$review-nvbench context
+$review-nvbench feedback
+$review-nvbench adversarial
 ```
 
 If no mode is provided, the workflow defaults to `context`.
