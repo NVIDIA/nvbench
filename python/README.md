@@ -5,42 +5,78 @@ Library `NVBench`.
 
 ## Installation
 
-Install from PyPi
+Install from PyPI:
 
 ```bash
-pip install cuda-bench[cu13]  # For CUDA 13.x
-pip install cuda-bench[cu12]  # For CUDA 12.x
+python -m pip install cuda-bench
 ```
+
+Use an optional dependency if you want `pip` to install a compatible
+`cuda-bindings` package as well:
+
+```bash
+python -m pip install "cuda-bench[cu12]"  # Install cuda-bindings 12.x
+python -m pip install "cuda-bench[cu13]"  # Install cuda-bindings 13.x
+```
+
+The published Linux wheel is compatible with both CUDA 12.x and CUDA 13.x
+Python environments. It contains two native extensions: one built with a CUDA
+12.x Toolkit and installed under `cuda.bench.cu12`, and one built with a CUDA
+13.x Toolkit and installed under `cuda.bench.cu13`. At runtime, `cuda-bench`
+queries the installed `cuda.bindings` package to determine the CUDA major
+version and loads the matching native extension.
+
+The `cu12` and `cu13` extras do not select different `cuda-bench` wheels. They
+only select the compatible `cuda-bindings` dependency family. If your
+environment already provides an appropriate `cuda-bindings` 12.x or 13.x
+package, installing plain `cuda-bench` is sufficient.
+
+A local CUDA Toolkit is not required when installing a published wheel, but the
+NVIDIA driver must support the CUDA runtime used by the installed
+`cuda.bindings` package. Use the same CUDA major version for other CUDA Python
+binary packages in the environment, for example `cupy-cuda12x` with
+`cuda-bench[cu12]` or `cupy-cuda13x` with `cuda-bench[cu13]`.
 
 ## Building from source
 
 ### Ensure recent version of CMake
 
-Since `nvbench` requires a rather new version of CMake (>=3.30.4), either build CMake from sources, or create a conda environment with a recent version of CMake, using
+Since `nvbench` requires CMake >=3.30.4, either install a recent CMake or
+create a conda environment with CMake and Ninja:
 
-```
-conda create -n build_env --yes  cmake ninja
+```bash
+conda create -n build_env --yes cmake ninja
 conda activate build_env
 ```
 
 ### Ensure CUDA compiler
 
-Since building `NVBench` library requires CUDA compiler, ensure that appropriate environment variables
-are set. For example, assuming CUDA toolkit is installed system-wide, and assuming Ampere GPU architecture:
+Building `cuda-bench` from source requires a CUDA Toolkit with `nvcc`. Ensure
+that the appropriate environment variables are set. For example, on Linux,
+assuming the CUDA Toolkit is installed system-wide:
 
 ```bash
 export CUDACXX=/usr/local/cuda/bin/nvcc
-export CUDAARCHS=86
+export CUDAARCHS=all-major
 ```
+
+Unlike the published wheel, a local source build only builds the native
+extension for the CUDA Toolkit found by CMake. The CUDA major version selected
+in the install command below must match that Toolkit.
 
 ### Build Python project
 
-Now switch to python folder, configure and install NVBench library, and install the package in editable mode:
+Now switch to the Python package directory and install `cuda-bench` from source:
 
 ```bash
 cd nvbench/python
-pip install -e .
+python -m pip install ".[cu12]"  # If CUDACXX points to a CUDA 12.x toolkit
+python -m pip install ".[cu13]"  # If CUDACXX points to a CUDA 13.x toolkit
 ```
+
+Editable installs (`python -m pip install -e .`) are currently not supported.
+They do not install the versioned CUDA extension layout used by `cuda-bench`.
+Re-run the non-editable install command after making source changes.
 
 ### Verify that package works
 
