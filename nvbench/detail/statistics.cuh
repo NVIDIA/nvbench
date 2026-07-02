@@ -54,6 +54,21 @@ namespace nvbench::detail::statistics
 
 inline constexpr nvbench::int64_t min_samples_for_noise_estimate = 5;
 
+// Heuristic crossover near L1-sized float64 data; tune if sorting remains faster.
+inline constexpr std::size_t quartile_selection_threshold = 4096;
+
+inline constexpr bool has_enough_samples_for_noise_estimate(nvbench::int64_t num_samples)
+{
+  return num_samples >= min_samples_for_noise_estimate;
+}
+
+template <typename ValueType>
+constexpr ValueType standard_deviation_unavailable_sentinel()
+{
+  static_assert(std::is_floating_point_v<ValueType>);
+  return std::numeric_limits<ValueType>::infinity();
+}
+
 /**
  * Computes and returns the unbiased sample standard deviation.
  *
@@ -66,9 +81,9 @@ ValueType standard_deviation(Iter first, Iter last, ValueType mean)
 
   const auto num = std::distance(first, last);
 
-  if (num < min_samples_for_noise_estimate) // don't bother with low sample sizes.
+  if (!has_enough_samples_for_noise_estimate(num)) // don't bother with low sample sizes.
   {
-    return std::numeric_limits<ValueType>::infinity();
+    return standard_deviation_unavailable_sentinel<ValueType>();
   }
 
   const auto variance = nvbench::detail::transform_reduce(first,
@@ -205,10 +220,13 @@ public:
   }
 };
 
-// Compute percentile rank using nearest rank method
+// Use a rounded zero-based percentile rank
 inline std::size_t percentile_rank(int percentile, std::size_t size)
 {
+  // Precondition: sample_size > 0. Public percentile helpers handle empty
+  // inputs before calling this internal rank helper.
   assert(size > 0 && "percentile_rank requires non-empty sample set");
+
   const auto p = std::clamp(percentile, 0, 100);
   const auto q = static_cast<nvbench::float64_t>(p) / 100.0;
 
@@ -216,12 +234,23 @@ inline std::size_t percentile_rank(int percentile, std::size_t size)
   return static_cast<std::size_t>(std::round(q * max_rank));
 }
 
+template <typename ValueType>
+bool contains_nan(const std::vector<ValueType> &samples)
+{
+  return std::any_of(samples.cbegin(), samples.cend(), [](ValueType value) {
+    return std::isnan(value);
+  });
+}
+
 template <typename ValueType, std::size_t N>
 std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> &&samples,
                                                         const std::array<int, N> &percentiles)
 {
+  static_assert(std::is_floating_point_v<ValueType>,
+                "compute_percentiles_by_sorting requires a floating-point value type.");
+
   std::array<ValueType, N> result{};
-  if (samples.empty())
+  if (samples.empty() || contains_nan(samples))
   {
     result.fill(std::numeric_limits<ValueType>::quiet_NaN());
     return result;
@@ -242,7 +271,8 @@ std::array<ValueType, N> compute_percentiles_by_sorting(std::vector<ValueType> &
  * Computes exact percentile values using rank round(p / 100 * (S - 1)).
  *
  * The input range is copied before sorting, so const iterators are supported.
- * If the input has fewer than 1 sample, all percentiles are returned as quiet NaNs.
+ * If the input has fewer than 1 sample or contains a NaN, all percentiles are returned as quiet
+ * NaNs.
  */
 template <typename Iter,
           std::size_t N,
@@ -273,17 +303,22 @@ struct quartiles_t
 template <typename ValueType>
 quartiles_t<ValueType> compute_quartiles_by_sorting(std::vector<ValueType> &&samples)
 {
+  static_assert(std::is_floating_point_v<ValueType>,
+                "compute_quartiles_by_sorting requires a floating-point value type.");
+
   constexpr std::array<int, 3> qs{25, 50, 75};
-  const auto r = ::nvbench::detail::statistics::compute_percentiles_by_sorting(
-    std::forward<std::vector<ValueType>>(samples),
-    qs);
+  const auto r = ::nvbench::detail::statistics::compute_percentiles_by_sorting(std::move(samples),
+                                                                               qs);
   return {r[0], r[1], r[2]};
 }
 
 template <typename ValueType>
 quartiles_t<ValueType> compute_quartiles_by_selection(std::vector<ValueType> &&samples)
 {
-  if (samples.empty())
+  static_assert(std::is_floating_point_v<ValueType>,
+                "compute_quartiles_by_selection requires a floating-point value type.");
+
+  if (samples.empty() || contains_nan(samples))
   {
     constexpr auto nan = std::numeric_limits<ValueType>::quiet_NaN();
     return {nan, nan, nan};
@@ -319,9 +354,8 @@ quartiles_t<ValueType> compute_quartiles(Iter first, Iter last)
   static_assert(std::is_floating_point_v<ValueType>);
 
   std::vector<ValueType> samples(first, last);
-  constexpr std::size_t selection_threshold = 4096;
 
-  if (samples.size() >= selection_threshold)
+  if (samples.size() >= quartile_selection_threshold)
   {
     return ::nvbench::detail::statistics::compute_quartiles_by_selection(std::move(samples));
   }
@@ -357,13 +391,36 @@ compute_relative_interquartile_range(nvbench::float64_t first_quartile,
   return ::nvbench::detail::statistics::compute_relative_dispersion(interquartile_range, median);
 }
 
+// Returns nullopt until there are enough samples for a meaningful standard deviation estimate.
+inline std::optional<nvbench::float64_t>
+compute_standard_deviation_noise(nvbench::int64_t num_samples,
+                                 nvbench::float64_t standard_deviation,
+                                 nvbench::float64_t center)
+{
+  if (!has_enough_samples_for_noise_estimate(num_samples))
+  {
+    return std::nullopt;
+  }
+  if (!std::isfinite(standard_deviation))
+  {
+    return std::nullopt;
+  }
+
+  return ::nvbench::detail::statistics::compute_relative_dispersion(standard_deviation, center);
+}
+
+inline nvbench::float64_t stdev_noise_or_sentinel(std::optional<nvbench::float64_t> noise)
+{
+  return noise.value_or(standard_deviation_unavailable_sentinel<nvbench::float64_t>());
+}
+
 // Returns nullopt until there are enough samples for a meaningful robust noise estimate.
 inline std::optional<nvbench::float64_t> compute_robust_noise(nvbench::int64_t num_samples,
                                                               nvbench::float64_t first_quartile,
                                                               nvbench::float64_t median,
                                                               nvbench::float64_t third_quartile)
 {
-  if (num_samples < min_samples_for_noise_estimate)
+  if (!has_enough_samples_for_noise_estimate(num_samples))
   {
     return std::nullopt;
   }

@@ -24,6 +24,7 @@
 #include <cmath>
 #include <iterator>
 #include <limits>
+#include <random>
 #include <sstream>
 #include <vector>
 
@@ -61,6 +62,27 @@ void assert_quartiles_nan(statistics::quartiles_t<T> actual)
   ASSERT(std::isnan(actual.first_quartile));
   ASSERT(std::isnan(actual.median));
   ASSERT(std::isnan(actual.third_quartile));
+}
+
+statistics::quartiles_t<nvbench::float64_t> expected_rank_quartiles(std::size_t num_samples)
+{
+  const auto expected_value = [num_samples](int percentile) {
+    const auto q = static_cast<nvbench::float64_t>(percentile) / 100.0;
+    return std::round(q * static_cast<nvbench::float64_t>(num_samples - 1));
+  };
+  return {expected_value(25), expected_value(50), expected_value(75)};
+}
+
+statistics::quartiles_t<nvbench::float64_t>
+expected_duplicate_heavy_quartiles(std::size_t num_samples)
+{
+  const auto value_at_percentile = [num_samples](int percentile) {
+    const auto q = static_cast<nvbench::float64_t>(percentile) / 100.0;
+    const auto rank =
+      static_cast<std::size_t>(std::round(q * static_cast<nvbench::float64_t>(num_samples - 1)));
+    return static_cast<nvbench::float64_t>((4 * rank) / num_samples);
+  };
+  return {value_at_percentile(25), value_at_percentile(50), value_at_percentile(75)};
 }
 
 void test_mean()
@@ -259,6 +281,16 @@ void test_percentiles()
     ASSERT(std::isnan(actual[1]));
     ASSERT(std::isnan(actual[2]));
   }
+
+  {
+    constexpr auto nan = std::numeric_limits<nvbench::float64_t>::quiet_NaN();
+    const std::vector<nvbench::float64_t> data{10.0, nan, 30.0, 20.0};
+    const auto actual =
+      statistics::compute_percentiles(data.cbegin(), data.cend(), std::array<int, 3>{25, 50, 75});
+    ASSERT(std::isnan(actual[0]));
+    ASSERT(std::isnan(actual[1]));
+    ASSERT(std::isnan(actual[2]));
+  }
 }
 
 void test_quartiles_methods_agree()
@@ -282,14 +314,32 @@ void test_quartiles_methods_agree()
     assert_quartiles_equal(selection, sorting);
   }
 
+  {
+    constexpr auto nan = std::numeric_limits<nvbench::float64_t>::quiet_NaN();
+    const std::vector<nvbench::float64_t> data{40.0, 10.0, nan, 20.0};
+    assert_quartiles_nan(
+      statistics::compute_quartiles_by_sorting(std::vector<nvbench::float64_t>(data)));
+    assert_quartiles_nan(
+      statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data)));
+    assert_quartiles_nan(statistics::compute_quartiles(data.cbegin(), data.cend()));
+  }
+
   // test around threshold when public API switches between implementations
-  for (const auto n : std::array<std::size_t, 3>{4095, 4096, 4097})
+  constexpr auto threshold = statistics::quartile_selection_threshold;
+  if constexpr (threshold < 2)
+  {
+    return;
+  }
+
+  for (const auto n : std::array<std::size_t, 3>{threshold - 1, threshold, threshold + 1})
   {
     std::vector<nvbench::float64_t> data(n);
     for (std::size_t i = 0; i < data.size(); ++i)
     {
-      data[i] = static_cast<nvbench::float64_t>((i * 37) % data.size());
+      data[i] = static_cast<nvbench::float64_t>(i);
     }
+    std::mt19937 rng{37u};
+    std::shuffle(data.begin(), data.end(), rng);
 
     const auto public_api = statistics::compute_quartiles(data.cbegin(), data.cend());
     const auto sorting =
@@ -298,6 +348,41 @@ void test_quartiles_methods_agree()
       statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
     assert_quartiles_equal(selection, sorting);
     assert_quartiles_equal(public_api, sorting);
+    assert_quartiles_equal(public_api, expected_rank_quartiles(n));
+  }
+}
+
+void test_quartiles_methods_agree_with_duplicate_heavy_inputs()
+{
+  // Test around threshold when public API switches between implementations.
+  constexpr auto threshold = statistics::quartile_selection_threshold;
+  if constexpr (threshold < 2)
+  {
+    return;
+  }
+
+  for (const auto n : std::array<std::size_t, 3>{threshold - 1, threshold, threshold + 1})
+  {
+    for (const auto seed : std::array<unsigned int, 3>{17u, 12345u, 987654321u})
+    {
+      std::vector<nvbench::float64_t> data(n);
+      for (std::size_t i = 0; i < data.size(); ++i)
+      {
+        data[i] = static_cast<nvbench::float64_t>((4 * i) / data.size());
+      }
+
+      std::mt19937 rng{seed};
+      std::shuffle(data.begin(), data.end(), rng);
+
+      const auto public_api = statistics::compute_quartiles(data.cbegin(), data.cend());
+      const auto sorting =
+        statistics::compute_quartiles_by_sorting(std::vector<nvbench::float64_t>(data));
+      const auto selection =
+        statistics::compute_quartiles_by_selection(std::vector<nvbench::float64_t>(data));
+      assert_quartiles_equal(selection, sorting);
+      assert_quartiles_equal(public_api, sorting);
+      assert_quartiles_equal(public_api, expected_duplicate_heavy_quartiles(n));
+    }
   }
 }
 
@@ -384,6 +469,119 @@ void test_compute_robust_noise()
       statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, 2.0, 4.0, 6.0);
     ASSERT(actual);
     ASSERT(is_close(*actual, 1.0));
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, 0.0, 0.0, 1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate, -2.0, -1.0, 0.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate,
+                                       std::numeric_limits<nvbench::float64_t>::quiet_NaN(),
+                                       4.0,
+                                       6.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_robust_noise(statistics::min_samples_for_noise_estimate,
+                                       2.0,
+                                       4.0,
+                                       std::numeric_limits<nvbench::float64_t>::infinity());
+    ASSERT(!actual);
+  }
+}
+
+void test_compute_standard_deviation_noise()
+{
+  ASSERT(!statistics::has_enough_samples_for_noise_estimate(
+    statistics::min_samples_for_noise_estimate - 1));
+  ASSERT(
+    statistics::has_enough_samples_for_noise_estimate(statistics::min_samples_for_noise_estimate));
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate - 1,
+                                                   2.0,
+                                                   1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual = statistics::compute_standard_deviation_noise(
+      statistics::min_samples_for_noise_estimate,
+      std::numeric_limits<nvbench::float64_t>::quiet_NaN(),
+      1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual = statistics::compute_standard_deviation_noise(
+      statistics::min_samples_for_noise_estimate,
+      std::numeric_limits<nvbench::float64_t>::infinity(),
+      1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   1.0,
+                                                   0.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   1.0,
+                                                   -1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   -1.0,
+                                                   1.0);
+    ASSERT(!actual);
+  }
+
+  {
+    const auto actual =
+      statistics::compute_standard_deviation_noise(statistics::min_samples_for_noise_estimate,
+                                                   2.0,
+                                                   4.0);
+    ASSERT(actual);
+    ASSERT(is_close(*actual, 0.5));
+  }
+}
+
+void test_stdev_noise_or_sentinel()
+{
+  {
+    const auto actual = statistics::standard_deviation_unavailable_sentinel<nvbench::float64_t>();
+    ASSERT(std::isinf(actual));
+  }
+
+  {
+    const auto actual = statistics::stdev_noise_or_sentinel(nvbench::float64_t{0.25});
+    ASSERT(is_close(actual, 0.25));
+  }
+
+  {
+    const auto actual = statistics::stdev_noise_or_sentinel(std::nullopt);
+    ASSERT(actual == statistics::standard_deviation_unavailable_sentinel<nvbench::float64_t>());
   }
 }
 
@@ -496,9 +694,12 @@ int main()
   test_percentiles();
   test_quartiles();
   test_quartiles_methods_agree();
+  test_quartiles_methods_agree_with_duplicate_heavy_inputs();
   test_compute_relative_dispersion_nominal_input();
   test_compute_relative_dispersion_invalid_inputs();
   test_relative_interquartile_range();
+  test_compute_standard_deviation_noise();
+  test_stdev_noise_or_sentinel();
   test_compute_robust_noise();
   test_lin_regression();
   test_r2();

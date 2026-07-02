@@ -19,6 +19,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/measure_cold.cuh>
+#include <nvbench/detail/measure_timeout_warnings.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
@@ -33,7 +34,6 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
-#include <string>
 #include <thread>
 #include <utility>
 
@@ -201,6 +201,25 @@ bool measure_cold_base::is_finished()
 
 void measure_cold_base::run_trials_epilogue() { m_walltime_timer.stop(); }
 
+void measure_cold_base::log_timeout_warnings(nvbench::printer_base &printer,
+                                             std::optional<nvbench::float64_t> cuda_stdev_noise)
+{
+  if (!m_max_time_exceeded)
+  {
+    return;
+  }
+
+  const auto timeout = m_walltime_timer.get_duration();
+
+  log_measurement_timeout_warnings(printer,
+                                   m_criterion_params,
+                                   timeout,
+                                   m_total_samples,
+                                   m_min_samples,
+                                   m_total_cuda_time,
+                                   cuda_stdev_noise);
+}
+
 void measure_cold_base::generate_summaries()
 {
   {
@@ -209,6 +228,30 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hint", "sample_size");
     summ.set_string("description", "Number of isolated kernel executions");
     summ.set_int64("value", m_total_samples);
+  }
+
+  {
+    auto &summ = m_state.add_summary("nv/cold/walltime");
+    summ.set_string("name", "Walltime");
+    summ.set_string("hint", "duration");
+    summ.set_string("description", "Walltime used for isolated measurements");
+    summ.set_float64("value", m_walltime_timer.get_duration());
+    summ.set_string("hide", "Hidden by default.");
+  }
+
+  if (m_total_samples == 0)
+  {
+    // Throttling can discard every trial before a timeout stops collection.
+    // Keep timeout diagnostics, but skip sample-derived summaries.
+    if (auto printer_ptr = m_state.get_benchmark().get_printer())
+    {
+      auto &printer = *printer_ptr;
+      this->log_timeout_warnings(printer);
+      printer.log(nvbench::log_level::warn,
+                  fmt::format("Cold: no accepted samples recorded in {:0.2f}s walltime.",
+                              m_walltime_timer.get_duration()));
+    }
+    return;
   }
 
   // cpu time statistics
@@ -257,15 +300,15 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  const auto cpu_stdev_noise = statistics::compute_relative_dispersion(cpu_stdev, cpu_mean);
-  if (cpu_stdev_noise)
+  const auto cpu_stdev_noise =
+    statistics::compute_standard_deviation_noise(m_total_samples, cpu_stdev, cpu_mean);
   {
     auto &summ = m_state.add_summary("nv/cold/time/cpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative standard deviation of isolated kernel execution CPU times");
-    summ.set_float64("value", *cpu_stdev_noise);
+    summ.set_float64("value", statistics::stdev_noise_or_sentinel(cpu_stdev_noise));
   }
 
   const auto [cpu_time_first_quartile, cpu_time_median, cpu_time_third_quartile] =
@@ -363,15 +406,15 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  const auto cuda_stdev_noise = statistics::compute_relative_dispersion(cuda_stdev, cuda_mean);
-  if (cuda_stdev_noise)
+  const auto cuda_stdev_noise =
+    statistics::compute_standard_deviation_noise(m_total_samples, cuda_stdev, cuda_mean);
   {
     auto &summ = m_state.add_summary("nv/cold/time/gpu/stdev/relative");
     summ.set_string("name", "Noise");
     summ.set_string("hint", "percentage");
     summ.set_string("description",
                     "Relative standard deviation of isolated kernel execution GPU times");
-    summ.set_float64("value", *cuda_stdev_noise);
+    summ.set_float64("value", statistics::stdev_noise_or_sentinel(cuda_stdev_noise));
   }
 
   const auto [cuda_time_first_quartile, cuda_time_median, cuda_time_third_quartile] =
@@ -460,15 +503,6 @@ void measure_cold_base::generate_summaries()
     }
   } // bandwidth
 
-  {
-    auto &summ = m_state.add_summary("nv/cold/walltime");
-    summ.set_string("name", "Walltime");
-    summ.set_string("hint", "duration");
-    summ.set_string("description", "Walltime used for isolated measurements");
-    summ.set_float64("value", m_walltime_timer.get_duration());
-    summ.set_string("hide", "Hidden by default.");
-  }
-
   if (m_sm_clock_rate_accumulator != 0.)
   {
     const auto clock_mean = m_sm_clock_rate_accumulator / d_samples;
@@ -500,53 +534,7 @@ void measure_cold_base::generate_summaries()
   {
     auto &printer = *printer_ptr;
 
-    if (m_max_time_exceeded)
-    {
-      const auto timeout = m_walltime_timer.get_duration();
-
-      auto get_param = [this](std::optional<nvbench::float64_t> &param, const std::string &name) {
-        if (m_criterion_params.has_value(name))
-        {
-          param = m_criterion_params.get_float64(name);
-        }
-      };
-
-      std::optional<nvbench::float64_t> max_noise;
-      get_param(max_noise, "max-noise");
-
-      std::optional<nvbench::float64_t> min_time;
-      get_param(min_time, "min-time");
-
-      if (max_noise && cuda_stdev_noise && *cuda_stdev_noise > *max_noise)
-      {
-        printer.log(nvbench::log_level::warn,
-                    fmt::format("Current measurement timed out ({:0.2f}s) "
-                                "while over noise threshold ({:0.2f}% > "
-                                "{:0.2f}%)",
-                                timeout,
-                                *cuda_stdev_noise * 100,
-                                *max_noise * 100));
-      }
-      if (m_total_samples < m_min_samples)
-      {
-        printer.log(nvbench::log_level::warn,
-                    fmt::format("Current measurement timed out ({:0.2f}s) "
-                                "before accumulating min_samples ({} < {})",
-                                timeout,
-                                m_total_samples,
-                                m_min_samples));
-      }
-      if (min_time && m_total_cuda_time < *min_time)
-      {
-        printer.log(nvbench::log_level::warn,
-                    fmt::format("Current measurement timed out ({:0.2f}s) "
-                                "before accumulating min_time ({:0.2f}s < "
-                                "{:0.2f}s)",
-                                timeout,
-                                m_total_cuda_time,
-                                *min_time));
-      }
-    }
+    this->log_timeout_warnings(printer, cuda_stdev_noise);
 
     // Log to stdout:
     printer.log(nvbench::log_level::pass,
