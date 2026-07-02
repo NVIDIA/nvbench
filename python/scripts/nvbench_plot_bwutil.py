@@ -4,13 +4,44 @@ import argparse
 import os
 import sys
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter
-
-try:
+if __package__:
+    from .nvbench_json import reader
+    from .nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+else:
     from nvbench_json import reader
-except ImportError:
-    from scripts.nvbench_json import reader
+    from nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+
+plt = None
+PercentFormatter = None
+
+
+def load_nvbench_plot_bwutil_tooling():
+    global PercentFormatter, plt
+
+    if plt is None:
+        plt = require_tooling_dependency(
+            ToolingDependency(
+                "matplotlib.pyplot", "matplotlib", "bandwidth plot rendering"
+            ),
+            tool_name="nvbench-plot-bwutil",
+        )
+    if PercentFormatter is None:
+        ticker = require_tooling_dependency(
+            ToolingDependency(
+                "matplotlib.ticker", "matplotlib", "plot axis formatting"
+            ),
+            tool_name="nvbench-plot-bwutil",
+        )
+        PercentFormatter = ticker.PercentFormatter
+
 
 UTILIZATION_TAG = "nv/cold/bw/global/utilization"
 
@@ -263,6 +294,12 @@ def plot_entries(entries, title=None, output=None, dark=False):
 
 def main():
     args, filenames = parse_files()
+    try:
+        load_nvbench_plot_bwutil_tooling()
+    except MissingToolingDependencyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
     try:
         axis_filters = parse_axis_filters(args.axis)
     except ValueError as exc:
