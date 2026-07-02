@@ -265,6 +265,13 @@ void write_jsonbin_sidecar(nvbench::state &state,
   paths.summary_path /= filename;
 
   bool write_succeeded = false;
+  auto log_if_present  = [&state](nvbench::log_level level, const std::string &msg) {
+    if (auto printer_ptr = state.get_benchmark().get_printer())
+    {
+      printer_ptr->log(level, msg);
+    }
+  };
+
   try
   {
     ensure_output_directory(paths.write_path.parent_path());
@@ -286,16 +293,12 @@ void write_jsonbin_sidecar(nvbench::state &state,
       fs::remove(paths.write_path, remove_ec);
     }
 
-    if (auto printer_ptr = state.get_benchmark().get_printer())
-    {
-      auto &printer = *printer_ptr;
-      printer.log(nvbench::log_level::warn,
-                  fmt::format("Error writing {} ({}) to {}: {}",
-                              tag,
-                              hint,
-                              paths.write_path.string(),
-                              e.what()));
-    }
+    log_if_present(nvbench::log_level::warn,
+                   fmt::format("Error writing {} ({}) to {}: {}",
+                               tag,
+                               hint,
+                               paths.write_path.string(),
+                               e.what()));
   } // end catch
 
   auto &summ = state.add_summary(fmt::format("{}:{}", metadata.summary_tag_prefix, tag));
@@ -312,14 +315,10 @@ void write_jsonbin_sidecar(nvbench::state &state,
   timer.stop();
   if (write_succeeded)
   {
-    if (auto printer_ptr = state.get_benchmark().get_printer())
-    {
-      auto &printer = *printer_ptr;
-      printer.log(nvbench::log_level::info,
-                  fmt::format("Wrote '{}' in {:>6.3f}ms",
-                              paths.write_path.string(),
-                              timer.get_duration() * 1000));
-    }
+    log_if_present(nvbench::log_level::info,
+                   fmt::format("Wrote '{}' in {:>6.3f}ms",
+                               paths.write_path.string(),
+                               timer.get_duration() * 1000));
   }
 }
 
@@ -361,7 +360,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
   {
     constexpr jsonbin_sidecar_metadata metadata{"-bin",
                                                 "nv/json/bin",
-                                                "Samples Times File",
+                                                "Sample Times File",
                                                 "file/sample_times",
                                                 "Binary file containing sample times as "
                                                 "little-endian float32."};
@@ -373,7 +372,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
   {
     constexpr jsonbin_sidecar_metadata metadata{"-freqs-bin",
                                                 "nv/json/freqs-bin",
-                                                "Samples Frequencies File",
+                                                "Sample Frequencies File",
                                                 "file/sample_freqs",
                                                 "Binary file containing sample frequencies as "
                                                 "little-endian float32."};
