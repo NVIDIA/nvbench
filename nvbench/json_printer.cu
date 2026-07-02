@@ -42,6 +42,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -114,6 +115,57 @@ void write_named_values(JsonNode &node, const nvbench::named_values &values)
 // choose buffer to be block size of modern SSD
 // see: https://github.com/NVIDIA/nvbench/issues/255
 static constexpr std::size_t preferred_buffer_nbytes = 4096;
+
+struct jsonbin_directory_paths
+{
+  fs::path write_path;
+  fs::path summary_path;
+};
+
+jsonbin_directory_paths make_jsonbin_directory_paths(const std::string &stream_name,
+                                                     const std::string &suffix)
+{
+  const fs::path stream_path{stream_name};
+  const fs::path sidecar_dir{stream_path.filename().string() + suffix};
+  const auto stream_parent = stream_path.parent_path();
+  return {stream_parent.empty() ? sidecar_dir : stream_parent / sidecar_dir, sidecar_dir};
+}
+
+void ensure_output_directory(const fs::path &dir)
+{
+  std::error_code create_ec;
+  fs::create_directories(dir, create_ec);
+
+  std::error_code status_ec;
+  if (fs::is_directory(dir, status_ec))
+  {
+    return;
+  }
+
+  std::error_code exists_ec;
+  if (fs::exists(dir, exists_ec))
+  {
+    NVBENCH_THROW(std::runtime_error, "'{}' exists and is not a directory.", dir.string());
+  }
+
+  if (create_ec)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Failed to create result directory '{}': {}.",
+                  dir.string(),
+                  create_ec.message());
+  }
+
+  if (status_ec)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "Failed to inspect result directory '{}': {}.",
+                  dir.string(),
+                  status_ec.message());
+  }
+
+  NVBENCH_THROW(std::runtime_error, "Failed to create result directory '{}'.", dir.string());
+}
 
 template <std::size_t N, std::size_t... Is>
 void swap_bytes_impl(char *p, std::index_sequence<Is...>)
@@ -225,27 +277,19 @@ void json_printer::do_process_bulk_data_float64(state &state,
     nvbench::cpu_timer timer;
     timer.start();
 
-    fs::path result_path{m_stream_name + "-bin/"};
+    auto paths = make_jsonbin_directory_paths(m_stream_name, "-bin");
     try
     {
-      if (!fs::exists(result_path))
-      {
-        if (!fs::create_directory(result_path))
-        {
-          NVBENCH_THROW(std::runtime_error, "{}", "Failed to create result directory '{}'.");
-        }
-      }
-      else if (!fs::is_directory(result_path))
-      {
-        NVBENCH_THROW(std::runtime_error, "{}", "'{}' exists and is not a directory.");
-      }
+      ensure_output_directory(paths.write_path);
 
       const auto file_id = m_num_jsonbin_files++;
-      result_path /= fmt::format("{:d}.bin", file_id);
+      const fs::path filename{fmt::format("{:d}.bin", file_id)};
+      paths.write_path /= filename;
+      paths.summary_path /= filename;
 
       std::ofstream out;
       out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
-      out.open(result_path, std::ios::binary | std::ios::out);
+      out.open(paths.write_path, std::ios::binary | std::ios::out);
 
       write_out_values_as_float32(out, data);
     }
@@ -254,9 +298,12 @@ void json_printer::do_process_bulk_data_float64(state &state,
       if (auto printer_ptr = state.get_benchmark().get_printer())
       {
         auto &printer = *printer_ptr;
-        printer.log(
-          nvbench::log_level::warn,
-          fmt::format("Error writing {} ({}) to {}: {}", tag, hint, result_path.string(), e.what()));
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("Error writing {} ({}) to {}: {}",
+                                tag,
+                                hint,
+                                paths.write_path.string(),
+                                e.what()));
       }
     } // end catch
 
@@ -266,7 +313,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
     summ.set_string("description",
                     "Binary file containing sample times as little-endian "
                     "float32.");
-    summ.set_string("filename", result_path.string());
+    summ.set_string("filename", paths.summary_path.string());
     summ.set_int64("size", static_cast<nvbench::int64_t>(data.size()));
     summ.set_string("hide", "Not needed in table.");
 
@@ -274,9 +321,10 @@ void json_printer::do_process_bulk_data_float64(state &state,
     if (auto printer_ptr = state.get_benchmark().get_printer())
     {
       auto &printer = *printer_ptr;
-      printer.log(
-        nvbench::log_level::info,
-        fmt::format("Wrote '{}' in {:>6.3f}ms", result_path.string(), timer.get_duration() * 1000));
+      printer.log(nvbench::log_level::info,
+                  fmt::format("Wrote '{}' in {:>6.3f}ms",
+                              paths.write_path.string(),
+                              timer.get_duration() * 1000));
     }
   } // end hint == sample_times
 
@@ -285,27 +333,19 @@ void json_printer::do_process_bulk_data_float64(state &state,
     nvbench::cpu_timer timer;
     timer.start();
 
-    fs::path result_path{m_stream_name + "-freqs-bin/"};
+    auto paths = make_jsonbin_directory_paths(m_stream_name, "-freqs-bin");
     try
     {
-      if (!fs::exists(result_path))
-      {
-        if (!fs::create_directory(result_path))
-        {
-          NVBENCH_THROW(std::runtime_error, "{}", "Failed to create result directory '{}'.");
-        }
-      }
-      else if (!fs::is_directory(result_path))
-      {
-        NVBENCH_THROW(std::runtime_error, "{}", "'{}' exists and is not a directory.");
-      }
+      ensure_output_directory(paths.write_path);
 
       const auto file_id = m_num_jsonbin_freq_files++;
-      result_path /= fmt::format("{:d}.bin", file_id);
+      const fs::path filename{fmt::format("{:d}.bin", file_id)};
+      paths.write_path /= filename;
+      paths.summary_path /= filename;
 
       std::ofstream out;
       out.exceptions(out.exceptions() | std::ios::failbit | std::ios::badbit);
-      out.open(result_path, std::ios::binary | std::ios::out);
+      out.open(paths.write_path, std::ios::binary | std::ios::out);
 
       write_out_values_as_float32(out, data);
     }
@@ -314,9 +354,12 @@ void json_printer::do_process_bulk_data_float64(state &state,
       if (auto printer_ptr = state.get_benchmark().get_printer())
       {
         auto &printer = *printer_ptr;
-        printer.log(
-          nvbench::log_level::warn,
-          fmt::format("Error writing {} ({}) to {}: {}", tag, hint, result_path.string(), e.what()));
+        printer.log(nvbench::log_level::warn,
+                    fmt::format("Error writing {} ({}) to {}: {}",
+                                tag,
+                                hint,
+                                paths.write_path.string(),
+                                e.what()));
       }
     } // end catch
 
@@ -326,7 +369,7 @@ void json_printer::do_process_bulk_data_float64(state &state,
     summ.set_string("description",
                     "Binary file containing sample frequencies as little-endian "
                     "float32.");
-    summ.set_string("filename", result_path.string());
+    summ.set_string("filename", paths.summary_path.string());
     summ.set_int64("size", static_cast<nvbench::int64_t>(data.size()));
     summ.set_string("hide", "Not needed in table.");
 
@@ -334,9 +377,10 @@ void json_printer::do_process_bulk_data_float64(state &state,
     if (auto printer_ptr = state.get_benchmark().get_printer())
     {
       auto &printer = *printer_ptr;
-      printer.log(
-        nvbench::log_level::info,
-        fmt::format("Wrote '{}' in {:>6.3f}ms", result_path.string(), timer.get_duration() * 1000));
+      printer.log(nvbench::log_level::info,
+                  fmt::format("Wrote '{}' in {:>6.3f}ms",
+                              paths.write_path.string(),
+                              timer.get_duration() * 1000));
     }
   } // end hint == sample_freqs
 }
