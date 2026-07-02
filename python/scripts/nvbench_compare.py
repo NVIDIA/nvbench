@@ -9,6 +9,7 @@ import argparse
 import math
 import os
 import pprint
+import re
 import sys
 import warnings
 from collections import Counter
@@ -467,12 +468,18 @@ class Float32BinarySource:
     filename: str
     json_dir: str
     description: str
+    json_path: str | None = None
     reader: Float32Reader = read_float32_file
 
     @cached_property
     def values(self) -> Float32Array | None:
         return read_float32_binary(
-            self.count, self.filename, self.json_dir, self.description, self.reader
+            self.count,
+            self.filename,
+            self.json_dir,
+            self.description,
+            self.reader,
+            self.json_path,
         )
 
     def has_material_payload(self) -> bool:
@@ -482,7 +489,7 @@ class Float32BinarySource:
         if self.reader is not read_float32_file:
             return True
 
-        filename = resolve_binary_filename(self.json_dir, self.filename)
+        filename = resolve_binary_filename(self.json_dir, self.filename, self.json_path)
         try:
             return os.path.getsize(filename) > 0
         except OSError:
@@ -954,13 +961,35 @@ def extract_binary_meta(summaries, tag):
     return extract_binary_size(summary), extract_binary_filename(summary)
 
 
-def resolve_binary_filename(json_dir, binary_filename):
+def resolve_legacy_jsonbin_filename(json_dir, binary_filename, json_path):
+    if json_path is None:
+        return None
+
+    json_name = os.path.basename(json_path)
+    sidecar_names = {f"{json_name}-bin", f"{json_name}-freqs-bin"}
+    path_parts = re.split(r"[\\/]+", os.path.normpath(binary_filename))
+    for index, part in enumerate(path_parts):
+        if part in sidecar_names:
+            candidate = os.path.join(json_dir, *path_parts[index:])
+            if os.path.exists(candidate):
+                return candidate
+
+    return None
+
+
+def resolve_binary_filename(json_dir, binary_filename, json_path=None):
     if os.path.isabs(binary_filename):
         return binary_filename
 
     json_relative_filename = os.path.join(json_dir, binary_filename)
     if os.path.exists(json_relative_filename):
         return json_relative_filename
+
+    legacy_jsonbin_filename = resolve_legacy_jsonbin_filename(
+        json_dir, binary_filename, json_path
+    )
+    if legacy_jsonbin_filename is not None:
+        return legacy_jsonbin_filename
 
     parent_relative_filename = os.path.join(os.path.dirname(json_dir), binary_filename)
     if os.path.exists(parent_relative_filename):
@@ -977,8 +1006,8 @@ def warn_unavailable_bulk_data(description, message):
     )
 
 
-def read_float32_binary(count, filename, json_dir, description, reader):
-    filename = resolve_binary_filename(json_dir, filename)
+def read_float32_binary(count, filename, json_dir, description, reader, json_path=None):
+    filename = resolve_binary_filename(json_dir, filename, json_path)
     try:
         values = np.frombuffer(reader(filename), dtype="<f4")
     except (BufferError, OSError, TypeError, ValueError) as exc:
@@ -994,7 +1023,9 @@ def read_float32_binary(count, filename, json_dir, description, reader):
     return values
 
 
-def extract_float32_binary_source(summaries, tag, json_dir, description, reader):
+def extract_float32_binary_source(
+    summaries, tag, json_dir, description, reader, json_path=None
+):
     count, filename = extract_binary_meta(summaries, tag)
     if count is None or filename is None or json_dir is None:
         return None
@@ -1005,27 +1036,37 @@ def extract_float32_binary_source(summaries, tag, json_dir, description, reader)
         count=count,
         filename=filename,
         json_dir=json_dir,
+        json_path=json_path,
         description=description,
         reader=reader,
     )
 
 
-def extract_sample_time_source(summaries, json_dir, reader):
+def extract_sample_time_source(summaries, json_dir, reader, json_path=None):
     return extract_float32_binary_source(
-        summaries, SAMPLE_TIMES_TAG, json_dir, "sample time", reader
+        summaries, SAMPLE_TIMES_TAG, json_dir, "sample time", reader, json_path
     )
 
 
-def extract_sample_frequency_source(summaries, json_dir, reader):
+def extract_sample_frequency_source(summaries, json_dir, reader, json_path=None):
     return extract_float32_binary_source(
-        summaries, SAMPLE_FREQUENCIES_TAG, json_dir, "sample frequency", reader
+        summaries,
+        SAMPLE_FREQUENCIES_TAG,
+        json_dir,
+        "sample frequency",
+        reader,
+        json_path,
     )
 
 
-def extract_gpu_timing_data(summaries, json_dir=None, float32_reader=read_float32_file):
-    sample_source = extract_sample_time_source(summaries, json_dir, float32_reader)
+def extract_gpu_timing_data(
+    summaries, json_dir=None, float32_reader=read_float32_file, json_path=None
+):
+    sample_source = extract_sample_time_source(
+        summaries, json_dir, float32_reader, json_path
+    )
     frequency_source = extract_sample_frequency_source(
-        summaries, json_dir, float32_reader
+        summaries, json_dir, float32_reader, json_path
     )
     if (
         sample_source is not None
@@ -1093,7 +1134,7 @@ def make_empty_gpu_timing_data():
 def resolve_bulk_source_filename(source: Float32BinarySource | None) -> str | None:
     if source is None:
         return None
-    return resolve_binary_filename(source.json_dir, source.filename)
+    return resolve_binary_filename(source.json_dir, source.filename, source.json_path)
 
 
 def get_bulk_source_count(source: Float32BinarySource | None) -> int | None:
@@ -3025,19 +3066,27 @@ def compare_benches(
                     ref_state, cmp_state
                 )
                 if missing_summaries_decision is None:
-                    cmp_gpu_time = extract_gpu_timing_data(cmp_summaries, cmp_json_dir)
-                    ref_gpu_time = extract_gpu_timing_data(ref_summaries, ref_json_dir)
+                    cmp_gpu_time = extract_gpu_timing_data(
+                        cmp_summaries, cmp_json_dir, json_path=cmp_json_path
+                    )
+                    ref_gpu_time = extract_gpu_timing_data(
+                        ref_summaries, ref_json_dir, json_path=ref_json_path
+                    )
                     comparison = compare_gpu_timings(
                         ref_gpu_time, cmp_gpu_time, comparison_thresholds
                     )
                 else:
                     cmp_gpu_time = (
-                        extract_gpu_timing_data(cmp_summaries, cmp_json_dir)
+                        extract_gpu_timing_data(
+                            cmp_summaries, cmp_json_dir, json_path=cmp_json_path
+                        )
                         if cmp_summaries
                         else make_empty_gpu_timing_data()
                     )
                     ref_gpu_time = (
-                        extract_gpu_timing_data(ref_summaries, ref_json_dir)
+                        extract_gpu_timing_data(
+                            ref_summaries, ref_json_dir, json_path=ref_json_path
+                        )
                         if ref_summaries
                         else make_empty_gpu_timing_data()
                     )

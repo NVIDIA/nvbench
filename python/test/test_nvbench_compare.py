@@ -931,6 +931,35 @@ def test_bulk_file_resolution_does_not_fall_back_to_cwd(
         assert timing.samples is None
 
 
+def test_bulk_file_resolution_accepts_legacy_jsonbin_path(tmp_path, nvbench_compare):
+    json_dir = tmp_path / "data"
+    json_dir.mkdir()
+    json_path = json_dir / "result.json"
+    samples_dir = json_dir / "result.json-bin"
+    samples_dir.mkdir()
+    samples_file = samples_dir / "0.bin"
+    np.array([123.0], dtype="<f4").tofile(samples_file)
+
+    legacy_filename = "../../../data/result.json-bin/0.bin"
+
+    assert nvbench_compare.resolve_binary_filename(
+        str(json_dir), legacy_filename, str(json_path)
+    ) == str(samples_file)
+
+    timing = nvbench_compare.extract_gpu_timing_data(
+        [
+            make_binary_summary(
+                nvbench_compare, "SAMPLE_TIMES_TAG", legacy_filename, 1
+            ),
+        ],
+        str(json_dir),
+        json_path=str(json_path),
+    )
+
+    assert timing.samples is not None
+    assert list(timing.samples) == pytest.approx([123.0])
+
+
 def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     ref_timing = make_gpu_timing_data(nvbench_compare, mean=1.0, stdev_relative=0.05)
 
