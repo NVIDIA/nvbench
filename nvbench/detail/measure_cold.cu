@@ -151,6 +151,8 @@ void measure_cold_base::record_measurements()
 
     m_sm_clock_rates.push_back(current_clock_rate);
     m_sm_clock_rate_accumulator += current_clock_rate;
+
+    m_stopping_criterion.add_frequency(current_clock_rate);
   }
 
   // Update and record timers and counters:
