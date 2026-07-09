@@ -59,12 +59,16 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
 
     if np is None:
         np = require_tooling_dependency(
-            ToolingDependency("numpy", "numpy", "bulk timing analysis"),
+            ToolingDependency(
+                "numpy", "numpy", "bulk timing analysis", extra="compare"
+            ),
             tool_name="nvbench-compare",
         )
     if load_color and Fore is None:
         colorama = require_tooling_dependency(
-            ToolingDependency("colorama", "colorama", "colored status output"),
+            ToolingDependency(
+                "colorama", "colorama", "colored status output", extra="compare"
+            ),
             tool_name="nvbench-compare",
         )
         Fore = colorama.Fore
@@ -72,7 +76,7 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
 
 def load_tabulate_for_table_output() -> tuple[Any, tuple[int, ...]]:
     tabulate_module = require_tooling_dependency(
-        ToolingDependency("tabulate", "tabulate", "table output"),
+        ToolingDependency("tabulate", "tabulate", "table output", extra="compare"),
         tool_name="nvbench-compare",
     )
     return tabulate_module, version_tuple(tabulate_module.__version__)
@@ -80,7 +84,9 @@ def load_tabulate_for_table_output() -> tuple[Any, tuple[int, ...]]:
 
 def load_jsondiff_for_device_diff() -> Any:
     return require_tooling_dependency(
-        ToolingDependency("jsondiff", "jsondiff", "device metadata diffs"),
+        ToolingDependency(
+            "jsondiff", "jsondiff", "device metadata diffs", extra="compare"
+        ),
         tool_name="nvbench-compare",
     )
 
@@ -2442,13 +2448,9 @@ def matching_axis_filters(state, axis_filter_groups):
     )
 
 
-def is_finite_number(value):
-    return value is not None and math.isfinite(value)
-
-
 def format_duration(seconds, *, allow_negative=False, allow_zero=False):
     if (
-        not is_finite_number(seconds)
+        not is_finite(seconds)
         or (seconds < 0.0 and not allow_negative)
         or (seconds == 0.0 and not allow_zero)
     ):
@@ -2470,7 +2472,7 @@ def format_duration(seconds, *, allow_negative=False, allow_zero=False):
 
 
 def select_duration_units(*seconds_values):
-    seconds_values = [value for value in seconds_values if is_finite_number(value)]
+    seconds_values = [value for value in seconds_values if is_finite(value)]
     if not seconds_values:
         return 1e6, "us"
 
@@ -2483,7 +2485,7 @@ def select_duration_units(*seconds_values):
 
 
 def duration_precision_for_center(center, delta_multiplier):
-    if not is_finite_number(center):
+    if not is_finite(center):
         return 3
 
     center_multiplier, _ = select_duration_units(center)
@@ -2497,7 +2499,7 @@ def format_duration_range(bounds):
     if bounds is None:
         return "n/a"
     lower, upper = bounds
-    if not is_finite_number(lower) or not is_finite_number(upper):
+    if not is_finite(lower) or not is_finite(upper):
         return "n/a"
 
     multiplier, units = select_duration_units(lower, upper)
@@ -2853,18 +2855,22 @@ def plot_comparison_entries(entries, title=None, dark=False):
         return 1
 
     matplotlib = require_tooling_dependency(
-        ToolingDependency("matplotlib", "matplotlib", "plot rendering"),
+        ToolingDependency("matplotlib", "matplotlib", "plot rendering", extra="plot"),
         tool_name="nvbench-compare",
     )
     if not os.environ.get("DISPLAY"):
         matplotlib.use("Agg")
 
     plt = require_tooling_dependency(
-        ToolingDependency("matplotlib.pyplot", "matplotlib", "plot rendering"),
+        ToolingDependency(
+            "matplotlib.pyplot", "matplotlib", "plot rendering", extra="plot"
+        ),
         tool_name="nvbench-compare",
     )
     ticker = require_tooling_dependency(
-        ToolingDependency("matplotlib.ticker", "matplotlib", "plot axis formatting"),
+        ToolingDependency(
+            "matplotlib.ticker", "matplotlib", "plot axis formatting", extra="plot"
+        ),
         tool_name="nvbench-compare",
     )
     PercentFormatter = ticker.PercentFormatter
@@ -2953,12 +2959,17 @@ def compare_benches(
     if plot_along:
         plt = require_tooling_dependency(
             ToolingDependency(
-                "matplotlib.pyplot", "matplotlib", "per-axis plot rendering"
+                "matplotlib.pyplot",
+                "matplotlib",
+                "per-axis plot rendering",
+                extra="plot",
             ),
             tool_name="nvbench-compare",
         )
         sns = require_tooling_dependency(
-            ToolingDependency("seaborn", "seaborn", "per-axis plot styling"),
+            ToolingDependency(
+                "seaborn", "seaborn", "per-axis plot styling", extra="plot"
+            ),
             tool_name="nvbench-compare",
         )
 

@@ -29,14 +29,20 @@ def load_nvbench_plot_bwutil_tooling():
     if plt is None:
         plt = require_tooling_dependency(
             ToolingDependency(
-                "matplotlib.pyplot", "matplotlib", "bandwidth plot rendering"
+                "matplotlib.pyplot",
+                "matplotlib",
+                "bandwidth plot rendering",
+                extra="plot",
             ),
             tool_name="nvbench-plot-bwutil",
         )
     if PercentFormatter is None:
         ticker = require_tooling_dependency(
             ToolingDependency(
-                "matplotlib.ticker", "matplotlib", "plot axis formatting"
+                "matplotlib.ticker",
+                "matplotlib",
+                "plot axis formatting",
+                extra="plot",
             ),
             tool_name="nvbench-plot-bwutil",
         )

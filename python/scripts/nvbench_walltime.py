@@ -36,7 +36,7 @@ def load_nvbench_walltime_tooling():
         return
 
     tabulate = require_tooling_dependency(
-        ToolingDependency("tabulate", "tabulate", "table output"),
+        ToolingDependency("tabulate", "tabulate", "table output", extra="compare"),
         tool_name="nvbench-walltime",
     )
     tabulate_version = version_tuple(tabulate.__version__)

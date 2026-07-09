@@ -30,22 +30,26 @@ def load_nvbench_histogram_tooling():
 
     if plt is None:
         plt = require_tooling_dependency(
-            ToolingDependency("matplotlib.pyplot", "matplotlib", "histogram plotting"),
+            ToolingDependency(
+                "matplotlib.pyplot", "matplotlib", "histogram plotting", extra="plot"
+            ),
             tool_name="nvbench-histogram",
         )
     if np is None:
         np = require_tooling_dependency(
-            ToolingDependency("numpy", "numpy", "sample loading"),
+            ToolingDependency("numpy", "numpy", "sample loading", extra="plot"),
             tool_name="nvbench-histogram",
         )
     if pd is None:
         pd = require_tooling_dependency(
-            ToolingDependency("pandas", "pandas", "sample table construction"),
+            ToolingDependency(
+                "pandas", "pandas", "sample table construction", extra="plot"
+            ),
             tool_name="nvbench-histogram",
         )
     if sns is None:
         sns = require_tooling_dependency(
-            ToolingDependency("seaborn", "seaborn", "histogram plotting"),
+            ToolingDependency("seaborn", "seaborn", "histogram plotting", extra="plot"),
             tool_name="nvbench-histogram",
         )
 
