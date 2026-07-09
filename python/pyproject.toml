@@ -52,6 +52,7 @@ tools = ["cuda-bench[compare,plot]"]
 
 [project.scripts]
 nvbench-compare = "cuda.bench.scripts.nvbench_compare:main"
+nvbench-compare-legacy = "cuda.bench.scripts.nvbench_compare_legacy:main"
 nvbench-histogram = "cuda.bench.scripts.nvbench_histogram:main"
 nvbench-json-summary = "cuda.bench.scripts.nvbench_json_summary:main"
 nvbench-walltime = "cuda.bench.scripts.nvbench_walltime:main"
