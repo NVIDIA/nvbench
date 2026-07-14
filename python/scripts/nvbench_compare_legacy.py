@@ -416,9 +416,7 @@ def extract_summary_float(summaries, tag, *, null_value=None):
     return normalize_float_value(extract_summary_value(summary), null_value=null_value)
 
 
-def extract_gpu_timing_data(
-    summaries, json_dir=None, float32_reader=None, json_path=None
-):
+def extract_gpu_timing_data(summaries):
     mean = extract_summary_float(summaries, GPU_TIME_MEAN_TAG)
     stdev = extract_summary_float(summaries, GPU_TIME_STDEV_TAG, null_value=math.inf)
     stdev_relative = extract_summary_float(
@@ -563,7 +561,7 @@ def compute_legacy_timing_comparison_inputs(ref_timing, cmp_timing):
     )
 
 
-def compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
+def compare_gpu_timings(ref_timing, cmp_timing):
     timing_inputs = compute_legacy_timing_comparison_inputs(ref_timing, cmp_timing)
     ref_estimate = timing_inputs.ref_estimate
     cmp_estimate = timing_inputs.cmp_estimate
@@ -1104,10 +1102,6 @@ def compare_benches(
     no_color,
     reference_device_filter=None,
     compare_device_filter=None,
-    ref_json_dir=None,
-    cmp_json_dir=None,
-    ref_json_path=None,
-    cmp_json_path=None,
 ):
     if plot_along:
         plt = require_tooling_dependency(
@@ -1229,16 +1223,12 @@ def compare_benches(
                 )
                 if missing_summaries_decision is not None:
                     ref_gpu_time = (
-                        extract_gpu_timing_data(
-                            ref_summaries, ref_json_dir, json_path=ref_json_path
-                        )
+                        extract_gpu_timing_data(ref_summaries)
                         if ref_summaries
                         else make_empty_gpu_timing_data()
                     )
                     cmp_gpu_time = (
-                        extract_gpu_timing_data(
-                            cmp_summaries, cmp_json_dir, json_path=cmp_json_path
-                        )
+                        extract_gpu_timing_data(cmp_summaries)
                         if cmp_summaries
                         else make_empty_gpu_timing_data()
                     )
@@ -1249,15 +1239,9 @@ def compare_benches(
                         missing_summaries_decision, timing_inputs
                     )
                 else:
-                    cmp_gpu_time = extract_gpu_timing_data(
-                        cmp_summaries, cmp_json_dir, json_path=cmp_json_path
-                    )
-                    ref_gpu_time = extract_gpu_timing_data(
-                        ref_summaries, ref_json_dir, json_path=ref_json_path
-                    )
+                    cmp_gpu_time = extract_gpu_timing_data(cmp_summaries)
+                    ref_gpu_time = extract_gpu_timing_data(ref_summaries)
                     comparison = compare_gpu_timings(ref_gpu_time, cmp_gpu_time)
-                if comparison is None:
-                    continue
 
                 if (
                     plot_along
@@ -1628,10 +1612,6 @@ def main() -> int:
                 no_color=args.no_color,
                 reference_device_filter=reference_device_filter,
                 compare_device_filter=compare_device_filter,
-                ref_json_dir=os.path.dirname(ref),
-                cmp_json_dir=os.path.dirname(comp),
-                ref_json_path=ref,
-                cmp_json_path=comp,
             )
         except MissingToolingDependencyError as exc:
             print(str(exc), file=sys.stderr)
