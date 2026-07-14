@@ -1572,9 +1572,8 @@ def test_format_diff_and_percent_ranges(nvbench_compare):
     assert nvbench_compare.format_duration(math.inf) == "n/a"
     assert nvbench_compare.format_duration(-1.0) == "n/a"
     assert nvbench_compare.format_duration(0.0) == "n/a"
-    assert (
-        nvbench_compare.format_duration(-1.0, allow_negative=True) == "-1000000.000 us"
-    )
+    assert nvbench_compare.format_duration(-1.0, allow_negative=True) == "-1.000 s"
+    assert nvbench_compare.format_duration(-1e-3, allow_negative=True) == "-1.000 ms"
     assert nvbench_compare.format_duration(0.0, allow_zero=True) == "0.000 us"
     assert nvbench_compare.format_duration_range((-12e-6, 8e-6)) == "[-12.00, 8.00] us"
     assert (

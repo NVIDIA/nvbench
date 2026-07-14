@@ -2526,15 +2526,13 @@ def format_duration(seconds, *, allow_negative=False, allow_zero=False):
     ):
         return "n/a"
 
-    if seconds >= 1:
+    magnitude = abs(seconds)
+    if magnitude >= 1:
         multiplier = 1.0
         units = "s"
-    elif seconds >= 1e-3:
+    elif magnitude >= 1e-3:
         multiplier = 1e3
         units = "ms"
-    elif seconds >= 1e-6:
-        multiplier = 1e6
-        units = "us"
     else:
         multiplier = 1e6
         units = "us"
