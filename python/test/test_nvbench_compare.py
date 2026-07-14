@@ -2952,6 +2952,7 @@ def test_main_validates_device_filters_before_loading_tooling(
 
 def test_main_no_color_does_not_require_colorama(monkeypatch, nvbench_compare):
     calls = []
+    monkeypatch.setattr(nvbench_compare, "Fore", None)
 
     def fake_load_tooling(*, load_color=True):
         calls.append(load_color)
@@ -2981,6 +2982,7 @@ def test_main_no_color_does_not_require_colorama(monkeypatch, nvbench_compare):
 
     assert nvbench_compare.main() == 0
     assert calls == [False]
+    assert nvbench_compare.Fore is None
 
 
 def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):
