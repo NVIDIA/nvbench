@@ -974,7 +974,7 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert undecided.diff == pytest.approx(0.03)
     assert undecided.frac_diff == pytest.approx(0.03)
     assert undecided.max_noise == pytest.approx(0.05)
-    assert undecided.reason.code == "noise_too_high"
+    assert undecided.reason.code == "centers_not_close"
 
     legacy_same = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(nvbench_compare, mean=1.0, stdev_relative=0.005),
@@ -1240,6 +1240,104 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert noisy_same is not None
     assert noisy_same.status == nvbench_compare.ComparisonStatus.UNDECIDED
     assert noisy_same.reason.code == "noise_too_high"
+
+    noisy_bulk_same = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+            frequency_values=[100.0] * 4,
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+            frequency_values=[100.0] * 4,
+        ),
+    )
+    assert noisy_bulk_same is not None
+    assert noisy_bulk_same.status == nvbench_compare.ComparisonStatus.SAME
+    assert (
+        noisy_bulk_same.max_noise
+        > nvbench_compare.get_default_thresholds().same_relative_dispersion_ceiling
+    )
+    assert noisy_bulk_same.reason.code == "bulk_same"
+
+    noisy_bulk_time_same = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+        ),
+    )
+    assert noisy_bulk_time_same is not None
+    assert noisy_bulk_time_same.status == nvbench_compare.ComparisonStatus.SAME
+    assert (
+        noisy_bulk_time_same.max_noise
+        > nvbench_compare.get_default_thresholds().same_relative_dispersion_ceiling
+    )
+    assert noisy_bulk_time_same.reason.code == "bulk_time_same_without_cycles"
+
+    noisy_bulk_time_same_with_summary_cycles = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            sm_clock_rate_mean=100.0,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            sm_clock_rate_mean=100.0,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+        ),
+    )
+    assert noisy_bulk_time_same_with_summary_cycles is not None
+    assert (
+        noisy_bulk_time_same_with_summary_cycles.status
+        == nvbench_compare.ComparisonStatus.SAME
+    )
+    assert (
+        noisy_bulk_time_same_with_summary_cycles.reason.code
+        == "bulk_time_same_confirmed_by_summary_cycles"
+    )
+
+    noisy_bulk_time_summary_cycle_disagreement = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            sm_clock_rate_mean=100.0,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            sm_clock_rate_mean=200.0,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+        ),
+    )
+    assert noisy_bulk_time_summary_cycle_disagreement is not None
+    assert (
+        noisy_bulk_time_summary_cycle_disagreement.status
+        == nvbench_compare.ComparisonStatus.UNDECIDED
+    )
+    assert (
+        noisy_bulk_time_summary_cycle_disagreement.reason.code
+        == "cycle_same_not_confirmed"
+    )
+
+    noisy_bulk_bad_cycles = nvbench_compare.compare_gpu_timings(
+        make_gpu_timing_data(
+            nvbench_compare,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+            frequency_values=[0.0, 100.0, 100.0, 100.0],
+        ),
+        make_gpu_timing_data(
+            nvbench_compare,
+            sample_values=[1.0, 1.0, 1.1, 1.1],
+            frequency_values=[100.0] * 4,
+        ),
+    )
+    assert noisy_bulk_bad_cycles is not None
+    assert noisy_bulk_bad_cycles.status == nvbench_compare.ComparisonStatus.UNDECIDED
+    assert noisy_bulk_bad_cycles.reason.code == "bulk_cycle_data_unusable"
 
     clock_disagreement = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -2528,7 +2626,7 @@ def test_main_prints_undecided_reason_summary(monkeypatch, capsys, nvbench_compa
         "devices": devices,
         "benchmarks": [
             make_benchmark(
-                [make_state(nvbench_compare, "state", mean="1.01", noise="0.05")]
+                [make_state(nvbench_compare, "state", mean="1.001", noise="0.05")]
             )
         ],
     }

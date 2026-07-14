@@ -585,6 +585,8 @@ REASON_DISPLAY_CODES = {
     "bulk_same": "bulk-same",
     "bulk_time_data_unusable": "bt-bad",
     "bulk_time_same": "bt-same",
+    "bulk_time_same_confirmed_by_summary_cycles": "bt-same-sc",
+    "bulk_time_same_without_cycles": "bt-same-no-cyc",
     "bulk_time_support_mismatch": "bt-sup-miss",
     "centers_not_close": "centers-far",
     "clear_gap_confirmed_by_bulk_cycles": "bc-gap",
@@ -1895,17 +1897,23 @@ def compare_values_for_bulk_same(ref_values, cmp_values, *, label, thresholds):
 
 
 def compare_timings_for_bulk_same(ref_timing, cmp_timing, thresholds):
-    ref_bulk = get_bulk_time_and_cycles(ref_timing)
-    cmp_bulk = get_bulk_time_and_cycles(cmp_timing)
-    if ref_bulk is None or cmp_bulk is None:
+    ref_times = positive_finite_array(ref_timing.samples)
+    cmp_times = positive_finite_array(cmp_timing.samples)
+    if ref_times is None or cmp_times is None:
+        if (
+            ref_timing.sample_source is not None
+            and cmp_timing.sample_source is not None
+        ):
+            return make_decision(
+                ComparisonStatus.UNDECIDED,
+                "bulk_time_data_unusable",
+                "bulk time data is empty or unusable",
+            )
         return make_decision(
             ComparisonStatus.UNDECIDED,
             "bulk_data_unavailable",
-            "bulk sample time and frequency data are unavailable",
+            "bulk sample time data are unavailable",
         )
-
-    ref_times, ref_cycles = ref_bulk
-    cmp_times, cmp_cycles = cmp_bulk
 
     time_decision = compare_values_for_bulk_same(
         ref_times, cmp_times, label="time", thresholds=thresholds
@@ -1913,6 +1921,29 @@ def compare_timings_for_bulk_same(ref_timing, cmp_timing, thresholds):
     if time_decision.status != ComparisonStatus.SAME:
         return time_decision
 
+    if ref_timing.frequency_source is None or cmp_timing.frequency_source is None:
+        return make_decision(
+            ComparisonStatus.SAME,
+            "bulk_time_same_without_cycles",
+            "bulk time nearest-neighbor coverage supports same; sample frequencies are unavailable",
+        )
+
+    ref_frequencies = positive_finite_array(ref_timing.frequencies)
+    cmp_frequencies = positive_finite_array(cmp_timing.frequencies)
+    if (
+        ref_frequencies is None
+        or cmp_frequencies is None
+        or len(ref_times) != len(ref_frequencies)
+        or len(cmp_times) != len(cmp_frequencies)
+    ):
+        return make_decision(
+            ComparisonStatus.UNDECIDED,
+            "bulk_cycle_data_unusable",
+            "bulk cycle data is empty or unusable",
+        )
+
+    ref_cycles = ref_times * ref_frequencies
+    cmp_cycles = cmp_times * cmp_frequencies
     cycle_decision = compare_values_for_bulk_same(
         ref_cycles, cmp_cycles, label="cycle", thresholds=thresholds
     )
@@ -1926,6 +1957,34 @@ def compare_timings_for_bulk_same(ref_timing, cmp_timing, thresholds):
     )
 
 
+def compare_timings_for_bulk_same_if_available(ref_timing, cmp_timing, thresholds):
+    decision = compare_timings_for_bulk_same(ref_timing, cmp_timing, thresholds)
+    if decision.reason.code == "bulk_data_unavailable":
+        return None
+    return decision
+
+
+def confirm_bulk_time_same_without_cycles(
+    ref_timing, cmp_timing, ref_interval, cmp_interval, thresholds
+):
+    decision = confirm_same_with_clock_rate(
+        ref_timing, cmp_timing, ref_interval, cmp_interval, thresholds
+    )
+    if decision.reason.code == "same_without_clock_rate":
+        return make_decision(
+            ComparisonStatus.SAME,
+            "bulk_time_same_without_cycles",
+            "bulk time nearest-neighbor coverage supports same; cycle data are unavailable",
+        )
+    if decision.status == ComparisonStatus.SAME:
+        return make_decision(
+            ComparisonStatus.SAME,
+            "bulk_time_same_confirmed_by_summary_cycles",
+            "bulk time nearest-neighbor coverage supports same and SM-clock-adjusted summary intervals confirm same",
+        )
+    return decision
+
+
 def compare_timings_for_same(
     ref_timing, cmp_timing, ref_noise, cmp_noise, ref_interval, cmp_interval, thresholds
 ):
@@ -1934,12 +1993,6 @@ def compare_timings_for_same(
             ComparisonStatus.UNDECIDED,
             "noise_unavailable",
             "relative dispersion is unavailable, negative, or non-finite",
-        )
-    if max(ref_noise, cmp_noise) > thresholds.same_relative_dispersion_ceiling:
-        return make_decision(
-            ComparisonStatus.UNDECIDED,
-            "noise_too_high",
-            "relative dispersion is too high to declare same",
         )
 
     if ref_interval is None or cmp_interval is None:
@@ -1952,6 +2005,29 @@ def compare_timings_for_same(
     decision = compare_intervals_for_same(ref_interval, cmp_interval, thresholds)
     if decision.status != ComparisonStatus.SAME:
         return decision
+
+    bulk_decision = compare_timings_for_bulk_same_if_available(
+        ref_timing, cmp_timing, thresholds
+    )
+    if (
+        bulk_decision is not None
+        and bulk_decision.reason.code == "bulk_time_same_without_cycles"
+    ):
+        bulk_decision = confirm_bulk_time_same_without_cycles(
+            ref_timing, cmp_timing, ref_interval, cmp_interval, thresholds
+        )
+
+    if max(ref_noise, cmp_noise) > thresholds.same_relative_dispersion_ceiling:
+        if bulk_decision is not None:
+            return bulk_decision
+        return make_decision(
+            ComparisonStatus.UNDECIDED,
+            "noise_too_high",
+            "relative dispersion is too high to declare same",
+        )
+
+    if bulk_decision is not None:
+        return bulk_decision
 
     return confirm_same_with_clock_rate(
         ref_timing, cmp_timing, ref_interval, cmp_interval, thresholds
@@ -2175,21 +2251,15 @@ def compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
         "no_clear_gap",
         "missing_interval",
     }:
-        bulk_decision = compare_timings_for_bulk_same(
-            ref_timing, cmp_timing, comparison_thresholds
+        decision = compare_timings_for_same(
+            ref_timing,
+            cmp_timing,
+            ref_noise,
+            cmp_noise,
+            ref_interval,
+            cmp_interval,
+            comparison_thresholds,
         )
-        if bulk_decision.reason.code == "bulk_data_unavailable":
-            decision = compare_timings_for_same(
-                ref_timing,
-                cmp_timing,
-                ref_noise,
-                cmp_noise,
-                ref_interval,
-                cmp_interval,
-                comparison_thresholds,
-            )
-        else:
-            decision = bulk_decision
 
     return SummaryComparison(
         ref_interval=ref_interval,
