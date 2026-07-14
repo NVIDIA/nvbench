@@ -1006,6 +1006,16 @@ def format_axis_values(axis_values, axes, axis_filters=None):
     return " ".join(parts)
 
 
+def format_plot_series_key(state_key, occurrence, occurrence_count, axis_name_parts):
+    parts = []
+    if state_key:
+        parts.append(state_key)
+    if occurrence_count > 1:
+        parts.append(f"occurrence={occurrence + 1}/{occurrence_count}")
+    parts.extend(axis_name_parts)
+    return ", ".join(parts)
+
+
 def plot_comparison_entries(entries, title=None, dark=False):
     if not entries:
         print("No comparison data to plot.")
@@ -1198,6 +1208,7 @@ def compare_benches(
             counters: dict[Any, int] = {}
 
             for cmp_state in cmp_device_states:
+                cmp_state_name = state_match_key(cmp_state)
                 cmp_state_key = state_comparison_key(cmp_state)
                 occurrence = counters.get(cmp_state_key, 0)
                 counters[cmp_state_key] = occurrence + 1
@@ -1256,7 +1267,12 @@ def compare_benches(
                         else:
                             axis_value = parse_plot_axis_value(av["name"], av["value"])
                     if axis_value is not None:
-                        axis_name = ", ".join(axis_name_parts)
+                        axis_name = format_plot_series_key(
+                            cmp_state_name,
+                            occurrence,
+                            cmp_state_counts[cmp_state_key],
+                            axis_name_parts,
+                        )
 
                         if axis_name not in plot_data["cmp"]:
                             plot_data["cmp"][axis_name] = {}

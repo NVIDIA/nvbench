@@ -725,6 +725,42 @@ def test_compare_benches_collects_bulk_debug_rows(tmp_path, nvbench_compare):
     assert row["compare_frequency_filename"] == str(cmp_freqs_file)
 
 
+def test_bulk_debug_rows_store_absolute_sidecar_paths(
+    tmp_path, monkeypatch, nvbench_compare
+):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    samples_file = data_dir / "samples.bin"
+    np.array([1.0, 1.0], dtype="<f4").tofile(samples_file)
+
+    monkeypatch.chdir(tmp_path)
+    state = make_state(nvbench_compare, "state", mean="1.0")
+    state["summaries"].append(
+        make_binary_summary(nvbench_compare, "SAMPLE_TIMES_TAG", "samples.bin", 2)
+    )
+    bulk_debug_rows = []
+
+    nvbench_compare.compare_benches(
+        make_comparison_run_data(nvbench_compare),
+        [make_benchmark([state])],
+        [make_benchmark([state])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        ref_json_dir="data",
+        cmp_json_dir="data",
+        ref_json_path="data/ref.json",
+        cmp_json_path="data/cmp.json",
+        bulk_debug_rows=bulk_debug_rows,
+    )
+
+    assert bulk_debug_rows[0]["reference_sample_filename"] == str(samples_file)
+    assert bulk_debug_rows[0]["compare_sample_filename"] == str(samples_file)
+
+
 def test_format_bulk_debug_python_loads_arrays(tmp_path, nvbench_compare):
     samples_file = tmp_path / "samples.bin"
     np.array([1.0, 2.0], dtype="<f4").tofile(samples_file)
@@ -2250,6 +2286,58 @@ def test_plot_along_ignores_threshold_diff_table_filter(monkeypatch, nvbench_com
     assert table_calls == []
     assert [call["x"] for call in plot_calls] == [[1.0, 2.0], [1.0, 2.0]]
     assert [call["shape"] for call in plot_calls] == ["-", "--"]
+
+
+def test_plot_along_separates_duplicate_state_occurrences(monkeypatch, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    plot_calls = []
+
+    def fake_plot(x, y, shape, *args, **kwargs):
+        plot_calls.append({"x": x, "shape": shape, "label": kwargs["label"]})
+        return [types.SimpleNamespace(get_color=lambda: "black")]
+
+    monkeypatch.setattr(sys.modules["matplotlib.pyplot"], "plot", fake_plot)
+    monkeypatch.setattr(
+        sys.modules["matplotlib.pyplot"], "fill_between", lambda *args, **kwargs: None
+    )
+
+    ref_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "duplicate", axis_value=1),
+                make_state(nvbench_compare, "duplicate", axis_value=1),
+            ]
+        )
+    ]
+    cmp_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "duplicate", axis_value=1),
+                make_state(nvbench_compare, "duplicate", axis_value=1),
+            ]
+        )
+    ]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        ref_benches,
+        cmp_benches,
+        threshold=0.0,
+        plot_along="A",
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 2
+    assert [call["x"] for call in plot_calls] == [[1.0], [1.0], [1.0], [1.0]]
+    assert [call["label"] for call in plot_calls] == [
+        "duplicate, occurrence=1/2",
+        "duplicate, occurrence=1/2 ref",
+        "duplicate, occurrence=2/2",
+        "duplicate, occurrence=2/2 ref",
+    ]
 
 
 def test_plot_along_rejects_non_numeric_axis_values(monkeypatch, nvbench_compare):
