@@ -3316,7 +3316,7 @@ def compare_benches(
                         )
                     )
                 else:
-                    print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
+                    print(tabulate.tabulate(rows, headers=headers, tablefmt="pipe"))
 
                 print("")
 
@@ -3392,7 +3392,7 @@ def compare_benches(
                     plt.close(fig)
 
     if plot:
-        title = "%SOL Bandwidth change"
+        title = "GPU timing change"
         if len(comparison_device_names) == 1:
             title = f"{title} - {next(iter(comparison_device_names))}"
         if filter_plan.global_axis_filters:
@@ -3574,6 +3574,12 @@ def main() -> int:
                 to_compare.append((r, c))
     else:
         to_compare = [(files_or_dirs[0], files_or_dirs[1])]
+    if not to_compare:
+        print(
+            f"No non-empty matching JSON files found in {files_or_dirs[0]!r} "
+            f"and {files_or_dirs[1]!r}"
+        )
+        return 1
 
     stats = ComparisonStats()
 
@@ -3590,7 +3596,7 @@ def main() -> int:
         except ValueError as exc:
             print(str(exc))
             return 1
-        except (KeyError, TypeError, IndexError) as exc:
+        except (AttributeError, KeyError, TypeError, IndexError) as exc:
             print(format_json_structure_error(ref, comp, exc))
             return 1
 
@@ -3659,7 +3665,7 @@ def main() -> int:
         except ValueError as exc:
             print(str(exc))
             return 1
-        except (KeyError, TypeError, IndexError) as exc:
+        except (AttributeError, KeyError, TypeError, IndexError) as exc:
             print(format_json_structure_error(ref, comp, exc))
             return 1
 

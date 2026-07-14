@@ -3170,6 +3170,54 @@ def test_main_reports_invalid_benchmark_entry_structure(
     assert "missing key 'name'" in output
 
 
+def test_main_reports_invalid_nested_json_structure(
+    monkeypatch, capsys, nvbench_compare
+):
+    root = {
+        "devices": [{"id": 0, "name": "Test GPU"}],
+        "benchmarks": [
+            {
+                "name": "bench",
+                "devices": [0],
+                "axes": [],
+                "states": [
+                    {
+                        "name": "state",
+                        "device": 0,
+                        "axis_values": ["bad"],
+                        "summaries": [],
+                    }
+                ],
+            }
+        ],
+    }
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "invalid NVBench JSON structure" in output
+    assert "has no attribute 'get'" in output
+
+
+def test_main_rejects_directory_inputs_without_matching_json_files(
+    tmp_path, monkeypatch, capsys, nvbench_compare
+):
+    ref_dir = tmp_path / "ref"
+    cmp_dir = tmp_path / "cmp"
+    ref_dir.mkdir()
+    cmp_dir.mkdir()
+    (ref_dir / "ref_only.json").write_text("{}", encoding="utf-8")
+    (cmp_dir / "cmp_only.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", str(ref_dir), str(cmp_dir)])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "No non-empty matching JSON files found" in output
+
+
 def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {
@@ -3403,6 +3451,64 @@ def test_compare_benches_legacy_display_uses_scalar_diff(monkeypatch, nvbench_co
     assert row[-5] == "1.010 s"
     assert row[-3] == "10.000 ms"
     assert row[-2] == "1.00%"
+
+
+def test_compare_benches_old_tabulate_fallback_uses_pipe_format(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    tabulate_calls = []
+
+    def fake_tabulate(rows, headers, *args, **kwargs):
+        tabulate_calls.append({"rows": rows, "headers": headers, "kwargs": kwargs})
+        return ""
+
+    monkeypatch.setattr(
+        nvbench_compare,
+        "load_tabulate_for_table_output",
+        lambda: (types.SimpleNamespace(tabulate=fake_tabulate), (0, 8, 2)),
+    )
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])],
+        [make_benchmark([make_state(nvbench_compare, "state", mean="1.01")])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert tabulate_calls[0]["kwargs"]["tablefmt"] == "pipe"
+
+
+def test_compare_benches_summary_plot_title_describes_timing(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    plot_calls = []
+
+    monkeypatch.setattr(
+        nvbench_compare,
+        "plot_comparison_entries",
+        lambda *args, **kwargs: plot_calls.append({"args": args, "kwargs": kwargs}),
+    )
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([make_state(nvbench_compare, "state", mean="1.0")])],
+        [make_benchmark([make_state(nvbench_compare, "state", mean="1.01")])],
+        threshold=0.0,
+        plot_along=None,
+        plot=True,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert plot_calls[0]["kwargs"]["title"] == "GPU timing change - Test GPU"
 
 
 def test_compare_benches_explain_display_uses_explicit_intervals(
