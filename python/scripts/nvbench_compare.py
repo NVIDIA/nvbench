@@ -3264,12 +3264,12 @@ def compare_benches(
                             )
                         )
 
-            if len(rows) == 0:
+            has_rows = len(rows) > 0
+            has_plot_along_data = bool(plot_along) and any(
+                axis_times for axis_times in plot_data["cmp"].values()
+            )
+            if not has_rows and not has_plot_along_data:
                 continue
-            if display == "explain":
-                align_explain_interval_columns(rows, row_comparisons, len(axes))
-            elif display == "intervals":
-                align_timing_interval_columns(rows, row_comparisons, len(axes))
 
             cmp_device = find_device_by_id(cmp_device_id, run_data.cmp_devices)
             ref_device = find_device_by_id(ref_device_id, run_data.ref_devices)
@@ -3279,27 +3279,33 @@ def compare_benches(
                     f"ref={ref_device_id} cmp={cmp_device_id}, but device metadata is missing"
                 )
 
-            if cmp_device == ref_device:
-                print(f"## [{cmp_device['id']}] {cmp_device['name']}\n")
-            else:
-                print(
-                    f"## [{ref_device['id']}] {ref_device['name']} vs. "
-                    f"[{cmp_device['id']}] {cmp_device['name']}\n"
-                )
-            tabulate, tabulate_version = load_tabulate_for_table_output()
-            # colalign and github format require tabulate 0.8.3
-            if tabulate_version >= (0, 8, 3):
-                print(
-                    tabulate.tabulate(
-                        rows, headers=headers, colalign=colalign, tablefmt="github"
+            if has_rows:
+                if display == "explain":
+                    align_explain_interval_columns(rows, row_comparisons, len(axes))
+                elif display == "intervals":
+                    align_timing_interval_columns(rows, row_comparisons, len(axes))
+
+                if cmp_device == ref_device:
+                    print(f"## [{cmp_device['id']}] {cmp_device['name']}\n")
+                else:
+                    print(
+                        f"## [{ref_device['id']}] {ref_device['name']} vs. "
+                        f"[{cmp_device['id']}] {cmp_device['name']}\n"
                     )
-                )
-            else:
-                print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
+                tabulate, tabulate_version = load_tabulate_for_table_output()
+                # colalign and github format require tabulate 0.8.3
+                if tabulate_version >= (0, 8, 3):
+                    print(
+                        tabulate.tabulate(
+                            rows, headers=headers, colalign=colalign, tablefmt="github"
+                        )
+                    )
+                else:
+                    print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
 
-            print("")
+                print("")
 
-            if plot_along:
+            if has_plot_along_data:
                 fig = plt.figure()
                 try:
                     plt.xscale("log")

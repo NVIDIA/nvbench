@@ -2193,6 +2193,66 @@ def test_plot_along_skips_states_without_selected_axis(monkeypatch, nvbench_comp
     assert [call["x"] for call in fill_between_calls] == [[1.0, 2.0], [1.0, 2.0]]
 
 
+def test_plot_along_ignores_threshold_diff_table_filter(monkeypatch, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    plot_calls = []
+    table_calls = []
+
+    def fake_plot(x, y, shape, *args, **kwargs):
+        plot_calls.append({"x": x, "y": y, "shape": shape})
+        return [types.SimpleNamespace(get_color=lambda: "black")]
+
+    monkeypatch.setattr(sys.modules["matplotlib.pyplot"], "plot", fake_plot)
+    monkeypatch.setattr(
+        sys.modules["matplotlib.pyplot"], "fill_between", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        nvbench_compare,
+        "load_tabulate_for_table_output",
+        lambda: (
+            types.SimpleNamespace(
+                tabulate=lambda *args, **kwargs: table_calls.append(args)
+            ),
+            (0, 8, 10),
+        ),
+    )
+
+    ref_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", axis_value=1),
+                make_state(nvbench_compare, "state", axis_value=2),
+            ]
+        )
+    ]
+    cmp_benches = [
+        make_benchmark(
+            [
+                make_state(nvbench_compare, "state", axis_value=1),
+                make_state(nvbench_compare, "state", axis_value=2),
+            ]
+        )
+    ]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        ref_benches,
+        cmp_benches,
+        threshold=1.0,
+        plot_along="A",
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 2
+    assert run_data.stats.pass_count == 2
+    assert table_calls == []
+    assert [call["x"] for call in plot_calls] == [[1.0, 2.0], [1.0, 2.0]]
+    assert [call["shape"] for call in plot_calls] == ["-", "--"]
+
+
 def test_plot_along_rejects_non_numeric_axis_values(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
 
