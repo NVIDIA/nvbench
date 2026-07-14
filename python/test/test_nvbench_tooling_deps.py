@@ -32,6 +32,7 @@ def make_packaged_scripts_tree(tmp_path: Path) -> Path:
         (package / "__init__.py").write_text("", encoding="utf-8")
     for filename in [
         "nvbench_compare.py",
+        "nvbench_compare_legacy.py",
         "nvbench_histogram.py",
         "nvbench_json_summary.py",
         "nvbench_plot_bwutil.py",
@@ -80,6 +81,7 @@ def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
     ("module_name", "expected_entry"),
     [
         ("cuda.bench.scripts.nvbench_compare", "main"),
+        ("cuda.bench.scripts.nvbench_compare_legacy", "main"),
         ("cuda.bench.scripts.nvbench_histogram", "main"),
         ("cuda.bench.scripts.nvbench_json_summary", "main"),
         ("cuda.bench.scripts.nvbench_plot_bwutil", "main"),
