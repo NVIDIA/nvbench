@@ -110,10 +110,21 @@ Print the effective configuration for a built-in preset:
 nvbench-compare --preset permissive --dump-config
 ```
 
+## Exit Status
+
+`nvbench-compare` returns exit status `0` when the comparison completes,
+including when regressions are reported. Invocation errors, unreadable inputs,
+and invalid NVBench JSON structures return nonzero status. CI jobs that should
+fail on regressions must inspect the summary output rather than relying on the
+process exit status alone.
+
 ## Matching Inputs
 
-`nvbench-compare` matches benchmark states by benchmark name, device pairing,
-axis filters, and state occurrence order within each device section.
+`nvbench-compare` matches benchmark states by benchmark name and by positional
+device pairing after any device filters are applied. Within each paired device
+section, states are matched by normalized state name plus their full axis-value
+tuple. Occurrence order is used only to disambiguate otherwise identical
+duplicates with the same state name and axis values.
 
 Device sections must match unless `--ignore-devices` is specified or explicit
 device filters are used:
@@ -574,3 +585,14 @@ Maximum sample mass that may be removed from unique-support coverage by the rare
 value filter. If filtering would remove more sample mass than this, remove every
 unique value, or operate on an all-unique dataset, support coverage falls back
 to the full unique support.
+
+## Other CLI Options
+
+### `--threshold-diff PERCENT`
+
+Filter displayed table rows to comparisons whose absolute center-to-center
+relative difference is at least `PERCENT`. The value is a percentage, not a
+fraction: use `--threshold-diff 5` for a 5% threshold.
+
+This option affects table output. It does not change summary counters or the
+data used by `--plot-along`.
