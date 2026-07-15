@@ -3628,3 +3628,33 @@ def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_c
 
     assert nvbench_compare.main() == 0
     assert captured["threshold"] == pytest.approx(0.05)
+
+
+@pytest.mark.parametrize("threshold", ["nan", "inf", "-1"])
+def test_main_rejects_invalid_threshold_diff(
+    monkeypatch, capsys, nvbench_compare, threshold
+):
+    monkeypatch.setattr(
+        nvbench_compare,
+        "load_nvbench_compare_tooling",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("tooling should not load")
+        ),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--threshold-diff",
+            threshold,
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 1
+    assert (
+        "--threshold-diff must be a finite non-negative percentage"
+        in capsys.readouterr().out
+    )

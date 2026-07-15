@@ -314,6 +314,11 @@ def parse_device_filter(device_arg, option_name):
     return device_ids
 
 
+def validate_threshold_diff(threshold):
+    if not math.isfinite(threshold) or threshold < 0.0:
+        raise ValueError("--threshold-diff must be a finite non-negative percentage")
+
+
 def select_devices(all_devices, device_filter, option_name):
     if device_filter is None:
         return list(all_devices)
@@ -1290,39 +1295,47 @@ def compare_benches(
                         )
 
                 run_data.stats.record(comparison.status, comparison.reason)
-                if comparison.status == ComparisonStatus.UNKNOWN or (
+                should_display_row = comparison.status == ComparisonStatus.UNKNOWN or (
                     comparison.frac_diff is not None
                     and abs(comparison.frac_diff) >= threshold
-                ):
+                )
+                axis_filters = None
+                if should_display_row or plot:
                     axis_filters = matching_axis_filters(cmp_state, axis_filter_groups)
+                if (
+                    plot
+                    and comparison.frac_diff is not None
+                    and math.isfinite(comparison.frac_diff)
+                ):
+                    axis_label = format_axis_values(axis_values, axes, axis_filters)
+                    if axis_label:
+                        label = f"""{cmp_bench["name"]} | {axis_label}"""
+                    else:
+                        label = cmp_bench["name"]
+                    cmp_device = find_device_by_id(
+                        cmp_state["device"], run_data.cmp_devices
+                    )
+                    if cmp_device:
+                        comparison_device_names.add(cmp_device["name"])
+                    comparison_entries.append(
+                        (
+                            label,
+                            comparison.frac_diff,
+                            comparison.status.value,
+                            cmp_bench["name"],
+                        )
+                    )
+
+                if should_display_row:
                     append_display_row(row, comparison, no_color)
 
                     rows.append(row)
-                    if (
-                        plot
-                        and comparison.frac_diff is not None
-                        and math.isfinite(comparison.frac_diff)
-                    ):
-                        axis_label = format_axis_values(axis_values, axes, axis_filters)
-                        if axis_label:
-                            label = f"""{cmp_bench["name"]} | {axis_label}"""
-                        else:
-                            label = cmp_bench["name"]
-                        cmp_device = find_device_by_id(
-                            cmp_state["device"], run_data.cmp_devices
-                        )
-                        if cmp_device:
-                            comparison_device_names.add(cmp_device["name"])
-                        comparison_entries.append(
-                            (
-                                label,
-                                comparison.frac_diff,
-                                comparison.status.value,
-                                cmp_bench["name"],
-                            )
-                        )
 
-            if len(rows) == 0:
+            has_rows = len(rows) > 0
+            has_plot_along_data = bool(plot_along) and any(
+                axis_times for axis_times in plot_data["cmp"].values()
+            )
+            if not has_rows and not has_plot_along_data:
                 continue
 
             cmp_device = find_device_by_id(cmp_device_id, run_data.cmp_devices)
@@ -1333,27 +1346,28 @@ def compare_benches(
                     f"ref={ref_device_id} cmp={cmp_device_id}, but device metadata is missing"
                 )
 
-            if cmp_device == ref_device:
-                print(f"## [{cmp_device['id']}] {cmp_device['name']}\n")
-            else:
-                print(
-                    f"## [{ref_device['id']}] {ref_device['name']} vs. "
-                    f"[{cmp_device['id']}] {cmp_device['name']}\n"
-                )
-            tabulate, tabulate_version = load_tabulate_for_table_output()
-            # colalign and github format require tabulate 0.8.3
-            if tabulate_version >= (0, 8, 3):
-                print(
-                    tabulate.tabulate(
-                        rows, headers=headers, colalign=colalign, tablefmt="github"
+            if has_rows:
+                if cmp_device == ref_device:
+                    print(f"## [{cmp_device['id']}] {cmp_device['name']}\n")
+                else:
+                    print(
+                        f"## [{ref_device['id']}] {ref_device['name']} vs. "
+                        f"[{cmp_device['id']}] {cmp_device['name']}\n"
                     )
-                )
-            else:
-                print(tabulate.tabulate(rows, headers=headers, tablefmt="pipe"))
+                tabulate, tabulate_version = load_tabulate_for_table_output()
+                # colalign and github format require tabulate 0.8.3
+                if tabulate_version >= (0, 8, 3):
+                    print(
+                        tabulate.tabulate(
+                            rows, headers=headers, colalign=colalign, tablefmt="github"
+                        )
+                    )
+                else:
+                    print(tabulate.tabulate(rows, headers=headers, tablefmt="pipe"))
 
-            print("")
+                print("")
 
-            if plot_along:
+            if has_plot_along_data:
                 fig = plt.figure()
                 try:
                     plt.xscale("log")
@@ -1518,6 +1532,7 @@ def main() -> int:
     files_or_dirs = args.files_or_dirs
 
     try:
+        validate_threshold_diff(args.threshold)
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
         reference_device_filter = parse_device_filter(
             args.reference_devices, "--reference-devices"

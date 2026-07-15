@@ -816,6 +816,11 @@ def parse_device_filter(device_arg, option_name):
     return device_ids
 
 
+def validate_threshold_diff(threshold):
+    if not math.isfinite(threshold) or threshold < 0.0:
+        raise ValueError("--threshold-diff must be a finite non-negative percentage")
+
+
 def select_devices(all_devices, device_filter, option_name):
     if device_filter is None:
         return list(all_devices)
@@ -3513,6 +3518,12 @@ def main() -> int:
 
     args = parser.parse_args()
     files_or_dirs = args.files_or_dirs
+    try:
+        validate_threshold_diff(args.threshold)
+    except ValueError as exc:
+        print(str(exc))
+        return 1
+
     try:
         comparison_preset, comparison_thresholds = resolve_comparison_thresholds(
             args.preset, args.config
