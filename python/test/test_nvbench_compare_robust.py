@@ -1723,6 +1723,24 @@ def test_format_timing_with_explicit_interval(nvbench_compare):
     )
 
 
+def test_format_axis_value_rejects_missing_axis_metadata(nvbench_compare):
+    with pytest.raises(KeyError, match="axis metadata not found"):
+        nvbench_compare.format_axis_value(
+            "Missing",
+            {"name": "Missing", "type": "int64", "value": 1},
+            [{"name": "A", "type": "int64", "flags": {}}],
+        )
+
+
+def test_format_axis_value_rejects_unsupported_axis_type(nvbench_compare):
+    with pytest.raises(ValueError, match="unsupported axis type"):
+        nvbench_compare.format_axis_value(
+            "A",
+            {"name": "A", "type": "bool", "value": True},
+            [{"name": "A", "type": "bool", "flags": {}}],
+        )
+
+
 def test_align_explain_interval_columns_pads_values_across_rows(nvbench_compare):
     rows = [["", ""], ["", ""]]
     comparisons = [

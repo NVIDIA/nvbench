@@ -2348,8 +2348,14 @@ def find_device_by_id(device_id, all_devices):
     return None
 
 
-def format_int64_axis_value(axis_name, axis_value, axes):
-    axis = next(filter(lambda ax: ax["name"] == axis_name, axes))
+def find_axis_by_name(axis_name, axes):
+    for axis in axes:
+        if axis["name"] == axis_name:
+            return axis
+    raise KeyError(f"axis metadata not found for {axis_name!r}")
+
+
+def format_int64_axis_value(axis_name, axis_value, axis):
     axis_flags = axis["flags"]
     value = int(axis_value["value"])
     if axis_flags == "pow2":
@@ -2371,16 +2377,17 @@ def format_string_axis_value(axis_name, axis_value, axes):
 
 
 def format_axis_value(axis_name, axis_value, axes):
-    axis = next(filter(lambda ax: ax["name"] == axis_name, axes))
+    axis = find_axis_by_name(axis_name, axes)
     axis_type = axis["type"]
     if axis_type == "int64":
-        return format_int64_axis_value(axis_name, axis_value, axes)
+        return format_int64_axis_value(axis_name, axis_value, axis)
     elif axis_type == "float64":
         return format_float64_axis_value(axis_name, axis_value, axes)
     elif axis_type == "type":
         return format_type_axis_value(axis_name, axis_value, axes)
     elif axis_type == "string":
         return format_string_axis_value(axis_name, axis_value, axes)
+    raise ValueError(f"unsupported axis type {axis_type!r} for axis {axis_name!r}")
 
 
 def make_display(name: str, display_values: list[str]) -> str:
