@@ -1141,7 +1141,7 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert fast.status == nvbench_compare.ComparisonStatus.FAST
     assert fast.reason.code == "clear_gap_confirmed_by_summary_cycles"
     assert fast.diff_interval == pytest.approx((-0.5, -0.05))
-    assert fast.frac_diff_interval == pytest.approx((-0.3846153846, -0.05))
+    assert fast.frac_diff_interval == pytest.approx((-0.625, -0.0526315789))
 
     slow = nvbench_compare.compare_gpu_timings(
         ref_interval_timing,
@@ -1179,7 +1179,7 @@ def test_compare_gpu_timings_classifies_common_cases(tmp_path, nvbench_compare):
     assert same.status == nvbench_compare.ComparisonStatus.SAME
     assert same.reason.code == "same_confirmed_by_cycles"
     assert same.diff_interval == pytest.approx((-0.28, 0.28))
-    assert same.frac_diff_interval == pytest.approx((-0.2153846154, 0.28))
+    assert same.frac_diff_interval == pytest.approx((-0.2745098039, 0.28))
 
     deterministic_same = nvbench_compare.compare_gpu_timings(
         make_gpu_timing_data(
@@ -1631,6 +1631,37 @@ def test_format_diff_and_percent_ranges(nvbench_compare):
             (0.0769230769, 0.55), nvbench_compare.ComparisonStatus.SLOW
         )
         == ">= +7.7%"
+    )
+
+
+def test_frac_diff_interval_uses_symmetric_ratio(nvbench_compare):
+    ref_interval = nvbench_compare.TimingInterval(
+        lower=4.096e-6,
+        center=5.120e-6,
+        upper=5.120e-6,
+    )
+    cmp_interval = nvbench_compare.TimingInterval(
+        lower=6.112e-6,
+        center=6.144e-6,
+        upper=6.144e-6,
+    )
+
+    forward = nvbench_compare.compute_frac_diff_interval(ref_interval, cmp_interval)
+    reverse = nvbench_compare.compute_frac_diff_interval(cmp_interval, ref_interval)
+
+    assert forward == pytest.approx((0.19375, 0.5))
+    assert reverse == pytest.approx((-0.5, -0.19375))
+    assert (
+        nvbench_compare.format_percentage_bounds(
+            forward, nvbench_compare.ComparisonStatus.SLOW
+        )
+        == ">= +19.4%"
+    )
+    assert (
+        nvbench_compare.format_percentage_bounds(
+            reverse, nvbench_compare.ComparisonStatus.FAST
+        )
+        == "<= -19.4%"
     )
 
 

@@ -1308,6 +1308,10 @@ def is_nonnegative_finite(value):
     return is_finite(value) and value >= 0.0
 
 
+def symmetric_frac_diff(a, b):
+    return (a - b) / min(a, b)
+
+
 def derive_absolute_dispersion(relative_dispersion, center):
     if is_nonnegative_finite(relative_dispersion) and is_positive_finite(center):
         return relative_dispersion * center
@@ -1431,12 +1435,16 @@ def compare_intervals_for_clear_gap(ref_interval, cmp_interval, thresholds):
     # These ratios are equivalent to log(ref/cmp) >= log(1 + delta), but avoid
     # evaluating logarithms on every comparison.
     if cmp_interval.upper < ref_interval.lower:
-        gap = ref_interval.lower - cmp_interval.upper
-        if gap / cmp_interval.upper >= thresholds.clear_gap_relative:
+        if (
+            symmetric_frac_diff(ref_interval.lower, cmp_interval.upper)
+            >= thresholds.clear_gap_relative
+        ):
             return ComparisonStatus.FAST
     if cmp_interval.lower > ref_interval.upper:
-        gap = cmp_interval.lower - ref_interval.upper
-        if gap / ref_interval.upper >= thresholds.clear_gap_relative:
+        if (
+            symmetric_frac_diff(cmp_interval.lower, ref_interval.upper)
+            >= thresholds.clear_gap_relative
+        ):
             return ComparisonStatus.SLOW
     return None
 
@@ -1449,18 +1457,20 @@ def compute_diff_interval(ref_interval, cmp_interval):
 
 
 def compute_frac_diff_interval(ref_interval, cmp_interval):
+    # Report change using the same symmetric relative-distance family as the
+    # robust clear-gap checks. Reversing reference/compare flips the sign while
+    # preserving the magnitude.
     return (
-        cmp_interval.lower / ref_interval.upper - 1.0,
-        cmp_interval.upper / ref_interval.lower - 1.0,
+        symmetric_frac_diff(cmp_interval.lower, ref_interval.upper),
+        symmetric_frac_diff(cmp_interval.upper, ref_interval.lower),
     )
 
 
 def centers_are_close(ref_center, cmp_center, thresholds):
     if not is_positive_finite(ref_center) or not is_positive_finite(cmp_center):
         return False
-    return (
-        abs(ref_center - cmp_center) / min(ref_center, cmp_center)
-        <= thresholds.same_center_relative
+    return abs(symmetric_frac_diff(ref_center, cmp_center)) <= (
+        thresholds.same_center_relative
     )
 
 
