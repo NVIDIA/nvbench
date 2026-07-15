@@ -32,7 +32,7 @@ def make_packaged_scripts_tree(tmp_path: Path) -> Path:
         (package / "__init__.py").write_text("", encoding="utf-8")
     for filename in [
         "nvbench_compare.py",
-        "nvbench_compare_legacy.py",
+        "nvbench_compare_robust.py",
         "nvbench_histogram.py",
         "nvbench_json_summary.py",
         "nvbench_plot_bwutil.py",
@@ -81,7 +81,7 @@ def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
     ("module_name", "expected_entry"),
     [
         ("cuda.bench.scripts.nvbench_compare", "main"),
-        ("cuda.bench.scripts.nvbench_compare_legacy", "main"),
+        ("cuda.bench.scripts.nvbench_compare_robust", "main"),
         ("cuda.bench.scripts.nvbench_histogram", "main"),
         ("cuda.bench.scripts.nvbench_json_summary", "main"),
         ("cuda.bench.scripts.nvbench_plot_bwutil", "main"),
@@ -101,6 +101,44 @@ def test_console_script_modules_import_from_packaged_paths(
 
     assert Path(module.__file__) == package_dir / f"{leaf_module}.py"
     assert callable(getattr(module, expected_entry))
+
+
+def test_compare_console_scripts_are_explicitly_named():
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    contents = pyproject.read_text(encoding="utf-8")
+
+    assert (
+        'nvbench-compare-robust = "cuda.bench.scripts.nvbench_compare_robust:main"'
+        in contents
+    )
+    assert (
+        'nvbench-compare-legacy = "cuda.bench.scripts.nvbench_compare:main"' in contents
+    )
+    assert 'nvbench-compare = "cuda.bench.scripts.nvbench_compare:main"' not in contents
+
+
+def test_nvbench_compare_script_path_uses_legacy_behavior(monkeypatch):
+    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    monkeypatch.syspath_prepend(str(scripts_dir))
+    sys.modules.pop("nvbench_compare", None)
+
+    module = importlib.import_module("nvbench_compare")
+
+    assert [status.value for status in module.ComparisonStatus] == [
+        "????",
+        "SAME",
+        "FAST",
+        "SLOW",
+    ]
+    assert module.get_display_headers()[0] == [
+        "Ref Time",
+        "Ref Noise",
+        "Cmp Time",
+        "Cmp Noise",
+        "Diff",
+        "%Diff",
+        "Status",
+    ]
 
 
 def test_require_tooling_dependency_returns_loaded_module(tooling_deps):

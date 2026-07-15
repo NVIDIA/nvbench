@@ -1,6 +1,6 @@
 # NVBench Compare
 
-`nvbench-compare` compares two NVBench JSON outputs and classifies matching
+`nvbench-compare-robust` compares two NVBench JSON outputs and classifies matching
 benchmark states as `SAME`, `FAST`, `SLOW`, `AMBG`, or `????`.
 
 NVBench treats benchmark performance data as describing a timing interval over
@@ -19,19 +19,19 @@ instead of forcing a pass or regression.
 Compare two JSON files:
 
 ```bash
-nvbench-compare reference.json compare.json
+nvbench-compare-robust reference.json compare.json
 ```
 
 Limit the comparison to one benchmark:
 
 ```bash
-nvbench-compare --benchmark copy_type_sweep reference.json compare.json
+nvbench-compare-robust --benchmark copy_type_sweep reference.json compare.json
 ```
 
 Limit the comparison to one benchmark and one axis value:
 
 ```bash
-nvbench-compare \
+nvbench-compare-robust \
   --benchmark copy_type_sweep \
   --axis T=F32 \
   reference.json compare.json
@@ -43,31 +43,31 @@ columns. `explain` adds explicit low/center/high interval endpoints and decision
 reason codes:
 
 ```bash
-nvbench-compare --display intervals reference.json compare.json
-nvbench-compare --display legacy reference.json compare.json
-nvbench-compare --display explain reference.json compare.json
+nvbench-compare-robust --display intervals reference.json compare.json
+nvbench-compare-robust --display legacy reference.json compare.json
+nvbench-compare-robust --display explain reference.json compare.json
 ```
 
 Plot the comparison summary, or plot timings along a positive numeric axis. Add
 `--dark` to the summary plot when it should use a dark theme:
 
 ```bash
-nvbench-compare --plot --dark reference.json compare.json
-nvbench-compare --plot-along "Elements{io}" reference.json compare.json
+nvbench-compare-robust --plot --dark reference.json compare.json
+nvbench-compare-robust --plot-along "Elements{io}" reference.json compare.json
 ```
 
 Generate Python code with bulk sample/frequency filenames for every displayed
 row:
 
 ```bash
-nvbench-compare --bulk-debug-python /path/to/output.py reference.json compare.json
+nvbench-compare-robust --bulk-debug-python /path/to/output.py reference.json compare.json
 ```
 
 Compare selected devices. Device filters are paired by position, so this
 compares reference device `0` against compare device `1`:
 
 ```bash
-nvbench-compare \
+nvbench-compare-robust \
   --reference-devices 0 \
   --compare-devices 1 \
   reference.json compare.json
@@ -77,42 +77,42 @@ Disable ANSI color codes. In this mode, status values are prefixed with emoji
 markers so copied output still carries the status category:
 
 ```bash
-nvbench-compare --no-color reference.json compare.json
+nvbench-compare-robust --no-color reference.json compare.json
 ```
 
 Use a built-in comparison preset:
 
 ```bash
-nvbench-compare --preset permissive reference.json compare.json
+nvbench-compare-robust --preset permissive reference.json compare.json
 ```
 
 Use custom settings from TOML:
 
 ```bash
-nvbench-compare --config compare.toml reference.json compare.json
+nvbench-compare-robust --config compare.toml reference.json compare.json
 ```
 
 Use a CLI preset as the base while preserving explicit TOML overrides:
 
 ```bash
-nvbench-compare --config compare.toml --preset strict reference.json compare.json
+nvbench-compare-robust --config compare.toml --preset strict reference.json compare.json
 ```
 
 Print the effective default configuration:
 
 ```bash
-nvbench-compare --dump-config
+nvbench-compare-robust --dump-config
 ```
 
 Print the effective configuration for a built-in preset:
 
 ```bash
-nvbench-compare --preset permissive --dump-config
+nvbench-compare-robust --preset permissive --dump-config
 ```
 
 ## Exit Status
 
-`nvbench-compare` returns exit status `0` when the comparison completes,
+`nvbench-compare-robust` returns exit status `0` when the comparison completes,
 including when regressions are reported. Invocation errors, unreadable inputs,
 and invalid NVBench JSON structures return nonzero status. CI jobs that should
 fail on regressions must inspect the summary output rather than relying on the
@@ -120,7 +120,7 @@ process exit status alone.
 
 ## Matching Inputs
 
-`nvbench-compare` matches benchmark states by benchmark name and by positional
+`nvbench-compare-robust` matches benchmark states by benchmark name and by positional
 device pairing after any device filters are applied. Within each paired device
 section, states are matched by normalized state name plus their full axis-value
 tuple. Occurrence order is used only to disambiguate otherwise identical
@@ -130,13 +130,13 @@ Device sections must match unless `--ignore-devices` is specified or explicit
 device filters are used:
 
 ```bash
-nvbench-compare \
+nvbench-compare-robust \
   --ignore-devices \
   reference.json compare.json
 ```
 
 ```bash
-nvbench-compare \
+nvbench-compare-robust \
   --reference-devices 0 \
   --compare-devices 1 \
   reference.json compare.json
@@ -149,7 +149,7 @@ device lists must have the same length; devices are paired by position.
 Benchmark and axis filters follow NVBench CLI scoping:
 
 ```bash
-nvbench-compare -b copy_type_sweep -a T=F32 reference.json compare.json
+nvbench-compare-robust -b copy_type_sweep -a T=F32 reference.json compare.json
 ```
 
 For integer axes displayed with NVBench `pow2` formatting, filter by exponent
@@ -157,7 +157,7 @@ with `NAME[pow2]=EXP`. For example, an axis value displayed as `2^20` is
 selected with:
 
 ```bash
-nvbench-compare -b base -a "Elements{io}[pow2]=20" reference.json compare.json
+nvbench-compare-robust -b base -a "Elements{io}[pow2]=20" reference.json compare.json
 ```
 
 `-a` / `--axis` applies to the most recent `-b` / `--benchmark`, or to all
@@ -167,7 +167,7 @@ replayed onto each selected benchmark, matching NVBench CLI behavior.
 
 ## Timing Data Used
 
-For each matched state, `nvbench-compare` extracts GPU timing summaries emitted
+For each matched state, `nvbench-compare-robust` extracts GPU timing summaries emitted
 by NVBench cold measurements:
 
 - `min`
@@ -191,7 +191,7 @@ case, clear-gap decisions may fall back to summary `sm_clock_rate/mean`
 confirmation when those summaries are available.
 
 Bulk files that are resolved as present and non-empty, but fail lazy loading or
-validation, are treated as unusable evidence. In that case, `nvbench-compare`
+validation, are treated as unusable evidence. In that case, `nvbench-compare-robust`
 does not fall back to summary clock-rate confirmation for that row and reports
 the comparison as `AMBG`.
 
@@ -199,13 +199,13 @@ the comparison as `AMBG`.
 
 `--bulk-debug-python /path/to/output.py` writes a Python script to the specified
 file. The generated script contains a `bulk_rows` list. Each entry corresponds
-to one row that `nvbench-compare` prints in its display tables after all
+to one row that `nvbench-compare-robust` prints in its display tables after all
 benchmark, axis, device, and threshold filters are applied.
 
 Use `stdout` instead of a file path to print the generated Python code:
 
 ```bash
-nvbench-compare --bulk-debug-python stdout reference.json compare.json
+nvbench-compare-robust --bulk-debug-python stdout reference.json compare.json
 ```
 
 Generated bulk-debug Python is enclosed in comment markers:
@@ -222,7 +222,7 @@ substitution, which requires a shell such as Bash, Zsh, or Ksh:
 
 ```bash
 python -i <(
-  nvbench-compare --bulk-debug-python stdout reference.json compare.json \
+  nvbench-compare-robust --bulk-debug-python stdout reference.json compare.json \
     | sed -n '/^# NVB-BULK-BEGIN$/,/^# NVB-BULK-END$/p'
 )
 ```
@@ -232,7 +232,7 @@ For IPython, write the generated code to a temporary file directly:
 
 ```bash
 tmp=$(mktemp "${TMPDIR:-/tmp}/nvbench-bulk.XXXXXX")
-nvbench-compare --bulk-debug-python "$tmp" reference.json compare.json
+nvbench-compare-robust --bulk-debug-python "$tmp" reference.json compare.json
 ipython -i "$tmp"
 rm -f "$tmp"
 ```
@@ -275,7 +275,7 @@ remain after filtering, use `occurrence` to distinguish them.
 
 ## Time Estimates And Intervals
 
-`nvbench-compare` prefers robust timing summaries when both sides provide them:
+`nvbench-compare-robust` prefers robust timing summaries when both sides provide them:
 
 - center: `median`
 - relative dispersion: `iqr/relative`, or `iqr/absolute` / `median`
@@ -326,7 +326,7 @@ but avoid evaluating logarithms for every row.
 
 ### 2. Confirm Clear Gap In Cycle Space
 
-If sample times and frequencies are available, `nvbench-compare` computes:
+If sample times and frequencies are available, `nvbench-compare-robust` computes:
 
 ```text
 cycles = sample_time * sample_frequency
@@ -336,7 +336,7 @@ It then builds cycle intervals from the bulk cycle samples and requires the
 cycle interval comparison to agree with the timing interval comparison. A timing
 gap that is not confirmed by bulk cycle intervals is `AMBG`.
 
-If bulk data are missing or empty, `nvbench-compare` falls back to summary
+If bulk data are missing or empty, `nvbench-compare-robust` falls back to summary
 clock-rate confirmation using `sm_clock_rate/mean`. If non-empty bulk data are
 present but fail lazy loading or validation, the clear-gap decision remains
 `AMBG` instead of falling back. If the clock-rate summary is missing or invalid,
@@ -345,7 +345,7 @@ the clear-gap decision also remains `AMBG`.
 ### 3. Check Bulk-Data Compatibility For SAME
 
 When there is no clear gap and bulk sample/frequency data are available,
-`nvbench-compare` compares both time samples and cycle samples using symmetric
+`nvbench-compare-robust` compares both time samples and cycle samples using symmetric
 nearest-neighbor coverage in log space.
 
 For each unique value in one run, the nearest unique value in the other run is
@@ -390,12 +390,12 @@ summary timing decision can still report `SAME`.
 ### 5. Otherwise Report AMBG
 
 If none of the clear-gap or same-result paths has enough evidence,
-`nvbench-compare` reports `AMBG` and records a reason in the summary.
+`nvbench-compare-robust` reports `AMBG` and records a reason in the summary.
 
 ## What To Do With AMBG Results
 
 `AMBG` does not mean a benchmark improved or regressed. It means
-`nvbench-compare` did not find enough evidence to classify the result as
+`nvbench-compare-robust` did not find enough evidence to classify the result as
 `SAME`, `FAST`, or `SLOW`.
 
 Useful next steps are:
@@ -405,7 +405,7 @@ Useful next steps are:
 ```bash
 ./benchmark --jsonbin reference.json
 ./benchmark --jsonbin compare.json
-nvbench-compare reference.json compare.json
+nvbench-compare-robust reference.json compare.json
 ```
 
 Here `./benchmark` is the NVBench-instrumented executable or Python script that
@@ -486,14 +486,14 @@ This command uses the `permissive` preset as the base and overrides only
 `bulk.sample_coverage`:
 
 ```bash
-nvbench-compare --config compare.toml reference.json compare.json
+nvbench-compare-robust --config compare.toml reference.json compare.json
 ```
 
 This command uses the `strict` preset as the base, but still overrides
 `bulk.sample_coverage` from TOML:
 
 ```bash
-nvbench-compare --config compare.toml --preset strict reference.json compare.json
+nvbench-compare-robust --config compare.toml --preset strict reference.json compare.json
 ```
 
 ## Built-In Presets
@@ -502,18 +502,18 @@ Built-in presets are available through `--preset`. To inspect the exact values
 for the default configuration, run:
 
 ```bash
-nvbench-compare --dump-config
+nvbench-compare-robust --dump-config
 ```
 
 To inspect a named preset, combine `--preset` with `--dump-config`:
 
 ```bash
-nvbench-compare --preset strict --dump-config
-nvbench-compare --preset permissive --dump-config
+nvbench-compare-robust --preset strict --dump-config
+nvbench-compare-robust --preset permissive --dump-config
 ```
 
 This avoids duplicating preset values in documentation and keeps the displayed
-configuration tied to the installed `nvbench-compare` version.
+configuration tied to the installed `nvbench-compare-robust` version.
 
 ## Configuration Keys
 

@@ -66,9 +66,11 @@ def nvbench_compare(monkeypatch):
         ),
     )
 
-    module_path = Path(__file__).resolve().parents[1] / "scripts" / "nvbench_compare.py"
+    module_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "nvbench_compare_robust.py"
+    )
     monkeypatch.syspath_prepend(str(module_path.parent))
-    spec = importlib.util.spec_from_file_location("nvbench_compare", module_path)
+    spec = importlib.util.spec_from_file_location("nvbench_compare_robust", module_path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -87,7 +89,7 @@ def test_nvbench_compare_imports_from_packaged_script_path(tmp_path, monkeypatch
     for package in [tmp_path / "cuda", tmp_path / "cuda" / "bench", package_dir]:
         (package / "__init__.py").write_text("", encoding="utf-8")
     for filename in [
-        "nvbench_compare.py",
+        "nvbench_compare_robust.py",
         "nvbench_tooling_deps.py",
     ]:
         shutil.copy(scripts_dir / filename, package_dir / filename)
@@ -98,13 +100,13 @@ def test_nvbench_compare_imports_from_packaged_script_path(tmp_path, monkeypatch
         "cuda",
         "cuda.bench",
         "cuda.bench.scripts",
-        "cuda.bench.scripts.nvbench_compare",
+        "cuda.bench.scripts.nvbench_compare_robust",
         "cuda.bench.scripts.nvbench_json",
         "cuda.bench.scripts.nvbench_tooling_deps",
     ]:
         monkeypatch.delitem(sys.modules, module_name, raising=False)
 
-    module = importlib.import_module("cuda.bench.scripts.nvbench_compare")
+    module = importlib.import_module("cuda.bench.scripts.nvbench_compare_robust")
 
     assert module.GPU_TIME_MEAN_TAG == "nv/cold/time/gpu/mean"
 
@@ -188,7 +190,7 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
             return types.SimpleNamespace()
         if (
             dependency.import_name == "colorama"
-            and attempts.count(("colorama", "nvbench-compare")) == 1
+            and attempts.count(("colorama", "nvbench-compare-robust")) == 1
         ):
             raise nvbench_compare.MissingToolingDependencyError("missing colorama")
         return types.SimpleNamespace(Fore=types.SimpleNamespace(RESET=""))
@@ -201,7 +203,7 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
 
     assert nvbench_compare.np is not None
     assert nvbench_compare.Fore is None
-    assert attempts == [("numpy", "nvbench-compare")]
+    assert attempts == [("numpy", "nvbench-compare-robust")]
 
     attempts.clear()
 
@@ -214,8 +216,8 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
 
     assert nvbench_compare.Fore is not None
     assert attempts == [
-        ("colorama", "nvbench-compare"),
-        ("colorama", "nvbench-compare"),
+        ("colorama", "nvbench-compare-robust"),
+        ("colorama", "nvbench-compare-robust"),
     ]
 
 
