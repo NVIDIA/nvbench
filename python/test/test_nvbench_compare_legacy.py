@@ -51,6 +51,9 @@ def nvbench_compare_legacy(monkeypatch):
         ),
     )
 
+    # The legacy decision tree intentionally lives in nvbench_compare.py so
+    # direct-script users keep the old behavior. The nvbench-compare-legacy
+    # console entry point maps to this module directly.
     module_path = Path(__file__).resolve().parents[1] / "scripts" / "nvbench_compare.py"
     monkeypatch.syspath_prepend(str(module_path.parent))
     spec = importlib.util.spec_from_file_location(
