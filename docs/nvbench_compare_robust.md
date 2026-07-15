@@ -144,7 +144,35 @@ nvbench-compare-robust \
 
 The device filter value may be `all`, one non-negative integer device id, or a
 comma-separated list of non-negative integer ids. Filtered reference and compare
-device lists must have the same length; devices are paired by position.
+device lists must have the same length; devices are paired by position, not by
+matching numeric id. This lets users compare differently numbered devices, such
+as reference device `0` against compare device `1`, or compare two machine
+configurations where CUDA device ids do not name the same physical GPU.
+
+For multiple selected devices, order the lists deliberately:
+
+```bash
+nvbench-compare-robust \
+  --reference-devices 0,1 \
+  --compare-devices 1,0 \
+  reference.json compare.json
+```
+
+This compares reference `0` with compare `1`, and reference `1` with compare
+`0`.
+
+Device ids may also be repeated intentionally:
+
+```bash
+nvbench-compare-robust \
+  --reference-devices 0,0 \
+  --compare-devices 0,1 \
+  reference.json compare.json
+```
+
+This compares the same reference device `0` against compare devices `0` and
+`1`. Repeated ids duplicate comparison sections by design; use them only when
+that pairing is intentional.
 
 Benchmark and axis filters follow NVBench CLI scoping:
 
