@@ -628,26 +628,11 @@ def state_has_summaries(state):
     return bool(state.get("summaries"))
 
 
-def format_skipped_state_reason(side, state):
-    reason = state.get("skip_reason")
-    if reason:
-        return f"{side} state skipped: {reason}"
-    return f"{side} state skipped"
+def state_pair_is_skipped(ref_state, cmp_state):
+    return ref_state.get("is_skipped") or cmp_state.get("is_skipped")
 
 
 def missing_state_summaries_decision(ref_state, cmp_state):
-    skipped_messages = []
-    if ref_state.get("is_skipped"):
-        skipped_messages.append(format_skipped_state_reason("reference", ref_state))
-    if cmp_state.get("is_skipped"):
-        skipped_messages.append(format_skipped_state_reason("compare", cmp_state))
-    if skipped_messages:
-        return make_decision(
-            ComparisonStatus.UNKNOWN,
-            "state_skipped",
-            "; ".join(skipped_messages),
-        )
-
     missing_sides = []
     if not state_has_summaries(ref_state):
         missing_sides.append("reference")
@@ -1171,6 +1156,9 @@ def compare_benches(
                 # Duplicate state names with identical axis values are matched
                 # by occurrence order within the filtered device section.
                 ref_state = ref_states_by_name[cmp_state_key][occurrence]
+                if state_pair_is_skipped(ref_state, cmp_state):
+                    continue
+
                 axis_values = cmp_state["axis_values"]
                 if not axis_values:
                     axis_values = []

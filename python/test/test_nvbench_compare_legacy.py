@@ -167,6 +167,70 @@ def test_legacy_compare_reports_unusable_noise_as_unknown(nvbench_compare_legacy
     assert comparison.reason.code == "noise_unavailable"
 
 
+def test_legacy_compare_skips_explicitly_skipped_states(
+    monkeypatch, nvbench_compare_legacy
+):
+    captured_rows = []
+
+    def fake_tabulate(rows, *args, **kwargs):
+        captured_rows.extend(rows)
+        return ""
+
+    monkeypatch.setattr(
+        nvbench_compare_legacy,
+        "load_tabulate_for_table_output",
+        lambda: (types.SimpleNamespace(tabulate=fake_tabulate), (0, 8, 3)),
+    )
+
+    skipped_ref_state = make_state(
+        nvbench_compare_legacy, "skipped", mean="1.0", axis_value=1
+    )
+    skipped_ref_state["is_skipped"] = True
+    skipped_ref_state["skip_reason"] = "disabled"
+    skipped_cmp_state = make_state(
+        nvbench_compare_legacy, "skipped", mean="1.0", axis_value=1
+    )
+    skipped_cmp_state["is_skipped"] = True
+    skipped_cmp_state["skip_reason"] = "disabled"
+    run_data = make_run_data(nvbench_compare_legacy)
+
+    nvbench_compare_legacy.compare_benches(
+        run_data,
+        [
+            make_benchmark(
+                [
+                    skipped_ref_state,
+                    make_state(
+                        nvbench_compare_legacy, "valid", mean="1.0", axis_value=2
+                    ),
+                ]
+            )
+        ],
+        [
+            make_benchmark(
+                [
+                    skipped_cmp_state,
+                    make_state(
+                        nvbench_compare_legacy, "valid", mean="1.0", axis_value=2
+                    ),
+                ]
+            )
+        ],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=nvbench_compare_legacy.build_benchmark_filter_plan([]),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 1
+    assert run_data.stats.pass_count == 1
+    assert len(captured_rows) == 1
+    assert captured_rows[0][0] == "2"
+    assert captured_rows[0][-1] == "🔵 SAME"
+
+
 def test_legacy_plot_along_ignores_threshold_diff_table_filter(
     monkeypatch, nvbench_compare_legacy
 ):
