@@ -358,7 +358,6 @@ class Emoji(str, Enum):
     BLUE = "\U0001f535"
     GREEN = "\U0001f7e2"
     RED = "\U0001f534"
-    SHRUG = "\U0001f937"
     NONE = ""
 
 
@@ -1111,7 +1110,7 @@ def compare_benches(
             raise ValueError(
                 f"benchmark {cmp_bench['name']!r} has {len(ref_device_ids)} "
                 f"reference device(s) but {len(cmp_device_ids)} compare device(s); "
-                "nvbench-compare-legacy pairs devices by position, so each compared "
+                f"{current_tool_name()} pairs devices by position, so each compared "
                 "benchmark must contain the same number of devices"
             )
 
