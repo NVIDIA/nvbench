@@ -13,7 +13,7 @@ import pytest
 def tooling_deps(monkeypatch):
     scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
     monkeypatch.syspath_prepend(str(scripts_dir))
-    sys.modules.pop("nvbench_tooling_deps", None)
+    monkeypatch.delitem(sys.modules, "nvbench_tooling_deps", raising=False)
     return importlib.import_module("nvbench_tooling_deps")
 
 
@@ -120,7 +120,7 @@ def test_compare_console_scripts_are_explicitly_named():
 def test_nvbench_compare_script_path_uses_legacy_behavior(monkeypatch):
     scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
     monkeypatch.syspath_prepend(str(scripts_dir))
-    sys.modules.pop("nvbench_compare", None)
+    monkeypatch.delitem(sys.modules, "nvbench_compare", raising=False)
 
     module = importlib.import_module("nvbench_compare")
 
