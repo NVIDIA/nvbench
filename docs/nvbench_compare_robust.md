@@ -1,7 +1,20 @@
-# NVBench Compare
+# NVBench tool for comparing performance data
 
 `nvbench-compare-robust` compares two NVBench JSON outputs and classifies matching
 benchmark states as `SAME`, `FAST`, `SLOW`, `AMBG`, or `????`.
+
+## Robust vs. Legacy Compare
+
+NVBench provides two compare entry points:
+
+- `nvbench-compare-robust` uses timing intervals, robust summaries, and optional
+  bulk sample data to make conservative `SAME`, `FAST`, `SLOW`, and `AMBG`
+  decisions.
+- `nvbench-compare-legacy` preserves the historical mean/stdev-based comparison
+  behavior. Use it for compatibility with existing workflows or when you need
+  the old decision rule.
+
+This document describes `nvbench-compare-robust`.
 
 NVBench treats benchmark performance data as describing a timing interval over
 which measured timings varied. The interval is not intended as a precise
