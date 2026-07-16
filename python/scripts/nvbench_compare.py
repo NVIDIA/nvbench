@@ -886,41 +886,6 @@ def format_duration(seconds, *, allow_negative=False, allow_zero=False):
     return f"{seconds * multiplier:0.3f} {units}"
 
 
-def select_duration_units(*seconds_values):
-    seconds_values = [value for value in seconds_values if is_finite(value)]
-    if not seconds_values:
-        return 1e6, "us"
-
-    max_abs_seconds = max(abs(value) for value in seconds_values)
-    if max_abs_seconds >= 1:
-        return 1.0, "s"
-    if max_abs_seconds >= 1e-3:
-        return 1e3, "ms"
-    return 1e6, "us"
-
-
-def duration_precision_for_center(center, delta_multiplier):
-    if not is_finite(center):
-        return 3
-
-    center_multiplier, _ = select_duration_units(center)
-    center_quantum = 10.0**-3 * (delta_multiplier / center_multiplier)
-    if center_quantum >= 1.0:
-        return 0
-    return int(math.ceil(-math.log10(center_quantum)))
-
-
-def format_duration_range(bounds):
-    if bounds is None:
-        return "n/a"
-    lower, upper = bounds
-    if not is_finite(lower) or not is_finite(upper):
-        return "n/a"
-
-    multiplier, units = select_duration_units(lower, upper)
-    return f"[{lower * multiplier:0.2f}, {upper * multiplier:0.2f}] {units}"
-
-
 def format_percentage(percentage):
     if percentage is None:
         return "n/a"
