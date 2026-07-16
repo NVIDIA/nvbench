@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026, NVIDIA CORPORATION.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 from __future__ import annotations
@@ -36,6 +36,10 @@ def version_tuple(v):
     return tuple(map(int, (v.split("."))))
 
 
+def current_tool_name() -> str:
+    return os.path.basename(sys.argv[0]) or "nvbench-compare"
+
+
 Fore: Any = None
 
 
@@ -47,7 +51,7 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
             ToolingDependency(
                 "colorama", "colorama", "colored status output", extra="compare"
             ),
-            tool_name="nvbench-compare-legacy",
+            tool_name=current_tool_name(),
         )
         Fore = colorama.Fore
 
@@ -55,7 +59,7 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
 def load_tabulate_for_table_output() -> tuple[Any, tuple[int, ...]]:
     tabulate_module = require_tooling_dependency(
         ToolingDependency("tabulate", "tabulate", "table output", extra="compare"),
-        tool_name="nvbench-compare-legacy",
+        tool_name=current_tool_name(),
     )
     return tabulate_module, version_tuple(tabulate_module.__version__)
 
@@ -65,7 +69,7 @@ def load_jsondiff_for_device_diff() -> Any:
         ToolingDependency(
             "jsondiff", "jsondiff", "device metadata diffs", extra="compare"
         ),
-        tool_name="nvbench-compare-legacy",
+        tool_name=current_tool_name(),
     )
 
 
@@ -134,18 +138,9 @@ class TimeEstimate:
 
 
 @dataclass(frozen=True)
-class TimingInterval:
-    lower: float
-    upper: float
-    center: float
-
-
-@dataclass(frozen=True)
 class TimingComparisonInputs:
     ref_estimate: TimeEstimate
     cmp_estimate: TimeEstimate
-    ref_interval: TimingInterval | None
-    cmp_interval: TimingInterval | None
 
 
 class ComparisonStatus(str, Enum):
@@ -170,8 +165,6 @@ class TimingDecision:
 
 @dataclass(frozen=True)
 class SummaryComparison:
-    ref_interval: TimingInterval | None
-    cmp_interval: TimingInterval | None
     ref_estimate: TimeEstimate
     cmp_estimate: TimeEstimate
     ref_time: float | None
@@ -529,8 +522,6 @@ def unusable_timing_center_decision(ref_time, cmp_time):
 
 def make_unavailable_timing_comparison(decision, timing_inputs):
     return SummaryComparison(
-        ref_interval=timing_inputs.ref_interval,
-        cmp_interval=timing_inputs.cmp_interval,
         ref_estimate=timing_inputs.ref_estimate,
         cmp_estimate=timing_inputs.cmp_estimate,
         ref_time=timing_inputs.ref_estimate.center,
@@ -561,8 +552,6 @@ def compute_legacy_timing_comparison_inputs(ref_timing, cmp_timing):
                 cmp_timing.stdev_relative, cmp_timing.stdev, cmp_timing.mean
             ),
         ),
-        ref_interval=None,
-        cmp_interval=None,
     )
 
 
@@ -615,8 +604,6 @@ def compare_gpu_timings(ref_timing, cmp_timing):
             )
 
     return SummaryComparison(
-        ref_interval=None,
-        cmp_interval=None,
         ref_estimate=ref_estimate,
         cmp_estimate=cmp_estimate,
         ref_time=ref_time,
@@ -1028,7 +1015,7 @@ def plot_comparison_entries(entries, title=None, dark=False):
 
     matplotlib = require_tooling_dependency(
         ToolingDependency("matplotlib", "matplotlib", "plot rendering", extra="plot"),
-        tool_name="nvbench-compare-legacy",
+        tool_name=current_tool_name(),
     )
     if not os.environ.get("DISPLAY"):
         matplotlib.use("Agg")
@@ -1037,13 +1024,13 @@ def plot_comparison_entries(entries, title=None, dark=False):
         ToolingDependency(
             "matplotlib.pyplot", "matplotlib", "plot rendering", extra="plot"
         ),
-        tool_name="nvbench-compare-legacy",
+        tool_name=current_tool_name(),
     )
     ticker = require_tooling_dependency(
         ToolingDependency(
             "matplotlib.ticker", "matplotlib", "plot axis formatting", extra="plot"
         ),
-        tool_name="nvbench-compare-legacy",
+        tool_name=current_tool_name(),
     )
     PercentFormatter = ticker.PercentFormatter
 
@@ -1126,13 +1113,13 @@ def compare_benches(
                 "per-axis plot rendering",
                 extra="plot",
             ),
-            tool_name="nvbench-compare-legacy",
+            tool_name=current_tool_name(),
         )
         sns = require_tooling_dependency(
             ToolingDependency(
                 "seaborn", "seaborn", "per-axis plot styling", extra="plot"
             ),
-            tool_name="nvbench-compare-legacy",
+            tool_name=current_tool_name(),
         )
 
         sns.set_theme()

@@ -50,6 +50,10 @@ def version_tuple(v):
     return tuple(map(int, (v.split("."))))
 
 
+def current_tool_name() -> str:
+    return os.path.basename(sys.argv[0]) or "nvbench-compare-robust"
+
+
 np: Any = None
 Fore: Any = None
 
@@ -62,14 +66,14 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
             ToolingDependency(
                 "numpy", "numpy", "bulk timing analysis", extra="compare"
             ),
-            tool_name="nvbench-compare-robust",
+            tool_name=current_tool_name(),
         )
     if load_color and Fore is None:
         colorama = require_tooling_dependency(
             ToolingDependency(
                 "colorama", "colorama", "colored status output", extra="compare"
             ),
-            tool_name="nvbench-compare-robust",
+            tool_name=current_tool_name(),
         )
         Fore = colorama.Fore
 
@@ -77,7 +81,7 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
 def load_tabulate_for_table_output() -> tuple[Any, tuple[int, ...]]:
     tabulate_module = require_tooling_dependency(
         ToolingDependency("tabulate", "tabulate", "table output", extra="compare"),
-        tool_name="nvbench-compare-robust",
+        tool_name=current_tool_name(),
     )
     return tabulate_module, version_tuple(tabulate_module.__version__)
 
@@ -87,7 +91,7 @@ def load_jsondiff_for_device_diff() -> Any:
         ToolingDependency(
             "jsondiff", "jsondiff", "device metadata diffs", extra="compare"
         ),
-        tool_name="nvbench-compare-robust",
+        tool_name=current_tool_name(),
     )
 
 
@@ -2958,7 +2962,7 @@ def plot_comparison_entries(entries, title=None, dark=False):
 
     matplotlib = require_tooling_dependency(
         ToolingDependency("matplotlib", "matplotlib", "plot rendering", extra="plot"),
-        tool_name="nvbench-compare-robust",
+        tool_name=current_tool_name(),
     )
     if not os.environ.get("DISPLAY"):
         matplotlib.use("Agg")
@@ -2967,13 +2971,13 @@ def plot_comparison_entries(entries, title=None, dark=False):
         ToolingDependency(
             "matplotlib.pyplot", "matplotlib", "plot rendering", extra="plot"
         ),
-        tool_name="nvbench-compare-robust",
+        tool_name=current_tool_name(),
     )
     ticker = require_tooling_dependency(
         ToolingDependency(
             "matplotlib.ticker", "matplotlib", "plot axis formatting", extra="plot"
         ),
-        tool_name="nvbench-compare-robust",
+        tool_name=current_tool_name(),
     )
     PercentFormatter = ticker.PercentFormatter
 
@@ -3066,13 +3070,13 @@ def compare_benches(
                 "per-axis plot rendering",
                 extra="plot",
             ),
-            tool_name="nvbench-compare-robust",
+            tool_name=current_tool_name(),
         )
         sns = require_tooling_dependency(
             ToolingDependency(
                 "seaborn", "seaborn", "per-axis plot styling", extra="plot"
             ),
-            tool_name="nvbench-compare-robust",
+            tool_name=current_tool_name(),
         )
 
         sns.set_theme()

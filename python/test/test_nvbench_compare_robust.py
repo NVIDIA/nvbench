@@ -183,6 +183,8 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
     attempts = []
     nvbench_compare.np = None
     nvbench_compare.Fore = None
+    tool_name = "nvbench-compare-robust"
+    monkeypatch.setattr(nvbench_compare.sys, "argv", [tool_name])
 
     def fake_require_tooling_dependency(dependency, *, tool_name):
         attempts.append((dependency.import_name, tool_name))
@@ -190,7 +192,7 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
             return types.SimpleNamespace()
         if (
             dependency.import_name == "colorama"
-            and attempts.count(("colorama", "nvbench-compare-robust")) == 1
+            and attempts.count(("colorama", tool_name)) == 1
         ):
             raise nvbench_compare.MissingToolingDependencyError("missing colorama")
         return types.SimpleNamespace(Fore=types.SimpleNamespace(RESET=""))
@@ -203,7 +205,7 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
 
     assert nvbench_compare.np is not None
     assert nvbench_compare.Fore is None
-    assert attempts == [("numpy", "nvbench-compare-robust")]
+    assert attempts == [("numpy", tool_name)]
 
     attempts.clear()
 
@@ -216,8 +218,8 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
 
     assert nvbench_compare.Fore is not None
     assert attempts == [
-        ("colorama", "nvbench-compare-robust"),
-        ("colorama", "nvbench-compare-robust"),
+        ("colorama", tool_name),
+        ("colorama", tool_name),
     ]
 
 
