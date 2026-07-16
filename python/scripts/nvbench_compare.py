@@ -1617,7 +1617,9 @@ def main() -> int:
     print(
         f"  - Regression  (abs(%Diff) > min_noise, %Diff > 0): {stats.regression_count}"
     )
-    print(f"  - Unknown     (infinite or unavailable noise): {stats.unknown_count}")
+    print(
+        f"  - Unknown     (missing or unusable timing/noise data): {stats.unknown_count}"
+    )
     return 0
 
 
