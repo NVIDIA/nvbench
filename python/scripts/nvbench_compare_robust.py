@@ -3322,8 +3322,6 @@ def compare_benches(
             has_plot_along_data = bool(plot_along) and any(
                 axis_times for axis_times in plot_data["cmp"].values()
             )
-            if not has_rows and not has_plot_along_data:
-                continue
 
             cmp_device = find_device_by_id(cmp_device_id, run_data.cmp_devices)
             ref_device = find_device_by_id(ref_device_id, run_data.ref_devices)
@@ -3332,6 +3330,9 @@ def compare_benches(
                     f"benchmark {cmp_bench['name']!r} references device pair "
                     f"ref={ref_device_id} cmp={cmp_device_id}, but device metadata is missing"
                 )
+
+            if not has_rows and not has_plot_along_data:
+                continue
 
             if has_rows:
                 if display == "explain":

@@ -340,6 +340,35 @@ def test_legacy_summary_plot_ignores_threshold_diff_table_filter(
     assert captured_entries[0][1] == pytest.approx(0.01)
 
 
+def test_legacy_validates_device_metadata_when_threshold_hides_rows(
+    nvbench_compare_legacy,
+):
+    run_data = nvbench_compare_legacy.ComparisonRunData(
+        stats=nvbench_compare_legacy.ComparisonStats(),
+        ref_devices=({"id": 0, "name": "GPU"},),
+        cmp_devices=(),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "benchmark 'bench' references device pair ref=0 cmp=0, "
+            "but device metadata is missing"
+        ),
+    ):
+        nvbench_compare_legacy.compare_benches(
+            run_data,
+            [make_benchmark([make_state(nvbench_compare_legacy, "state")])],
+            [make_benchmark([make_state(nvbench_compare_legacy, "state")])],
+            threshold=1.0,
+            plot_along=None,
+            plot=False,
+            dark=False,
+            filter_plan=nvbench_compare_legacy.build_benchmark_filter_plan([]),
+            no_color=True,
+        )
+
+
 @pytest.mark.parametrize("threshold", ["nan", "inf", "-1"])
 def test_legacy_main_rejects_invalid_threshold_diff(
     monkeypatch, capsys, nvbench_compare_legacy, threshold

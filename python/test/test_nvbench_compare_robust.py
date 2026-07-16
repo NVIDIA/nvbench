@@ -2320,6 +2320,35 @@ def test_plot_along_ignores_threshold_diff_table_filter(monkeypatch, nvbench_com
     assert [call["shape"] for call in plot_calls] == ["-", "--"]
 
 
+def test_compare_benches_validates_device_metadata_when_threshold_hides_rows(
+    nvbench_compare,
+):
+    run_data = nvbench_compare.ComparisonRunData(
+        stats=nvbench_compare.ComparisonStats(),
+        ref_devices=({"id": 0, "name": "GPU"},),
+        cmp_devices=(),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "benchmark 'bench' references device pair ref=0 cmp=0, "
+            "but device metadata is missing"
+        ),
+    ):
+        nvbench_compare.compare_benches(
+            run_data,
+            [make_benchmark([make_state(nvbench_compare, "state")])],
+            [make_benchmark([make_state(nvbench_compare, "state")])],
+            threshold=1.0,
+            plot_along=None,
+            plot=False,
+            dark=False,
+            filter_plan=make_filter_plan(nvbench_compare),
+            no_color=True,
+        )
+
+
 def test_plot_along_separates_duplicate_state_occurrences(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     plot_calls = []
