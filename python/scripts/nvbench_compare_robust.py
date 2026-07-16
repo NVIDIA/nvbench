@@ -1338,6 +1338,22 @@ def parse_plot_axis_value(axis_name, axis_value):
     return value
 
 
+def extract_plot_axis_value(axis_values, plot_along, benchmark_name, state_name):
+    axis_name_parts = []
+    for axis_value in axis_values:
+        if axis_value["name"] != plot_along:
+            axis_name_parts.append(f"""{axis_value["name"]} = {axis_value["value"]}""")
+        else:
+            return (
+                parse_plot_axis_value(axis_value["name"], axis_value["value"]),
+                axis_name_parts,
+            )
+    raise ValueError(
+        f"--plot-along axis {plot_along!r} is not present in "
+        f"benchmark {benchmark_name!r} state {state_name!r}"
+    )
+
+
 def make_timing_interval(lower, upper, center):
     if (
         not is_positive_finite(lower)
@@ -3227,35 +3243,26 @@ def compare_benches(
                     and is_positive_finite(comparison.ref_time)
                     and is_positive_finite(comparison.cmp_time)
                 ):
-                    axis_name_parts = []
-                    axis_value = None
-                    for av in axis_values:
-                        if av["name"] != plot_along:
-                            axis_name_parts.append(f"""{av["name"]} = {av["value"]}""")
-                        else:
-                            axis_value = parse_plot_axis_value(av["name"], av["value"])
-                    if axis_value is not None:
-                        axis_name = format_plot_series_key(
-                            cmp_state_name,
-                            occurrence,
-                            cmp_state_counts[cmp_state_key],
-                            axis_name_parts,
-                        )
+                    axis_value, axis_name_parts = extract_plot_axis_value(
+                        axis_values, plot_along, cmp_bench["name"], cmp_state_name
+                    )
+                    axis_name = format_plot_series_key(
+                        cmp_state_name,
+                        occurrence,
+                        cmp_state_counts[cmp_state_key],
+                        axis_name_parts,
+                    )
 
-                        if axis_name not in plot_data["cmp"]:
-                            plot_data["cmp"][axis_name] = {}
-                            plot_data["ref"][axis_name] = {}
-                            plot_data["cmp_noise"][axis_name] = {}
-                            plot_data["ref_noise"][axis_name] = {}
+                    if axis_name not in plot_data["cmp"]:
+                        plot_data["cmp"][axis_name] = {}
+                        plot_data["ref"][axis_name] = {}
+                        plot_data["cmp_noise"][axis_name] = {}
+                        plot_data["ref_noise"][axis_name] = {}
 
-                        plot_data["cmp"][axis_name][axis_value] = comparison.cmp_time
-                        plot_data["ref"][axis_name][axis_value] = comparison.ref_time
-                        plot_data["cmp_noise"][axis_name][axis_value] = (
-                            comparison.cmp_noise
-                        )
-                        plot_data["ref_noise"][axis_name][axis_value] = (
-                            comparison.ref_noise
-                        )
+                    plot_data["cmp"][axis_name][axis_value] = comparison.cmp_time
+                    plot_data["ref"][axis_name][axis_value] = comparison.ref_time
+                    plot_data["cmp_noise"][axis_name][axis_value] = comparison.cmp_noise
+                    plot_data["ref_noise"][axis_name][axis_value] = comparison.ref_noise
 
                 run_data.stats.record(comparison.status, comparison.reason)
                 if comparison.status == ComparisonStatus.UNKNOWN or (

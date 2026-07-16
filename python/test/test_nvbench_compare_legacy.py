@@ -282,6 +282,34 @@ def test_legacy_plot_along_ignores_threshold_diff_table_filter(
     ]
 
 
+def test_legacy_plot_along_rejects_states_without_selected_axis(
+    nvbench_compare_legacy,
+):
+    ref_state = make_state(nvbench_compare_legacy, "without_axis")
+    cmp_state = make_state(nvbench_compare_legacy, "without_axis")
+    ref_state["axis_values"] = []
+    cmp_state["axis_values"] = []
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "--plot-along axis 'A' is not present in "
+            "benchmark 'bench' state 'without_axis'"
+        ),
+    ):
+        nvbench_compare_legacy.compare_benches(
+            make_run_data(nvbench_compare_legacy),
+            [make_benchmark([ref_state])],
+            [make_benchmark([cmp_state])],
+            threshold=0.0,
+            plot_along="A",
+            plot=False,
+            dark=False,
+            filter_plan=nvbench_compare_legacy.build_benchmark_filter_plan([]),
+            no_color=True,
+        )
+
+
 def test_legacy_summary_plot_ignores_threshold_diff_table_filter(
     monkeypatch, nvbench_compare_legacy
 ):
