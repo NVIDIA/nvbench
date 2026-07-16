@@ -3260,7 +3260,8 @@ def test_main_reports_invalid_nested_json_structure(
     assert nvbench_compare.main() == 1
     output = capsys.readouterr().out
     assert "invalid NVBench JSON structure" in output
-    assert "has no attribute 'get'" in output
+    assert "ref.json" in output
+    assert "cmp.json" in output
 
 
 def test_main_rejects_directory_inputs_without_matching_json_files(
