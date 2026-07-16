@@ -631,9 +631,10 @@ uses all samples.
 Valid range: `0 <= value <= 1`
 
 Maximum sample mass that may be removed from unique-support coverage by the rare
-value filter. If filtering would remove more sample mass than this, remove every
-unique value, or operate on an all-unique dataset, support coverage falls back
-to the full unique support.
+value filter. The filter falls back to the full unique support if filtering
+would remove more sample mass than this limit or if the count threshold would
+remove every unique value. The latter includes all-unique datasets, where
+rare-value filtering has no repeated-value support to preserve.
 
 ## Other CLI Options
 
