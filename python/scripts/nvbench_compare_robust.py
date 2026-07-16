@@ -1312,8 +1312,8 @@ def is_nonnegative_finite(value):
     return is_finite(value) and value >= 0.0
 
 
-def symmetric_frac_diff(a, b):
-    return (a - b) / min(a, b)
+def symmetric_frac_diff(delta_t1, delta_t2):
+    return (delta_t1 - delta_t2) / min(delta_t1, delta_t2)
 
 
 def derive_absolute_dispersion(relative_dispersion, center):
@@ -2756,20 +2756,23 @@ def format_change(comparison):
     return format_percentage_bounds(comparison.frac_diff_interval, comparison.status)
 
 
+def format_center_diff(ref_time, cmp_time):
+    if not is_positive_finite(ref_time) or not is_positive_finite(cmp_time):
+        return "n/a"
+    return f"{symmetric_frac_diff(cmp_time, ref_time) * 100.0:+0.1f}%"
+
+
+def format_interval_span(interval):
+    if interval is None or not is_positive_finite(interval.center):
+        return "n/a"
+    if not is_finite(interval.lower) or not is_finite(interval.upper):
+        return "n/a"
+    if interval.upper < interval.lower:
+        return "n/a"
+    return f"{((interval.upper - interval.lower) / interval.center) * 100.0:0.1f}%"
+
+
 def get_display_headers(display):
-    if display == "legacy":
-        return (
-            [
-                "Ref Time",
-                "Ref Noise",
-                "Cmp Time",
-                "Cmp Noise",
-                "Diff",
-                "%Diff",
-                "Status",
-            ],
-            ["right", "right", "right", "right", "right", "right", "center"],
-        )
     if display == "explain":
         return (
             [
@@ -2783,6 +2786,11 @@ def get_display_headers(display):
             ],
             ["right", "right", "right", "right", "left", "right", "center"],
         )
+    if display == "simple":
+        return (
+            ["Ref", "Ref Span", "Cmp", "Cmp Span", "%C Diff", "Change", "Status"],
+            ["right", "right", "right", "right", "right", "right", "center"],
+        )
     return (
         ["Ref", "Cmp", "Change", "Status"],
         ["right", "right", "right", "center"],
@@ -2790,15 +2798,13 @@ def get_display_headers(display):
 
 
 def append_display_row(row, comparison, no_color, display):
-    if display == "legacy":
+    if display == "simple":
         row.append(format_duration(comparison.ref_time))
-        row.append(format_percentage(comparison.ref_noise))
+        row.append(format_interval_span(comparison.ref_interval))
         row.append(format_duration(comparison.cmp_time))
-        row.append(format_percentage(comparison.cmp_noise))
-        row.append(
-            format_duration(comparison.diff, allow_negative=True, allow_zero=True)
-        )
-        row.append(format_percentage(comparison.frac_diff))
+        row.append(format_interval_span(comparison.cmp_interval))
+        row.append(format_center_diff(comparison.ref_time, comparison.cmp_time))
+        row.append(format_change(comparison))
         row.append(colorize_comparison_status(comparison.status, no_color))
         return
 
@@ -3474,7 +3480,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--display",
-        choices=["intervals", "legacy", "explain"],
+        choices=["simple", "intervals", "explain"],
         default="intervals",
         help="comparison table display mode",
     )

@@ -250,16 +250,16 @@ def format_test_percent(value):
     return f"{value * 100.0:0.1f}%"
 
 
-INTERVAL_DISPLAY_HEADERS = ["Ref", "Cmp", "Change", "Status"]
-LEGACY_DISPLAY_HEADERS = [
-    "Ref Time",
-    "Ref Noise",
-    "Cmp Time",
-    "Cmp Noise",
-    "Diff",
-    "%Diff",
+SIMPLE_DISPLAY_HEADERS = [
+    "Ref",
+    "Ref Span",
+    "Cmp",
+    "Cmp Span",
+    "%C Diff",
+    "Change",
     "Status",
 ]
+INTERVAL_DISPLAY_HEADERS = ["Ref", "Cmp", "Change", "Status"]
 EXPLAIN_DISPLAY_HEADERS = [
     "Ref [Lo | Ce | Hi]",
     "Cmp [Lo | Ce | Hi]",
@@ -1634,6 +1634,16 @@ def test_format_diff_and_percent_ranges(nvbench_compare):
         )
         == ">= +7.7%"
     )
+    assert nvbench_compare.format_center_diff(1.0, 1.25) == "+25.0%"
+    assert nvbench_compare.format_center_diff(1.25, 1.0) == "-25.0%"
+    assert nvbench_compare.format_center_diff(None, 1.0) == "n/a"
+    assert (
+        nvbench_compare.format_interval_span(
+            nvbench_compare.TimingInterval(lower=0.98, center=1.0, upper=1.03)
+        )
+        == "5.0%"
+    )
+    assert nvbench_compare.format_interval_span(None) == "n/a"
 
 
 def test_frac_diff_interval_uses_symmetric_ratio(nvbench_compare):
@@ -3478,7 +3488,7 @@ def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compa
     assert row[-2] == ""
 
 
-def test_compare_benches_legacy_display_uses_scalar_diff(monkeypatch, nvbench_compare):
+def test_compare_benches_simple_display_uses_center_diff(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
 
@@ -3495,15 +3505,18 @@ def test_compare_benches_legacy_display_uses_scalar_diff(monkeypatch, nvbench_co
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
         no_color=True,
-        display="legacy",
+        display="simple",
     )
 
-    table = find_tabulate_call(tabulate_calls, LEGACY_DISPLAY_HEADERS)
+    table = find_tabulate_call(tabulate_calls, SIMPLE_DISPLAY_HEADERS)
     row = table["rows"][0]
     assert row[-7] == "1.000 s"
+    assert row[-6] == "2.0%"
     assert row[-5] == "1.010 s"
-    assert row[-3] == "10.000 ms"
-    assert row[-2] == "1.00%"
+    assert row[-4] == "2.0%"
+    assert row[-3] == "+1.0%"
+    assert row[-2] == ""
+    assert row[-1] == "\U0001f937 AMBG"
 
 
 def test_compare_benches_old_tabulate_fallback_uses_pipe_format(

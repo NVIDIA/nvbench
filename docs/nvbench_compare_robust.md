@@ -51,14 +51,17 @@ nvbench-compare-robust \
 ```
 
 Choose a table display mode. The default `intervals` mode shows timing centers
-with compact intervals and the status. `legacy` shows the older time/noise/diff
-columns. `explain` adds explicit low/center/high interval endpoints and decision
-reason codes:
+with compact intervals and the status. `simple` shows timing centers, center
+difference, interval span over center, evidence-backed change, and status.
+`explain` adds explicit low/center/high interval endpoints and decision reason
+codes. Use `nvbench-compare-legacy` when you need the older mean/stdev
+time/noise/diff table and decision rule.
 
 ```bash
+nvbench-compare-robust --display simple reference.json compare.json
 nvbench-compare-robust --display intervals reference.json compare.json
-nvbench-compare-robust --display legacy reference.json compare.json
 nvbench-compare-robust --display explain reference.json compare.json
+nvbench-compare-legacy reference.json compare.json
 ```
 
 Plot the comparison summary, or plot timings along a positive numeric axis. Add
