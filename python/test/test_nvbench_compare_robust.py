@@ -3,6 +3,7 @@
 
 import importlib.util
 import math
+import runpy
 import shutil
 import sys
 import types
@@ -765,6 +766,12 @@ def test_bulk_debug_rows_store_absolute_sidecar_paths(
     assert bulk_debug_rows[0]["compare_sample_filename"] == str(samples_file)
 
 
+def run_generated_bulk_debug_script(tmp_path, script):
+    script_file = tmp_path / "bulk_debug.py"
+    script_file.write_text(script, encoding="utf-8")
+    return runpy.run_path(str(script_file))
+
+
 def test_format_bulk_debug_python_loads_arrays(tmp_path, nvbench_compare):
     samples_file = tmp_path / "samples.bin"
     np.array([1.0, 2.0], dtype="<f4").tofile(samples_file)
@@ -782,11 +789,9 @@ def test_format_bulk_debug_python_loads_arrays(tmp_path, nvbench_compare):
             }
         ]
     )
-    namespace = {}
-
     assert script.startswith("# NVB-BULK-BEGIN\n")
     assert script.endswith("# NVB-BULK-END\n")
-    exec(script, namespace)
+    namespace = run_generated_bulk_debug_script(tmp_path, script)
 
     arrays = namespace["load_bulk_data"](namespace["bulk_rows"][0])
     assert list(arrays["reference_samples"]) == pytest.approx([1.0, 2.0])
@@ -799,7 +804,7 @@ def test_bulk_debug_output_stdout_token_is_case_insensitive(nvbench_compare):
     assert not nvbench_compare.BulkDebugOutput("output.py").is_stdout
 
 
-def test_format_bulk_debug_python_handles_nonfinite_values(nvbench_compare):
+def test_format_bulk_debug_python_handles_nonfinite_values(tmp_path, nvbench_compare):
     script = nvbench_compare.format_bulk_debug_python(
         [
             {
@@ -809,14 +814,12 @@ def test_format_bulk_debug_python_handles_nonfinite_values(nvbench_compare):
             }
         ]
     )
-    namespace = {}
-
     assert 'nan = float("nan")' in script
     assert 'inf = float("inf")' in script
     assert "'reference_time': nan" in script
     assert "'compare_time': inf" in script
     assert "'fractional_difference': -inf" in script
-    exec(script, namespace)
+    namespace = run_generated_bulk_debug_script(tmp_path, script)
 
     row = namespace["bulk_rows"][0]
     assert math.isnan(row["reference_time"])
@@ -824,7 +827,7 @@ def test_format_bulk_debug_python_handles_nonfinite_values(nvbench_compare):
     assert row["fractional_difference"] == -math.inf
 
 
-def test_format_bulk_debug_python_escapes_filenames(nvbench_compare):
+def test_format_bulk_debug_python_escapes_filenames(tmp_path, nvbench_compare):
     filename = "dir/quoted'file\\name\nsamples.bin"
     script = nvbench_compare.format_bulk_debug_python(
         [
@@ -840,9 +843,7 @@ def test_format_bulk_debug_python_escapes_filenames(nvbench_compare):
             }
         ]
     )
-    namespace = {}
-
-    exec(script, namespace)
+    namespace = run_generated_bulk_debug_script(tmp_path, script)
 
     row = namespace["bulk_rows"][0]
     assert row["reference_sample_filename"] == filename
