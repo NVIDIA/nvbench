@@ -16,19 +16,23 @@ file(
 )
 include(${_cpm_download_location})
 
+# Determine CUDA major version for directory structure
+set(CUDA_VERSION_DIR "cu${CUDAToolkit_VERSION_MAJOR}")
+set(CMAKE_INSTALL_INCLUDEDIR "cuda/bench/${CUDA_VERSION_DIR}/include")
+set(CMAKE_INSTALL_LIBDIR     "cuda/bench/${CUDA_VERSION_DIR}")
 CPMAddPackage(
    NAME nvbench
    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
    OPTIONS
-     "NVBench_INSTALL_RULES ON"
+     "NVBench_ENABLE_TESTING OFF"
+     "NVBench_ENABLE_INSTALL_RULES ON"
      "NVBench_ENABLE_CUPTI OFF"
+     "NVBench_ENABLE_EXAMPLES OFF"
    FIND_PACKAGE_ARGS CONFIG REQUIRED
 )
 
-CPMAddPackage("gh:pybind/pybind11@3.0.1")
+CPMAddPackage("gh:pybind/pybind11@3.0.4")
 
-# Determine CUDA major version for directory structure
-set(CUDA_VERSION_DIR "cu${CUDAToolkit_VERSION_MAJOR}")
 message(STATUS "Building extension for CUDA ${CUDAToolkit_VERSION_MAJOR}, output directory: cuda/bench/${CUDA_VERSION_DIR}")
 
 add_library(_nvbench MODULE src/py_nvbench.cpp)
@@ -46,4 +50,4 @@ install(TARGETS _nvbench DESTINATION cuda/bench/${CUDA_VERSION_DIR})
 # Determine target that nvbench::nvbench is an alias of,
 # necessary because ALIAS targets cannot be installed
 get_target_property(_aliased_target_name nvbench::nvbench ALIASED_TARGET)
-install(IMPORTED_RUNTIME_ARTIFACTS ${_aliased_target_name} DESTINATION cuda/bench/${CUDA_VERSION_DIR})
+# install(IMPORTED_RUNTIME_ARTIFACTS ${_aliased_target_name} DESTINATION cuda/bench/${CUDA_VERSION_DIR})
