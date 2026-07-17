@@ -20,6 +20,7 @@ import functools
 import importlib
 import importlib.metadata
 import warnings
+from pathlib import Path
 
 from ._decorators import axis as axis
 from ._decorators import make_register as _make_register
@@ -49,6 +50,10 @@ _NVBENCH_EXPORTS = (
 _PUBLIC_EXPORTS = (
     *_NVBENCH_EXPORTS,
     "axis",
+    "get_nvbench_cmake_dir",
+    "get_nvbench_include_dir",
+    "get_nvbench_library_dir",
+    "get_nvbench_prefix",
     "option",
     "register",
 )
@@ -62,6 +67,12 @@ __all__ = list(_PUBLIC_EXPORTS)
 
 # Optional test override used by decorator tests.
 _register = None
+
+_SUPPORTED_CUDA_MAJOR_VERSIONS = (12, 13)
+
+
+def _format_supported_cuda_versions():
+    return ", ".join(str(major) for major in _SUPPORTED_CUDA_MAJOR_VERSIONS)
 
 
 # Detect CUDA runtime version and load appropriate extension
@@ -80,6 +91,65 @@ def _get_cuda_major_version():
             "cuda-bindings is required for runtime CUDA version detection. "
             "Install with: pip install cuda-bench[cu12] or pip install cuda-bench[cu13]"
         )
+
+
+def _normalize_cuda_major_version(cuda_major):
+    if cuda_major is None:
+        cuda_major = _get_cuda_major_version()
+    elif isinstance(cuda_major, bool) or not isinstance(cuda_major, int):
+        raise TypeError("cuda_major must be an integer CUDA major version")
+
+    if cuda_major not in _SUPPORTED_CUDA_MAJOR_VERSIONS:
+        raise ValueError(
+            f"Unsupported CUDA major version: {cuda_major}. "
+            f"Supported CUDA versions: {_format_supported_cuda_versions()}."
+        )
+    return cuda_major
+
+
+def get_nvbench_prefix(cuda_major=None):
+    """Return the embedded NVBench install prefix for a CUDA major version.
+
+    If *cuda_major* is not provided, use the same CUDA major version selected
+    by cuda-bench at runtime.
+    """
+
+    cuda_major = _normalize_cuda_major_version(cuda_major)
+    prefix = Path(__file__).resolve().parent / f"cu{cuda_major}" / "nvbench"
+    if not prefix.is_dir():
+        raise FileNotFoundError(
+            "cuda-bench wheel does not contain an embedded NVBench install "
+            f"prefix for CUDA {cuda_major}.x: {prefix}"
+        )
+    return prefix
+
+
+def _get_existing_nvbench_subdirectory(cuda_major, name):
+    path = get_nvbench_prefix(cuda_major) / name
+    if not path.is_dir():
+        raise FileNotFoundError(f"Embedded NVBench {name} directory not found: {path}")
+    return path
+
+
+def get_nvbench_include_dir(cuda_major=None):
+    """Return the embedded NVBench include directory."""
+
+    return _get_existing_nvbench_subdirectory(cuda_major, "include")
+
+
+def get_nvbench_library_dir(cuda_major=None):
+    """Return the embedded NVBench library directory."""
+
+    return _get_existing_nvbench_subdirectory(cuda_major, "lib")
+
+
+def get_nvbench_cmake_dir(cuda_major=None):
+    """Return the embedded NVBench CMake package directory."""
+
+    path = get_nvbench_library_dir(cuda_major) / "cmake" / "nvbench"
+    if not path.is_dir():
+        raise FileNotFoundError(f"Embedded NVBench CMake directory not found: {path}")
+    return path
 
 
 def _bind_nvbench_module(module):
@@ -107,7 +177,7 @@ def _load_nvbench_module():
         raise ImportError(
             f"No cuda-bench extension found for CUDA {cuda_major}.x. "
             f"This wheel may not include support for your CUDA version. "
-            f"Supported CUDA versions: 12, 13. "
+            f"Supported CUDA versions: {_format_supported_cuda_versions()}. "
             f"Original error: {e}"
         ) from e
 
