@@ -33,17 +33,22 @@ macro(nvbench_generate_exports)
       string(APPEND nvbench_install_export_code_block ${nvbench_json_code_block})
     endif()
 
+    set(nvbench_global_targets nvbench main internal_build_interface)
+    if(TARGET nvbench.ctl)
+      list(APPEND nvbench_global_targets ctl)
+    endif()
+
     rapids_export(BUILD NVBench
       EXPORT_SET nvbench-targets
       NAMESPACE "nvbench::"
-      GLOBAL_TARGETS nvbench main ctl internal_build_interface
+      GLOBAL_TARGETS ${nvbench_global_targets}
       LANGUAGES CUDA CXX
       FINAL_CODE_BLOCK nvbench_build_export_code_block
     )
     rapids_export(INSTALL NVBench
       EXPORT_SET nvbench-targets
       NAMESPACE "nvbench::"
-      GLOBAL_TARGETS nvbench main ctl internal_build_interface
+      GLOBAL_TARGETS ${nvbench_global_targets}
       LANGUAGES CUDA CXX
       FINAL_CODE_BLOCK nvbench_install_export_code_block
     )
