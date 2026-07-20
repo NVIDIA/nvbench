@@ -60,6 +60,11 @@ struct l2flush
     }
   }
 
+  l2flush(const l2flush &)            = delete;
+  l2flush(l2flush &&)                 = delete;
+  l2flush &operator=(const l2flush &) = delete;
+  l2flush &operator=(l2flush &&)      = delete;
+
   __forceinline__ void flush(cudaStream_t stream)
   {
     if (m_l2_size > 0)

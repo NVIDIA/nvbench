@@ -43,11 +43,11 @@ struct gpu_frequency
 {
   gpu_frequency() = default;
 
-  // move-only
+  // timestamps_kernel members are tied to their own registered host storage.
   gpu_frequency(const gpu_frequency &)            = delete;
-  gpu_frequency(gpu_frequency &&)                 = default;
+  gpu_frequency(gpu_frequency &&)                 = delete;
   gpu_frequency &operator=(const gpu_frequency &) = delete;
-  gpu_frequency &operator=(gpu_frequency &&)      = default;
+  gpu_frequency &operator=(gpu_frequency &&)      = delete;
 
   void start(const nvbench::cuda_stream &stream) { m_start.record(stream); }
 
