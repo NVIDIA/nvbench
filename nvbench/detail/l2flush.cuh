@@ -60,6 +60,7 @@ struct l2flush
     }
   }
 
+  // This object owns a CUDA allocation that must be freed exactly once.
   l2flush(const l2flush &)            = delete;
   l2flush(l2flush &&)                 = delete;
   l2flush &operator=(const l2flush &) = delete;
