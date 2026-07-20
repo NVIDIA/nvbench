@@ -92,6 +92,13 @@ def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
         return f"{fore}{msg}{Fore.RESET}"
 
 
+def colorize_status(
+    status_label: str, fore_name: str, emoji: Emoji, no_color: bool
+) -> str:
+    fore = "" if no_color else getattr(Fore, fore_name)
+    return colorize(status_label, fore, emoji, no_color)
+
+
 def find_matching_bench(needle, haystack):
     for hay in haystack:
         if hay["name"] == needle["name"]:
@@ -533,19 +540,23 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    status = colorize(status_label, Fore.YELLOW, Emoji.YELLOW, no_color)
+                    status = colorize_status(
+                        status_label, "YELLOW", Emoji.YELLOW, no_color
+                    )
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    status = colorize(status_label, Fore.BLUE, Emoji.BLUE, no_color)
+                    status = colorize_status(status_label, "BLUE", Emoji.BLUE, no_color)
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    status = colorize(status_label, Fore.GREEN, Emoji.GREEN, no_color)
+                    status = colorize_status(
+                        status_label, "GREEN", Emoji.GREEN, no_color
+                    )
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    status = colorize(status_label, Fore.RED, Emoji.RED, no_color)
+                    status = colorize_status(status_label, "RED", Emoji.RED, no_color)
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
