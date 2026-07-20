@@ -74,6 +74,6 @@ void test_basic()
 
 int main()
 {
-  test_move();
   test_basic();
+  test_move();
 }
