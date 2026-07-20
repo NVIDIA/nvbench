@@ -23,7 +23,27 @@
 
 #include <fmt/format.h>
 
+#include <type_traits>
+#include <utility>
+
 #include "test_asserts.cuh"
+
+static_assert(std::is_nothrow_move_constructible_v<nvbench::cuda_timer>);
+static_assert(std::is_nothrow_move_assignable_v<nvbench::cuda_timer>);
+
+void test_move()
+{
+  nvbench::cuda_timer source;
+  nvbench::cuda_timer moved{std::move(source)};
+  nvbench::cuda_timer assigned;
+  assigned = std::move(moved);
+
+  nvbench::cuda_stream stream;
+  assigned.start(stream);
+  assigned.stop(stream);
+  NVBENCH_CUDA_CALL(cudaDeviceSynchronize());
+  ASSERT(assigned.ready());
+}
 
 void test_basic(cudaStream_t time_stream, cudaStream_t exec_stream, bool expected)
 {
@@ -52,4 +72,8 @@ void test_basic()
   test_basic(stream1, stream2, false);
 }
 
-int main() { test_basic(); }
+int main()
+{
+  test_basic();
+  test_move();
+}
