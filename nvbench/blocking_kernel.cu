@@ -33,6 +33,9 @@
 namespace
 {
 
+// high_resolution_clock is suitable for measuring elapsed time within device code.
+using device_clock = cuda::std::chrono::high_resolution_clock;
+
 // Once launched, this kernel will block the stream until `flag` updates is
 // non-zero. If `timeout` seconds pass, an error will be printed and the stream
 // will unblock.
@@ -40,16 +43,16 @@ __global__ void block_stream(const volatile nvbench::int32_t *flag,
                              volatile nvbench::int32_t *timeout_flag,
                              nvbench::float64_t timeout)
 {
-  const auto start_point = cuda::std::chrono::high_resolution_clock::now();
+  const auto start_point = device_clock::now();
   const auto timeout_ns =
     cuda::std::chrono::nanoseconds(static_cast<nvbench::int64_t>(timeout * 1e9));
   const auto timeout_point = start_point + timeout_ns;
 
   const bool use_timeout = timeout >= 0.;
-  auto now               = cuda::std::chrono::high_resolution_clock::now();
+  auto now               = device_clock::now();
   while (!(*flag) && (!use_timeout || now < timeout_point))
   {
-    now = cuda::std::chrono::high_resolution_clock::now();
+    now = device_clock::now();
   }
 
   if (now >= timeout_point)
