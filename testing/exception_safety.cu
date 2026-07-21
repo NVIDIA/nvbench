@@ -130,7 +130,7 @@ void run_benchmark(test_control &control, bool add_axis = false)
   bench.add_device(0);
   bench.set_min_samples(1);
   bench.set_timeout(0.01);
-  bench.set_criterion_param_float64("min-time", 1e-6);
+  bench.set_min_time(1e-6);
   if (add_axis)
   {
     bench.add_int64_axis("Case", {0, 1, 2});

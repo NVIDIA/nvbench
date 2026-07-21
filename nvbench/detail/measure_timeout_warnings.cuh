@@ -52,16 +52,35 @@ get_float64_criterion_param(const nvbench::criterion_params &params, const std::
   return params.get_float64(name);
 }
 
+inline bool min_time_can_block_stop(const nvbench::stopping_criterion_base &criterion,
+                                    nvbench::int64_t total_samples,
+                                    nvbench::float64_t accumulated_time,
+                                    nvbench::float64_t min_time)
+{
+  const nvbench::stopping_context min_samples_satisfied_context{total_samples,
+                                                                accumulated_time,
+                                                                total_samples,
+                                                                min_time};
+  const nvbench::stopping_context min_time_satisfied_context{total_samples,
+                                                             accumulated_time,
+                                                             total_samples,
+                                                             accumulated_time};
+
+  return !criterion.is_eligible_to_stop(min_samples_satisfied_context) &&
+         criterion.is_eligible_to_stop(min_time_satisfied_context);
+}
+
 inline void log_measurement_timeout_warnings(nvbench::printer_base &printer,
                                              const nvbench::criterion_params &criterion_params,
                                              nvbench::float64_t timeout,
                                              nvbench::int64_t total_samples,
                                              nvbench::int64_t min_samples,
+                                             nvbench::float64_t min_time,
+                                             bool can_min_time_block_stop,
                                              nvbench::float64_t accumulated_time,
                                              std::optional<nvbench::float64_t> stdev_noise)
 {
   const auto max_noise = get_float64_criterion_param(criterion_params, "max-noise");
-  const auto min_time  = get_float64_criterion_param(criterion_params, "min-time");
 
   const auto enough_samples_for_noise =
     statistics::has_enough_samples_for_noise_estimate(total_samples);
@@ -102,7 +121,7 @@ inline void log_measurement_timeout_warnings(nvbench::printer_base &printer,
                             total_samples,
                             min_samples));
   }
-  if (min_time && accumulated_time < *min_time)
+  if (can_min_time_block_stop && accumulated_time < min_time)
   {
     printer.log(nvbench::log_level::warn,
                 fmt::format("Current measurement timed out ({:0.2f}s) "
@@ -110,7 +129,7 @@ inline void log_measurement_timeout_warnings(nvbench::printer_base &printer,
                             "{:0.2f}s)",
                             timeout,
                             accumulated_time,
-                            *min_time));
+                            min_time));
   }
 }
 

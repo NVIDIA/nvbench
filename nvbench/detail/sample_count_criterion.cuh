@@ -45,6 +45,7 @@ protected:
   virtual void do_initialize() override;
   virtual void do_add_measurement(nvbench::float64_t measurement) override;
   virtual bool do_is_finished() override;
+  virtual bool do_is_eligible_to_stop(const nvbench::stopping_context &context) const override;
 };
 
 } // namespace nvbench::detail

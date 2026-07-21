@@ -47,6 +47,7 @@ state::state(const benchmark_base &bench)
     , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
     , m_cold_warmup_runs{bench.get_cold_warmup_runs()}
+    , m_min_time{bench.get_min_time()}
     , m_cold_max_warmup_walltime{bench.get_cold_max_warmup_walltime()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
@@ -71,6 +72,7 @@ state::state(const benchmark_base &bench,
     , m_stopping_criterion(bench.get_stopping_criterion())
     , m_min_samples{bench.get_min_samples()}
     , m_cold_warmup_runs{bench.get_cold_warmup_runs()}
+    , m_min_time{bench.get_min_time()}
     , m_cold_max_warmup_walltime{bench.get_cold_max_warmup_walltime()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}

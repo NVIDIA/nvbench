@@ -29,11 +29,7 @@ function (nvbench_add_examples_target target_prefix cuda_std)
     target_link_libraries(${example_name} PRIVATE nvbench::main)
     set_target_properties(${example_name} PROPERTIES COMPILE_FEATURES cuda_std_${cuda_std})
 
-    set(example_args --timeout 0.1)
-    # The custom_criterion example doesn't support the --min-time argument:
-    if (NOT "${example_src}" STREQUAL "custom_criterion.cu")
-      list(APPEND example_args --min-time 1e-5)
-    endif()
+    set(example_args --timeout 0.1 --min-time 1e-5)
 
     add_test(NAME ${example_name}
       COMMAND "$<TARGET_FILE:${example_name}>" ${example_args})

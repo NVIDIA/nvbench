@@ -45,6 +45,17 @@ namespace detail
 inline std::string default_stopping_criterion() { return "stdrel"; }
 } // namespace detail
 
+struct stopping_context
+{
+  nvbench::int64_t total_samples{};
+  nvbench::float64_t total_time{};
+  nvbench::int64_t min_samples{};
+  nvbench::float64_t min_time{};
+
+  [[nodiscard]] bool needs_more_samples() const { return total_samples < min_samples; }
+  [[nodiscard]] bool needs_more_time() const { return total_time < min_time; }
+};
+
 /**
  * Stores all the parameters for stopping criterion in use
  */
@@ -121,6 +132,23 @@ public:
    */
   bool is_finished() { return this->do_is_finished(); }
 
+  /**
+   * Check if the criterion is eligible to stop under the current measurement context and has
+   * been met for all measurements processed by `add_measurement`.
+   */
+  bool is_finished(const stopping_context &context)
+  {
+    return this->do_is_eligible_to_stop(context) && this->do_is_finished();
+  }
+
+  /**
+   * Check if framework-level measurement limits permit stopping.
+   */
+  bool is_eligible_to_stop(const stopping_context &context) const
+  {
+    return this->do_is_eligible_to_stop(context);
+  }
+
 protected:
   /**
    * Initialize the criterion after updating the parameters
@@ -136,6 +164,18 @@ protected:
    * Check if the criterion has been met for all measurements processed by `add_measurement`
    */
   virtual bool do_is_finished() = 0;
+
+  /**
+   * Check if framework-level measurement limits permit stopping.
+   *
+   * The default preserves the historical behavior for custom criteria: honor min_samples before
+   * applying the criterion's own stopping decision, but do not impose min_time unless the
+   * criterion opts in.
+   */
+  virtual bool do_is_eligible_to_stop(const stopping_context &context) const
+  {
+    return !context.needs_more_samples();
+  }
 };
 
 } // namespace nvbench

@@ -51,6 +51,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
     , m_cold_warmup_runs{exec_state.get_cold_warmup_runs()}
+    , m_min_time{exec_state.get_min_time()}
     , m_cold_max_warmup_walltime{exec_state.get_cold_max_warmup_walltime()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
@@ -179,13 +180,13 @@ bool measure_cold_base::is_finished()
     return true;
   }
 
-  // Check that we've gathered enough samples:
-  if (m_total_samples >= m_min_samples)
+  const nvbench::stopping_context context{m_total_samples,
+                                          m_total_cuda_time,
+                                          m_min_samples,
+                                          m_min_time};
+  if (m_stopping_criterion.is_finished(context))
   {
-    if (m_stopping_criterion.is_finished())
-    {
-      return true;
-    }
+    return true;
   }
 
   // Check for timeouts:
@@ -211,13 +212,16 @@ void measure_cold_base::log_timeout_warnings(nvbench::printer_base &printer,
 
   const auto timeout = m_walltime_timer.get_duration();
 
-  log_measurement_timeout_warnings(printer,
-                                   m_criterion_params,
-                                   timeout,
-                                   m_total_samples,
-                                   m_min_samples,
-                                   m_total_cuda_time,
-                                   cuda_stdev_noise);
+  log_measurement_timeout_warnings(
+    printer,
+    m_criterion_params,
+    timeout,
+    m_total_samples,
+    m_min_samples,
+    m_min_time,
+    min_time_can_block_stop(m_stopping_criterion, m_total_samples, m_total_cuda_time, m_min_time),
+    m_total_cuda_time,
+    cuda_stdev_noise);
 }
 
 void measure_cold_base::generate_summaries()

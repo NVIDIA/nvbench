@@ -155,6 +155,11 @@ struct state
   void set_min_samples(nvbench::int64_t min_samples) { m_min_samples = min_samples; }
   /// @}
 
+  /// Accumulate at least this much measurement time when the stopping criterion requires it. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
+  /// @}
+
   /// Execute this many warmup runs before collecting cold measurement samples. @{
   [[nodiscard]] nvbench::int64_t get_cold_warmup_runs() const { return m_cold_warmup_runs; }
   void set_cold_warmup_runs(nvbench::int64_t cold_warmup_runs)
@@ -357,6 +362,7 @@ private:
   nvbench::int64_t m_min_samples;
   nvbench::int64_t m_cold_warmup_runs;
 
+  nvbench::float64_t m_min_time;
   nvbench::float64_t m_cold_max_warmup_walltime;
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;

@@ -68,6 +68,23 @@ void test_target_samples_one()
   ASSERT(criterion.is_finished());
 }
 
+void test_context_ignores_global_floors()
+{
+  nvbench::criterion_params params;
+  params.set_int64("target-samples", 3);
+
+  nvbench::detail::sample_count_criterion criterion;
+  criterion.initialize(params);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    criterion.add_measurement(1.0);
+  }
+
+  ASSERT(criterion.is_finished());
+  ASSERT(criterion.is_finished(nvbench::stopping_context{3, 0.0, 10, 1.0}));
+}
+
 void test_non_positive_target_samples()
 {
   for (const auto target_samples : {0, -1})
@@ -85,5 +102,6 @@ int main()
   test_default_target_samples();
   test_custom_target_samples();
   test_target_samples_one();
+  test_context_ignores_global_floors();
   test_non_positive_target_samples();
 }

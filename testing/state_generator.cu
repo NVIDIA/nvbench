@@ -764,6 +764,7 @@ void test_termination_criteria()
 {
   const nvbench::int64_t min_samples                = 1000;
   const nvbench::int64_t cold_warmup_runs           = 7;
+  const nvbench::float64_t min_time                 = 2000;
   const nvbench::float64_t cold_max_warmup_walltime = 3000;
   const nvbench::float64_t skip_time                = 4000;
   const nvbench::float64_t timeout                  = 5000;
@@ -774,6 +775,7 @@ void test_termination_criteria()
   dummy_bench bench;
   bench.set_devices(std::vector<int>{});
   bench.set_min_samples(min_samples);
+  bench.set_min_time(min_time);
   bench.set_cold_warmup_runs(cold_warmup_runs);
   bench.set_cold_max_warmup_walltime(cold_max_warmup_walltime);
   bench.set_skip_time(skip_time);
@@ -783,6 +785,7 @@ void test_termination_criteria()
 
   ASSERT(states.size() == 1);
   ASSERT(min_samples == states[0].get_min_samples());
+  ASSERT(within_one(min_time, states[0].get_min_time()));
   ASSERT(cold_warmup_runs == states[0].get_cold_warmup_runs());
   ASSERT(within_one(cold_max_warmup_walltime, states[0].get_cold_max_warmup_walltime()));
   ASSERT(within_one(skip_time, states[0].get_skip_time()));

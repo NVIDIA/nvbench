@@ -557,8 +557,9 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->update_int64_prop(first[0], first[1]);
       first += 2;
     }
-    else if (arg == "--skip-time" || arg == "--timeout" || arg == "--cold-max-warmup-walltime" ||
-             arg == "--throttle-threshold" || arg == "--throttle-recovery-delay")
+    else if (arg == "--min-time" || arg == "--skip-time" || arg == "--timeout" ||
+             arg == "--cold-max-warmup-walltime" || arg == "--throttle-threshold" ||
+             arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -1129,6 +1130,10 @@ try
   if (prop_arg == "--skip-time")
   {
     bench.set_skip_time(value);
+  }
+  else if (prop_arg == "--min-time")
+  {
+    bench.set_min_time(value);
   }
   else if (prop_arg == "--timeout")
   {

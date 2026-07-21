@@ -169,6 +169,15 @@ struct benchmark_base
   }
   /// @}
 
+  /// Accumulate at least this much measurement time when the stopping criterion requires it. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  benchmark_base &set_min_time(nvbench::float64_t min_time)
+  {
+    m_min_time = min_time;
+    return *this;
+  }
+  /// @}
+
   /// Execute this many warmup runs before collecting cold measurement samples. @{
   [[nodiscard]] nvbench::int64_t get_cold_warmup_runs() const { return m_cold_warmup_runs; }
   benchmark_base &set_cold_warmup_runs(nvbench::int64_t cold_warmup_runs)
@@ -348,6 +357,7 @@ protected:
   nvbench::int64_t m_min_samples{10};
   nvbench::int64_t m_cold_warmup_runs{1};
 
+  nvbench::float64_t m_min_time{0.5};
   nvbench::float64_t m_cold_max_warmup_walltime{-1.};
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};

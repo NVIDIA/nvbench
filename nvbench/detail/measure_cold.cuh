@@ -123,6 +123,7 @@ protected:
   nvbench::int64_t m_min_samples{};
   nvbench::int64_t m_cold_warmup_runs{1};
 
+  nvbench::float64_t m_min_time{};
   nvbench::float64_t m_cold_max_warmup_walltime{};
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};

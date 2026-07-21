@@ -45,4 +45,9 @@ bool sample_count_criterion::do_is_finished()
   return m_total_samples >= m_params.get_int64("target-samples");
 }
 
+bool sample_count_criterion::do_is_eligible_to_stop(const nvbench::stopping_context &) const
+{
+  return true;
+}
+
 } // namespace nvbench::detail

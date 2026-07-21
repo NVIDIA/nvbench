@@ -39,6 +39,22 @@ void test_const()
   ASSERT(criterion.is_finished());
 }
 
+void test_context_requires_min_samples_only()
+{
+  nvbench::criterion_params params;
+  nvbench::detail::entropy_criterion criterion;
+
+  criterion.initialize(params);
+  for (int i = 0; i < 6; i++)
+  {
+    criterion.add_measurement(42.0);
+  }
+
+  ASSERT(criterion.is_finished());
+  ASSERT(!criterion.is_finished(nvbench::stopping_context{5, 1.0, 6, 0.0}));
+  ASSERT(criterion.is_finished(nvbench::stopping_context{6, 0.0, 6, 1.0}));
+}
+
 void produce_entropy_arch(nvbench::detail::entropy_criterion &criterion)
 {
   /*
@@ -87,5 +103,6 @@ void test_entropy_arch()
 int main()
 {
   test_const();
+  test_context_requires_min_samples_only();
   test_entropy_arch();
 }
