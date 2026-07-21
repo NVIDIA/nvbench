@@ -1207,12 +1207,38 @@ void test_min_samples()
 
 void test_min_time()
 {
-  nvbench::option_parser parser;
-  parser.parse({"--benchmark", "DummyBench", "--min-time", "12345e-2"});
-  const auto &states = parser_to_states(parser);
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--min-time", "12345e-2"});
+    const auto &states = parser_to_states(parser);
 
-  ASSERT(states.size() == 1);
-  ASSERT(std::abs(states[0].get_min_time() - 12345e-2) < 1e-12);
+    ASSERT(states.size() == 1);
+    ASSERT(std::abs(states[0].get_min_time() - 12345e-2) < 1e-12);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--min-time", "0"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_min_time() == 0.);
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--min-time", "-1"}));
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--min-time", "nan"}));
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--min-time", "inf"}));
+  }
 }
 
 void test_cold_warmup_runs()

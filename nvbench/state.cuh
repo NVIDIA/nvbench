@@ -29,6 +29,7 @@
 #endif
 
 #include <nvbench/cuda_stream.cuh>
+#include <nvbench/detail/validate_min_time.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/named_values.cuh>
@@ -157,7 +158,11 @@ struct state
 
   /// Accumulate at least this much measurement time when the stopping criterion requires it. @{
   [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
-  void set_min_time(nvbench::float64_t min_time) { m_min_time = min_time; }
+  void set_min_time(nvbench::float64_t min_time)
+  {
+    nvbench::detail::validate_min_time(min_time);
+    m_min_time = min_time;
+  }
   /// @}
 
   /// Execute this many warmup runs before collecting cold measurement samples. @{

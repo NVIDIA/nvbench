@@ -162,6 +162,8 @@
     criteria may ignore it.
   * Batched measurements use this limit directly because they are not controlled
     by a stopping criterion.
+  * Must be finite and non-negative. Use `0` to disable this minimum-time
+    requirement.
   * Default is 0.5 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.

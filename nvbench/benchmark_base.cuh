@@ -29,6 +29,7 @@
 #endif
 
 #include <nvbench/axes_metadata.cuh>
+#include <nvbench/detail/validate_min_time.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/stopping_criterion.cuh>
@@ -173,6 +174,7 @@ struct benchmark_base
   [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
   benchmark_base &set_min_time(nvbench::float64_t min_time)
   {
+    nvbench::detail::validate_min_time(min_time);
     m_min_time = min_time;
     return *this;
   }
