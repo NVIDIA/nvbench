@@ -4,7 +4,7 @@ import argparse
 import math
 import os
 import sys
-from enum import StrEnum
+from enum import Enum
 
 if __package__:
     from .nvbench_json import reader
@@ -74,7 +74,7 @@ failure_count = 0
 pass_count = 0
 
 
-class Emoji(StrEnum):
+class Emoji(str, Enum):
     YELLOW = "\U0001f7e1"
     BLUE = "\U0001f535"
     GREEN = "\U0001f7e2"
@@ -85,7 +85,7 @@ class Emoji(StrEnum):
 def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
     if no_color:
         prefix = ""
-        if emoji_s := str(emoji):
+        if emoji_s := emoji.value:
             prefix = f"{emoji_s} "
         return f"{prefix}{msg}"
     else:
