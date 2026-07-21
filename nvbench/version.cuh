@@ -31,6 +31,11 @@
 // Include the auto-generated version header:
 #include <nvbench/detail/version.cuh>
 
+#ifdef NVBENCH_VERSION
+// undefine auto-generated string NVBENCH_VERSION
+#undef NVBENCH_VERSION
+#endif
+
 // clang-format off
 
 /// Numeric version as "MMmmpp"

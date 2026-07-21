@@ -33,6 +33,8 @@
 
 #include <cuda_runtime_api.h>
 
+#include <utility>
+
 namespace nvbench
 {
 
@@ -44,17 +46,27 @@ struct cuda_timer
     NVBENCH_CUDA_CALL(cudaEventCreate(&m_stop));
   }
 
-  __forceinline__ ~cuda_timer()
-  {
-    NVBENCH_CUDA_CALL(cudaEventDestroy(m_start));
-    NVBENCH_CUDA_CALL(cudaEventDestroy(m_stop));
-  }
+  __forceinline__ ~cuda_timer() { this->destroy(); }
 
   // move-only
   cuda_timer(const cuda_timer &)            = delete;
-  cuda_timer(cuda_timer &&)                 = default;
   cuda_timer &operator=(const cuda_timer &) = delete;
-  cuda_timer &operator=(cuda_timer &&)      = default;
+
+  cuda_timer(cuda_timer &&other) noexcept
+      : m_start{std::exchange(other.m_start, nullptr)}
+      , m_stop{std::exchange(other.m_stop, nullptr)}
+  {}
+
+  cuda_timer &operator=(cuda_timer &&other) noexcept
+  {
+    if (this != &other)
+    {
+      this->destroy();
+      m_start = std::exchange(other.m_start, nullptr);
+      m_stop  = std::exchange(other.m_stop, nullptr);
+    }
+    return *this;
+  }
 
   __forceinline__ void start(cudaStream_t stream)
   {
@@ -88,6 +100,18 @@ struct cuda_timer
   }
 
 private:
+  __forceinline__ void destroy() noexcept
+  {
+    if (m_start != nullptr)
+    {
+      NVBENCH_CUDA_CALL_NOEXCEPT(cudaEventDestroy(m_start));
+    }
+    if (m_stop != nullptr)
+    {
+      NVBENCH_CUDA_CALL_NOEXCEPT(cudaEventDestroy(m_stop));
+    }
+  }
+
   cudaEvent_t m_start;
   cudaEvent_t m_stop;
 };
