@@ -1450,6 +1450,27 @@ void test_stopping_criterion()
     ASSERT(states.size() == 1);
     ASSERT(states[0].get_stopping_criterion() == "sample-count");
     ASSERT(states[0].get_criterion_params().get_int64("target-samples") == 3);
+    ASSERT(!states[0].get_criterion_params().has_value("min-time"));
+    ASSERT(states[0].get_min_time() == 1e-5);
+  }
+  { // min-time remains a measurement option when it precedes the criterion:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--min-time",
+      "1e-5",
+      "--stopping-criterion",
+      "sample-count",
+      "--target-samples",
+      "3",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "sample-count");
+    ASSERT(states[0].get_criterion_params().get_int64("target-samples") == 3);
+    ASSERT(!states[0].get_criterion_params().has_value("min-time"));
     ASSERT(states[0].get_min_time() == 1e-5);
   }
   { // min-time is also independent from entropy criterion parameters:
