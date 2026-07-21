@@ -131,7 +131,7 @@
     before any `--benchmark` arguments.
 
 * `--disable-blocking-kernel`
-  * Do not use the `blocking_kernel`.
+  * Disable NVBench's stream-blocking timing helper for cold measurements.
   * This is narrower than `--profile`: it preserves normal repeated benchmark
     execution. Use `--profile` for external profiling workflows.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
