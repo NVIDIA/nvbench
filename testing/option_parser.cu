@@ -1347,6 +1347,18 @@ void test_disable_blocking_kernel()
     parser.parse({"--benchmark", "DummyBench", "--profile"});
     assert_state_flags(parser_to_states(parser), true, true);
   }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--profile", "--disable-blocking-kernel"});
+    assert_state_flags(parser_to_states(parser), true, true);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--disable-blocking-kernel", "--profile"});
+    assert_state_flags(parser_to_states(parser), true, true);
+  }
 }
 
 void test_output_parent_directories_created()
