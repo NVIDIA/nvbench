@@ -67,6 +67,26 @@ namespace fs = std::experimental::filesystem;
 namespace
 {
 
+enum class stream_printer_spec
+{
+  none,
+  stdout_stream,
+  stderr_stream,
+};
+
+[[nodiscard]] stream_printer_spec classify_stream_printer_spec(std::string_view spec)
+{
+  if (spec == "stdout")
+  {
+    return stream_printer_spec::stdout_stream;
+  }
+  if (spec == "stderr")
+  {
+    return stream_printer_spec::stderr_stream;
+  }
+  return stream_printer_spec::none;
+}
+
 //==============================================================================
 // helpers types for using std::string_view with std::regex
 using sv_citer          = std::string_view::const_iterator;
@@ -623,6 +643,13 @@ catch (std::exception &e)
 void option_parser::add_json_printer(const std::string &spec, bool enable_binary)
 try
 {
+  if (enable_binary && classify_stream_printer_spec(spec) != stream_printer_spec::none)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "--jsonbin requires a file path; '{}' is a stream destination.",
+                  spec);
+  }
+
   std::ostream &stream = this->printer_spec_to_ostream(spec);
   m_printer.emplace<nvbench::json_printer>(stream, spec, enable_binary);
 }
@@ -637,26 +664,26 @@ catch (std::exception &e)
 
 std::ostream &option_parser::printer_spec_to_ostream(const std::string &spec)
 {
-  if (spec == "stdout")
+  switch (classify_stream_printer_spec(spec))
   {
-    m_have_stdout_printer = true;
-    return std::cout;
+    case stream_printer_spec::stdout_stream:
+      m_have_stdout_printer = true;
+      return std::cout;
+    case stream_printer_spec::stderr_stream:
+      return std::cerr;
+    case stream_printer_spec::none:
+      // spec is a filename:
+      break;
   }
-  else if (spec == "stderr")
-  {
-    return std::cerr;
-  }
-  else // spec is a filename:
-  {
-    ::create_output_parent_directories(spec);
 
-    auto file_stream = std::make_unique<std::ofstream>();
-    // Throw if file can't open
-    file_stream->exceptions(file_stream->exceptions() | std::ios::failbit);
-    file_stream->open(spec);
-    m_ofstream_storage.push_back(std::move(file_stream));
-    return *m_ofstream_storage.back();
-  }
+  ::create_output_parent_directories(spec);
+
+  auto file_stream = std::make_unique<std::ofstream>();
+  // Throw if file can't open
+  file_stream->exceptions(file_stream->exceptions() | std::ios::failbit);
+  file_stream->open(spec);
+  m_ofstream_storage.push_back(std::move(file_stream));
+  return *m_ofstream_storage.back();
 }
 
 void option_parser::print_version() const
