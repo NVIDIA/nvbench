@@ -1265,6 +1265,35 @@ void test_timeout()
   ASSERT(std::abs(states[0].get_timeout() - 12345e2) < 1.);
 }
 
+void test_json_stream_destinations()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--json", "stdout"});
+  }
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--json", "stderr"});
+  }
+
+  for (const char *stream_name : {"stdout", "stderr"})
+  {
+    try
+    {
+      nvbench::option_parser parser;
+      parser.parse({"--jsonbin", stream_name});
+    }
+    catch (const std::runtime_error &e)
+    {
+      const std::string message{e.what()};
+      ASSERT(message.find("--jsonbin requires a file path") != std::string::npos);
+      ASSERT(message.find(stream_name) != std::string::npos);
+      continue;
+    }
+    ASSERT(false);
+  }
+}
+
 void test_output_parent_directories_created()
 {
   const auto unique_suffix = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -1648,6 +1677,7 @@ try
   test_skip_time();
   test_cold_max_warmup_walltime();
   test_timeout();
+  test_json_stream_destinations();
   test_output_parent_directories_created();
 
   test_stopping_criterion();

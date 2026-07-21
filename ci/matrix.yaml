@@ -1,7 +1,7 @@
 cuda_prev_min: &cuda_prev_min '12.0'
 cuda_prev_max: &cuda_prev_max '12.9'
 cuda_curr_min: &cuda_curr_min '13.0'
-cuda_curr_max: &cuda_curr_max '13.2'
+cuda_curr_max: &cuda_curr_max '13.3'
 
 # The version of the devcontainer images to use from https://hub.docker.com/r/rapidsai/devcontainers
 devcontainer_version: '26.08'
