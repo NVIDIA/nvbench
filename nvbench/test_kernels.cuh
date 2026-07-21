@@ -46,20 +46,23 @@
 namespace nvbench
 {
 
+// high_resolution_clock is suitable for measuring elapsed time within device code.
+using device_clock = cuda::std::chrono::high_resolution_clock;
+
 /*!
  * Each launched thread just sleeps for `seconds`.
  */
 __global__ void sleep_kernel(double seconds)
 {
-  const auto start = cuda::std::chrono::high_resolution_clock::now();
+  const auto start = device_clock::now();
   const auto ns =
     cuda::std::chrono::nanoseconds(static_cast<nvbench::int64_t>(seconds * 1000 * 1000 * 1000));
   const auto finish = start + ns;
 
-  auto now = cuda::std::chrono::high_resolution_clock::now();
+  auto now = device_clock::now();
   while (now < finish)
   {
-    now = cuda::std::chrono::high_resolution_clock::now();
+    now = device_clock::now();
   }
 }
 

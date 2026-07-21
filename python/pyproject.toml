@@ -9,7 +9,8 @@ build-backend = "scikit_build_core.build"
 name = "cuda-bench"
 description = "CUDA Kernel Benchmarking Package with CUDA 12.x and 13.x runtime support"
 authors = [{ name = "NVIDIA Corporation" }]
-license = { text = "Apache-2.0 WITH LLVM-exception" }
+license = "Apache-2.0 WITH LLVM-exception"
+license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -19,8 +20,8 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Environment :: GPU :: NVIDIA CUDA",
-  "License :: OSI Approved :: Apache Software License",
   "Operating System :: POSIX :: Linux",
 ]
 requires-python = ">=3.10"
