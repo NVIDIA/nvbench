@@ -742,7 +742,7 @@ Set minimal samples count before stopping criterion applies
     return std::ref(self);
   };
   static constexpr const char *method_set_min_time_doc = R"XXXX(
-Set minimal measurement time before the stopping criterion applies, in seconds
+Set the finite, non-negative minimum measurement time, in seconds
 )XXXX";
   py_benchmark_cls.def("set_min_time",
                        method_set_min_time_impl,
@@ -1079,13 +1079,13 @@ Set the number of benchmark timings for NVBench to perform before stopping crite
 
   // method State.get_min_time
   static constexpr const char *method_get_min_time_doc = R"XXXX(
-Get the accumulated measurement time required before stopping criterion begins being used
+Get the minimum accumulated measurement time, in seconds
 )XXXX";
   pystate_cls.def("get_min_time", &nvbench::state::get_min_time, method_get_min_time_doc);
 
   // method State.set_min_time
   static constexpr const char *method_set_min_time_doc = R"XXXX(
-Set the accumulated measurement time required before stopping criterion begins being used
+Set the finite, non-negative minimum measurement time, in seconds
 )XXXX";
   pystate_cls.def("set_min_time",
                   &nvbench::state::set_min_time,

@@ -293,11 +293,11 @@ class _OptionDecorators:
         )
 
     def min_time(self, duration_seconds: float) -> Callable[[_F], _F]:
-        """Set the minimum measurement time to collect."""
+        """Set the finite, non-negative minimum measurement time to collect."""
         return self.set_min_time(duration_seconds)
 
     def set_min_time(self, duration_seconds: float) -> Callable[[_F], _F]:
-        """Set the minimum measurement time to collect."""
+        """Set the finite, non-negative minimum measurement time to collect."""
         return _append_benchmark_action(
             lambda benchmark: benchmark.set_min_time(duration_seconds)
         )
