@@ -149,8 +149,8 @@
     before any `--benchmark` arguments.
 
 * `--min-samples <count>`
-  * Gather at least `<count>` samples per measurement before checking any
-    other stopping criterion besides the timeout.
+  * Require at least `<count>` samples per measurement before stopping criteria
+    that use this limit may stop.
   * Default is 10 samples.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
