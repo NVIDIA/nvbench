@@ -14,7 +14,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""Command-line access to cuda.bench installation paths."""
+"""Command-line access to the NVBench installation embedded in cuda-bench.
+
+The cuda-bench wheel includes an NVBench CMake installation under a
+CUDA-versioned package directory, such as ``cuda/bench/cu12/nvbench`` or
+``cuda/bench/cu13/nvbench``. This module prints those paths for build systems,
+shell scripts, and examples that need to compile native NVBench benchmarks
+against the copy shipped with the Python package.
+
+The implementation intentionally uses pure-Python path helpers. Running
+``python -m cuda.bench.nvbench --prefix`` does not import the ``_nvbench``
+native extension.
+"""
 
 from __future__ import annotations
 
@@ -30,8 +41,8 @@ PathGetter = Callable[[int | None], Path]
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="python -m cuda.bench.config",
-        description="Print cuda.bench installation paths.",
+        prog="python -m cuda.bench.nvbench",
+        description="Print paths for the NVBench installation embedded in cuda-bench.",
     )
     parser.add_argument(
         "--cuda-major",
@@ -42,28 +53,28 @@ def _build_parser() -> argparse.ArgumentParser:
 
     paths = parser.add_mutually_exclusive_group(required=True)
     paths.add_argument(
-        "--nvbench-prefix",
+        "--prefix",
         action="store_const",
         const=_paths.get_nvbench_prefix,
         dest="path_getter",
         help="Print the embedded NVBench install prefix.",
     )
     paths.add_argument(
-        "--nvbench-include-dir",
+        "--include-dir",
         action="store_const",
         const=_paths.get_nvbench_include_dir,
         dest="path_getter",
         help="Print the embedded NVBench include directory.",
     )
     paths.add_argument(
-        "--nvbench-library-dir",
+        "--library-dir",
         action="store_const",
         const=_paths.get_nvbench_library_dir,
         dest="path_getter",
         help="Print the embedded NVBench library directory.",
     )
     paths.add_argument(
-        "--nvbench-cmake-dir",
+        "--cmake-dir",
         action="store_const",
         const=_paths.get_nvbench_cmake_dir,
         dest="path_getter",
