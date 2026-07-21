@@ -292,6 +292,16 @@ class _OptionDecorators:
             lambda benchmark: benchmark.set_min_samples(count)
         )
 
+    def min_time(self, duration_seconds: float) -> Callable[[_F], _F]:
+        """Set the minimum measurement time to collect."""
+        return self.set_min_time(duration_seconds)
+
+    def set_min_time(self, duration_seconds: float) -> Callable[[_F], _F]:
+        """Set the minimum measurement time to collect."""
+        return _append_benchmark_action(
+            lambda benchmark: benchmark.set_min_time(duration_seconds)
+        )
+
     def cold_warmup_runs(self, count: int) -> Callable[[_F], _F]:
         """Set the number of cold measurement warmup runs."""
         return self.set_cold_warmup_runs(count)
