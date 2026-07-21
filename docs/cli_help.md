@@ -130,6 +130,13 @@
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--disable-blocking-kernel`
+  * Do not use the `blocking_kernel`.
+  * This is narrower than `--profile`: it preserves normal repeated benchmark
+    execution. Use `--profile` for external profiling workflows.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
 * `--no-batch`
   * Do not run batched measurements even if enabled.
   * Intended to shorten run-time when batched measurements are not of interest.
