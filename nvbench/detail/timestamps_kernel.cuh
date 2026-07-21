@@ -45,11 +45,12 @@ struct timestamps_kernel
 
   void record(const nvbench::cuda_stream &stream);
 
-  // move-only
+  // The device pointer refers to registered storage inside this object.
+  // Moving would leave it pointing at the moved-from object.
   timestamps_kernel(const timestamps_kernel &)            = delete;
-  timestamps_kernel(timestamps_kernel &&)                 = default;
+  timestamps_kernel(timestamps_kernel &&)                 = delete;
   timestamps_kernel &operator=(const timestamps_kernel &) = delete;
-  timestamps_kernel &operator=(timestamps_kernel &&)      = default;
+  timestamps_kernel &operator=(timestamps_kernel &&)      = delete;
 
   nvbench::uint64_t m_host_timestamps[2];
   nvbench::uint64_t *m_device_timestamps{};
