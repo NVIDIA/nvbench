@@ -1732,11 +1732,8 @@ try
   test_skip_time();
   test_cold_max_warmup_walltime();
   test_timeout();
-<<<<<<< HEAD
   test_json_stream_destinations();
-=======
   test_disable_blocking_kernel();
->>>>>>> 445da5d (Reintroduce support for CLI option to disable blocking kernel)
   test_output_parent_directories_created();
 
   test_stopping_criterion();
