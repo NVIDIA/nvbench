@@ -6,6 +6,7 @@ set(test_srcs
   cuda_timer.cu
   cuda_stream.cu
   cpu_timer.cu
+  criterion_exception.cu
   criterion_manager.cu
   criterion_params.cu
   custom_main_custom_args.cu
