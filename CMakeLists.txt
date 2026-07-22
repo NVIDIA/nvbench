@@ -52,6 +52,7 @@ option(NVBench_ENABLE_DEVICE_TESTING
   "Include tests that require a GPU (with locked clocks)."
   OFF
 )
+option(NVBench_ENABLE_EXECUTABLES "Build NVBench command-line executables." ON)
 option(NVBench_ENABLE_EXAMPLES "Build NVBench examples." OFF)
 option(NVBench_ENABLE_INSTALL_RULES "Install NVBench." ${NVBench_TOPLEVEL_PROJECT})
 
@@ -75,7 +76,9 @@ if (NVBench_ENABLE_EXAMPLES OR
   enable_testing()
 endif()
 
-add_subdirectory(exec)
+if (NVBench_ENABLE_EXECUTABLES)
+  add_subdirectory(exec)
+endif()
 
 if (NVBench_ENABLE_EXAMPLES)
   add_subdirectory(examples)

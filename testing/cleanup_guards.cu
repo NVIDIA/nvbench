@@ -3,10 +3,14 @@
 
 #include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
+#include <nvbench/detail/device_scope.cuh>
+#include <nvbench/detail/gpu_frequency.cuh>
+#include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/measure_cold.cuh>
 #include <nvbench/detail/measure_cold_launch_timer_core.cuh>
 #include <nvbench/detail/measure_hot.cuh>
 #include <nvbench/detail/stream_cleanup_guard.cuh>
+#include <nvbench/detail/timestamps_kernel.cuh>
 
 #include <cuda_runtime_api.h>
 
@@ -97,11 +101,25 @@ constexpr void verify_stream_cleanup_guard_noexcept_contract()
                 "stream_cleanup_guard release must remain noexcept.");
 }
 
+template <typename T>
+constexpr void verify_immovable_resource_owner()
+{
+  static_assert(!std::is_copy_constructible_v<T>, "Resource owner must not be copy constructible.");
+  static_assert(!std::is_copy_assignable_v<T>, "Resource owner must not be copy assignable.");
+  static_assert(!std::is_move_constructible_v<T>, "Resource owner must not be move constructible.");
+  static_assert(!std::is_move_assignable_v<T>, "Resource owner must not be move assignable.");
+}
+
 constexpr void verify_noexcept_contracts()
 {
   verify_cpu_timer_noexcept_contract<nvbench::cpu_timer>();
   static_assert(noexcept(std::declval<nvbench::blocking_kernel &>().unblock_noexcept()),
                 "blocking_kernel unblock_noexcept must remain noexcept.");
+  verify_immovable_resource_owner<nvbench::blocking_kernel>();
+  verify_immovable_resource_owner<nvbench::detail::device_scope>();
+  verify_immovable_resource_owner<nvbench::detail::gpu_frequency>();
+  verify_immovable_resource_owner<nvbench::detail::l2flush>();
+  verify_immovable_resource_owner<nvbench::detail::timestamps_kernel>();
 
   verify_stream_cleanup_measure_noexcept_contract<hot_cleanup_probe>();
   verify_cold_measure_noexcept_contract<cold_cleanup_probe>();

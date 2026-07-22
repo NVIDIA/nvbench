@@ -26,6 +26,7 @@
 # with definitions given here.
 
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import (
     Any,
     Literal,
@@ -231,6 +232,10 @@ class _OptionDecorators:
 axis: _AxisDecorators
 option: _OptionDecorators
 
+def get_nvbench_prefix(cuda_major: int | None = ...) -> Path: ...
+def get_nvbench_include_dir(cuda_major: int | None = ...) -> Path: ...
+def get_nvbench_library_dir(cuda_major: int | None = ...) -> Path: ...
+def get_nvbench_cmake_dir(cuda_major: int | None = ...) -> Path: ...
 @overload
 def register(fn: _BenchmarkFn, /) -> Benchmark: ...
 @overload

@@ -24,6 +24,12 @@ import warnings
 from ._decorators import axis as axis
 from ._decorators import make_register as _make_register
 from ._decorators import option as option
+from ._paths import _format_supported_cuda_versions as _format_supported_cuda_versions
+from ._paths import _get_cuda_major_version as _get_cuda_major_version
+from ._paths import get_nvbench_cmake_dir as get_nvbench_cmake_dir
+from ._paths import get_nvbench_include_dir as get_nvbench_include_dir
+from ._paths import get_nvbench_library_dir as get_nvbench_library_dir
+from ._paths import get_nvbench_prefix as get_nvbench_prefix
 
 try:
     __version__ = importlib.metadata.version("cuda-bench")
@@ -49,6 +55,10 @@ _NVBENCH_EXPORTS = (
 _PUBLIC_EXPORTS = (
     *_NVBENCH_EXPORTS,
     "axis",
+    "get_nvbench_cmake_dir",
+    "get_nvbench_include_dir",
+    "get_nvbench_library_dir",
+    "get_nvbench_prefix",
     "option",
     "register",
 )
@@ -62,24 +72,6 @@ __all__ = list(_PUBLIC_EXPORTS)
 
 # Optional test override used by decorator tests.
 _register = None
-
-
-# Detect CUDA runtime version and load appropriate extension
-def _get_cuda_major_version():
-    """Detect the CUDA runtime major version."""
-    try:
-        import cuda.bindings
-
-        # Get CUDA version from cuda-bindings package version
-        # cuda-bindings version is in format like "12.9.1" or "13.0.0"
-        version_str = cuda.bindings.__version__
-        major = int(version_str.split(".")[0])
-        return major
-    except ImportError:
-        raise ImportError(
-            "cuda-bindings is required for runtime CUDA version detection. "
-            "Install with: pip install cuda-bench[cu12] or pip install cuda-bench[cu13]"
-        )
 
 
 def _bind_nvbench_module(module):
@@ -107,7 +99,7 @@ def _load_nvbench_module():
         raise ImportError(
             f"No cuda-bench extension found for CUDA {cuda_major}.x. "
             f"This wheel may not include support for your CUDA version. "
-            f"Supported CUDA versions: 12, 13. "
+            f"Supported CUDA versions: {_format_supported_cuda_versions()}. "
             f"Original error: {e}"
         ) from e
 
