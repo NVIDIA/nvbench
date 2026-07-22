@@ -35,11 +35,16 @@
 namespace nvbench::detail
 {
 
+// Keep hot batches large enough to avoid one-launch batches when --min-time is
+// disabled or set to an extremely small positive value.
+constexpr nvbench::float64_t smallest_hot_batch_target_time = 100e-6;
+
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
     , m_min_samples{exec_state.get_min_samples()}
     , m_min_time{exec_state.get_min_time()}
+    , m_batch_target_time{m_min_time}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
 {
@@ -53,16 +58,19 @@ measure_hot_base::measure_hot_base(state &exec_state)
     // If the cold measurement ran successfully, disable skip_time. It'd just
     // be annoying to skip now.
     m_skip_time = -1;
+
+    m_batch_target_time = std::max(m_min_time, smallest_hot_batch_target_time);
   }
   catch (...)
   {
     // If the above threw an exception, we don't have a cold measurement to use.
-    // Estimate a target_time between m_min_time and m_timeout.
-    // Use the average of the min_time and timeout, but don't go over 5x
-    // min_time in case timeout is huge.
+    // Estimate an internal batch target from min_time and timeout, then apply
+    // the minimum floor below. Use the average of min_time and timeout, but
+    // don't go over 5x min_time in case timeout is huge.
     // We could expose a `target_time` property on benchmark_base/state if
     // needed.
-    m_min_time = std::min((m_min_time + m_timeout) / 2., m_min_time * 5);
+    const auto fallback_batch_target_time = std::min((m_min_time + m_timeout) / 2., m_min_time * 5);
+    m_batch_target_time = std::max(smallest_hot_batch_target_time, fallback_batch_target_time);
   }
 }
 
