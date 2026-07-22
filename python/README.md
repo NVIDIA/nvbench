@@ -70,18 +70,25 @@ Now switch to the Python package directory and install `cuda-bench` from source:
 
 ```bash
 cd nvbench/python
+
 python -m pip install ".[cu12]"  # If CUDACXX points to a CUDA 12.x toolkit
 python -m pip install ".[cu13]"  # If CUDACXX points to a CUDA 13.x toolkit
 ```
 
-Editable installs (`python -m pip install -e .`) are currently not supported.
-They do not install the versioned CUDA extension layout used by `cuda-bench`.
-Re-run the non-editable install command after making source changes.
+Alternatively, ensure build requirements are installed and use editable install:
+
+```bash
+cd nvbench/python
+python -m pip install "scikit-build-core>=0.10" setuptools_scm
+
+python -m pip install --no-build-isolation -e ".[cu12]"  # If CUDACXX points to a CUDA 12.x toolkit
+python -m pip install --no-build-isolation -e ".[cu13]"  # If CUDACXX points to a CUDA 13.x toolkit
+```
 
 ### Verify that package works
 
 ```bash
-python test/run_1.py
+python test/smoke.py
 ```
 
 ### Run examples
