@@ -51,8 +51,18 @@ void test_context_requires_min_samples_only()
   }
 
   ASSERT(criterion.is_finished());
-  ASSERT(!criterion.is_finished(nvbench::stopping_context{5, 1.0, 6, 0.0}));
-  ASSERT(criterion.is_finished(nvbench::stopping_context{6, 0.0, 6, 1.0}));
+  ASSERT(!criterion.is_finished(nvbench::stopping_context{
+    5,   // total_samples
+    1.0, // total_time
+    6,   // min_samples
+    0.0  // min_time
+  }));
+  ASSERT(criterion.is_finished(nvbench::stopping_context{
+    6,   // total_samples
+    0.0, // total_time
+    6,   // min_samples
+    1.0  // min_time
+  }));
 }
 
 void produce_entropy_arch(nvbench::detail::entropy_criterion &criterion)

@@ -82,7 +82,12 @@ void test_context_ignores_global_floors()
   }
 
   ASSERT(criterion.is_finished());
-  ASSERT(criterion.is_finished(nvbench::stopping_context{3, 0.0, 10, 1.0}));
+  ASSERT(criterion.is_finished(nvbench::stopping_context{
+    3,   // total_samples
+    0.0, // total_time
+    10,  // min_samples
+    1.0  // min_time
+  }));
 }
 
 void test_non_positive_target_samples()

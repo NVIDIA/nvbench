@@ -150,6 +150,39 @@ void test_stdrel_finishes_with_persistently_invalid_noise()
   ASSERT(count > 1);
 }
 
+void test_stdrel_invalid_noise_context_requires_min_time()
+{
+  nvbench::detail::stdrel_criterion criterion;
+  criterion.initialize(nvbench::criterion_params{});
+
+  const auto invalid_measurement              = nvbench::float64_t{0};
+  nvbench::int64_t total_invalid_measurements = 0;
+  while (!criterion.is_finished() && total_invalid_measurements < max_invalid_measurements_cap)
+  {
+    criterion.add_measurement(invalid_measurement);
+    ++total_invalid_measurements;
+  }
+  ASSERT(criterion.is_finished());
+
+  const auto min_time = nvbench::float64_t{1};
+  {
+    const auto total_samples = total_invalid_measurements;
+    const auto total_time    = min_time / nvbench::float64_t{2};
+    const auto min_samples   = total_invalid_measurements;
+    const auto context =
+      nvbench::stopping_context{total_samples, total_time, min_samples, min_time};
+    ASSERT(!criterion.is_finished(context));
+  }
+  {
+    const auto total_samples = total_invalid_measurements;
+    const auto total_time    = min_time;
+    const auto min_samples   = total_invalid_measurements;
+    const auto context =
+      nvbench::stopping_context{total_samples, total_time, min_samples, min_time};
+    ASSERT(criterion.is_finished(context));
+  }
+}
+
 void test_stdrel_context_requires_min_samples_and_min_time()
 {
   nvbench::detail::stdrel_criterion criterion;
@@ -162,18 +195,33 @@ void test_stdrel_context_requires_min_samples_and_min_time()
   }
 
   ASSERT(criterion.is_finished());
-  ASSERT(!criterion.is_finished(nvbench::stopping_context{min_samples_for_noise_estimate - 1,
-                                                          42.0,
-                                                          min_samples_for_noise_estimate,
-                                                          0.0}));
-  ASSERT(!criterion.is_finished(nvbench::stopping_context{min_samples_for_noise_estimate,
-                                                          0.1,
-                                                          min_samples_for_noise_estimate,
-                                                          1.0}));
-  ASSERT(criterion.is_finished(nvbench::stopping_context{min_samples_for_noise_estimate,
-                                                         1.0,
-                                                         min_samples_for_noise_estimate,
-                                                         1.0}));
+  {
+    const auto total_samples = min_samples_for_noise_estimate - 1;
+    const auto total_time    = nvbench::float64_t{42};
+    const auto min_samples   = min_samples_for_noise_estimate;
+    const auto min_time      = nvbench::float64_t{0};
+    const auto context =
+      nvbench::stopping_context{total_samples, total_time, min_samples, min_time};
+    ASSERT(!criterion.is_finished(context));
+  }
+  {
+    const auto total_samples = min_samples_for_noise_estimate;
+    const auto total_time    = nvbench::float64_t{0.1};
+    const auto min_samples   = min_samples_for_noise_estimate;
+    const auto min_time      = nvbench::float64_t{1};
+    const auto context =
+      nvbench::stopping_context{total_samples, total_time, min_samples, min_time};
+    ASSERT(!criterion.is_finished(context));
+  }
+  {
+    const auto total_samples = min_samples_for_noise_estimate;
+    const auto total_time    = nvbench::float64_t{1};
+    const auto min_samples   = min_samples_for_noise_estimate;
+    const auto min_time      = nvbench::float64_t{1};
+    const auto context =
+      nvbench::stopping_context{total_samples, total_time, min_samples, min_time};
+    ASSERT(criterion.is_finished(context));
+  }
 }
 
 int main()
@@ -183,5 +231,6 @@ int main()
   test_stdrel_needs_enough_samples();
   test_stdrel_uses_sample_standard_deviation();
   test_stdrel_finishes_with_persistently_invalid_noise();
+  test_stdrel_invalid_noise_context_requires_min_time();
   test_stdrel_context_requires_min_samples_and_min_time();
 }
