@@ -2989,20 +2989,46 @@ def ensure_plot_output_parent(output):
         parent.mkdir(parents=True, exist_ok=True)
 
 
+def reserve_plot_output_path(
+    output: str | None,
+    output_paths: set[str],
+    *,
+    option_name: str,
+    collision_hint: str,
+) -> None:
+    if output is None:
+        return
+
+    normalized_output_path = os.path.abspath(output)
+    if normalized_output_path in output_paths:
+        raise ValueError(
+            f"{option_name} would write multiple plots to {output!r}; {collision_hint}"
+        )
+    output_paths.add(normalized_output_path)
+
+
 def validate_plot_along_output_template(output_template):
     try:
-        parsed_fields = [field for _, field, _, _ in Formatter().parse(output_template)]
+        parsed_fields = [
+            (field_name, format_spec, conversion)
+            for _, field_name, format_spec, conversion in Formatter().parse(
+                output_template
+            )
+        ]
     except ValueError as exc:
         raise ValueError(f"--plot-along-output template is invalid: {exc}") from exc
 
-    for field_name in parsed_fields:
+    valid_fields = ", ".join(
+        f"{{{field}}}" for field in sorted(PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS)
+    )
+    for field_name, format_spec, conversion in parsed_fields:
         if field_name is None:
             continue
-        root_name = re.split(r"[.[]", field_name, maxsplit=1)[0]
-        if root_name not in PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS:
-            valid_fields = ", ".join(
-                f"{{{field}}}" for field in sorted(PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS)
-            )
+        if (
+            field_name not in PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS
+            or format_spec
+            or conversion
+        ):
             raise ValueError(
                 f"--plot-along-output supports template fields {valid_fields}; "
                 f"got {{{field_name}}}"
@@ -3029,8 +3055,11 @@ def save_or_show_plot(fig, plt, output, description):
         plt.show()
         return
 
-    ensure_plot_output_parent(output)
-    fig.savefig(output, dpi=150)
+    try:
+        ensure_plot_output_parent(output)
+        fig.savefig(output, dpi=150)
+    except OSError as exc:
+        raise ValueError(f"failed to write {description} to {output!r}: {exc}") from exc
     print(f"Saved {description} to {output}")
 
 
@@ -3139,9 +3168,12 @@ def compare_benches(
     bulk_debug_rows=None,
     plot_output=None,
     plot_along_output=None,
+    plot_output_paths=None,
 ):
     if comparison_thresholds is None:
         comparison_thresholds = get_default_thresholds()
+    if plot_output_paths is None:
+        plot_output_paths = set()
 
     if plot_along:
         if plot_along_output is not None:
@@ -3175,7 +3207,6 @@ def compare_benches(
 
     comparison_entries = []
     comparison_device_names = set()
-    plot_along_output_paths = set()
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
         if not ref_bench:
@@ -3439,14 +3470,14 @@ def compare_benches(
                     axis_name=plot_along,
                 )
                 if plot_along_output_path is not None:
-                    normalized_output_path = os.path.abspath(plot_along_output_path)
-                    if normalized_output_path in plot_along_output_paths:
-                        raise ValueError(
-                            "--plot-along-output would write multiple plots to "
-                            f"{plot_along_output_path!r}; use a template with "
-                            "{benchmark}, {device}, or {axis} to make paths unique"
-                        )
-                    plot_along_output_paths.add(normalized_output_path)
+                    reserve_plot_output_path(
+                        plot_along_output_path,
+                        plot_output_paths,
+                        option_name="--plot-along-output",
+                        collision_hint=(
+                            "use a template that yields a unique path for each plot"
+                        ),
+                    )
 
                 fig = plt.figure()
                 try:
@@ -3532,6 +3563,16 @@ def compare_benches(
             )
             if axis_label:
                 title = f"{title} ({axis_label})"
+        if comparison_entries:
+            reserve_plot_output_path(
+                plot_output,
+                plot_output_paths,
+                option_name="--plot-output",
+                collision_hint=(
+                    "use a unique output path for each input pair or compare one "
+                    "JSON pair at a time"
+                ),
+            )
         plot_comparison_entries(
             comparison_entries, title=title, dark=dark, output=plot_output
         )
@@ -3738,6 +3779,7 @@ def main() -> int:
         return 1
 
     stats = ComparisonStats()
+    plot_output_paths: set[str] = set()
 
     for ref, comp in to_compare:
         try:
@@ -3816,6 +3858,7 @@ def main() -> int:
                 bulk_debug_rows=bulk_debug_rows,
                 plot_output=args.plot_output,
                 plot_along_output=args.plot_along_output,
+                plot_output_paths=plot_output_paths,
             )
         except MissingToolingDependencyError as exc:
             print(str(exc), file=sys.stderr)
