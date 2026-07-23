@@ -33,7 +33,6 @@
 
 #include <cstddef>
 #include <exception>
-#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -87,19 +86,19 @@ struct runner : public runner_base
   {
     if (m_benchmark.m_devices.empty())
     {
-      this->run_device(std::nullopt, skip_remaining);
+      this->run_device(nullptr, skip_remaining);
     }
     else
     {
       for (const auto &device : m_benchmark.m_devices)
       {
-        this->run_device(device, skip_remaining);
+        this->run_device(&device, skip_remaining);
       }
     }
   }
 
 private:
-  void run_device(const std::optional<nvbench::device_info> &device, bool &skip_remaining)
+  void run_device(const nvbench::device_info *device, bool &skip_remaining)
   {
     if (device)
     {
@@ -109,7 +108,7 @@ private:
     // Iterate through type_configs:
     std::size_t type_config_index = 0;
     nvbench::tl::foreach<type_configs>(
-      [&self = *this, &states = m_benchmark.m_states, &type_config_index, &device, &skip_remaining](
+      [&self = *this, &states = m_benchmark.m_states, &type_config_index, device, &skip_remaining](
         auto type_config_wrapper) {
         // Get current type_config:
         using type_config = typename decltype(type_config_wrapper)::type;
@@ -117,8 +116,11 @@ private:
         // Find states with the current device / type_config
         for (nvbench::state &cur_state : states)
         {
-          if (cur_state.get_device() == device &&
-              cur_state.get_type_config_index() == type_config_index)
+          const auto &state_device      = cur_state.get_device();
+          const bool is_matching_device = device == nullptr
+                                            ? !state_device
+                                            : state_device && *state_device == *device;
+          if (is_matching_device && cur_state.get_type_config_index() == type_config_index)
           {
             self.run_state_prologue(cur_state);
             try

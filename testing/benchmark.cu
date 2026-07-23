@@ -229,7 +229,7 @@ void test_string_axes()
 
 void test_run()
 {
-  // More exhaustive testing is in runner.cu. This just tests that the
+  // More exhaustive testing is in runner.cpp. This just tests that the
   // runner is called.
   no_types_bench bench;
   bench.set_devices(std::vector<int>{});
