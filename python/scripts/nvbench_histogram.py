@@ -4,15 +4,54 @@ import argparse
 import os
 import sys
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-
-try:
+if __package__:
+    from .nvbench_json import reader
+    from .nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+else:
     from nvbench_json import reader
-except ImportError:
-    from scripts.nvbench_json import reader
+    from nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+
+np = None
+pd = None
+plt = None
+sns = None
+
+
+def load_nvbench_histogram_tooling():
+    global np, pd, plt, sns
+
+    if plt is None:
+        plt = require_tooling_dependency(
+            ToolingDependency(
+                "matplotlib.pyplot", "matplotlib", "histogram plotting", extra="plot"
+            ),
+            tool_name="nvbench-histogram",
+        )
+    if np is None:
+        np = require_tooling_dependency(
+            ToolingDependency("numpy", "numpy", "sample loading", extra="plot"),
+            tool_name="nvbench-histogram",
+        )
+    if pd is None:
+        pd = require_tooling_dependency(
+            ToolingDependency(
+                "pandas", "pandas", "sample table construction", extra="plot"
+            ),
+            tool_name="nvbench-histogram",
+        )
+    if sns is None:
+        sns = require_tooling_dependency(
+            ToolingDependency("seaborn", "seaborn", "histogram plotting", extra="plot"),
+            tool_name="nvbench-histogram",
+        )
 
 
 def parse_files():
@@ -115,12 +154,18 @@ def parse_json(filename):
 
 def main():
     filenames = parse_files()
+    try:
+        load_nvbench_histogram_tooling()
+    except MissingToolingDependencyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
 
     dfs = [parse_json(filename) for filename in filenames]
     df = pd.concat(dfs, ignore_index=True)
 
     sns.displot(df, rug=True, kind="kde", fill=True)
     plt.show()
+    return 0
 
 
 if __name__ == "__main__":

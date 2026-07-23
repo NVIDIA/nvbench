@@ -4,16 +4,22 @@ import argparse
 import math
 import os
 import sys
-from enum import StrEnum
+from enum import Enum
 
-import jsondiff
-import tabulate
-from colorama import Fore
-
-try:
+if __package__:
+    from .nvbench_json import reader
+    from .nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+else:
     from nvbench_json import reader
-except ImportError:
-    from scripts.nvbench_json import reader
+    from nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
 
 
 # Parse version string into tuple, "x.y.z" -> (x, y, z)
@@ -21,7 +27,44 @@ def version_tuple(v):
     return tuple(map(int, (v.split("."))))
 
 
-tabulate_version = version_tuple(tabulate.__version__)
+Fore = None
+tabulate = None
+tabulate_version = (0, 0, 0)
+
+
+def load_nvbench_compare_tooling(*, load_color=True):
+    global Fore
+
+    if load_color and Fore is None:
+        colorama = require_tooling_dependency(
+            ToolingDependency(
+                "colorama", "colorama", "colored status output", extra="compare"
+            ),
+            tool_name="nvbench-compare-legacy",
+        )
+        Fore = colorama.Fore
+    load_tabulate_for_table_output()
+
+
+def load_tabulate_for_table_output():
+    global tabulate, tabulate_version
+
+    if tabulate is None:
+        tabulate = require_tooling_dependency(
+            ToolingDependency("tabulate", "tabulate", "table output", extra="compare"),
+            tool_name="nvbench-compare-legacy",
+        )
+        tabulate_version = version_tuple(tabulate.__version__)
+
+
+def load_jsondiff_for_device_diff():
+    return require_tooling_dependency(
+        ToolingDependency(
+            "jsondiff", "jsondiff", "device metadata diffs", extra="compare"
+        ),
+        tool_name="nvbench-compare-legacy",
+    )
+
 
 all_ref_devices = []
 all_cmp_devices = []
@@ -31,7 +74,7 @@ failure_count = 0
 pass_count = 0
 
 
-class Emoji(StrEnum):
+class Emoji(str, Enum):
     YELLOW = "\U0001f7e1"
     BLUE = "\U0001f535"
     GREEN = "\U0001f7e2"
@@ -39,14 +82,21 @@ class Emoji(StrEnum):
     NONE = ""
 
 
-def colorize(msg: str, fore: Fore, emoji: Emoji, no_color: bool) -> str:
+def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
     if no_color:
         prefix = ""
-        if emoji_s := str(emoji):
+        if emoji_s := emoji.value:
             prefix = f"{emoji_s} "
         return f"{prefix}{msg}"
     else:
         return f"{fore}{msg}{Fore.RESET}"
+
+
+def colorize_status(
+    status_label: str, fore_name: str, emoji: Emoji, no_color: bool
+) -> str:
+    fore = "" if no_color else getattr(Fore, fore_name)
+    return colorize(status_label, fore, emoji, no_color)
 
 
 def find_matching_bench(needle, haystack):
@@ -225,13 +275,26 @@ def plot_comparison_entries(entries, title=None, dark=False):
         print("No comparison data to plot.")
         return 1
 
+    matplotlib = require_tooling_dependency(
+        ToolingDependency("matplotlib", "matplotlib", "plot rendering", extra="plot"),
+        tool_name="nvbench-compare-legacy",
+    )
     if not os.environ.get("DISPLAY"):
-        import matplotlib
-
         matplotlib.use("Agg")
 
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import PercentFormatter
+    plt = require_tooling_dependency(
+        ToolingDependency(
+            "matplotlib.pyplot", "matplotlib", "plot rendering", extra="plot"
+        ),
+        tool_name="nvbench-compare-legacy",
+    )
+    ticker = require_tooling_dependency(
+        ToolingDependency(
+            "matplotlib.ticker", "matplotlib", "plot axis formatting", extra="plot"
+        ),
+        tool_name="nvbench-compare-legacy",
+    )
+    PercentFormatter = ticker.PercentFormatter
 
     labels, values, statuses, bench_names = map(list, zip(*entries))
 
@@ -303,8 +366,21 @@ def compare_benches(
     no_color,
 ):
     if plot_along:
-        import matplotlib.pyplot as plt
-        import seaborn as sns
+        plt = require_tooling_dependency(
+            ToolingDependency(
+                "matplotlib.pyplot",
+                "matplotlib",
+                "per-axis plot rendering",
+                extra="plot",
+            ),
+            tool_name="nvbench-compare-legacy",
+        )
+        sns = require_tooling_dependency(
+            ToolingDependency(
+                "seaborn", "seaborn", "per-axis plot styling", extra="plot"
+            ),
+            tool_name="nvbench-compare-legacy",
+        )
 
         sns.set_theme()
 
@@ -464,19 +540,23 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    status = colorize(status_label, Fore.YELLOW, Emoji.YELLOW, no_color)
+                    status = colorize_status(
+                        status_label, "YELLOW", Emoji.YELLOW, no_color
+                    )
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    status = colorize(status_label, Fore.BLUE, Emoji.BLUE, no_color)
+                    status = colorize_status(status_label, "BLUE", Emoji.BLUE, no_color)
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    status = colorize(status_label, Fore.GREEN, Emoji.GREEN, no_color)
+                    status = colorize_status(
+                        status_label, "GREEN", Emoji.GREEN, no_color
+                    )
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    status = colorize(status_label, Fore.RED, Emoji.RED, no_color)
+                    status = colorize_status(status_label, "RED", Emoji.RED, no_color)
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
@@ -522,6 +602,7 @@ def compare_benches(
                     )
                 )
             # colalign and github format require tabulate 0.8.3
+            load_tabulate_for_table_output()
             if tabulate_version >= (0, 8, 3):
                 print(
                     tabulate.tabulate(
@@ -639,6 +720,12 @@ def main():
         parser.print_help()
         sys.exit(1)
 
+    try:
+        load_nvbench_compare_tooling(load_color=not args.no_color)
+    except MissingToolingDependencyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
     # if provided two directories, find all the exactly named files
     # in both and treat them as the reference and compare
     to_compare = []
@@ -668,11 +755,19 @@ def main():
         all_cmp_devices = cmp_root["devices"]
 
         if ref_root["devices"] != cmp_root["devices"]:
-            warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
+            if args.no_color:
+                warn_fore = ""
+            else:
+                warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
             print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
             print(": ", end="")
 
+            try:
+                jsondiff = load_jsondiff_for_device_diff()
+            except MissingToolingDependencyError as exc:
+                print(str(exc), file=sys.stderr)
+                return 1
             print(
                 jsondiff.diff(
                     ref_root["devices"], cmp_root["devices"], syntax="symmetric"
@@ -681,17 +776,21 @@ def main():
             if not args.ignore_devices:
                 sys.exit(1)
 
-        compare_benches(
-            ref_root["benchmarks"],
-            cmp_root["benchmarks"],
-            args.threshold,
-            args.plot_along,
-            args.plot,
-            args.dark,
-            axis_filters,
-            args.benchmark,
-            args.no_color,
-        )
+        try:
+            compare_benches(
+                ref_root["benchmarks"],
+                cmp_root["benchmarks"],
+                args.threshold,
+                args.plot_along,
+                args.plot,
+                args.dark,
+                axis_filters,
+                args.benchmark,
+                args.no_color,
+            )
+        except MissingToolingDependencyError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
 
     print("# Summary\n")
     print("- Total Matches: %d" % config_count)
