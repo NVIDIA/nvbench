@@ -3,6 +3,7 @@
 
 import importlib
 import importlib.metadata
+import importlib.util
 import shutil
 import sys
 from pathlib import Path
