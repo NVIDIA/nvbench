@@ -94,7 +94,8 @@ struct runner : public runner_base
     {
       for (const auto &device : m_benchmark.m_devices)
       {
-        this->run_device(device, skip_remaining);
+        const std::optional<nvbench::device_info> selected_device{device};
+        this->run_device(selected_device, skip_remaining);
       }
     }
   }
