@@ -5,12 +5,23 @@ import math
 import os
 import sys
 
-import tabulate
-
-try:
+if __package__:
+    from .nvbench_json import reader
+    from .nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+else:
     from nvbench_json import reader
-except ImportError:
-    from scripts.nvbench_json import reader
+    from nvbench_tooling_deps import (
+        MissingToolingDependencyError,
+        ToolingDependency,
+        require_tooling_dependency,
+    )
+
+tabulate = None
+tabulate_version = (0, 0, 0)
 
 
 # Parse version string into tuple, "x.y.z" -> (x, y, z)
@@ -18,7 +29,18 @@ def version_tuple(v):
     return tuple(map(int, (v.split("."))))
 
 
-tabulate_version = version_tuple(tabulate.__version__)
+def load_nvbench_walltime_tooling():
+    global tabulate, tabulate_version
+
+    if tabulate is not None:
+        return
+
+    tabulate = require_tooling_dependency(
+        ToolingDependency("tabulate", "tabulate", "table output", extra="compare"),
+        tool_name="nvbench-walltime",
+    )
+    tabulate_version = version_tuple(tabulate.__version__)
+
 
 all_devices = []
 
@@ -341,6 +363,12 @@ def main():
 
     filenames.sort()
 
+    try:
+        load_nvbench_walltime_tooling()
+    except MissingToolingDependencyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
     data = {}
 
     files_out = {}
@@ -355,6 +383,7 @@ def main():
 
     print_overview_section(data)
     print_files_section(data)
+    return 0
 
 
 if __name__ == "__main__":
