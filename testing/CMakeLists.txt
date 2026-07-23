@@ -49,7 +49,7 @@ foreach(test_src IN LISTS test_srcs)
   add_executable(${test_name} "${test_src}")
   target_include_directories(${test_name} PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
   target_link_libraries(${test_name} PRIVATE nvbench::nvbench fmt::fmt)
-  # This host-compiled test uses CUDA APIs through NVBenchs headers.
+  # This host-compiled test uses CUDA APIs through NVBench headers.
   if (test_name STREQUAL "nvbench.test.runner")
     target_link_libraries(${test_name} PRIVATE CUDA::cudart)
   endif()
