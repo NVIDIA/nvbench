@@ -104,6 +104,12 @@ jobs:
       contents: read
     uses: ./.github/workflows/build-and-test-python-wheels.yml
 
+  python-editable:
+    name: Python Editable Install
+    permissions:
+      contents: read
+    uses: ./.github/workflows/test-python-editable.yml
+
   verify-devcontainers:
     name: Verify Dev Containers
     if: ${{ !contains(github.event.head_commit.message, '[skip-vdc]') }}
@@ -126,6 +132,7 @@ jobs:
       - nvbench
       - nvbench-windows
       - python-wheels
+      - python-editable
       - verify-devcontainers
     steps:
       - name: Check status of all precursor jobs
