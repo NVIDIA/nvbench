@@ -17,6 +17,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
+from string import Formatter
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Protocol, TypeAlias
 
 if TYPE_CHECKING:
@@ -2977,7 +2979,67 @@ def format_plot_series_key(state_key, occurrence, occurrence_count, axis_name_pa
     return ", ".join(parts)
 
 
-def plot_comparison_entries(entries, title=None, dark=False):
+PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS = frozenset({"benchmark", "device", "axis"})
+
+
+def ensure_plot_output_parent(output):
+    output_path = Path(output)
+    parent = output_path.parent
+    if parent != Path("."):
+        parent.mkdir(parents=True, exist_ok=True)
+
+
+def validate_plot_along_output_template(output_template):
+    try:
+        parsed_fields = [field for _, field, _, _ in Formatter().parse(output_template)]
+    except ValueError as exc:
+        raise ValueError(f"--plot-along-output template is invalid: {exc}") from exc
+
+    for field_name in parsed_fields:
+        if field_name is None:
+            continue
+        root_name = re.split(r"[.[]", field_name, maxsplit=1)[0]
+        if root_name not in PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS:
+            valid_fields = ", ".join(
+                f"{{{field}}}" for field in sorted(PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS)
+            )
+            raise ValueError(
+                f"--plot-along-output supports template fields {valid_fields}; "
+                f"got {{{field_name}}}"
+            )
+
+
+def format_plot_along_output_path(
+    output_template, *, benchmark_name, device_id, axis_name
+):
+    if output_template is None:
+        return None
+
+    validate_plot_along_output_template(output_template)
+    try:
+        return output_template.format(
+            benchmark=benchmark_name, device=device_id, axis=axis_name
+        )
+    except (IndexError, KeyError, ValueError) as exc:
+        raise ValueError(f"--plot-along-output template is invalid: {exc}") from exc
+
+
+def save_or_show_plot(fig, plt, output, description):
+    if output is None:
+        plt.show()
+        return
+
+    ensure_plot_output_parent(output)
+    fig.savefig(output, dpi=150)
+    print(f"Saved {description} to {output}")
+
+
+def use_noninteractive_matplotlib_backend(matplotlib):
+    if "matplotlib.pyplot" not in sys.modules:
+        matplotlib.use("Agg")
+
+
+def plot_comparison_entries(entries, title=None, dark=False, output=None):
     if not entries:
         print("No comparison data to plot.")
         return 1
@@ -2986,8 +3048,8 @@ def plot_comparison_entries(entries, title=None, dark=False):
         ToolingDependency("matplotlib", "matplotlib", "plot rendering", extra="plot"),
         tool_name=current_tool_name(),
     )
-    if not os.environ.get("DISPLAY"):
-        matplotlib.use("Agg")
+    if output is not None:
+        use_noninteractive_matplotlib_backend(matplotlib)
 
     plt = require_tooling_dependency(
         ToolingDependency(
@@ -3052,12 +3114,7 @@ def plot_comparison_entries(entries, title=None, dark=False):
 
     fig.tight_layout()
 
-    if not os.environ.get("DISPLAY"):
-        output = "nvbench_compare_robust.png"
-        fig.savefig(output, dpi=150)
-        print(f"Saved comparison plot to {output}")
-    else:
-        plt.show()
+    save_or_show_plot(fig, plt, output, "comparison plot")
     return 0
 
 
@@ -3080,11 +3137,24 @@ def compare_benches(
     comparison_thresholds=None,
     display="intervals",
     bulk_debug_rows=None,
+    plot_output=None,
+    plot_along_output=None,
 ):
     if comparison_thresholds is None:
         comparison_thresholds = get_default_thresholds()
 
     if plot_along:
+        if plot_along_output is not None:
+            matplotlib = require_tooling_dependency(
+                ToolingDependency(
+                    "matplotlib",
+                    "matplotlib",
+                    "per-axis plot rendering",
+                    extra="plot",
+                ),
+                tool_name=current_tool_name(),
+            )
+            use_noninteractive_matplotlib_backend(matplotlib)
         plt = require_tooling_dependency(
             ToolingDependency(
                 "matplotlib.pyplot",
@@ -3105,6 +3175,7 @@ def compare_benches(
 
     comparison_entries = []
     comparison_device_names = set()
+    plot_along_output_paths = set()
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
         if not ref_bench:
@@ -3361,6 +3432,22 @@ def compare_benches(
                 print("")
 
             if has_plot_along_data:
+                plot_along_output_path = format_plot_along_output_path(
+                    plot_along_output,
+                    benchmark_name=cmp_bench["name"],
+                    device_id=cmp_device_id,
+                    axis_name=plot_along,
+                )
+                if plot_along_output_path is not None:
+                    normalized_output_path = os.path.abspath(plot_along_output_path)
+                    if normalized_output_path in plot_along_output_paths:
+                        raise ValueError(
+                            "--plot-along-output would write multiple plots to "
+                            f"{plot_along_output_path!r}; use a template with "
+                            "{benchmark}, {device}, or {axis} to make paths unique"
+                        )
+                    plot_along_output_paths.add(normalized_output_path)
+
                 fig = plt.figure()
                 try:
                     plt.xscale("log")
@@ -3427,7 +3514,9 @@ def compare_benches(
                         plot_line("ref", "--", axis + " ref", axis)
 
                     plt.legend()
-                    plt.show()
+                    save_or_show_plot(
+                        fig, plt, plot_along_output_path, "plot-along output"
+                    )
                 finally:
                     plt.close(fig)
 
@@ -3443,7 +3532,9 @@ def compare_benches(
             )
             if axis_label:
                 title = f"{title} ({axis_label})"
-        plot_comparison_entries(comparison_entries, title=title, dark=dark)
+        plot_comparison_entries(
+            comparison_entries, title=title, dark=dark, output=plot_output
+        )
 
 
 def main() -> int:
@@ -3511,6 +3602,19 @@ def main() -> int:
         action="store_true",
     )
     parser.add_argument(
+        "--plot-output",
+        default=None,
+        help="save --plot output to this path instead of showing it interactively",
+    )
+    parser.add_argument(
+        "--plot-along-output",
+        default=None,
+        help=(
+            "save --plot-along output to this path or filename template instead "
+            "of showing it interactively"
+        ),
+    )
+    parser.add_argument(
         "--dark",
         action="store_true",
         help="Use dark theme (black background, white text)",
@@ -3570,6 +3674,12 @@ def main() -> int:
     if args.dump_config:
         print(dump_comparison_config(comparison_preset, comparison_thresholds), end="")
         return 0
+    if args.plot_output is not None and not args.plot:
+        print("--plot-output requires --plot")
+        return 1
+    if args.plot_along_output is not None and args.plot_along is None:
+        print("--plot-along-output requires --plot-along")
+        return 1
 
     try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
@@ -3704,6 +3814,8 @@ def main() -> int:
                 comparison_thresholds=comparison_thresholds,
                 display=args.display,
                 bulk_debug_rows=bulk_debug_rows,
+                plot_output=args.plot_output,
+                plot_along_output=args.plot_along_output,
             )
         except MissingToolingDependencyError as exc:
             print(str(exc), file=sys.stderr)

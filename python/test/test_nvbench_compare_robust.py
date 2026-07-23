@@ -20,8 +20,85 @@ def nvbench_compare(monkeypatch):
         def get_color(self):
             return "black"
 
+    class DummyText:
+        def set_color(self, *args, **kwargs):
+            pass
+
+    class DummyAxis:
+        def __init__(self):
+            self.label = DummyText()
+
+        def set_major_formatter(self, *args, **kwargs):
+            pass
+
+    class DummySpine:
+        def set_color(self, *args, **kwargs):
+            pass
+
+    class DummyPatch:
+        def set_facecolor(self, *args, **kwargs):
+            pass
+
+    class DummyAxes:
+        def __init__(self):
+            self.xaxis = DummyAxis()
+            self.yaxis = DummyAxis()
+            self.title = DummyText()
+            self.spines = {
+                "left": DummySpine(),
+                "right": DummySpine(),
+                "top": DummySpine(),
+                "bottom": DummySpine(),
+            }
+
+        def set_facecolor(self, *args, **kwargs):
+            pass
+
+        def tick_params(self, *args, **kwargs):
+            pass
+
+        def barh(self, *args, **kwargs):
+            pass
+
+        def set_yticks(self, *args, **kwargs):
+            pass
+
+        def set_yticklabels(self, *args, **kwargs):
+            pass
+
+        def invert_yaxis(self, *args, **kwargs):
+            pass
+
+        def set_ylim(self, *args, **kwargs):
+            pass
+
+        def axvline(self, *args, **kwargs):
+            pass
+
+        def axhline(self, *args, **kwargs):
+            pass
+
+        def set_title(self, *args, **kwargs):
+            pass
+
+        def set_xlim(self, *args, **kwargs):
+            pass
+
+    class DummyFigure:
+        def __init__(self):
+            self.patch = DummyPatch()
+
+        def tight_layout(self, *args, **kwargs):
+            pass
+
+        def savefig(self, *args, **kwargs):
+            pyplot.savefig_calls.append({"args": args, "kwargs": kwargs})
+
     pyplot = types.ModuleType("matplotlib.pyplot")
-    pyplot.figure = lambda *args, **kwargs: None
+    pyplot.savefig_calls = []
+    pyplot.show_calls = []
+    pyplot.figure = lambda *args, **kwargs: DummyFigure()
+    pyplot.subplots = lambda *args, **kwargs: (DummyFigure(), DummyAxes())
     pyplot.xscale = lambda *args, **kwargs: None
     pyplot.yscale = lambda *args, **kwargs: None
     pyplot.xlabel = lambda *args, **kwargs: None
@@ -30,13 +107,20 @@ def nvbench_compare(monkeypatch):
     pyplot.plot = lambda *args, **kwargs: [DummyLine()]
     pyplot.fill_between = lambda *args, **kwargs: None
     pyplot.legend = lambda *args, **kwargs: None
-    pyplot.show = lambda *args, **kwargs: None
+    pyplot.show = lambda *args, **kwargs: pyplot.show_calls.append((args, kwargs))
     pyplot.close = lambda *args, **kwargs: None
 
     matplotlib = types.ModuleType("matplotlib")
+    matplotlib.use_calls = []
+    matplotlib.use = lambda *args, **kwargs: matplotlib.use_calls.append((args, kwargs))
     matplotlib.pyplot = pyplot
     monkeypatch.setitem(sys.modules, "matplotlib", matplotlib)
     monkeypatch.setitem(sys.modules, "matplotlib.pyplot", pyplot)
+    monkeypatch.setitem(
+        sys.modules,
+        "matplotlib.ticker",
+        types.SimpleNamespace(PercentFormatter=lambda *args, **kwargs: object()),
+    )
     monkeypatch.setitem(
         sys.modules,
         "seaborn",
@@ -2321,6 +2405,106 @@ def test_plot_along_ignores_threshold_diff_table_filter(monkeypatch, nvbench_com
     assert [call["shape"] for call in plot_calls] == ["-", "--"]
 
 
+def test_plot_along_output_saves_without_showing(tmp_path, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    pyplot = sys.modules["matplotlib.pyplot"]
+    output = tmp_path / "plots" / "bench-device0-A.png"
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([make_state(nvbench_compare, "state", axis_value=1)])],
+        [make_benchmark([make_state(nvbench_compare, "state", axis_value=1)])],
+        threshold=0.0,
+        plot_along="A",
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        plot_along_output=str(output),
+    )
+
+    assert [call["args"][0] for call in pyplot.savefig_calls] == [str(output)]
+    assert pyplot.show_calls == []
+
+
+def test_plot_along_output_template_expands_per_plot(tmp_path, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    pyplot = sys.modules["matplotlib.pyplot"]
+    output_template = str(tmp_path / "{benchmark}-device{device}-{axis}.png")
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [
+            make_benchmark(
+                [make_state(nvbench_compare, "state", axis_value=1)], name="bench1"
+            ),
+            make_benchmark(
+                [make_state(nvbench_compare, "state", axis_value=1)], name="bench2"
+            ),
+        ],
+        [
+            make_benchmark(
+                [make_state(nvbench_compare, "state", axis_value=1)], name="bench1"
+            ),
+            make_benchmark(
+                [make_state(nvbench_compare, "state", axis_value=1)], name="bench2"
+            ),
+        ],
+        threshold=0.0,
+        plot_along="A",
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        plot_along_output=output_template,
+    )
+
+    assert [call["args"][0] for call in pyplot.savefig_calls] == [
+        str(tmp_path / "bench1-device0-A.png"),
+        str(tmp_path / "bench2-device0-A.png"),
+    ]
+    assert pyplot.show_calls == []
+
+
+def test_plot_along_output_rejects_duplicate_paths(tmp_path, nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    pyplot = sys.modules["matplotlib.pyplot"]
+
+    with pytest.raises(ValueError, match="would write multiple plots"):
+        nvbench_compare.compare_benches(
+            run_data,
+            [
+                make_benchmark(
+                    [make_state(nvbench_compare, "state", axis_value=1)],
+                    name="bench1",
+                ),
+                make_benchmark(
+                    [make_state(nvbench_compare, "state", axis_value=1)],
+                    name="bench2",
+                ),
+            ],
+            [
+                make_benchmark(
+                    [make_state(nvbench_compare, "state", axis_value=1)],
+                    name="bench1",
+                ),
+                make_benchmark(
+                    [make_state(nvbench_compare, "state", axis_value=1)],
+                    name="bench2",
+                ),
+            ],
+            threshold=0.0,
+            plot_along="A",
+            plot=False,
+            dark=False,
+            filter_plan=make_filter_plan(nvbench_compare),
+            no_color=True,
+            plot_along_output=str(tmp_path / "plot.png"),
+        )
+
+    assert len(pyplot.savefig_calls) == 1
+
+
 def test_compare_benches_validates_device_metadata_when_threshold_hides_rows(
     nvbench_compare,
 ):
@@ -3577,6 +3761,38 @@ def test_compare_benches_summary_plot_title_describes_timing(
     assert plot_calls[0]["kwargs"]["title"] == "GPU timing change - Test GPU"
 
 
+def test_plot_comparison_entries_shows_without_output(nvbench_compare):
+    pyplot = sys.modules["matplotlib.pyplot"]
+
+    assert (
+        nvbench_compare.plot_comparison_entries(
+            [("bench", 0.01, "FAST", "bench")], title="GPU timing change"
+        )
+        == 0
+    )
+
+    assert len(pyplot.show_calls) == 1
+    assert pyplot.savefig_calls == []
+
+
+def test_plot_comparison_entries_saves_without_showing(tmp_path, nvbench_compare):
+    pyplot = sys.modules["matplotlib.pyplot"]
+    output = tmp_path / "plots" / "compare.png"
+
+    assert (
+        nvbench_compare.plot_comparison_entries(
+            [("bench", 0.01, "FAST", "bench")],
+            title="GPU timing change",
+            output=str(output),
+        )
+        == 0
+    )
+
+    assert [call["args"][0] for call in pyplot.savefig_calls] == [str(output)]
+    assert pyplot.savefig_calls[0]["kwargs"]["dpi"] == 150
+    assert pyplot.show_calls == []
+
+
 def test_compare_benches_explain_display_uses_explicit_intervals(
     monkeypatch, nvbench_compare
 ):
@@ -3661,6 +3877,46 @@ def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_com
         "comparison_thresholds"
     ] == nvbench_compare.get_comparison_thresholds("strict")
     assert captured["display"] == "explain"
+
+
+def test_main_passes_plot_output_options_to_compare_benches(
+    monkeypatch, nvbench_compare
+):
+    devices = [{"id": 0, "name": "Test GPU"}]
+    root = {
+        "devices": devices,
+        "benchmarks": [],
+    }
+    captured = {}
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+
+    def fake_compare_benches(*args, **kwargs):
+        del args
+        captured["plot_output"] = kwargs["plot_output"]
+        captured["plot_along_output"] = kwargs["plot_along_output"]
+
+    monkeypatch.setattr(nvbench_compare, "compare_benches", fake_compare_benches)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--plot",
+            "--plot-output",
+            "compare.png",
+            "--plot-along",
+            "A",
+            "--plot-along-output",
+            "plots/{benchmark}-{axis}.png",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 0
+    assert captured["plot_output"] == "compare.png"
+    assert captured["plot_along_output"] == "plots/{benchmark}-{axis}.png"
 
 
 def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_compare):
