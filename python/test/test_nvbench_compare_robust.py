@@ -2466,6 +2466,51 @@ def test_plot_along_output_template_expands_per_plot(tmp_path, nvbench_compare):
     assert pyplot.show_calls == []
 
 
+def test_plot_along_output_template_pair_disambiguates_repeated_compare_devices(
+    tmp_path, nvbench_compare
+):
+    ref_devices = [{"id": 0, "name": "GPU 0"}, {"id": 1, "name": "GPU 1"}]
+    cmp_devices = [{"id": 0, "name": "GPU 0"}]
+    run_data = make_comparison_run_data(
+        nvbench_compare, ref_devices=ref_devices, cmp_devices=cmp_devices
+    )
+    pyplot = sys.modules["matplotlib.pyplot"]
+    output_template = str(tmp_path / "{benchmark}-pair{pair}-device{device}-{axis}.png")
+
+    ref_bench = make_benchmark(
+        [
+            make_state(nvbench_compare, "state", axis_value=1, device=0),
+            make_state(nvbench_compare, "state", axis_value=1, device=1),
+        ]
+    )
+    cmp_bench = make_benchmark(
+        [
+            make_state(nvbench_compare, "state", axis_value=1, device=0),
+        ]
+    )
+    cmp_bench["devices"] = [0, 0]
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [ref_bench],
+        [cmp_bench],
+        threshold=0.0,
+        plot_along="A",
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        reference_device_filter=[0, 1],
+        compare_device_filter=[0, 0],
+        plot_along_output=output_template,
+    )
+
+    assert [call["args"][0] for call in pyplot.savefig_calls] == [
+        str(tmp_path / "bench-pair0-device0-A.png"),
+        str(tmp_path / "bench-pair1-device0-A.png"),
+    ]
+
+
 def test_plot_along_output_rejects_duplicate_paths(tmp_path, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     pyplot = sys.modules["matplotlib.pyplot"]
@@ -4042,6 +4087,7 @@ def test_main_rejects_repeated_plot_along_output_across_directory_inputs(
     [
         "plots/{benchmark}-{device}-{axis}.png",
         "plots/{{literal}}-{axis}.png",
+        "plots/{benchmark}-pair{pair}-{axis}.png",
     ],
 )
 def test_validate_plot_along_output_template_accepts_supported_fields(
@@ -4066,6 +4112,39 @@ def test_validate_plot_along_output_template_rejects_unsupported_fields(
 ):
     with pytest.raises(ValueError, match=r"--plot-along-output supports"):
         nvbench_compare.validate_plot_along_output_template(output_template)
+
+
+def test_format_plot_along_output_path_sanitizes_template_fields(
+    tmp_path, nvbench_compare
+):
+    output = nvbench_compare.format_plot_along_output_path(
+        str(tmp_path / "plots" / "{benchmark}-device{device}-{axis}.png"),
+        benchmark_name="../../workspace/bench{name}",
+        device_id=0,
+        axis_name="Elements{io}/../Time",
+    )
+
+    assert output == str(
+        tmp_path / "plots" / "workspace_bench_name-device0-Elements_io_Time.png"
+    )
+
+
+def test_format_plot_along_output_path_formats_pair_field(tmp_path, nvbench_compare):
+    output = nvbench_compare.format_plot_along_output_path(
+        str(tmp_path / "plots" / "{benchmark}-pair{pair}-{axis}.png"),
+        benchmark_name="bench",
+        device_id=0,
+        axis_name="A",
+        device_pair_index=3,
+    )
+
+    assert output == str(tmp_path / "plots" / "bench-pair3-A.png")
+
+
+def test_sanitize_plot_output_component_uses_fallback_for_empty_values(
+    nvbench_compare,
+):
+    assert nvbench_compare.sanitize_plot_output_component("../../") == "value"
 
 
 def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_compare):

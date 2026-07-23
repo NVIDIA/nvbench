@@ -2979,7 +2979,8 @@ def format_plot_series_key(state_key, occurrence, occurrence_count, axis_name_pa
     return ", ".join(parts)
 
 
-PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS = frozenset({"benchmark", "device", "axis"})
+PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS = frozenset({"benchmark", "device", "axis", "pair"})
+PLOT_OUTPUT_FIELD_SAFE_CHARS = re.compile(r"[^A-Za-z0-9_-]+")
 
 
 def ensure_plot_output_parent(output):
@@ -3035,8 +3036,14 @@ def validate_plot_along_output_template(output_template):
             )
 
 
+def sanitize_plot_output_component(value: object) -> str:
+    sanitized = PLOT_OUTPUT_FIELD_SAFE_CHARS.sub("_", str(value))
+    sanitized = sanitized.strip("._-")
+    return sanitized or "value"
+
+
 def format_plot_along_output_path(
-    output_template, *, benchmark_name, device_id, axis_name
+    output_template, *, benchmark_name, device_id, axis_name, device_pair_index=0
 ):
     if output_template is None:
         return None
@@ -3044,7 +3051,10 @@ def format_plot_along_output_path(
     validate_plot_along_output_template(output_template)
     try:
         return output_template.format(
-            benchmark=benchmark_name, device=device_id, axis=axis_name
+            benchmark=sanitize_plot_output_component(benchmark_name),
+            device=sanitize_plot_output_component(device_id),
+            axis=sanitize_plot_output_component(axis_name),
+            pair=sanitize_plot_output_component(device_pair_index),
         )
     except (IndexError, KeyError, ValueError) as exc:
         raise ValueError(f"--plot-along-output template is invalid: {exc}") from exc
@@ -3468,6 +3478,7 @@ def compare_benches(
                     benchmark_name=cmp_bench["name"],
                     device_id=cmp_device_id,
                     axis_name=plot_along,
+                    device_pair_index=cmp_device_index,
                 )
                 if plot_along_output_path is not None:
                     reserve_plot_output_path(
