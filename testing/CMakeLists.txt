@@ -23,7 +23,7 @@ set(test_srcs
   range.cu
   reset_error.cu
   ring_buffer.cu
-  runner.cpp
+  runner.cu
   sample_count_criterion.cu
   state.cu
   statistics.cu
@@ -49,10 +49,6 @@ foreach(test_src IN LISTS test_srcs)
   add_executable(${test_name} "${test_src}")
   target_include_directories(${test_name} PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
   target_link_libraries(${test_name} PRIVATE nvbench::nvbench fmt::fmt)
-  # This host-compiled test uses CUDA APIs through NVBench headers.
-  if (test_name STREQUAL "nvbench.test.runner")
-    target_link_libraries(${test_name} PRIVATE CUDA::cudart)
-  endif()
   set_target_properties(${test_name} PROPERTIES COMPILE_FEATURES cuda_std_17)
   nvbench_config_target(${test_name})
   add_test(NAME ${test_name} COMMAND "$<TARGET_FILE:${test_name}>" ${NVBench_TEST_ARGS_${test_name}})
