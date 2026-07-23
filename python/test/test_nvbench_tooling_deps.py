@@ -2,23 +2,61 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import importlib
+import importlib.metadata
 import shutil
 import sys
 from pathlib import Path
 
 import pytest
 
+SCRIPT_SOURCE_FILES = [
+    "nvbench_compare.py",
+    "nvbench_compare_robust.py",
+    "nvbench_histogram.py",
+    "nvbench_json_summary.py",
+    "nvbench_plot_bwutil.py",
+    "nvbench_tooling_deps.py",
+    "nvbench_walltime.py",
+]
+
 
 @pytest.fixture
 def tooling_deps(monkeypatch):
-    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    scripts_dir = find_script_sources()
     monkeypatch.syspath_prepend(str(scripts_dir))
     monkeypatch.delitem(sys.modules, "nvbench_tooling_deps", raising=False)
     return importlib.import_module("nvbench_tooling_deps")
 
 
-def make_packaged_scripts_tree(tmp_path: Path) -> Path:
-    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+def is_script_source_dir(path: Path) -> bool:
+    return (
+        all((path / filename).is_file() for filename in SCRIPT_SOURCE_FILES)
+        and (path / "nvbench_json").is_dir()
+    )
+
+
+def find_script_sources() -> Path:
+    source_tree_scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    if source_tree_scripts_dir.is_dir() and is_script_source_dir(
+        source_tree_scripts_dir
+    ):
+        return source_tree_scripts_dir
+
+    try:
+        packaged_spec = importlib.util.find_spec(
+            "cuda.bench.scripts.nvbench_tooling_deps"
+        )
+    except ModuleNotFoundError:
+        packaged_spec = None
+    if packaged_spec is not None and packaged_spec.origin is not None:
+        scripts_dir = Path(packaged_spec.origin).resolve().parent
+        if is_script_source_dir(scripts_dir):
+            return scripts_dir
+
+    pytest.skip("NVBench script sources are not available in this test layout")
+
+
+def make_packaged_scripts_tree(tmp_path: Path, scripts_dir: Path) -> Path:
     package_dir = tmp_path / "cuda" / "bench" / "scripts"
     results_dir = tmp_path / "cuda" / "bench" / "results"
     package_dir.mkdir(parents=True)
@@ -30,15 +68,7 @@ def make_packaged_scripts_tree(tmp_path: Path) -> Path:
         results_dir,
     ]:
         (package / "__init__.py").write_text("", encoding="utf-8")
-    for filename in [
-        "nvbench_compare.py",
-        "nvbench_compare_robust.py",
-        "nvbench_histogram.py",
-        "nvbench_json_summary.py",
-        "nvbench_plot_bwutil.py",
-        "nvbench_tooling_deps.py",
-        "nvbench_walltime.py",
-    ]:
+    for filename in SCRIPT_SOURCE_FILES:
         shutil.copy(scripts_dir / filename, package_dir / filename)
     shutil.copytree(
         scripts_dir / "nvbench_json",
@@ -65,15 +95,26 @@ def clear_packaged_cuda_modules(monkeypatch):
             monkeypatch.delitem(sys.modules, module_name, raising=False)
 
 
+def assert_packaged_script_module(module, module_name: str, filename: str) -> None:
+    # Editable installs may redirect cuda.bench.scripts.* to the source-tree
+    # scripts/ directory, so assert the import contract rather than a physical
+    # package directory.
+    assert module.__name__ == module_name
+    assert module.__package__ == "cuda.bench.scripts"
+    assert Path(module.__file__).name == filename
+
+
 def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
-    package_dir = make_packaged_scripts_tree(tmp_path)
+    scripts_dir = find_script_sources()
+    make_packaged_scripts_tree(tmp_path, scripts_dir)
 
     monkeypatch.syspath_prepend(str(tmp_path))
     clear_packaged_cuda_modules(monkeypatch)
 
-    module = importlib.import_module("cuda.bench.scripts.nvbench_tooling_deps")
+    module_name = "cuda.bench.scripts.nvbench_tooling_deps"
+    module = importlib.import_module(module_name)
 
-    assert Path(module.__file__) == package_dir / "nvbench_tooling_deps.py"
+    assert_packaged_script_module(module, module_name, "nvbench_tooling_deps.py")
     assert module.ToolingDependency("math", "math", "testing").extra == "tools"
 
 
@@ -91,7 +132,8 @@ def test_tooling_deps_imports_from_packaged_script_path(tmp_path, monkeypatch):
 def test_console_script_modules_import_from_packaged_paths(
     tmp_path, monkeypatch, module_name, expected_entry
 ):
-    package_dir = make_packaged_scripts_tree(tmp_path)
+    scripts_dir = find_script_sources()
+    make_packaged_scripts_tree(tmp_path, scripts_dir)
     leaf_module = module_name.rsplit(".", 1)[-1]
 
     monkeypatch.syspath_prepend(str(tmp_path))
@@ -99,12 +141,27 @@ def test_console_script_modules_import_from_packaged_paths(
 
     module = importlib.import_module(module_name)
 
-    assert Path(module.__file__) == package_dir / f"{leaf_module}.py"
+    assert_packaged_script_module(module, module_name, f"{leaf_module}.py")
     assert callable(getattr(module, expected_entry))
 
 
 def test_compare_console_scripts_are_explicitly_named():
     pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    if not pyproject.exists():
+        entry_points = importlib.metadata.entry_points(group="console_scripts")
+        scripts = {entry_point.name: entry_point.value for entry_point in entry_points}
+
+        assert (
+            scripts["nvbench-compare-robust"]
+            == "cuda.bench.scripts.nvbench_compare_robust:main"
+        )
+        assert (
+            scripts["nvbench-compare-legacy"]
+            == "cuda.bench.scripts.nvbench_compare:main"
+        )
+        assert "nvbench-compare" not in scripts
+        return
+
     contents = pyproject.read_text(encoding="utf-8")
 
     assert (
@@ -118,7 +175,7 @@ def test_compare_console_scripts_are_explicitly_named():
 
 
 def test_nvbench_compare_script_path_uses_legacy_behavior(monkeypatch):
-    scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    scripts_dir = find_script_sources()
     monkeypatch.syspath_prepend(str(scripts_dir))
     monkeypatch.delitem(sys.modules, "nvbench_compare", raising=False)
 
