@@ -95,6 +95,7 @@ def nvbench_compare(monkeypatch):
             pyplot.savefig_calls.append({"args": args, "kwargs": kwargs})
 
     pyplot = types.ModuleType("matplotlib.pyplot")
+    pyplot.close_calls = []
     pyplot.savefig_calls = []
     pyplot.show_calls = []
     pyplot.figure = lambda *args, **kwargs: DummyFigure()
@@ -108,7 +109,7 @@ def nvbench_compare(monkeypatch):
     pyplot.fill_between = lambda *args, **kwargs: None
     pyplot.legend = lambda *args, **kwargs: None
     pyplot.show = lambda *args, **kwargs: pyplot.show_calls.append((args, kwargs))
-    pyplot.close = lambda *args, **kwargs: None
+    pyplot.close = lambda *args, **kwargs: pyplot.close_calls.append((args, kwargs))
 
     matplotlib = types.ModuleType("matplotlib")
     matplotlib.use_calls = []
@@ -2427,6 +2428,32 @@ def test_plot_along_output_saves_without_showing(tmp_path, nvbench_compare):
     assert pyplot.show_calls == []
 
 
+def test_plot_output_forces_agg_after_plot_along_imports_pyplot(
+    tmp_path, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    matplotlib = sys.modules["matplotlib"]
+    pyplot = sys.modules["matplotlib.pyplot"]
+    output = tmp_path / "compare.png"
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([make_state(nvbench_compare, "state", axis_value=1)])],
+        [make_benchmark([make_state(nvbench_compare, "state", axis_value=1)])],
+        threshold=0.0,
+        plot_along="A",
+        plot=True,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        plot_output=str(output),
+    )
+
+    assert matplotlib.use_calls == [(("Agg",), {})]
+    assert [call["args"][0] for call in pyplot.savefig_calls] == [str(output)]
+    assert len(pyplot.show_calls) == 1
+
+
 def test_plot_along_output_template_expands_per_plot(tmp_path, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     pyplot = sys.modules["matplotlib.pyplot"]
@@ -3818,6 +3845,7 @@ def test_plot_comparison_entries_shows_without_output(nvbench_compare):
 
     assert len(pyplot.show_calls) == 1
     assert pyplot.savefig_calls == []
+    assert len(pyplot.close_calls) == 1
 
 
 def test_plot_comparison_entries_saves_without_showing(tmp_path, nvbench_compare):
@@ -3836,6 +3864,7 @@ def test_plot_comparison_entries_saves_without_showing(tmp_path, nvbench_compare
     assert [call["args"][0] for call in pyplot.savefig_calls] == [str(output)]
     assert pyplot.savefig_calls[0]["kwargs"]["dpi"] == 150
     assert pyplot.show_calls == []
+    assert len(pyplot.close_calls) == 1
 
 
 def test_save_or_show_plot_reports_parent_directory_errors(tmp_path, nvbench_compare):
@@ -3998,6 +4027,32 @@ def test_main_passes_plot_output_options_to_compare_benches(
     assert nvbench_compare.main() == 0
     assert captured["plot_output"] == "compare.png"
     assert captured["plot_along_output"] == "plots/{benchmark}-{axis}.png"
+
+
+def test_main_rejects_invalid_plot_along_output_template_before_comparing(
+    monkeypatch, capsys, nvbench_compare
+):
+    def fail_compare_benches(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("compare_benches should not be called")
+
+    monkeypatch.setattr(nvbench_compare, "compare_benches", fail_compare_benches)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--plot-along",
+            "A",
+            "--plot-along-output",
+            "plots/{benchmark.missing}.png",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 1
+    assert "--plot-along-output supports template fields" in capsys.readouterr().out
 
 
 def make_directory_compare_inputs(tmp_path, nvbench_compare):

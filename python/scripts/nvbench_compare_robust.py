@@ -3074,8 +3074,7 @@ def save_or_show_plot(fig, plt, output, description):
 
 
 def use_noninteractive_matplotlib_backend(matplotlib):
-    if "matplotlib.pyplot" not in sys.modules:
-        matplotlib.use("Agg")
+    matplotlib.use("Agg")
 
 
 def plot_comparison_entries(entries, title=None, dark=False, output=None):
@@ -3115,45 +3114,48 @@ def plot_comparison_entries(entries, title=None, dark=False, output=None):
 
     fig_height = max(4.0, 0.3 * len(entries) + 1.5)
     fig, ax = plt.subplots(figsize=(10, fig_height))
-    if dark:
-        fig.patch.set_facecolor("black")
-        ax.set_facecolor("black")
-        ax.tick_params(colors="white")
-        ax.xaxis.label.set_color("white")
-        ax.yaxis.label.set_color("white")
-        ax.title.set_color("white")
-        for spine in ax.spines.values():
-            spine.set_color("white")
+    try:
+        if dark:
+            fig.patch.set_facecolor("black")
+            ax.set_facecolor("black")
+            ax.tick_params(colors="white")
+            ax.xaxis.label.set_color("white")
+            ax.yaxis.label.set_color("white")
+            ax.title.set_color("white")
+            for spine in ax.spines.values():
+                spine.set_color("white")
 
-    y_pos = range(len(labels))
-    ax.barh(y_pos, values, color=colors)
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(labels)
-    ax.invert_yaxis()
-    ax.set_ylim(len(labels) - 0.5, -0.5)
+        y_pos = range(len(labels))
+        ax.barh(y_pos, values, color=colors)
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(labels)
+        ax.invert_yaxis()
+        ax.set_ylim(len(labels) - 0.5, -0.5)
 
-    separator_color = "white" if dark else "gray"
-    ax.axvline(0, color=separator_color, linewidth=1, alpha=0.6)
-    for index in range(1, len(bench_names)):
-        if bench_names[index] != bench_names[index - 1]:
-            ax.axhline(index - 0.5, color=separator_color, linewidth=0.6, alpha=0.4)
-    ax.xaxis.set_major_formatter(PercentFormatter(1.0))
+        separator_color = "white" if dark else "gray"
+        ax.axvline(0, color=separator_color, linewidth=1, alpha=0.6)
+        for index in range(1, len(bench_names)):
+            if bench_names[index] != bench_names[index - 1]:
+                ax.axhline(index - 0.5, color=separator_color, linewidth=0.6, alpha=0.4)
+        ax.xaxis.set_major_formatter(PercentFormatter(1.0))
 
-    if title:
-        ax.set_title(title)
+        if title:
+            ax.set_title(title)
 
-    min_val = min(values)
-    max_val = max(values)
-    if min_val == max_val:
-        pad = 0.05 if min_val == 0 else abs(min_val) * 0.1
-        ax.set_xlim(min_val - pad, max_val + pad)
-    else:
-        pad = (max_val - min_val) * 0.1
-        ax.set_xlim(min_val - pad, max_val + pad)
+        min_val = min(values)
+        max_val = max(values)
+        if min_val == max_val:
+            pad = 0.05 if min_val == 0 else abs(min_val) * 0.1
+            ax.set_xlim(min_val - pad, max_val + pad)
+        else:
+            pad = (max_val - min_val) * 0.1
+            ax.set_xlim(min_val - pad, max_val + pad)
 
-    fig.tight_layout()
+        fig.tight_layout()
 
-    save_or_show_plot(fig, plt, output, "comparison plot")
+        save_or_show_plot(fig, plt, output, "comparison plot")
+    finally:
+        plt.close(fig)
     return 0
 
 
@@ -3732,6 +3734,12 @@ def main() -> int:
     if args.plot_along_output is not None and args.plot_along is None:
         print("--plot-along-output requires --plot-along")
         return 1
+    if args.plot_along_output is not None:
+        try:
+            validate_plot_along_output_template(args.plot_along_output)
+        except ValueError as exc:
+            print(str(exc))
+            return 1
 
     try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
