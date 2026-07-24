@@ -512,6 +512,11 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->enable_profile();
       first += 1;
     }
+    else if (arg == "--disable-blocking-kernel")
+    {
+      this->disable_blocking_kernel();
+      first += 1;
+    }
     else if (arg == "--no-batch")
     {
       this->disable_batched();
@@ -819,6 +824,18 @@ void option_parser::enable_profile()
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_disable_blocking_kernel(true);
   bench.set_run_once(true);
+}
+
+void option_parser::disable_blocking_kernel()
+{
+  // If no active benchmark, save args as global
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--disable-blocking-kernel");
+    return;
+  }
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_disable_blocking_kernel(true);
 }
 
 void option_parser::disable_batched()

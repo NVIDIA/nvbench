@@ -156,6 +156,18 @@ struct temp_tree
   return states_to_string(parser_to_states(parser));
 }
 
+void assert_state_flags(const std::vector<nvbench::state> &states,
+                        bool disable_blocking_kernel,
+                        bool run_once)
+{
+  ASSERT(!states.empty());
+  for (const auto &state : states)
+  {
+    ASSERT(state.get_disable_blocking_kernel() == disable_blocking_kernel);
+    ASSERT(state.get_run_once() == run_once);
+  }
+}
+
 } // namespace
 
 void test_empty()
@@ -1294,6 +1306,61 @@ void test_json_stream_destinations()
   }
 }
 
+void test_disable_blocking_kernel()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--disable-blocking-kernel"});
+    assert_state_flags(parser_to_states(parser), true, false);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse(
+      {"--disable-blocking-kernel", "--benchmark", "DummyBench", "--benchmark", "TestBench"});
+
+    const auto &benches = parser.get_benchmarks();
+    ASSERT(benches.size() == 2);
+    ASSERT(benches[0] != nullptr);
+    ASSERT(benches[1] != nullptr);
+
+    assert_state_flags(nvbench::detail::state_generator::create(*benches[0]), true, false);
+    assert_state_flags(nvbench::detail::state_generator::create(*benches[1]), true, false);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse(
+      {"--benchmark", "DummyBench", "--disable-blocking-kernel", "--benchmark", "TestBench"});
+
+    const auto &benches = parser.get_benchmarks();
+    ASSERT(benches.size() == 2);
+    ASSERT(benches[0] != nullptr);
+    ASSERT(benches[1] != nullptr);
+
+    assert_state_flags(nvbench::detail::state_generator::create(*benches[0]), true, false);
+    assert_state_flags(nvbench::detail::state_generator::create(*benches[1]), false, false);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--profile"});
+    assert_state_flags(parser_to_states(parser), true, true);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--profile", "--disable-blocking-kernel"});
+    assert_state_flags(parser_to_states(parser), true, true);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--disable-blocking-kernel", "--profile"});
+    assert_state_flags(parser_to_states(parser), true, true);
+  }
+}
+
 void test_output_parent_directories_created()
 {
   const auto unique_suffix = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -1678,6 +1745,7 @@ try
   test_cold_max_warmup_walltime();
   test_timeout();
   test_json_stream_destinations();
+  test_disable_blocking_kernel();
   test_output_parent_directories_created();
 
   test_stopping_criterion();
