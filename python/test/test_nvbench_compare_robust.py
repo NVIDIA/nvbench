@@ -175,6 +175,7 @@ def test_nvbench_compare_imports_from_packaged_script_path(tmp_path, monkeypatch
     for package in [tmp_path / "cuda", tmp_path / "cuda" / "bench", package_dir]:
         (package / "__init__.py").write_text("", encoding="utf-8")
     for filename in [
+        "_nvbench_compare_plotting.py",
         "nvbench_compare_robust.py",
         "nvbench_tooling_deps.py",
     ]:
@@ -186,6 +187,7 @@ def test_nvbench_compare_imports_from_packaged_script_path(tmp_path, monkeypatch
         "cuda",
         "cuda.bench",
         "cuda.bench.scripts",
+        "cuda.bench.scripts._nvbench_compare_plotting",
         "cuda.bench.scripts.nvbench_compare_robust",
         "cuda.bench.scripts.nvbench_json",
         "cuda.bench.scripts.nvbench_tooling_deps",
@@ -2304,7 +2306,9 @@ def test_compare_benches_marks_unavailable_noise_undecided(
 def test_plot_along_rejects_states_without_selected_axis(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     monkeypatch.setattr(
-        nvbench_compare, "plot_comparison_entries", lambda *args, **kwargs: None
+        nvbench_compare.plotting,
+        "plot_comparison_entries",
+        lambda *args, **kwargs: None,
     )
 
     ref_benches = [
@@ -3693,7 +3697,9 @@ def test_compare_benches_plot_skips_unknown_rows(monkeypatch, nvbench_compare):
         return 0
 
     monkeypatch.setattr(
-        nvbench_compare, "plot_comparison_entries", fake_plot_comparison_entries
+        nvbench_compare.plotting,
+        "plot_comparison_entries",
+        fake_plot_comparison_entries,
     )
 
     run_data = make_comparison_run_data(nvbench_compare)
@@ -3813,7 +3819,7 @@ def test_compare_benches_summary_plot_title_describes_timing(
     plot_calls = []
 
     monkeypatch.setattr(
-        nvbench_compare,
+        nvbench_compare.plotting,
         "plot_comparison_entries",
         lambda *args, **kwargs: plot_calls.append({"args": args, "kwargs": kwargs}),
     )
@@ -3837,7 +3843,7 @@ def test_plot_comparison_entries_shows_without_output(nvbench_compare):
     pyplot = sys.modules["matplotlib.pyplot"]
 
     assert (
-        nvbench_compare.plot_comparison_entries(
+        nvbench_compare.plotting.plot_comparison_entries(
             [("bench", 0.01, "FAST", "bench")], title="GPU timing change"
         )
         == 0
@@ -3853,7 +3859,7 @@ def test_plot_comparison_entries_saves_without_showing(tmp_path, nvbench_compare
     output = tmp_path / "plots" / "compare.png"
 
     assert (
-        nvbench_compare.plot_comparison_entries(
+        nvbench_compare.plotting.plot_comparison_entries(
             [("bench", 0.01, "FAST", "bench")],
             title="GPU timing change",
             output=str(output),
@@ -3879,7 +3885,7 @@ def test_save_or_show_plot_reports_parent_directory_errors(tmp_path, nvbench_com
 
     output_text = str(output)
     with pytest.raises(ValueError) as exc_info:
-        nvbench_compare.save_or_show_plot(
+        nvbench_compare.plotting.save_or_show_plot(
             DummyFigure(), pyplot, output_text, "comparison plot"
         )
     assert "failed to write comparison plot" in str(exc_info.value)
@@ -3896,7 +3902,7 @@ def test_save_or_show_plot_reports_save_errors(tmp_path, nvbench_compare):
 
     output_text = str(output)
     with pytest.raises(ValueError) as exc_info:
-        nvbench_compare.save_or_show_plot(
+        nvbench_compare.plotting.save_or_show_plot(
             DummyFigure(), pyplot, output_text, "comparison plot"
         )
     assert "failed to write comparison plot" in str(exc_info.value)
@@ -4148,7 +4154,7 @@ def test_main_rejects_repeated_plot_along_output_across_directory_inputs(
 def test_validate_plot_along_output_template_accepts_supported_fields(
     nvbench_compare, output_template
 ):
-    nvbench_compare.validate_plot_along_output_template(output_template)
+    nvbench_compare.plotting.validate_plot_along_output_template(output_template)
 
 
 @pytest.mark.parametrize(
@@ -4166,13 +4172,13 @@ def test_validate_plot_along_output_template_rejects_unsupported_fields(
     nvbench_compare, output_template
 ):
     with pytest.raises(ValueError, match=r"--plot-along-output supports"):
-        nvbench_compare.validate_plot_along_output_template(output_template)
+        nvbench_compare.plotting.validate_plot_along_output_template(output_template)
 
 
 def test_format_plot_along_output_path_sanitizes_template_fields(
     tmp_path, nvbench_compare
 ):
-    output = nvbench_compare.format_plot_along_output_path(
+    output = nvbench_compare.plotting.format_plot_along_output_path(
         str(tmp_path / "plots" / "{benchmark}-device{device}-{axis}.png"),
         benchmark_name="../../workspace/bench{name}",
         device_id=0,
@@ -4185,7 +4191,7 @@ def test_format_plot_along_output_path_sanitizes_template_fields(
 
 
 def test_format_plot_along_output_path_formats_pair_field(tmp_path, nvbench_compare):
-    output = nvbench_compare.format_plot_along_output_path(
+    output = nvbench_compare.plotting.format_plot_along_output_path(
         str(tmp_path / "plots" / "{benchmark}-pair{pair}-{axis}.png"),
         benchmark_name="bench",
         device_id=0,
@@ -4199,7 +4205,7 @@ def test_format_plot_along_output_path_formats_pair_field(tmp_path, nvbench_comp
 def test_sanitize_plot_output_component_uses_fallback_for_empty_values(
     nvbench_compare,
 ):
-    assert nvbench_compare.sanitize_plot_output_component("../../") == "value"
+    assert nvbench_compare.plotting.sanitize_plot_output_component("../../") == "value"
 
 
 def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_compare):

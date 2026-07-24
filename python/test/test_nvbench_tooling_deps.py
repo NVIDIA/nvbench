@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 SCRIPT_SOURCE_FILES = [
+    "_nvbench_compare_plotting.py",
     "nvbench_compare.py",
     "nvbench_compare_robust.py",
     "nvbench_histogram.py",

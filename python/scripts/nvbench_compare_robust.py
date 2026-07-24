@@ -17,8 +17,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import cached_property
-from pathlib import Path
-from string import Formatter
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Protocol, TypeAlias
 
 if TYPE_CHECKING:
@@ -32,6 +30,7 @@ else:
     NumpyArray: TypeAlias = Any
 
 if __package__:
+    from . import _nvbench_compare_plotting as plotting
     from .nvbench_json import reader
     from .nvbench_tooling_deps import (
         MissingToolingDependencyError,
@@ -39,6 +38,7 @@ if __package__:
         require_tooling_dependency,
     )
 else:
+    import _nvbench_compare_plotting as plotting  # type: ignore[no-redef]
     from nvbench_json import reader  # type: ignore[no-redef]
     from nvbench_tooling_deps import (  # type: ignore[no-redef]
         MissingToolingDependencyError,
@@ -1322,38 +1322,6 @@ def derive_absolute_dispersion(relative_dispersion, center):
     if is_nonnegative_finite(relative_dispersion) and is_positive_finite(center):
         return relative_dispersion * center
     return None
-
-
-def parse_plot_axis_value(axis_name, axis_value):
-    try:
-        value = float(axis_value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(
-            f"--plot-along requires numeric axis values; "
-            f"axis {axis_name!r} has value {axis_value!r}"
-        ) from exc
-    if not is_positive_finite(value):
-        raise ValueError(
-            f"--plot-along requires positive finite axis values; "
-            f"axis {axis_name!r} has value {axis_value!r}"
-        )
-    return value
-
-
-def extract_plot_axis_value(axis_values, plot_along, benchmark_name, state_name):
-    axis_name_parts = []
-    for axis_value in axis_values:
-        if axis_value["name"] != plot_along:
-            axis_name_parts.append(f"""{axis_value["name"]} = {axis_value["value"]}""")
-        else:
-            return (
-                parse_plot_axis_value(axis_value["name"], axis_value["value"]),
-                axis_name_parts,
-            )
-    raise ValueError(
-        f"--plot-along axis {plot_along!r} is not present in "
-        f"benchmark {benchmark_name!r} state {state_name!r}"
-    )
 
 
 def make_timing_interval(lower, upper, center):
@@ -2969,196 +2937,6 @@ def format_axis_values(axis_values, axes, axis_filters=None):
     return " ".join(parts)
 
 
-def format_plot_series_key(state_key, occurrence, occurrence_count, axis_name_parts):
-    parts = []
-    if state_key:
-        parts.append(state_key)
-    if occurrence_count > 1:
-        parts.append(f"occurrence={occurrence + 1}/{occurrence_count}")
-    parts.extend(axis_name_parts)
-    return ", ".join(parts)
-
-
-PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS = frozenset({"benchmark", "device", "axis", "pair"})
-PLOT_OUTPUT_FIELD_SAFE_CHARS = re.compile(r"[^A-Za-z0-9_-]+")
-
-
-def ensure_plot_output_parent(output):
-    output_path = Path(output)
-    parent = output_path.parent
-    if parent != Path("."):
-        parent.mkdir(parents=True, exist_ok=True)
-
-
-def reserve_plot_output_path(
-    output: str | None,
-    output_paths: set[str],
-    *,
-    option_name: str,
-    collision_hint: str,
-) -> None:
-    if output is None:
-        return
-
-    normalized_output_path = os.path.abspath(output)
-    if normalized_output_path in output_paths:
-        raise ValueError(
-            f"{option_name} would write multiple plots to {output!r}; {collision_hint}"
-        )
-    output_paths.add(normalized_output_path)
-
-
-def validate_plot_along_output_template(output_template):
-    try:
-        parsed_fields = [
-            (field_name, format_spec, conversion)
-            for _, field_name, format_spec, conversion in Formatter().parse(
-                output_template
-            )
-        ]
-    except ValueError as exc:
-        raise ValueError(f"--plot-along-output template is invalid: {exc}") from exc
-
-    valid_fields = ", ".join(
-        f"{{{field}}}" for field in sorted(PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS)
-    )
-    for field_name, format_spec, conversion in parsed_fields:
-        if field_name is None:
-            continue
-        if (
-            field_name not in PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS
-            or format_spec
-            or conversion
-        ):
-            raise ValueError(
-                f"--plot-along-output supports template fields {valid_fields}; "
-                f"got {{{field_name}}}"
-            )
-
-
-def sanitize_plot_output_component(value: object) -> str:
-    sanitized = PLOT_OUTPUT_FIELD_SAFE_CHARS.sub("_", str(value))
-    sanitized = sanitized.strip("._-")
-    return sanitized or "value"
-
-
-def format_plot_along_output_path(
-    output_template, *, benchmark_name, device_id, axis_name, device_pair_index=0
-):
-    if output_template is None:
-        return None
-
-    validate_plot_along_output_template(output_template)
-    try:
-        return output_template.format(
-            benchmark=sanitize_plot_output_component(benchmark_name),
-            device=sanitize_plot_output_component(device_id),
-            axis=sanitize_plot_output_component(axis_name),
-            pair=sanitize_plot_output_component(device_pair_index),
-        )
-    except (IndexError, KeyError, ValueError) as exc:
-        raise ValueError(f"--plot-along-output template is invalid: {exc}") from exc
-
-
-def save_or_show_plot(fig, plt, output, description):
-    if output is None:
-        plt.show()
-        return
-
-    try:
-        ensure_plot_output_parent(output)
-        fig.savefig(output, dpi=150)
-    except OSError as exc:
-        raise ValueError(f"failed to write {description} to {output!r}: {exc}") from exc
-    print(f"Saved {description} to {output}")
-
-
-def use_noninteractive_matplotlib_backend(matplotlib):
-    matplotlib.use("Agg")
-
-
-def plot_comparison_entries(entries, title=None, dark=False, output=None):
-    if not entries:
-        print("No comparison data to plot.")
-        return 1
-
-    matplotlib = require_tooling_dependency(
-        ToolingDependency("matplotlib", "matplotlib", "plot rendering", extra="plot"),
-        tool_name=current_tool_name(),
-    )
-    if output is not None:
-        use_noninteractive_matplotlib_backend(matplotlib)
-
-    plt = require_tooling_dependency(
-        ToolingDependency(
-            "matplotlib.pyplot", "matplotlib", "plot rendering", extra="plot"
-        ),
-        tool_name=current_tool_name(),
-    )
-    ticker = require_tooling_dependency(
-        ToolingDependency(
-            "matplotlib.ticker", "matplotlib", "plot axis formatting", extra="plot"
-        ),
-        tool_name=current_tool_name(),
-    )
-    PercentFormatter = ticker.PercentFormatter
-
-    labels, values, statuses, bench_names = map(list, zip(*entries))
-
-    status_colors = {
-        "SLOW": "red",
-        "FAST": "green",
-        "SAME": "blue",
-    }
-    colors = [status_colors.get(status, "gray") for status in statuses]
-
-    fig_height = max(4.0, 0.3 * len(entries) + 1.5)
-    fig, ax = plt.subplots(figsize=(10, fig_height))
-    try:
-        if dark:
-            fig.patch.set_facecolor("black")
-            ax.set_facecolor("black")
-            ax.tick_params(colors="white")
-            ax.xaxis.label.set_color("white")
-            ax.yaxis.label.set_color("white")
-            ax.title.set_color("white")
-            for spine in ax.spines.values():
-                spine.set_color("white")
-
-        y_pos = range(len(labels))
-        ax.barh(y_pos, values, color=colors)
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(labels)
-        ax.invert_yaxis()
-        ax.set_ylim(len(labels) - 0.5, -0.5)
-
-        separator_color = "white" if dark else "gray"
-        ax.axvline(0, color=separator_color, linewidth=1, alpha=0.6)
-        for index in range(1, len(bench_names)):
-            if bench_names[index] != bench_names[index - 1]:
-                ax.axhline(index - 0.5, color=separator_color, linewidth=0.6, alpha=0.4)
-        ax.xaxis.set_major_formatter(PercentFormatter(1.0))
-
-        if title:
-            ax.set_title(title)
-
-        min_val = min(values)
-        max_val = max(values)
-        if min_val == max_val:
-            pad = 0.05 if min_val == 0 else abs(min_val) * 0.1
-            ax.set_xlim(min_val - pad, max_val + pad)
-        else:
-            pad = (max_val - min_val) * 0.1
-            ax.set_xlim(min_val - pad, max_val + pad)
-
-        fig.tight_layout()
-
-        save_or_show_plot(fig, plt, output, "comparison plot")
-    finally:
-        plt.close(fig)
-    return 0
-
-
 def compare_benches(
     run_data: ComparisonRunData,
     ref_benches,
@@ -3187,38 +2965,15 @@ def compare_benches(
     if plot_output_paths is None:
         plot_output_paths = set()
 
-    if plot_along:
-        if plot_along_output is not None:
-            matplotlib = require_tooling_dependency(
-                ToolingDependency(
-                    "matplotlib",
-                    "matplotlib",
-                    "per-axis plot rendering",
-                    extra="plot",
-                ),
-                tool_name=current_tool_name(),
-            )
-            use_noninteractive_matplotlib_backend(matplotlib)
-        plt = require_tooling_dependency(
-            ToolingDependency(
-                "matplotlib.pyplot",
-                "matplotlib",
-                "per-axis plot rendering",
-                extra="plot",
-            ),
-            tool_name=current_tool_name(),
-        )
-        sns = require_tooling_dependency(
-            ToolingDependency(
-                "seaborn", "seaborn", "per-axis plot styling", extra="plot"
-            ),
-            tool_name=current_tool_name(),
-        )
-
-        sns.set_theme()
-
-    comparison_entries = []
-    comparison_device_names = set()
+    plot_collector = plotting.PlotCollector(
+        plot_along=plot_along,
+        plot_summary=plot,
+        dark=dark,
+        plot_output=plot_output,
+        plot_along_output=plot_along_output,
+        output_paths=plot_output_paths,
+        tool_name=current_tool_name(),
+    )
     for cmp_bench in cmp_benches:
         ref_bench = find_matching_bench(cmp_bench, ref_benches)
         if not ref_bench:
@@ -3285,12 +3040,7 @@ def compare_benches(
 
             rows = []
             row_comparisons = []
-            plot_data: dict[str, dict[str, dict[float, float | None]]] = {
-                "cmp": {},
-                "ref": {},
-                "cmp_noise": {},
-                "ref_noise": {},
-            }
+            plot_data = plot_collector.make_plot_along_data()
             counters: dict[Any, int] = {}
 
             for cmp_state in cmp_device_states:
@@ -3352,31 +3102,18 @@ def compare_benches(
                 if comparison is None:
                     continue
 
-                if (
-                    plot_along
-                    and is_positive_finite(comparison.ref_time)
-                    and is_positive_finite(comparison.cmp_time)
-                ):
-                    axis_value, axis_name_parts = extract_plot_axis_value(
-                        axis_values, plot_along, cmp_bench["name"], cmp_state_name
-                    )
-                    axis_name = format_plot_series_key(
-                        cmp_state_name,
-                        occurrence,
-                        cmp_state_counts[cmp_state_key],
-                        axis_name_parts,
-                    )
-
-                    if axis_name not in plot_data["cmp"]:
-                        plot_data["cmp"][axis_name] = {}
-                        plot_data["ref"][axis_name] = {}
-                        plot_data["cmp_noise"][axis_name] = {}
-                        plot_data["ref_noise"][axis_name] = {}
-
-                    plot_data["cmp"][axis_name][axis_value] = comparison.cmp_time
-                    plot_data["ref"][axis_name][axis_value] = comparison.ref_time
-                    plot_data["cmp_noise"][axis_name][axis_value] = comparison.cmp_noise
-                    plot_data["ref_noise"][axis_name][axis_value] = comparison.ref_noise
+                plot_collector.record_plot_along(
+                    plot_data,
+                    ref_time=comparison.ref_time,
+                    cmp_time=comparison.cmp_time,
+                    ref_noise=comparison.ref_noise,
+                    cmp_noise=comparison.cmp_noise,
+                    axis_values=axis_values,
+                    benchmark_name=cmp_bench["name"],
+                    state_name=cmp_state_name,
+                    occurrence=occurrence,
+                    occurrence_count=cmp_state_counts[cmp_state_key],
+                )
 
                 run_data.stats.record(comparison.status, comparison.reason)
                 if comparison.status == ComparisonStatus.UNKNOWN or (
@@ -3408,34 +3145,21 @@ def compare_benches(
                                 comparison=comparison,
                             )
                         )
-                    if (
-                        plot
-                        and comparison.frac_diff is not None
-                        and math.isfinite(comparison.frac_diff)
-                    ):
+                    if plot:
                         axis_label = format_axis_values(axis_values, axes, axis_filters)
-                        if axis_label:
-                            label = f"""{cmp_bench["name"]} | {axis_label}"""
-                        else:
-                            label = cmp_bench["name"]
                         cmp_device = find_device_by_id(
                             cmp_state["device"], run_data.cmp_devices
                         )
-                        if cmp_device:
-                            comparison_device_names.add(cmp_device["name"])
-                        comparison_entries.append(
-                            (
-                                label,
-                                comparison.frac_diff,
-                                comparison.status.value,
-                                cmp_bench["name"],
-                            )
+                        plot_collector.record_summary_entry(
+                            benchmark_name=cmp_bench["name"],
+                            axis_label=axis_label,
+                            cmp_device_name=cmp_device["name"] if cmp_device else None,
+                            frac_diff=comparison.frac_diff,
+                            status=comparison.status.value,
                         )
 
             has_rows = len(rows) > 0
-            has_plot_along_data = bool(plot_along) and any(
-                axis_times for axis_times in plot_data["cmp"].values()
-            )
+            has_plot_along_data = plot_collector.has_plot_along_data(plot_data)
 
             cmp_device = find_device_by_id(cmp_device_id, run_data.cmp_devices)
             ref_device = find_device_by_id(ref_device_id, run_data.ref_devices)
@@ -3475,120 +3199,15 @@ def compare_benches(
                 print("")
 
             if has_plot_along_data:
-                plot_along_output_path = format_plot_along_output_path(
-                    plot_along_output,
+                plot_collector.render_plot_along(
+                    plot_data,
                     benchmark_name=cmp_bench["name"],
-                    device_id=cmp_device_id,
-                    axis_name=plot_along,
-                    device_pair_index=cmp_device_index,
+                    cmp_device_id=cmp_device_id,
+                    cmp_device_index=cmp_device_index,
+                    cmp_device_name=cmp_device["name"],
                 )
-                if plot_along_output_path is not None:
-                    reserve_plot_output_path(
-                        plot_along_output_path,
-                        plot_output_paths,
-                        option_name="--plot-along-output",
-                        collision_hint=(
-                            "use a template that yields a unique path for each plot"
-                        ),
-                    )
 
-                fig = plt.figure()
-                try:
-                    plt.xscale("log")
-                    plt.yscale("log")
-                    plt.xlabel(plot_along)
-                    plt.ylabel("time [s]")
-                    plt.title(cmp_device["name"])
-
-                    def plot_line(key, shape, label, data_axis, data=plot_data):
-                        axis_times = data[key][data_axis]
-                        if not axis_times:
-                            return
-                        axis_noise = data[key + "_noise"][data_axis]
-                        series = sorted(
-                            (
-                                (
-                                    float(axis_value),
-                                    axis_times[axis_value],
-                                    axis_noise[axis_value],
-                                )
-                                for axis_value in axis_times
-                            ),
-                            key=lambda item: item[0],
-                        )
-                        x, y, noise = map(list, zip(*series, strict=True))
-
-                        p = plt.plot(x, y, shape, marker="o", label=label)
-
-                        def plot_confidence_band(first, last):
-                            if last - first < 2:
-                                return
-
-                            band_x = x[first:last]
-                            band_y = y[first:last]
-                            band_noise = noise[first:last]
-                            top = [
-                                band_y[i] + band_y[i] * band_noise[i]
-                                for i in range(len(band_x))
-                            ]
-                            bottom = [
-                                max(
-                                    band_y[i] - band_y[i] * band_noise[i],
-                                    band_y[i] * 0.001,
-                                )
-                                for i in range(len(band_x))
-                            ]
-                            plt.fill_between(
-                                band_x, bottom, top, color=p[0].get_color(), alpha=0.1
-                            )
-
-                        start = None
-                        for i, noise_value in enumerate(noise):
-                            if is_usable_noise(noise_value) and start is None:
-                                start = i
-                            if not is_usable_noise(noise_value) and start is not None:
-                                plot_confidence_band(start, i)
-                                start = None
-
-                        if start is not None:
-                            plot_confidence_band(start, len(x))
-
-                    for axis in plot_data["cmp"].keys():
-                        plot_line("cmp", "-", axis, axis)
-                        plot_line("ref", "--", axis + " ref", axis)
-
-                    plt.legend()
-                    save_or_show_plot(
-                        fig, plt, plot_along_output_path, "plot-along output"
-                    )
-                finally:
-                    plt.close(fig)
-
-    if plot:
-        title = "GPU timing change"
-        if len(comparison_device_names) == 1:
-            title = f"{title} - {next(iter(comparison_device_names))}"
-        if filter_plan.global_axis_filters:
-            axis_label = ", ".join(
-                axis_filter["display"]
-                for axis_filter in filter_plan.global_axis_filters
-                if len(axis_filter["values"]) == 1
-            )
-            if axis_label:
-                title = f"{title} ({axis_label})"
-        if comparison_entries:
-            reserve_plot_output_path(
-                plot_output,
-                plot_output_paths,
-                option_name="--plot-output",
-                collision_hint=(
-                    "use a unique output path for each input pair or compare one "
-                    "JSON pair at a time"
-                ),
-            )
-        plot_comparison_entries(
-            comparison_entries, title=title, dark=dark, output=plot_output
-        )
+    plot_collector.render_summary(filter_plan.global_axis_filters)
 
 
 def main() -> int:
@@ -3736,7 +3355,7 @@ def main() -> int:
         return 1
     if args.plot_along_output is not None:
         try:
-            validate_plot_along_output_template(args.plot_along_output)
+            plotting.validate_plot_along_output_template(args.plot_along_output)
         except ValueError as exc:
             print(str(exc))
             return 1
