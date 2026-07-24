@@ -50,6 +50,7 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
 
   result->m_min_samples              = m_min_samples;
   result->m_cold_warmup_runs         = m_cold_warmup_runs;
+  result->m_min_time                 = m_min_time;
   result->m_cold_max_warmup_walltime = m_cold_max_warmup_walltime;
 
   result->m_skip_time = m_skip_time;

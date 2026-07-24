@@ -94,6 +94,7 @@ protected:
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_min_time{};
+  nvbench::float64_t m_batch_target_time{};
 
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
@@ -147,7 +148,7 @@ private:
     // The .95 factor here pads the batch_size a bit to avoid needing a second
     // batch due to noise.
     const auto time_estimate = m_cuda_timer.get_duration() * 0.95;
-    auto batch_size          = static_cast<nvbench::int64_t>(m_min_time / time_estimate);
+    auto batch_size          = static_cast<nvbench::int64_t>(m_batch_target_time / time_estimate);
 
     do
     {
@@ -199,7 +200,7 @@ private:
 
       // Predict number of remaining iterations:
       batch_size = static_cast<nvbench::int64_t>(
-        (m_min_time - m_total_cuda_time) /
+        (m_batch_target_time - m_total_cuda_time) /
         (m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples)));
 
       if (m_total_cuda_time > m_min_time && // min time okay

@@ -474,6 +474,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       bench["index"] = bench_index;
 
       bench["min_samples"]              = bench_ptr->get_min_samples();
+      bench["min_time"]                 = bench_ptr->get_min_time();
       bench["cold_warmup_runs"]         = bench_ptr->get_cold_warmup_runs();
       bench["cold_max_warmup_walltime"] = bench_ptr->get_cold_max_warmup_walltime();
       bench["skip_time"]                = bench_ptr->get_skip_time();
@@ -533,6 +534,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         st["name"] = exec_state.get_axis_values_as_string();
 
         st["min_samples"]              = exec_state.get_min_samples();
+        st["min_time"]                 = exec_state.get_min_time();
         st["cold_warmup_runs"]         = exec_state.get_cold_warmup_runs();
         st["cold_max_warmup_walltime"] = exec_state.get_cold_max_warmup_walltime();
         st["skip_time"]                = exec_state.get_skip_time();

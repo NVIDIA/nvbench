@@ -22,6 +22,8 @@
 #include <nvbench/summary.cuh>
 #include <nvbench/types.cuh>
 
+#include <limits>
+
 #include "test_asserts.cuh"
 
 // Mock up a benchmark for testing:
@@ -128,10 +130,27 @@ void test_defaults()
   ASSERT(state.get_string_or_default("Bar", "Kramble") == "Kramble");
 }
 
+void test_min_time()
+{
+  dummy_bench bench;
+  state_tester state{bench};
+
+  state.set_min_time(0.);
+  ASSERT(state.get_min_time() == 0.);
+
+  state.set_min_time(1.25);
+  ASSERT(state.get_min_time() == 1.25);
+
+  ASSERT_THROWS_ANY(state.set_min_time(-1.));
+  ASSERT_THROWS_ANY(state.set_min_time(std::numeric_limits<nvbench::float64_t>::quiet_NaN()));
+  ASSERT_THROWS_ANY(state.set_min_time(std::numeric_limits<nvbench::float64_t>::infinity()));
+}
+
 int main()
 {
   test_streams();
   test_params();
   test_summaries();
   test_defaults();
+  test_min_time();
 }

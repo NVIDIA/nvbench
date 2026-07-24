@@ -81,6 +81,7 @@ protected:
 
   nvbench::int64_t m_min_samples{};
 
+  nvbench::float64_t m_min_time{};
   nvbench::float64_t m_skip_time{};
   nvbench::float64_t m_timeout{};
 

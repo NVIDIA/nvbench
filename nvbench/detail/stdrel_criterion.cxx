@@ -32,9 +32,7 @@ namespace nvbench::detail
 constexpr nvbench::int64_t invalid_noise_estimate_limit = 64;
 
 stdrel_criterion::stdrel_criterion()
-    : stopping_criterion_base{"stdrel",
-                              {{"max-noise", 0.005}, // 0.5% stdrel
-                               {"min-time", 0.5}}}   // 0.5 seconds
+    : stopping_criterion_base{"stdrel", {{"max-noise", 0.005}}} // 0.5% stdrel
 {}
 
 void stdrel_criterion::do_initialize()
@@ -74,14 +72,6 @@ bool stdrel_criterion::do_is_finished()
   if (m_consecutive_invalid_noise_estimates >= invalid_noise_estimate_limit)
   {
     return true;
-  }
-
-  const auto total_measured_time =
-    m_measurements_summary.get_mean() *
-    static_cast<nvbench::float64_t>(m_measurements_summary.get_size());
-  if (total_measured_time <= m_params.get_float64("min-time"))
-  {
-    return false;
   }
 
   if (m_noise_tracker.empty())
@@ -136,6 +126,11 @@ bool stdrel_criterion::do_is_finished()
   }
 
   return false;
+}
+
+bool stdrel_criterion::do_is_eligible_to_stop(const nvbench::stopping_context &context) const
+{
+  return !context.needs_more_samples() && !context.needs_more_time();
 }
 
 } // namespace nvbench::detail

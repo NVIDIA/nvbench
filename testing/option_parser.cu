@@ -1205,6 +1205,42 @@ void test_min_samples()
   ASSERT(states[0].get_min_samples() == 12345);
 }
 
+void test_min_time()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--min-time", "12345e-2"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(std::abs(states[0].get_min_time() - 12345e-2) < 1e-12);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--min-time", "0"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_min_time() == 0.);
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--min-time", "-1"}));
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--min-time", "nan"}));
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--min-time", "inf"}));
+  }
+}
+
 void test_cold_warmup_runs()
 {
   {
@@ -1384,7 +1420,7 @@ void test_stopping_criterion()
     ASSERT(criterion_params.get_float64("max-angle") == 0.42);
     ASSERT(criterion_params.get_float64("min-r2") == 0.6);
   }
-  { // Global params to default criterion should work:
+  { // Global params to default criterion and global measurement options should work:
     nvbench::option_parser parser;
     parser.parse({
       "--max-noise",
@@ -1403,6 +1439,7 @@ void test_stopping_criterion()
     const auto &states = parser_to_states(parser);
 
     ASSERT(states.size() == 1);
+    ASSERT(states[0].get_min_time() == 0.1);
     ASSERT(states[0].get_stopping_criterion() == "entropy");
 
     const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
@@ -1450,6 +1487,62 @@ void test_stopping_criterion()
     const nvbench::criterion_params &criterion_params = states[0].get_criterion_params();
     ASSERT(criterion_params.has_value("target-samples"));
     ASSERT(criterion_params.get_int64("target-samples") == 123);
+  }
+  { // min-time is a measurement option, not a sample-count criterion parameter:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "sample-count",
+      "--target-samples",
+      "3",
+      "--min-time",
+      "1e-5",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "sample-count");
+    ASSERT(states[0].get_criterion_params().get_int64("target-samples") == 3);
+    ASSERT(!states[0].get_criterion_params().has_value("min-time"));
+    ASSERT(states[0].get_min_time() == 1e-5);
+  }
+  { // min-time remains a measurement option when it precedes the criterion:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--min-time",
+      "1e-5",
+      "--stopping-criterion",
+      "sample-count",
+      "--target-samples",
+      "3",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "sample-count");
+    ASSERT(states[0].get_criterion_params().get_int64("target-samples") == 3);
+    ASSERT(!states[0].get_criterion_params().has_value("min-time"));
+    ASSERT(states[0].get_min_time() == 1e-5);
+  }
+  { // min-time is also independent from entropy criterion parameters:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "entropy",
+      "--min-time",
+      "1e-5",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "entropy");
+    ASSERT(states[0].get_min_time() == 1e-5);
   }
   { // Global sample-count params apply to later benchmarks and per-benchmark params override:
     nvbench::option_parser parser;
@@ -1673,6 +1766,7 @@ try
   test_axis_before_benchmark();
 
   test_min_samples();
+  test_min_time();
   test_cold_warmup_runs();
   test_skip_time();
   test_cold_max_warmup_walltime();

@@ -149,17 +149,31 @@
     before any `--benchmark` arguments.
 
 * `--min-samples <count>`
-  * Gather at least `<count>` samples per measurement before checking any
-    other stopping criterion besides the timeout.
+  * Require at least `<count>` samples per measurement before stopping criteria
+    that use this limit may stop.
   * Default is 10 samples.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
+* `--min-time <seconds>`
+  * Require at least `<seconds>` of accumulated measurement time before stopping
+    criteria that use this limit may stop.
+  * The default `stdrel` stopping criterion uses this limit. Other stopping
+    criteria may ignore it.
+  * Batched measurements use this limit directly because they are not controlled
+    by a stopping criterion.
+  * Must be finite and non-negative. Use `0` to disable this minimum-time
+    requirement.
+  * Default is 0.5 seconds.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
 ## Stopping Criteria
 
 * `--stopping-criterion <criterion>`
-  * After `--min-samples` is satisfied, use `<criterion>` to detect if enough
-    samples were collected.
+  * Use `<criterion>` to detect if enough samples were collected.
+  * Each stopping criterion decides which measurement collection limits must be
+    satisfied before its stopping decision is applied.
   * Only applies to Cold and CPU-only measurements.
   * If both GPU and CPU times are gathered, GPU time is used for stopping
     analysis.
@@ -174,18 +188,6 @@
 
 ### "stdrel" Stopping Criterion Parameters
 
-* `--min-time <seconds>`
-  * Require at least `<seconds>` of accumulated execution time before `stdrel`
-    can stop based on the relative standard deviation estimate, either because
-    it falls below `--max-noise` or because it stabilizes above that threshold.
-    To avoid running indefinitely when relative standard deviation cannot be
-    computed reliably, NVBench may also stop earlier after repeated non-finite
-    noise estimates.
-  * Only applies to `stdrel` stopping criterion.
-  * Default is 0.5 seconds.
-  * Applies to the most recent `--benchmark`, or all benchmarks if specified
-    before any `--benchmark` arguments.
-
 * `--max-noise <value>`
   * Target relative standard deviation (stdev/mean). `stdrel` stops once the
     estimate falls below this value, or once the estimate has stabilized above
@@ -196,6 +198,9 @@
     before any `--benchmark` arguments.
 
 ### "entropy" Stopping Criterion Parameters
+
+The `entropy` criterion honors `--min-samples` before applying its convergence
+test, but does not require `--min-time`.
 
 * `--max-angle <value>`
   * Maximum linear regression angle of cumulative entropy.
@@ -217,7 +222,7 @@
 * `--target-samples <count>`
   * Stop after at least `<count>` samples are collected.
   * Default is 100 samples.
-  * The total number of collected samples is
-    `max(--min-samples, --target-samples)`.
+  * `sample-count` does not require global `--min-samples` or `--min-time`
+    before stopping.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.

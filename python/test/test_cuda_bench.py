@@ -152,6 +152,8 @@ def test_decorator_docstrings():
     obj_has_docstring_check(bench.option.set_criterion_param_string)
     obj_has_docstring_check(bench.option.min_samples)
     obj_has_docstring_check(bench.option.set_min_samples)
+    obj_has_docstring_check(bench.option.min_time)
+    obj_has_docstring_check(bench.option.set_min_time)
     obj_has_docstring_check(bench.option.cold_warmup_runs)
     obj_has_docstring_check(bench.option.set_cold_warmup_runs)
     obj_has_docstring_check(bench.option.cold_max_warmup_walltime)
@@ -171,6 +173,10 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
 
         def set_min_samples(self, count):
             self.calls.append(("min_samples", count))
+            return self
+
+        def set_min_time(self, duration_seconds):
+            self.calls.append(("min_time", duration_seconds))
             return self
 
         def set_cold_warmup_runs(self, count):
@@ -193,6 +199,7 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
     @bench.register()
     @bench.axis.int64("Elements", [1, 2, 3])
     @bench.option.min_samples(11)
+    @bench.option.min_time(0.125)
     @bench.option.cold_warmup_runs(7)
     @bench.option.cold_max_warmup_walltime(0.25)
     def decorated(state: bench.State):
@@ -202,6 +209,7 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
     assert fake_benchmark.calls == [
         ("int64", "Elements", [1, 2, 3]),
         ("min_samples", 11),
+        ("min_time", 0.125),
         ("cold_warmup_runs", 7),
         ("cold_max_warmup_walltime", 0.25),
     ]
@@ -279,7 +287,7 @@ def test_option_decorators_reject_wrong_order(monkeypatch):
         pass
 
     with pytest.raises(RuntimeError, match="must be placed below"):
-        bench.option.min_samples(3)(decorated)
+        bench.option.min_time(0.1)(decorated)
 
 
 def test_axis_decorators_reject_wrong_order(monkeypatch):
@@ -312,6 +320,8 @@ def test_State_doc():
     obj_has_docstring_check(cl.get_string)
     obj_has_docstring_check(cl.get_cold_warmup_runs)
     obj_has_docstring_check(cl.set_cold_warmup_runs)
+    obj_has_docstring_check(cl.get_min_time)
+    obj_has_docstring_check(cl.set_min_time)
     obj_has_docstring_check(cl.get_cold_max_warmup_walltime)
     obj_has_docstring_check(cl.set_cold_max_warmup_walltime)
     obj_has_docstring_check(cl.skip)

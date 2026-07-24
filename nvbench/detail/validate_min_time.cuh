@@ -28,24 +28,23 @@
 #pragma system_header
 #endif
 
-#include <nvbench/stopping_criterion.cuh>
 #include <nvbench/types.cuh>
 
-namespace nvbench::detail
+#include <cmath>
+#include <stdexcept>
+
+namespace nvbench
+{
+namespace detail
 {
 
-class sample_count_criterion final : public stopping_criterion_base
+inline void validate_min_time(nvbench::float64_t min_time)
 {
-  nvbench::int64_t m_total_samples{};
+  if (!std::isfinite(min_time) || min_time < nvbench::float64_t{0})
+  {
+    throw std::invalid_argument{"min_time must be finite and non-negative."};
+  }
+}
 
-public:
-  sample_count_criterion();
-
-protected:
-  virtual void do_initialize() override;
-  virtual void do_add_measurement(nvbench::float64_t measurement) override;
-  virtual bool do_is_finished() override;
-  virtual bool do_is_eligible_to_stop(const nvbench::stopping_context &context) const override;
-};
-
-} // namespace nvbench::detail
+} // namespace detail
+} // namespace nvbench

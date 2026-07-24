@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -238,6 +239,21 @@ void test_run()
   ASSERT(bench.get_states().size() == 1);
 }
 
+void test_min_time()
+{
+  no_types_bench bench;
+
+  bench.set_min_time(0.);
+  ASSERT(bench.get_min_time() == 0.);
+
+  bench.set_min_time(1.25);
+  ASSERT(bench.get_min_time() == 1.25);
+
+  ASSERT_THROWS_ANY(bench.set_min_time(-1.));
+  ASSERT_THROWS_ANY(bench.set_min_time(std::numeric_limits<nvbench::float64_t>::quiet_NaN()));
+  ASSERT_THROWS_ANY(bench.set_min_time(std::numeric_limits<nvbench::float64_t>::infinity()));
+}
+
 void test_clone()
 {
   lots_of_types_bench bench;
@@ -309,6 +325,7 @@ int main()
   test_int64_power_of_two_axes();
   test_string_axes();
   test_run();
+  test_min_time();
   test_clone();
   test_get_config_count();
 }

@@ -29,6 +29,7 @@
 #endif
 
 #include <nvbench/axes_metadata.cuh>
+#include <nvbench/detail/validate_min_time.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/stopping_criterion.cuh>
@@ -165,6 +166,16 @@ struct benchmark_base
   benchmark_base &set_min_samples(nvbench::int64_t min_samples)
   {
     m_min_samples = min_samples;
+    return *this;
+  }
+  /// @}
+
+  /// Accumulate at least this much measurement time when the stopping criterion requires it. @{
+  [[nodiscard]] nvbench::float64_t get_min_time() const { return m_min_time; }
+  benchmark_base &set_min_time(nvbench::float64_t min_time)
+  {
+    nvbench::detail::validate_min_time(min_time);
+    m_min_time = min_time;
     return *this;
   }
   /// @}
@@ -348,6 +359,7 @@ protected:
   nvbench::int64_t m_min_samples{10};
   nvbench::int64_t m_cold_warmup_runs{1};
 
+  nvbench::float64_t m_min_time{0.5};
   nvbench::float64_t m_cold_max_warmup_walltime{-1.};
   nvbench::float64_t m_skip_time{-1.};
   nvbench::float64_t m_timeout{15.};

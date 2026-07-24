@@ -63,6 +63,8 @@ void check_noise_warning(
                                                     total_samples,
                                                     1,
                                                     1.0,
+                                                    true,
+                                                    1.0,
                                                     stdev_noise);
 
   ASSERT(printer.logs.size() == 1);
@@ -88,7 +90,15 @@ void test_min_samples_timeout_warning()
   recording_printer printer{stream};
   nvbench::criterion_params params;
 
-  nvbench::detail::log_measurement_timeout_warnings(printer, params, 1.0, 4, 5, 1.0, std::nullopt);
+  nvbench::detail::log_measurement_timeout_warnings(printer,
+                                                    params,
+                                                    1.0,
+                                                    4,
+                                                    5,
+                                                    1.0,
+                                                    false,
+                                                    1.0,
+                                                    std::nullopt);
 
   ASSERT(printer.logs.size() == 1);
   ASSERT(printer.logs[0].first == nvbench::log_level::warn);
@@ -100,9 +110,15 @@ void test_min_time_timeout_warning()
   std::ostringstream stream;
   recording_printer printer{stream};
   nvbench::criterion_params params;
-  params.set_float64("min-time", 2.0);
-
-  nvbench::detail::log_measurement_timeout_warnings(printer, params, 1.0, 5, 1, 1.5, std::nullopt);
+  nvbench::detail::log_measurement_timeout_warnings(printer,
+                                                    params,
+                                                    1.0,
+                                                    5,
+                                                    1,
+                                                    2.0,
+                                                    true,
+                                                    1.5,
+                                                    std::nullopt);
 
   ASSERT(printer.logs.size() == 1);
   ASSERT(printer.logs[0].first == nvbench::log_level::warn);

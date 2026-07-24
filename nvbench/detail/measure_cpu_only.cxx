@@ -44,6 +44,7 @@ measure_cpu_only_base::measure_cpu_only_base(state &exec_state)
         exec_state.get_stopping_criterion())}
     , m_run_once{exec_state.get_run_once()}
     , m_min_samples{exec_state.get_min_samples()}
+    , m_min_time{exec_state.get_min_time()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
 {
@@ -96,13 +97,13 @@ bool measure_cpu_only_base::is_finished()
     return true;
   }
 
-  // Check that we've gathered enough samples:
-  if (m_total_samples >= m_min_samples)
+  const nvbench::stopping_context context{m_total_samples,
+                                          m_total_cpu_time,
+                                          m_min_samples,
+                                          m_min_time};
+  if (m_stopping_criterion.is_finished(context))
   {
-    if (m_stopping_criterion.is_finished())
-    {
-      return true;
-    }
+    return true;
   }
 
   // Check for timeouts:
@@ -272,6 +273,11 @@ void measure_cpu_only_base::generate_summaries()
                                        timeout,
                                        m_total_samples,
                                        m_min_samples,
+                                       m_min_time,
+                                       min_time_can_block_stop(m_stopping_criterion,
+                                                               m_total_samples,
+                                                               m_total_cpu_time,
+                                                               m_min_time),
                                        m_total_cpu_time,
                                        cpu_stdev_noise);
     }
