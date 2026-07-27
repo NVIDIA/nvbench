@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
@@ -578,7 +579,8 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       first += 2;
     }
     else if (arg == "--skip-time" || arg == "--timeout" || arg == "--cold-max-warmup-walltime" ||
-             arg == "--throttle-threshold" || arg == "--throttle-recovery-delay")
+             arg == "--batch-target-time" || arg == "--throttle-threshold" ||
+             arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -1164,6 +1166,16 @@ try
   else if (prop_arg == "--cold-max-warmup-walltime")
   {
     bench.set_cold_max_warmup_walltime(value);
+  }
+  else if (prop_arg == "--batch-target-time")
+  {
+    if (!std::isfinite(value) || value <= nvbench::float64_t{0})
+    {
+      NVBENCH_THROW(std::runtime_error,
+                    "{}",
+                    "--batch-target-time must be a finite positive duration.");
+    }
+    bench.set_batch_target_time(value);
   }
   else if (prop_arg == "--throttle-threshold")
   {

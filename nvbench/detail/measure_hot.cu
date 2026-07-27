@@ -27,6 +27,7 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <stdexcept>
 #include <utility>
@@ -34,14 +35,28 @@
 
 namespace nvbench::detail
 {
+namespace
+{
+
+// Keep hot batches long enough to amortize launch and timing overhead.
+constexpr nvbench::float64_t smallest_hot_batch_target_time = 100e-6;
+
+nvbench::float64_t normalize_batch_target_time(nvbench::float64_t target_time)
+{
+  if (!std::isfinite(target_time) || target_time <= nvbench::float64_t{0})
+  {
+    return smallest_hot_batch_target_time;
+  }
+  return std::max(target_time, smallest_hot_batch_target_time);
+}
+
+} // namespace
 
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
     , m_min_samples{exec_state.get_min_samples()}
-    , m_min_time{exec_state.get_criterion_params().has_value("min-time")
-                   ? exec_state.get_criterion_params().get_float64("min-time")
-                   : 0.5}
+    , m_batch_target_time{normalize_batch_target_time(exec_state.get_batch_target_time())}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
 {
@@ -59,12 +74,11 @@ measure_hot_base::measure_hot_base(state &exec_state)
   catch (...)
   {
     // If the above threw an exception, we don't have a cold measurement to use.
-    // Estimate a target_time between m_min_time and m_timeout.
-    // Use the average of the min_time and timeout, but don't go over 5x
-    // min_time in case timeout is huge.
-    // We could expose a `target_time` property on benchmark_base/state if
-    // needed.
-    m_min_time = std::min((m_min_time + m_timeout) / 2., m_min_time * 5);
+    // Estimate a target time between the configured batch target and timeout.
+    // Use their average, but don't go over 5x the configured target in case
+    // timeout is huge.
+    m_batch_target_time = normalize_batch_target_time(
+      std::min((m_batch_target_time + m_timeout) / 2., m_batch_target_time * 5));
   }
 }
 
@@ -131,15 +145,15 @@ void measure_hot_base::generate_summaries()
                                 m_total_samples,
                                 m_min_samples));
       }
-      if (m_total_cuda_time < m_min_time)
+      if (m_total_cuda_time < m_batch_target_time)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
-                                "before accumulating min_time ({:0.2f}s < "
+                                "before accumulating batch target time ({:0.2f}s < "
                                 "{:0.2f}s)",
                                 timeout,
                                 m_total_cuda_time,
-                                m_min_time));
+                                m_batch_target_time));
       }
     }
 

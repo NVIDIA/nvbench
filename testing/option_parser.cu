@@ -24,6 +24,7 @@
 #include <fmt/format.h>
 
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <system_error>
@@ -1265,6 +1266,42 @@ void test_timeout()
   ASSERT(std::abs(states[0].get_timeout() - 12345e2) < 1.);
 }
 
+void test_batch_target_time()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--batch-target-time", "1.25"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(std::abs(states[0].get_batch_target_time() - 1.25) < 1e-6);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--batch-target-time", "2.5", "--benchmark", "DummyBench"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(std::abs(states[0].get_batch_target_time() - 2.5) < 1e-6);
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--batch-target-time", "0"}));
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--batch-target-time", "-1"}));
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--batch-target-time", "inf"}));
+  }
+}
+
 void test_json_stream_destinations()
 {
   {
@@ -1677,6 +1714,7 @@ try
   test_skip_time();
   test_cold_max_warmup_walltime();
   test_timeout();
+  test_batch_target_time();
   test_json_stream_destinations();
   test_output_parent_directories_created();
 

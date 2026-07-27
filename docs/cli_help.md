@@ -136,6 +136,12 @@
   * Applied to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--batch-target-time <seconds>`
+  * Target accumulated GPU time for batched measurements.
+  * Default is 0.5 seconds.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
 ## Measurement Collection
 
 * `--timeout <seconds>`
@@ -143,8 +149,8 @@
   * Default is 15 seconds.
   * `<seconds>` is walltime, not accumulated sample time.
   * If a measurement times out, the default markdown log will print a warning to
-    report any outstanding termination criteria (min samples, min time, max
-    noise).
+    report any outstanding termination criteria (min samples, batch target time,
+    max noise).
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 

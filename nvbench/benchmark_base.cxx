@@ -52,8 +52,9 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_cold_warmup_runs         = m_cold_warmup_runs;
   result->m_cold_max_warmup_walltime = m_cold_max_warmup_walltime;
 
-  result->m_skip_time = m_skip_time;
-  result->m_timeout   = m_timeout;
+  result->m_batch_target_time = m_batch_target_time;
+  result->m_skip_time         = m_skip_time;
+  result->m_timeout           = m_timeout;
 
   result->m_criterion_params        = m_criterion_params;
   result->m_throttle_threshold      = m_throttle_threshold;

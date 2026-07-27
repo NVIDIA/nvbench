@@ -201,6 +201,14 @@ struct state
   void set_skip_batched(bool v) { m_skip_batched = v; }
   /// @}
 
+  /// Target accumulated GPU time for batched measurements. @{
+  [[nodiscard]] nvbench::float64_t get_batch_target_time() const { return m_batch_target_time; }
+  void set_batch_target_time(nvbench::float64_t batch_target_time)
+  {
+    m_batch_target_time = batch_target_time;
+  }
+  /// @}
+
   /// If true, the benchmark does not use the blocking_kernel. This is intended
   /// for use with external profiling tools. @{
   [[nodiscard]] bool get_disable_blocking_kernel() const { return m_disable_blocking_kernel; }
@@ -210,8 +218,8 @@ struct state
   /// If a warmup run finishes in less than `skip_time`, the measurement will
   /// be skipped.
   /// Extremely fast kernels (< 5000 ns) often timeout before they can
-  /// accumulate `min_time` measurements, and are often uninteresting. Setting
-  /// this value can help improve performance by skipping time consuming
+  /// accumulate enough measurement time, and are often uninteresting. Setting
+  /// this value can help improve performance by skipping time-consuming
   /// measurement that don't provide much information.
   /// Default value is -1., which disables the feature.
   /// @{
@@ -358,6 +366,7 @@ private:
   nvbench::int64_t m_cold_warmup_runs;
 
   nvbench::float64_t m_cold_max_warmup_walltime;
+  nvbench::float64_t m_batch_target_time;
   nvbench::float64_t m_skip_time;
   nvbench::float64_t m_timeout;
 

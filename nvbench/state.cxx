@@ -48,6 +48,7 @@ state::state(const benchmark_base &bench)
     , m_min_samples{bench.get_min_samples()}
     , m_cold_warmup_runs{bench.get_cold_warmup_runs()}
     , m_cold_max_warmup_walltime{bench.get_cold_max_warmup_walltime()}
+    , m_batch_target_time{bench.get_batch_target_time()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}
@@ -72,6 +73,7 @@ state::state(const benchmark_base &bench,
     , m_min_samples{bench.get_min_samples()}
     , m_cold_warmup_runs{bench.get_cold_warmup_runs()}
     , m_cold_max_warmup_walltime{bench.get_cold_max_warmup_walltime()}
+    , m_batch_target_time{bench.get_batch_target_time()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}
