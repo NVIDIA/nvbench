@@ -627,6 +627,21 @@ Set benchmark run duration timeout value, in seconds
                        py::return_value_policy::reference,
                        py::arg("duration_seconds"));
 
+  // method Benchmark.set_batch_target_time
+  auto method_set_batch_target_time_impl = [](nvbench::benchmark_base &self,
+                                              nvbench::float64_t duration_seconds) {
+    self.set_batch_target_time(duration_seconds);
+    return std::ref(self);
+  };
+  static constexpr const char *method_set_batch_target_time_doc = R"XXXX(
+Set target accumulated GPU time for batched measurements, in seconds
+)XXXX";
+  py_benchmark_cls.def("set_batch_target_time",
+                       method_set_batch_target_time_impl,
+                       method_set_batch_target_time_doc,
+                       py::return_value_policy::reference,
+                       py::arg("duration_seconds"));
+
   // method Benchmark.set_throttle_threshold
   auto method_set_throttle_threshold_impl = [](nvbench::benchmark_base &self,
                                                nvbench::float32_t threshold) {
@@ -809,6 +824,8 @@ void def_class_State(py::module_ m)
   //        nvbench::state::get_skip_time
   //        nvbench::state::set_timeout
   //        nvbench::state::get_timeout
+  //        nvbench::state::set_batch_target_time
+  //        nvbench::state::get_batch_target_time
   //        nvbench::state::set_throttle_threshold
   //        nvbench::state::get_throttle_threshold
   //        nvbench::state::set_throttle_recovery_delay
@@ -1134,6 +1151,21 @@ Use argument True to disable use of blocking kernel by NVBench"
   pystate_cls.def("set_timeout",
                   &nvbench::state::set_timeout,
                   method_set_timeout_doc,
+                  py::arg("duration_seconds"));
+
+  // method State.get_batch_target_time
+  static constexpr const char *method_get_batch_target_time_doc =
+    R"XXXX(Get target accumulated GPU time for batched measurements, in seconds)XXXX";
+  pystate_cls.def("get_batch_target_time",
+                  &nvbench::state::get_batch_target_time,
+                  method_get_batch_target_time_doc);
+
+  // method State.set_batch_target_time
+  static constexpr const char *method_set_batch_target_time_doc =
+    R"XXXX(Set target accumulated GPU time for batched measurements, in seconds)XXXX";
+  pystate_cls.def("set_batch_target_time",
+                  &nvbench::state::set_batch_target_time,
+                  method_set_batch_target_time_doc,
                   py::arg("duration_seconds"));
 
   // method State.get_blocking_kernel_timeout
