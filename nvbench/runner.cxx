@@ -75,6 +75,8 @@ void runner_base::run_state_epilogue(state &exec_state) const
     auto &printer = *printer_ptr;
     printer.add_completed_state();
   }
+  // Clean up stream if it was used https://github.com/NVIDIA/nvbench/issues/437
+  exec_state.reset_cuda_stream();
 }
 
 void runner_base::print_skip_notification(state &exec_state) const

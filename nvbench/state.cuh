@@ -92,6 +92,7 @@ struct state
     return m_cuda_stream;
   }
   void set_cuda_stream(nvbench::cuda_stream &&stream) { m_cuda_stream = std::move(stream); }
+  void reset_cuda_stream() { m_cuda_stream.reset(); }
 
   /// The CUDA device associated with with this benchmark state. May be
   /// nullopt for CPU-only benchmarks.
