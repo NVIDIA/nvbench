@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <variant>
@@ -80,6 +81,46 @@ measure_hot_base::measure_hot_base(state &exec_state)
     m_batch_target_time = normalize_batch_target_time(
       std::min((m_batch_target_time + m_timeout) / 2., m_batch_target_time * 5));
   }
+}
+
+nvbench::int64_t measure_hot_base::predict_batch_size(nvbench::float64_t target_time,
+                                                      nvbench::float64_t time_estimate,
+                                                      nvbench::int64_t fallback_batch_size)
+{
+  const auto fallback = std::max(fallback_batch_size, nvbench::int64_t{1});
+  if (!std::isfinite(target_time) || target_time <= nvbench::float64_t{0} ||
+      !std::isfinite(time_estimate) || time_estimate <= nvbench::float64_t{0})
+  {
+    return fallback;
+  }
+
+  const auto predicted_size = target_time / time_estimate;
+  if (!std::isfinite(predicted_size) || predicted_size <= static_cast<nvbench::float64_t>(fallback))
+  {
+    return fallback;
+  }
+
+  if (predicted_size >=
+      static_cast<nvbench::float64_t>(std::numeric_limits<nvbench::int64_t>::max()))
+  {
+    return fallback;
+  }
+
+  return static_cast<nvbench::int64_t>(predicted_size);
+}
+
+nvbench::int64_t measure_hot_base::grow_batch_size(nvbench::int64_t batch_size,
+                                                   nvbench::int64_t minimum_batch_size)
+{
+  const auto fallback           = std::max(minimum_batch_size, nvbench::int64_t{1});
+  const auto batch              = std::max(batch_size, fallback);
+  constexpr auto max_batch_size = std::numeric_limits<nvbench::int64_t>::max();
+  if (batch > max_batch_size / nvbench::int64_t{2})
+  {
+    return max_batch_size;
+  }
+
+  return std::max(batch * nvbench::int64_t{2}, fallback);
 }
 
 void measure_hot_base::check()
