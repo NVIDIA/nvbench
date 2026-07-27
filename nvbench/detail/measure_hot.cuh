@@ -149,9 +149,14 @@ private:
     const auto time_estimate = m_cuda_timer.get_duration() * 0.95;
     auto batch_size          = static_cast<nvbench::int64_t>(m_batch_target_time / time_estimate);
 
+    const auto min_batch_size = std::max(m_min_samples, nvbench::int64_t{1});
+
     do
     {
-      batch_size = std::max(batch_size, nvbench::int64_t{1});
+      // in m_batch_target_time is too small set the batch size to
+      // min_batch_size so that batch measurement
+      // completes in single iteration of this do/while loop
+      batch_size = std::max(batch_size, min_batch_size);
 
       nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
@@ -197,15 +202,23 @@ private:
       m_total_cuda_time += m_cuda_timer.get_duration();
       m_total_samples += batch_size;
 
-      // Predict number of remaining iterations:
-      batch_size = static_cast<nvbench::int64_t>(
-        (m_batch_target_time - m_total_cuda_time) /
-        (m_total_cuda_time / static_cast<nvbench::float64_t>(m_total_samples)));
-
       if (m_total_cuda_time > m_batch_target_time && // batch target time okay
           m_total_samples >= m_min_samples)          // min samples okay
       {
         break; // Stop iterating
+      }
+
+      // Predict number of remaining iterations:
+      if (m_total_cuda_time > 0.)
+      {
+        const auto remaining_time  = m_batch_target_time - m_total_cuda_time;
+        const auto time_per_sample = m_total_cuda_time /
+                                     static_cast<nvbench::float64_t>(m_total_samples);
+        batch_size = static_cast<nvbench::int64_t>(remaining_time / time_per_sample);
+      }
+      else
+      {
+        batch_size *= 2; // Double the batch size if no time has elapsed.
       }
 
       m_walltime_timer.stop();
