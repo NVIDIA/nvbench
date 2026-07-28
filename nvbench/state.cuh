@@ -47,6 +47,7 @@ namespace nvbench
 {
 
 struct benchmark_base;
+struct runner_base;
 
 namespace detail
 {
@@ -92,7 +93,6 @@ struct state
     return m_cuda_stream;
   }
   void set_cuda_stream(nvbench::cuda_stream &&stream) { m_cuda_stream = std::move(stream); }
-  void reset_cuda_stream() { m_cuda_stream.reset(); }
 
   /// The CUDA device associated with with this benchmark state. May be
   /// nullopt for CPU-only benchmarks.
@@ -329,6 +329,7 @@ struct state
   }
 
 private:
+  friend struct nvbench::runner_base;
   friend struct nvbench::detail::state_generator;
   friend struct nvbench::detail::state_tester;
 
@@ -340,6 +341,7 @@ private:
         std::size_t type_config_index);
 
   [[nodiscard]] bool skip_hot_measurement() const { return get_run_once() || get_skip_batched(); }
+  void reset_cuda_stream() { m_cuda_stream.reset(); }
 
   const nvbench::benchmark_base *m_benchmark_ptr;
 
