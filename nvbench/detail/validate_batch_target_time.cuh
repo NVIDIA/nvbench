@@ -33,7 +33,9 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace nvbench::detail
+namespace nvbench
+{
+namespace detail
 {
 
 inline void validate_batch_target_time(nvbench::float64_t batch_target_time)
@@ -44,4 +46,5 @@ inline void validate_batch_target_time(nvbench::float64_t batch_target_time)
   }
 }
 
-} // namespace nvbench::detail
+} // namespace detail
+} // namespace nvbench
