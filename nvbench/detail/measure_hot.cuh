@@ -160,8 +160,8 @@ private:
 
     do
     {
-      // If m_batch_target_time is too small, use min_batch_size so the
-      // batch measurement can complete in a single loop iteration.
+      // Keep hot measurements batched even when the configured target time is
+      // smaller than a few launch durations.
       batch_size = std::max(batch_size, min_batch_size);
 
       nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
