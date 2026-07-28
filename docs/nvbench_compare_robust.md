@@ -257,6 +257,11 @@ file. The generated script contains a `bulk_rows` list. Each entry corresponds
 to one row that `nvbench-compare-robust` prints in its display tables after all
 benchmark, axis, device, and threshold filters are applied.
 
+This output is also useful when the built-in `--plot` or `--plot-along` views
+are too generic. The generated `bulk_rows` data and `load_bulk_data(row)` helper
+let users build custom Matplotlib, Seaborn, or notebook visualizations from the
+same paired comparison rows used by the tool.
+
 Use `stdout` instead of a file path to print the generated Python code:
 
 ```bash
@@ -696,3 +701,7 @@ A plain path without template fields is valid only when one plot is generated
 across the whole command. If multiple plot-along figures, including figures
 from different JSON file pairs in directory mode, would write the same path, the
 command fails instead of silently overwriting earlier output.
+
+For duplicate-heavy benchmarks, crowded legends, or presentation-quality plots,
+use `--bulk-debug-python` to export the paired rows and build a custom
+visualization.
