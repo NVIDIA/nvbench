@@ -139,6 +139,10 @@
 * `--batch-target-time <seconds>`
   * Target accumulated GPU time for batched measurements.
   * Default is 0.5 seconds.
+  * `<seconds>` must be finite and positive.
+  * Batched measurements continue until both `--min-samples` and the
+    accumulated GPU-time target are satisfied, unless `--timeout` is reached
+    first.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
