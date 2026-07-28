@@ -86,6 +86,26 @@ def test_cpu_only():
 
         state.exec(lambda launch: None)
 
+    def batch_target_state_probe(state: bench.State):
+        observed["benchmark_batch_target_time"] = state.get_batch_target_time()
+
+        state.set_batch_target_time(0.125)
+        observed["state_batch_target_time"] = state.get_batch_target_time()
+
+        for duration_seconds in [0.0, -1.0, float("inf"), float("nan")]:
+            with pytest.raises(ValueError, match="finite and positive"):
+                state.set_batch_target_time(duration_seconds)
+
+        state.exec(lambda launch: None)
+
+    batch_target_benchmark = bench.register(batch_target_state_probe)
+    batch_target_benchmark.set_is_cpu_only(True)
+    batch_target_benchmark.set_batch_target_time(0.75)
+
+    for duration_seconds in [0.0, -1.0, float("inf"), float("nan")]:
+        with pytest.raises(ValueError, match="finite and positive"):
+            batch_target_benchmark.set_batch_target_time(duration_seconds)
+
     bench.run_all_benchmarks(["-q", "--profile"])
 
     assert saved_timers
@@ -97,6 +117,8 @@ def test_cpu_only():
         "benchmark_walltime": 0.5,
         "state_runs": 3,
         "state_walltime": 0.125,
+        "benchmark_batch_target_time": 0.75,
+        "state_batch_target_time": 0.125,
     }
 
 
