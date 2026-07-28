@@ -641,7 +641,7 @@ def compare_benches(
                 plt.show()
 
     if plot:
-        title = "%SOL Bandwidth change"
+        title = "GPU timing change"
         if len(comparison_device_names) == 1:
             title = f"{title} - {next(iter(comparison_device_names))}"
         if axis_filters:
