@@ -1366,6 +1366,10 @@ void test_batch_target_time()
     nvbench::option_parser parser;
     ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--batch-target-time", "inf"}));
   }
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "DummyBench", "--batch-target-time", "nan"}));
+  }
 }
 
 void test_json_stream_destinations()
