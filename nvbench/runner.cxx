@@ -69,6 +69,10 @@ void runner_base::run_state_prologue(nvbench::state &exec_state) const
 
 void runner_base::run_state_epilogue(state &exec_state) const
 {
+  // Release per-state stream resources after state execution has completed.
+  // See: https://github.com/NVIDIA/nvbench/issues/437
+  exec_state.reset_cuda_stream();
+
   // Notify the printer that the state has completed::
   if (auto printer_ptr = exec_state.get_benchmark().get_printer())
   {
