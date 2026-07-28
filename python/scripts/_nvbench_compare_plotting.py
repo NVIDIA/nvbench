@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import os
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from string import Formatter
@@ -16,16 +17,21 @@ from typing import Any
 if __package__:
     from .nvbench_tooling_deps import ToolingDependency, require_tooling_dependency
 else:
-    from nvbench_tooling_deps import ToolingDependency, require_tooling_dependency
+    from nvbench_tooling_deps import (  # type: ignore[no-redef]
+        ToolingDependency,
+        require_tooling_dependency,
+    )
 
 
 PlotAlongData = dict[str, dict[str, dict[float, float | None]]]
+AxisValue = Mapping[str, Any]
+ComparisonPlotEntry = tuple[str, float, str, str]
 
 PLOT_ALONG_OUTPUT_TEMPLATE_FIELDS = frozenset({"benchmark", "device", "axis", "pair"})
 PLOT_OUTPUT_FIELD_SAFE_CHARS = re.compile(r"[^A-Za-z0-9_-]+")
 
 
-def parse_plot_axis_value(axis_name, axis_value):
+def parse_plot_axis_value(axis_name: str, axis_value: Any) -> float:
     try:
         value = float(axis_value)
     except (TypeError, ValueError) as exc:
@@ -41,8 +47,13 @@ def parse_plot_axis_value(axis_name, axis_value):
     return value
 
 
-def extract_plot_axis_value(axis_values, plot_along, benchmark_name, state_name):
-    axis_name_parts = []
+def extract_plot_axis_value(
+    axis_values: Sequence[AxisValue],
+    plot_along: str,
+    benchmark_name: str,
+    state_name: str,
+) -> tuple[float, list[str]]:
+    axis_name_parts: list[str] = []
     for axis_value in axis_values:
         if axis_value["name"] != plot_along:
             axis_name_parts.append(f"""{axis_value["name"]} = {axis_value["value"]}""")
@@ -57,8 +68,13 @@ def extract_plot_axis_value(axis_values, plot_along, benchmark_name, state_name)
     )
 
 
-def format_plot_series_key(state_key, occurrence, occurrence_count, axis_name_parts):
-    parts = []
+def format_plot_series_key(
+    state_key: str,
+    occurrence: int,
+    occurrence_count: int,
+    axis_name_parts: Sequence[str],
+) -> str:
+    parts: list[str] = []
     if state_key:
         parts.append(state_key)
     if occurrence_count > 1:
@@ -67,7 +83,7 @@ def format_plot_series_key(state_key, occurrence, occurrence_count, axis_name_pa
     return ", ".join(parts)
 
 
-def ensure_plot_output_parent(output):
+def ensure_plot_output_parent(output: str) -> None:
     output_path = Path(output)
     parent = output_path.parent
     if parent != Path("."):
@@ -92,7 +108,7 @@ def reserve_plot_output_path(
     output_paths.add(normalized_output_path)
 
 
-def validate_plot_along_output_template(output_template):
+def validate_plot_along_output_template(output_template: str) -> None:
     try:
         parsed_fields = [
             (field_name, format_spec, conversion)
@@ -127,8 +143,13 @@ def sanitize_plot_output_component(value: object) -> str:
 
 
 def format_plot_along_output_path(
-    output_template, *, benchmark_name, device_id, axis_name, device_pair_index=0
-):
+    output_template: str | None,
+    *,
+    benchmark_name: str,
+    device_id: int,
+    axis_name: str,
+    device_pair_index: int = 0,
+) -> str | None:
     if output_template is None:
         return None
 
@@ -144,7 +165,7 @@ def format_plot_along_output_path(
         raise ValueError(f"--plot-along-output template is invalid: {exc}") from exc
 
 
-def save_or_show_plot(fig, plt, output, description):
+def save_or_show_plot(fig: Any, plt: Any, output: str | None, description: str) -> None:
     if output is None:
         plt.show()
         return
@@ -157,13 +178,18 @@ def save_or_show_plot(fig, plt, output, description):
     print(f"Saved {description} to {output}")
 
 
-def use_noninteractive_matplotlib_backend(matplotlib):
+def use_noninteractive_matplotlib_backend(matplotlib: Any) -> None:
     matplotlib.use("Agg")
 
 
 def plot_comparison_entries(
-    entries, title=None, dark=False, output=None, *, tool_name="nvbench-compare-robust"
-):
+    entries: Sequence[ComparisonPlotEntry],
+    title: str | None = None,
+    dark: bool = False,
+    output: str | None = None,
+    *,
+    tool_name: str = "nvbench-compare-robust",
+) -> int:
     if not entries:
         print("No comparison data to plot.")
         return 1
@@ -258,11 +284,11 @@ def has_plot_along_data(plot_data: PlotAlongData) -> bool:
     return any(axis_times for axis_times in plot_data["cmp"].values())
 
 
-def is_positive_finite(value):
+def is_positive_finite(value: float | None) -> bool:
     return value is not None and math.isfinite(value) and value > 0.0
 
 
-def is_usable_noise(value):
+def is_usable_noise(value: float | None) -> bool:
     return value is not None and math.isfinite(value) and value >= 0.0
 
 
@@ -275,7 +301,7 @@ class PlotCollector:
     plot_along_output: str | None
     output_paths: set[str]
     tool_name: str
-    comparison_entries: list[tuple[str, float, str, str]] = field(default_factory=list)
+    comparison_entries: list[ComparisonPlotEntry] = field(default_factory=list)
     comparison_device_names: set[str] = field(default_factory=set)
     plt: Any = None
 
@@ -317,15 +343,15 @@ class PlotCollector:
         self,
         plot_data: PlotAlongData,
         *,
-        ref_time,
-        cmp_time,
-        ref_noise,
-        cmp_noise,
-        axis_values,
-        benchmark_name,
-        state_name,
-        occurrence,
-        occurrence_count,
+        ref_time: float | None,
+        cmp_time: float | None,
+        ref_noise: float | None,
+        cmp_noise: float | None,
+        axis_values: Sequence[AxisValue],
+        benchmark_name: str,
+        state_name: str,
+        occurrence: int,
+        occurrence_count: int,
     ) -> None:
         if (
             self.plot_along is None
@@ -359,7 +385,13 @@ class PlotCollector:
         return bool(self.plot_along) and has_plot_along_data(plot_data)
 
     def record_summary_entry(
-        self, *, benchmark_name, axis_label, cmp_device_name, frac_diff, status
+        self,
+        *,
+        benchmark_name: str,
+        axis_label: str,
+        cmp_device_name: str | None,
+        frac_diff: float | None,
+        status: str,
     ) -> None:
         if not self.plot_summary or frac_diff is None or not math.isfinite(frac_diff):
             return
@@ -376,10 +408,10 @@ class PlotCollector:
         self,
         plot_data: PlotAlongData,
         *,
-        benchmark_name,
-        cmp_device_id,
-        cmp_device_index,
-        cmp_device_name,
+        benchmark_name: str,
+        cmp_device_id: int,
+        cmp_device_index: int,
+        cmp_device_name: str,
     ) -> None:
         if self.plot_along is None or self.plt is None:
             return
@@ -418,7 +450,9 @@ class PlotCollector:
         finally:
             self.plt.close(fig)
 
-    def _plot_line(self, plot_data: PlotAlongData, key, shape, label, data_axis):
+    def _plot_line(
+        self, plot_data: PlotAlongData, key: str, shape: str, label: str, data_axis: str
+    ) -> None:
         axis_times = plot_data[key][data_axis]
         if not axis_times:
             return
@@ -438,7 +472,7 @@ class PlotCollector:
 
         p = self.plt.plot(x, y, shape, marker="o", label=label)
 
-        def plot_confidence_band(first, last):
+        def plot_confidence_band(first: int, last: int) -> None:
             if last - first < 2:
                 return
 
@@ -468,7 +502,7 @@ class PlotCollector:
         if start is not None:
             plot_confidence_band(start, len(x))
 
-    def render_summary(self, global_axis_filters) -> None:
+    def render_summary(self, global_axis_filters: Sequence[Mapping[str, Any]]) -> None:
         if not self.plot_summary:
             return
 
