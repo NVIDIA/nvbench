@@ -25,8 +25,11 @@
 
 #include <chrono>
 #include <cmath>
+#include <initializer_list>
 #include <iostream>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <system_error>
 
 #if __has_include(<filesystem>)
@@ -155,6 +158,30 @@ struct temp_tree
 [[nodiscard]] std::string parser_to_state_string(nvbench::option_parser &parser)
 {
   return states_to_string(parser_to_states(parser));
+}
+
+void assert_parse_error_contains(std::vector<std::string> args,
+                                 std::initializer_list<std::string_view> snippets)
+{
+  try
+  {
+    nvbench::option_parser parser;
+    parser.parse(std::move(args));
+  }
+  catch (const std::runtime_error &ex)
+  {
+    const std::string message = ex.what();
+    for (const auto snippet : snippets)
+    {
+      ASSERT_MSG(message.find(std::string{snippet}) != std::string::npos,
+                 "Expected error message to contain `{}`. Message:\n{}",
+                 snippet,
+                 message);
+    }
+    return;
+  }
+
+  ASSERT_MSG(false, "Expected parser error.", "");
 }
 
 } // namespace
@@ -1270,6 +1297,15 @@ void test_batch_target_time()
 {
   {
     nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(std::abs(states[0].get_batch_target_time() - 0.5) < 1e-6);
+  }
+
+  {
+    nvbench::option_parser parser;
     parser.parse({"--benchmark", "DummyBench", "--batch-target-time", "1.25"});
     const auto &states = parser_to_states(parser);
 
@@ -1284,6 +1320,36 @@ void test_batch_target_time()
 
     ASSERT(states.size() == 1);
     ASSERT(std::abs(states[0].get_batch_target_time() - 2.5) < 1e-6);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({
+      "--batch-target-time",
+      "2.5",
+      "--benchmark",
+      "DummyBench",
+      "--batch-target-time",
+      "1.0",
+      "--benchmark",
+      "TestBench",
+    });
+
+    const auto &benches = parser.get_benchmarks();
+    ASSERT(benches.size() == 2);
+    ASSERT(benches[0] != nullptr);
+    ASSERT(benches[1] != nullptr);
+
+    const auto dummy_states = nvbench::detail::state_generator::create(*benches[0]);
+    ASSERT(dummy_states.size() == 1);
+    ASSERT(std::abs(dummy_states[0].get_batch_target_time() - 1.0) < 1e-6);
+
+    const auto test_states = nvbench::detail::state_generator::create(*benches[1]);
+    ASSERT(!test_states.empty());
+    for (const auto &state : test_states)
+    {
+      ASSERT(std::abs(state.get_batch_target_time() - 2.5) < 1e-6);
+    }
   }
 
   {
@@ -1420,6 +1486,36 @@ void test_stopping_criterion()
 
     ASSERT(criterion_params.get_float64("max-angle") == 0.42);
     ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Global criterion rejects params it does not accept:
+    assert_parse_error_contains(
+      {
+        "--stopping-criterion",
+        "entropy",
+        "--min-time",
+        "0.1",
+        "--benchmark",
+        "DummyBench",
+      },
+      {
+        "--min-time is not valid for the active stopping criterion 'entropy'.",
+        "Current criterion 'entropy' accepts: --max-angle, --min-r2.",
+      });
+  }
+  { // Per-benchmark criterion rejects params it does not accept:
+    assert_parse_error_contains(
+      {
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--min-time",
+        "0.1",
+      },
+      {
+        "--min-time is not valid for the active stopping criterion 'entropy'.",
+        "Current criterion 'entropy' accepts: --max-angle, --min-r2.",
+      });
   }
   { // Global params to default criterion should work:
     nvbench::option_parser parser;
