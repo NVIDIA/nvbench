@@ -1213,12 +1213,6 @@ try
   }
   else if (prop_arg == "--batch-target-time")
   {
-    if (!std::isfinite(value) || value <= nvbench::float64_t{0})
-    {
-      NVBENCH_THROW(std::runtime_error,
-                    "{}",
-                    "--batch-target-time must be a finite positive duration.");
-    }
     bench.set_batch_target_time(value);
   }
   else if (prop_arg == "--throttle-threshold")

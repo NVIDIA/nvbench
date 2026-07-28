@@ -29,6 +29,7 @@
 #endif
 
 #include <nvbench/axes_metadata.cuh>
+#include <nvbench/detail/validate_batch_target_time.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/stopping_criterion.cuh>
@@ -228,6 +229,7 @@ struct benchmark_base
   [[nodiscard]] nvbench::float64_t get_batch_target_time() const { return m_batch_target_time; }
   benchmark_base &set_batch_target_time(nvbench::float64_t batch_target_time)
   {
+    nvbench::detail::validate_batch_target_time(batch_target_time);
     m_batch_target_time = batch_target_time;
     return *this;
   }

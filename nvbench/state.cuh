@@ -29,6 +29,7 @@
 #endif
 
 #include <nvbench/cuda_stream.cuh>
+#include <nvbench/detail/validate_batch_target_time.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/named_values.cuh>
@@ -205,6 +206,7 @@ struct state
   [[nodiscard]] nvbench::float64_t get_batch_target_time() const { return m_batch_target_time; }
   void set_batch_target_time(nvbench::float64_t batch_target_time)
   {
+    nvbench::detail::validate_batch_target_time(batch_target_time);
     m_batch_target_time = batch_target_time;
   }
   /// @}
