@@ -208,8 +208,8 @@ private:
       m_total_cuda_time += m_cuda_timer.get_duration();
       m_total_samples += batch_size;
 
-      if (m_total_cuda_time > m_batch_target_time && // batch target time okay
-          m_total_samples >= m_min_samples)          // min samples okay
+      if (m_total_cuda_time >= m_batch_target_time && // batch target time okay
+          m_total_samples >= m_min_samples)           // min samples okay
       {
         break; // Stop iterating
       }
