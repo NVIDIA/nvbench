@@ -157,6 +157,11 @@ def validate_plot_along_output_template(output_template: str) -> None:
             )
 
 
+def validate_plot_along_axis_name(plot_along: str | None) -> None:
+    if plot_along is not None and not plot_along:
+        raise ValueError("--plot-along requires a non-empty axis name")
+
+
 def sanitize_plot_output_component(value: object) -> str:
     sanitized = PLOT_OUTPUT_FIELD_SAFE_CHARS.sub("_", str(value))
     sanitized = sanitized.strip("._-")
@@ -377,6 +382,7 @@ class PlotCollector:
     noninteractive_backend_selected: bool = field(init=False, default=False)
 
     def __post_init__(self) -> None:
+        validate_plot_along_axis_name(self.plot_along)
         self.force_noninteractive_backend = validate_plot_output_modes(
             plot=self.plot_summary,
             plot_output=self.plot_output,

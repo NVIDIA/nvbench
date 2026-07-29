@@ -3353,6 +3353,11 @@ def main() -> int:
     if args.plot_along_output is not None and args.plot_along is None:
         print("--plot-along-output requires --plot-along")
         return 1
+    try:
+        plotting.validate_plot_along_axis_name(args.plot_along)
+    except ValueError as exc:
+        print(str(exc))
+        return 1
     if args.plot_along_output is not None:
         try:
             plotting.validate_plot_along_output_template(args.plot_along_output)

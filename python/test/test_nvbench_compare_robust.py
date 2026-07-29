@@ -2464,6 +2464,23 @@ def test_plot_outputs_force_agg_once_when_both_plot_modes_save(
     assert pyplot.show_calls == []
 
 
+def test_compare_benches_rejects_empty_plot_along_axis(nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+
+    with pytest.raises(ValueError, match="--plot-along requires a non-empty axis name"):
+        nvbench_compare.compare_benches(
+            run_data,
+            [make_benchmark([make_state(nvbench_compare, "state", axis_value=1)])],
+            [make_benchmark([make_state(nvbench_compare, "state", axis_value=1)])],
+            threshold=0.0,
+            plot_along="",
+            plot=False,
+            dark=False,
+            filter_plan=make_filter_plan(nvbench_compare),
+            no_color=True,
+        )
+
+
 def test_plot_along_output_template_expands_per_plot(tmp_path, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     pyplot = sys.modules["matplotlib.pyplot"]
@@ -4124,6 +4141,30 @@ def test_main_rejects_invalid_plot_along_output_template_before_comparing(
 
     assert nvbench_compare.main() == 1
     assert "--plot-along-output supports template fields" in capsys.readouterr().out
+
+
+def test_main_rejects_empty_plot_along_axis_before_comparing(
+    monkeypatch, capsys, nvbench_compare
+):
+    def fail_compare_benches(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("compare_benches should not be called")
+
+    monkeypatch.setattr(nvbench_compare, "compare_benches", fail_compare_benches)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--plot-along",
+            "",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 1
+    assert "--plot-along requires a non-empty axis name" in capsys.readouterr().out
 
 
 def test_main_rejects_mixed_plot_output_modes_when_summary_would_be_interactive(
