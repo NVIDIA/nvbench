@@ -3359,6 +3359,16 @@ def main() -> int:
         except ValueError as exc:
             print(str(exc))
             return 1
+    try:
+        plotting.validate_plot_output_modes(
+            plot=args.plot,
+            plot_output=args.plot_output,
+            plot_along=args.plot_along,
+            plot_along_output=args.plot_along_output,
+        )
+    except ValueError as exc:
+        print(str(exc))
+        return 1
 
     try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)

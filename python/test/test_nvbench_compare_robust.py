@@ -2432,13 +2432,14 @@ def test_plot_along_output_saves_without_showing(tmp_path, nvbench_compare):
     assert pyplot.show_calls == []
 
 
-def test_plot_output_forces_agg_after_plot_along_imports_pyplot(
+def test_plot_outputs_force_agg_once_when_both_plot_modes_save(
     tmp_path, nvbench_compare
 ):
     run_data = make_comparison_run_data(nvbench_compare)
     matplotlib = sys.modules["matplotlib"]
     pyplot = sys.modules["matplotlib.pyplot"]
-    output = tmp_path / "compare.png"
+    plot_output = tmp_path / "compare.png"
+    plot_along_output = tmp_path / "plot-along.png"
 
     nvbench_compare.compare_benches(
         run_data,
@@ -2450,12 +2451,16 @@ def test_plot_output_forces_agg_after_plot_along_imports_pyplot(
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
         no_color=True,
-        plot_output=str(output),
+        plot_output=str(plot_output),
+        plot_along_output=str(plot_along_output),
     )
 
     assert matplotlib.use_calls == [(("Agg",), {})]
-    assert [call["args"][0] for call in pyplot.savefig_calls] == [str(output)]
-    assert len(pyplot.show_calls) == 1
+    assert [call["args"][0] for call in pyplot.savefig_calls] == [
+        str(plot_along_output),
+        str(plot_output),
+    ]
+    assert pyplot.show_calls == []
 
 
 def test_plot_along_output_template_expands_per_plot(tmp_path, nvbench_compare):
@@ -4059,6 +4064,56 @@ def test_main_rejects_invalid_plot_along_output_template_before_comparing(
 
     assert nvbench_compare.main() == 1
     assert "--plot-along-output supports template fields" in capsys.readouterr().out
+
+
+def test_main_rejects_mixed_plot_output_modes_when_summary_would_be_interactive(
+    monkeypatch, capsys, nvbench_compare
+):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--plot",
+            "--plot-along",
+            "A",
+            "--plot-along-output",
+            "plot-along.png",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "Cannot mix interactive and file-based plot output" in output
+    assert "Add --plot-output" in output
+    assert "omit --plot-along-output" in output
+
+
+def test_main_rejects_mixed_plot_output_modes_when_plot_along_would_be_interactive(
+    monkeypatch, capsys, nvbench_compare
+):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--plot",
+            "--plot-output",
+            "compare.png",
+            "--plot-along",
+            "A",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "Cannot mix interactive and file-based plot output" in output
+    assert "Add --plot-along-output" in output
+    assert "omit --plot-output" in output
 
 
 def make_directory_compare_inputs(tmp_path, nvbench_compare):

@@ -182,6 +182,49 @@ def use_noninteractive_matplotlib_backend(matplotlib: Any) -> None:
     matplotlib.use("Agg")
 
 
+def validate_plot_output_modes(
+    *,
+    plot: bool,
+    plot_output: str | None,
+    plot_along: str | None,
+    plot_along_output: str | None,
+) -> bool:
+    requested_modes = []
+    if plot:
+        requested_modes.append(("--plot", "--plot-output", plot_output is not None))
+    if plot_along is not None:
+        requested_modes.append(
+            ("--plot-along", "--plot-along-output", plot_along_output is not None)
+        )
+
+    interactive_modes = [
+        mode for mode, _, has_output in requested_modes if not has_output
+    ]
+    file_modes = [mode for mode, _, has_output in requested_modes if has_output]
+    if interactive_modes and file_modes:
+        missing_output_options = [
+            output_option
+            for _, output_option, has_output in requested_modes
+            if not has_output
+        ]
+        provided_output_options = [
+            output_option
+            for _, output_option, has_output in requested_modes
+            if has_output
+        ]
+        raise ValueError(
+            "Cannot mix interactive and file-based plot output in one invocation. "
+            f"{', '.join(interactive_modes)} would call plt.show(), while "
+            f"{', '.join(file_modes)} would save to files. "
+            "Add "
+            f"{', '.join(missing_output_options)} to save every requested plot, "
+            "or omit "
+            f"{', '.join(provided_output_options)} to show every requested plot interactively."
+        )
+
+    return bool(file_modes)
+
+
 def plot_comparison_entries(
     entries: Sequence[ComparisonPlotEntry],
     title: str | None = None,
@@ -189,6 +232,7 @@ def plot_comparison_entries(
     output: str | None = None,
     *,
     tool_name: str = "nvbench-compare-robust",
+    force_noninteractive_backend: bool | None = None,
 ) -> int:
     if not entries:
         print("No comparison data to plot.")
@@ -198,7 +242,9 @@ def plot_comparison_entries(
         ToolingDependency("matplotlib", "matplotlib", "plot rendering", extra="plot"),
         tool_name=tool_name,
     )
-    if output is not None:
+    if force_noninteractive_backend is None:
+        force_noninteractive_backend = output is not None
+    if force_noninteractive_backend:
         use_noninteractive_matplotlib_backend(matplotlib)
 
     plt = require_tooling_dependency(
@@ -304,10 +350,18 @@ class PlotCollector:
     comparison_entries: list[ComparisonPlotEntry] = field(default_factory=list)
     comparison_device_names: set[str] = field(default_factory=set)
     plt: Any = None
+    force_noninteractive_backend: bool = field(init=False)
+    noninteractive_backend_selected: bool = field(init=False, default=False)
 
     def __post_init__(self) -> None:
+        self.force_noninteractive_backend = validate_plot_output_modes(
+            plot=self.plot_summary,
+            plot_output=self.plot_output,
+            plot_along=self.plot_along,
+            plot_along_output=self.plot_along_output,
+        )
         if self.plot_along:
-            if self.plot_along_output is not None:
+            if self.force_noninteractive_backend:
                 matplotlib = require_tooling_dependency(
                     ToolingDependency(
                         "matplotlib",
@@ -318,6 +372,7 @@ class PlotCollector:
                     tool_name=self.tool_name,
                 )
                 use_noninteractive_matplotlib_backend(matplotlib)
+                self.noninteractive_backend_selected = True
             self.plt = require_tooling_dependency(
                 ToolingDependency(
                     "matplotlib.pyplot",
@@ -533,4 +588,8 @@ class PlotCollector:
             dark=self.dark,
             output=self.plot_output,
             tool_name=self.tool_name,
+            force_noninteractive_backend=(
+                self.force_noninteractive_backend
+                and not self.noninteractive_backend_selected
+            ),
         )
