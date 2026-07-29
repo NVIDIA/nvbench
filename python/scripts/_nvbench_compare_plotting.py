@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import os
 import re
+import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -90,22 +91,42 @@ def ensure_plot_output_parent(output: str) -> None:
         parent.mkdir(parents=True, exist_ok=True)
 
 
-def reserve_plot_output_path(
+def add_copy_suffix(path: Path, counter: int) -> Path:
+    return path.with_name(f"{path.stem}-copy-{counter}{path.suffix}")
+
+
+def resolve_plot_output_path(
     output: str | None,
     output_paths: set[str],
     *,
-    option_name: str,
-    collision_hint: str,
-) -> None:
+    description: str,
+) -> str | None:
     if output is None:
-        return
+        return None
 
     normalized_output_path = os.path.abspath(output)
-    if normalized_output_path in output_paths:
-        raise ValueError(
-            f"{option_name} would write multiple plots to {output!r}; {collision_hint}"
-        )
-    output_paths.add(normalized_output_path)
+    if normalized_output_path not in output_paths and not os.path.exists(output):
+        output_paths.add(normalized_output_path)
+        return output
+
+    output_path = Path(output)
+    counter = 1
+    while True:
+        candidate_path = add_copy_suffix(output_path, counter)
+        normalized_candidate_path = os.path.abspath(candidate_path)
+        if (
+            normalized_candidate_path not in output_paths
+            and not candidate_path.exists()
+        ):
+            output_paths.add(normalized_candidate_path)
+            resolved_output = str(candidate_path)
+            print(
+                f"Warning: {description} output {output!r} is unavailable; "
+                f"writing to {resolved_output!r} instead.",
+                file=sys.stderr,
+            )
+            return resolved_output
+        counter += 1
 
 
 def validate_plot_along_output_template(output_template: str) -> None:
@@ -173,9 +194,9 @@ def save_or_show_plot(fig: Any, plt: Any, output: str | None, description: str) 
     try:
         ensure_plot_output_parent(output)
         fig.savefig(output, dpi=150)
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
         raise ValueError(f"failed to write {description} to {output!r}: {exc}") from exc
-    print(f"Saved {description} to {output}")
+    print(f"Saved {description} to {output}", file=sys.stderr)
 
 
 def use_noninteractive_matplotlib_backend(matplotlib: Any) -> None:
@@ -235,7 +256,7 @@ def plot_comparison_entries(
     force_noninteractive_backend: bool | None = None,
 ) -> int:
     if not entries:
-        print("No comparison data to plot.")
+        print("No comparison data to plot.", file=sys.stderr)
         return 1
 
     matplotlib = require_tooling_dependency(
@@ -478,13 +499,11 @@ class PlotCollector:
             axis_name=self.plot_along,
             device_pair_index=cmp_device_index,
         )
-        if plot_along_output_path is not None:
-            reserve_plot_output_path(
-                plot_along_output_path,
-                self.output_paths,
-                option_name="--plot-along-output",
-                collision_hint="use a template that yields a unique path for each plot",
-            )
+        plot_along_output_path = resolve_plot_output_path(
+            plot_along_output_path,
+            self.output_paths,
+            description="plot-along",
+        )
 
         fig = self.plt.figure()
         try:
@@ -572,21 +591,18 @@ class PlotCollector:
             )
             if axis_label:
                 title = f"{title} ({axis_label})"
+        plot_output = self.plot_output
         if self.comparison_entries:
-            reserve_plot_output_path(
+            plot_output = resolve_plot_output_path(
                 self.plot_output,
                 self.output_paths,
-                option_name="--plot-output",
-                collision_hint=(
-                    "use a unique output path for each input pair or compare one "
-                    "JSON pair at a time"
-                ),
+                description="comparison plot",
             )
         plot_comparison_entries(
             self.comparison_entries,
             title=title,
             dark=self.dark,
-            output=self.plot_output,
+            output=plot_output,
             tool_name=self.tool_name,
             force_noninteractive_backend=(
                 self.force_noninteractive_backend

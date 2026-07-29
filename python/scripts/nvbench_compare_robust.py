@@ -3386,25 +3386,11 @@ def main() -> int:
         parser.print_help()
         return 1
 
-    try:
-        load_nvbench_compare_tooling(load_color=not args.no_color)
-    except MissingToolingDependencyError as exc:
-        print(str(exc), file=sys.stderr)
-        return 1
-
-    bulk_debug_output = (
-        None
-        if args.bulk_debug_python is None
-        else BulkDebugOutput(args.bulk_debug_python)
-    )
-    bulk_debug_rows: list[dict[str, Any]] | None = (
-        [] if bulk_debug_output is not None else None
-    )
-
-    # if provided two directories, find all the exactly named files
-    # in both and treat them as the reference and compare
+    input_dirs = tuple(os.path.isdir(path) for path in files_or_dirs)
     to_compare = []
-    if os.path.isdir(files_or_dirs[0]) and os.path.isdir(files_or_dirs[1]):
+    # If provided two directories, find all the exactly named files
+    # in both and treat them as the reference and compare.
+    if all(input_dirs):
         for f in os.listdir(files_or_dirs[1]):
             if os.path.splitext(f)[1] != ".json":
                 continue
@@ -3425,6 +3411,21 @@ def main() -> int:
             f"and {files_or_dirs[1]!r}"
         )
         return 1
+
+    try:
+        load_nvbench_compare_tooling(load_color=not args.no_color)
+    except MissingToolingDependencyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    bulk_debug_output = (
+        None
+        if args.bulk_debug_python is None
+        else BulkDebugOutput(args.bulk_debug_python)
+    )
+    bulk_debug_rows: list[dict[str, Any]] | None = (
+        [] if bulk_debug_output is not None else None
+    )
 
     stats = ComparisonStats()
     plot_output_paths: set[str] = set()

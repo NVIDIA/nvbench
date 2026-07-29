@@ -318,6 +318,11 @@ Each `bulk_rows` entry includes:
 The generated script also defines `load_bulk_data(row)`, which reads the
 float32 sample and frequency files for a selected row.
 
+When directory inputs are used, `bulk_rows` contains rows from all matching JSON
+file pairs. Each row records its `reference_json` and `compare_json` path, so
+custom plotting code can group rows by source file, benchmark, device, axis, or
+reason code.
+
 Select the first displayed row:
 
 ```python
@@ -336,6 +341,17 @@ arrays = load_bulk_data(row)
 If `-b` and `-a` narrow the report to one comparison of interest, the desired
 entry is usually available positionally as `bulk_rows[0]`. If duplicate states
 remain after filtering, use `occurrence` to distinguish them.
+
+Plot the selected row with regular Python plotting tools:
+
+```python
+import matplotlib.pyplot as plt
+
+plt.hist(arrays["reference_samples"], alpha=0.5, label="reference")
+plt.hist(arrays["compare_samples"], alpha=0.5, label="compare")
+plt.legend()
+plt.show()
+```
 
 ## Time Estimates And Intervals
 
@@ -677,9 +693,12 @@ Interactive and file-based plot output cannot be mixed in one invocation. If
 `--plot` and `--plot-along` are both requested, provide output paths for both
 plots or omit output paths for both plots.
 
-For directory comparisons that produce more than one summary plot, a single
-`--plot-output PATH` would overwrite earlier output. In that case the command
-fails instead of writing multiple plots to the same path.
+Directory comparisons can generate one summary plot per matched JSON file pair.
+When multiple summary plots resolve to the same output path, later plots are
+written to the first available sibling path using `-copy-N` before the file
+extension, such as `compare-copy-1.png`. The same disambiguation is used if the
+requested file already exists. The actual saved path and any disambiguation
+warning are written to stderr.
 
 ### `--plot-along-output PATH_OR_TEMPLATE`
 
@@ -705,11 +724,17 @@ nvbench-compare-robust \
   reference.json compare.json
 ```
 
-A plain path without template fields is valid only when one plot is generated
-across the whole command. If multiple plot-along figures, including figures
-from different JSON file pairs in directory mode, would write the same path, the
-command fails instead of silently overwriting earlier output.
+A plain path without template fields is valid. If multiple plot-along figures
+resolve to the same path, later plots are written to the first available sibling
+path using `-copy-N` before the file extension, such as
+`plot-along-copy-1.png`. The same disambiguation is used if the requested file
+already exists. The actual saved path and any disambiguation warning are
+written to stderr.
 
-For duplicate-heavy benchmarks, crowded legends, or presentation-quality plots,
-use `--bulk-debug-python` to export the paired rows and build a custom
-visualization.
+To avoid copy-suffixed filenames, narrow the comparison with `--benchmark`,
+`--axis`, `--reference-devices`, or `--compare-devices`, pass the JSON files of
+interest directly instead of a directory, or add more template fields such as
+`{benchmark}`, `{device}`, `{pair}`, and `{axis}`. For duplicate-heavy
+benchmarks, crowded legends, presentation-quality plots, or a different
+grouping scheme, use `--bulk-debug-python` to export the paired rows and build a
+custom visualization.
