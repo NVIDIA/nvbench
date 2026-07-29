@@ -174,6 +174,8 @@ def format_plot_along_output_path(
     if output_template is None:
         return None
 
+    # Keep this helper self-validating; main() validates CLI input earlier so
+    # bad templates fail before any comparison work starts.
     validate_plot_along_output_template(output_template)
     try:
         return output_template.format(

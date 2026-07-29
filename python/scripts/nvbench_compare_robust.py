@@ -3359,6 +3359,8 @@ def main() -> int:
         except ValueError as exc:
             print(str(exc))
             return 1
+    # Validate here for early CLI errors; PlotCollector repeats this for direct
+    # compare_benches() callers.
     try:
         plotting.validate_plot_output_modes(
             plot=args.plot,
