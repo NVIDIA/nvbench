@@ -137,11 +137,16 @@ private:
   {
     nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
-    m_cuda_timer.start(m_launch.get_stream());
-    this->launch_kernel();
-    m_cuda_timer.stop(m_launch.get_stream());
+    m_walltime_timer.start();
+    {
+      m_cuda_timer.start(m_launch.get_stream());
+      this->launch_kernel();
+      m_cuda_timer.stop(m_launch.get_stream());
 
-    this->sync_stream();
+      this->sync_stream();
+    }
+    // get wall-clock estimate of launch execution
+    m_walltime_timer.stop();
     cleanup.release();
 
     this->check_skip_time(m_cuda_timer.get_duration());
@@ -149,20 +154,25 @@ private:
 
   void run_trials()
   {
+    const auto wallclock_time_initial_estimate = m_walltime_timer.get_duration();
+    const auto cuda_time_initial_estimate      = m_cuda_timer.get_duration();
+
     m_walltime_timer.start();
 
     // Use warmup results to estimate the number of iterations to run.
     // The .95 factor here pads the batch_size a bit to avoid needing a second
     // batch due to noise.
+    const auto time_estimate  = cuda_time_initial_estimate * 0.95;
     const auto min_batch_size = minimum_hot_batch_size;
-    const auto time_estimate  = m_cuda_timer.get_duration() * 0.95;
     auto batch_size = this->predict_batch_size(m_batch_target_time, time_estimate, min_batch_size);
+
+    const nvbench::int64_t timeout_min_batch_size = 1;
+    auto timeout_batch_size =
+      this->predict_batch_size(m_timeout, wallclock_time_initial_estimate, timeout_min_batch_size);
 
     do
     {
-      // Keep hot measurements batched even when the configured target time is
-      // smaller than a few launch durations.
-      batch_size = std::max(batch_size, min_batch_size);
+      batch_size = std::min(batch_size, timeout_batch_size);
 
       nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
@@ -214,20 +224,29 @@ private:
         break; // Stop iterating
       }
 
-      // Predict number of remaining iterations:
+      const auto sample_count = static_cast<nvbench::float64_t>(m_total_samples);
+
+      // Predict number of remaining iterations based on cuda-time budget
       const auto remaining_time  = m_batch_target_time - m_total_cuda_time;
-      const auto time_per_sample = m_total_cuda_time /
-                                   static_cast<nvbench::float64_t>(m_total_samples);
+      const auto time_per_sample = m_total_cuda_time / sample_count;
       batch_size = this->predict_batch_size(remaining_time,
                                             time_per_sample,
                                             this->grow_batch_size(batch_size, min_batch_size));
 
       m_walltime_timer.stop();
-      if (m_walltime_timer.get_duration() > m_timeout)
+      const auto total_walltime = m_walltime_timer.get_duration();
+      if (total_walltime > m_timeout)
       {
         m_max_time_exceeded = true;
         break;
       }
+
+      // predict number of ramaining iterations based on timeout budget
+      const auto remaining_walltime  = m_timeout - total_walltime;
+      const auto walltime_per_sample = total_walltime / sample_count;
+      timeout_batch_size =
+        this->predict_batch_size(remaining_walltime, walltime_per_sample, timeout_min_batch_size);
+
     } while (true);
 
     m_walltime_timer.stop();
