@@ -62,6 +62,8 @@ measure_hot_base::measure_hot_base(state &exec_state)
   }
 }
 
+bool measure_hot_base::use_timeout_batch_cap() const { return std::isfinite(m_timeout); }
+
 nvbench::int64_t measure_hot_base::predict_batch_size(nvbench::float64_t target_time,
                                                       nvbench::float64_t time_estimate,
                                                       nvbench::int64_t fallback_batch_size)
