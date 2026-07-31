@@ -24,6 +24,7 @@
 
 #include <nvbench/nvbench.cuh>
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
@@ -331,6 +332,59 @@ py::dict py_get_axis_values(const nvbench::state &state)
 
 // essentially a global variable, but allocated on the heap during module initialization
 std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry{};
+
+cudaStream_t extract_cuda_stream_from_provider(const py::handle &stream_provider)
+{
+  if (py::isinstance<nvbench::cuda_stream>(stream_provider))
+  {
+    throw py::type_error("State.set_stream does not accept cuda.bench.CudaStream instances");
+  }
+
+  if (!py::hasattr(stream_provider, "__cuda_stream__"))
+  {
+    throw py::type_error("State.set_stream expects an object implementing __cuda_stream__");
+  }
+
+  const py::object protocol_method = stream_provider.attr("__cuda_stream__");
+  if (!PyCallable_Check(protocol_method.ptr()))
+  {
+    throw py::type_error("State.set_stream expects __cuda_stream__ to be callable");
+  }
+
+  const py::object protocol_result = protocol_method();
+  if (!py::isinstance<py::tuple>(protocol_result))
+  {
+    throw py::type_error("State.set_stream expects __cuda_stream__ to return "
+                         "(protocol_version, cuda_stream_handle)");
+  }
+
+  const auto stream_info = py::reinterpret_borrow<py::tuple>(protocol_result);
+  if (stream_info.size() != 2)
+  {
+    throw py::type_error("State.set_stream expects __cuda_stream__ to return "
+                         "(protocol_version, cuda_stream_handle)");
+  }
+
+  int protocol_version{};
+  std::uintptr_t stream_handle{};
+  try
+  {
+    protocol_version = stream_info[0].cast<int>();
+    stream_handle    = stream_info[1].cast<std::uintptr_t>();
+  }
+  catch (const py::cast_error &)
+  {
+    throw py::type_error("State.set_stream expects __cuda_stream__ to return "
+                         "(protocol_version, cuda_stream_handle) integers");
+  }
+
+  if (protocol_version != 0)
+  {
+    throw py::value_error("State.set_stream only supports CUDA stream protocol version 0");
+  }
+
+  return reinterpret_cast<cudaStream_t>(stream_handle);
+}
 
 // Definitions of Python API
 static void def_class_CudaStream(py::module_ m)
@@ -889,6 +943,29 @@ Get `CudaStream` object from this configuration
                   method_get_stream_impl,
                   method_get_stream_doc,
                   py::return_value_policy::reference);
+
+  // method State.set_stream
+  auto method_set_stream_impl = [](nvbench::state &state, py::handle stream_provider) {
+    const auto stream_handle   = extract_cuda_stream_from_provider(stream_provider);
+    const auto &current_stream = state.get_cuda_stream_optional();
+    if (!current_stream.has_value() || current_stream->get_stream() != stream_handle)
+    {
+      state.set_cuda_stream(nvbench::make_cuda_stream_view(stream_handle));
+    }
+  };
+  static constexpr const char *method_set_stream_doc = R"XXXX(
+Set this configuration's CUDA stream from an object implementing __cuda_stream__.
+
+The stream provider owns the stream. NVBench stores a non-owning view and keeps
+the provider object alive while this State wrapper is alive.
+
+cuda.bench.CudaStream instances are not accepted.
+)XXXX";
+  pystate_cls.def("set_stream",
+                  method_set_stream_impl,
+                  method_set_stream_doc,
+                  py::arg("stream_provider"),
+                  py::keep_alive<1, 2>());
 
   // method State.get_int64
   auto method_get_int64_impl                        = &nvbench::state::get_int64;
