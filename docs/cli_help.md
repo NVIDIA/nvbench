@@ -152,9 +152,9 @@
   * Measurements will timeout after `<seconds>` have elapsed.
   * Default is 15 seconds.
   * `<seconds>` is walltime, not accumulated sample time.
-  * If a measurement times out, the default markdown log will print a warning to
-    report any outstanding termination criteria (min samples, batch target time,
-    max noise).
+  * If a measurement times out, the default markdown log will report which
+    termination conditions were still unmet. The exact warnings depend on the
+    measurement type and active stopping criterion.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
