@@ -231,13 +231,19 @@ private:
       const auto sample_count = static_cast<nvbench::float64_t>(m_total_samples);
 
       // Predict number of remaining iterations based on cuda-time budget
-      const auto remaining_time  = m_batch_target_time - m_total_cuda_time;
-      const auto time_per_sample = m_total_cuda_time / sample_count;
+      const auto remaining_time               = m_batch_target_time - m_total_cuda_time;
+      const auto time_per_sample              = m_total_cuda_time / sample_count;
+      const auto remaining_samples_to_minimum = std::max(m_min_samples - m_total_samples,
+                                                         nvbench::int64_t{1});
+      const auto batch_target_time_satisfied  = remaining_time <= nvbench::float64_t{0};
+      const auto fallback_size_on_invalid_cuda_prediction = batch_target_time_satisfied
+                                                              ? remaining_samples_to_minimum
+                                                              : m_min_samples;
       batch_size =
         this->predict_cuda_batch_size(remaining_time,
                                       time_per_sample,
                                       this->grow_batch_size(batch_size, minimum_hot_batch_size),
-                                      m_min_samples);
+                                      fallback_size_on_invalid_cuda_prediction);
 
       m_walltime_timer.stop();
       const auto total_walltime = m_walltime_timer.get_duration();
