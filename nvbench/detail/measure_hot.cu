@@ -37,6 +37,40 @@
 namespace nvbench::detail
 {
 
+namespace
+{
+
+nvbench::int64_t predict_batch_size(nvbench::float64_t target_duration,
+                                    nvbench::float64_t duration_per_launch,
+                                    nvbench::int64_t minimum_size,
+                                    nvbench::int64_t fallback_size_on_invalid_prediction)
+{
+  const auto clamped_min_size = std::max(minimum_size, nvbench::int64_t{1});
+  const auto clamped_fallback = std::max(fallback_size_on_invalid_prediction, nvbench::int64_t{1});
+  if (!std::isfinite(target_duration) || target_duration <= nvbench::float64_t{0} ||
+      !std::isfinite(duration_per_launch) || duration_per_launch <= nvbench::float64_t{0})
+  {
+    return clamped_fallback;
+  }
+
+  const auto predicted_launches = target_duration / duration_per_launch;
+  if (!std::isfinite(predicted_launches) ||
+      predicted_launches >=
+        static_cast<nvbench::float64_t>(std::numeric_limits<nvbench::int64_t>::max()))
+  {
+    return clamped_fallback;
+  }
+
+  if (predicted_launches <= static_cast<nvbench::float64_t>(clamped_min_size))
+  {
+    return clamped_min_size;
+  }
+
+  return static_cast<nvbench::int64_t>(predicted_launches);
+}
+
+} // namespace
+
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
@@ -62,32 +96,36 @@ measure_hot_base::measure_hot_base(state &exec_state)
   }
 }
 
-bool measure_hot_base::use_timeout_batch_cap() const { return std::isfinite(m_timeout); }
-
-nvbench::int64_t measure_hot_base::predict_batch_size(nvbench::float64_t target_time,
-                                                      nvbench::float64_t time_estimate,
-                                                      nvbench::int64_t fallback_batch_size)
+// CUDA-time predictions choose how many launches are needed to reach the
+// accumulated GPU-time target. Valid small predictions are raised to the
+// supplied minimum; invalid or overflowing predictions fall back to the
+// caller-provided conservative batch size, usually m_min_samples.
+nvbench::int64_t
+measure_hot_base::predict_cuda_batch_size(nvbench::float64_t target_time,
+                                          nvbench::float64_t time_estimate,
+                                          nvbench::int64_t minimum_batch_size,
+                                          nvbench::int64_t fallback_on_invalid_prediction)
 {
-  const auto fallback = std::max(fallback_batch_size, nvbench::int64_t{1});
-  if (!std::isfinite(target_time) || target_time <= nvbench::float64_t{0} ||
-      !std::isfinite(time_estimate) || time_estimate <= nvbench::float64_t{0})
+  return predict_batch_size(target_time,
+                            time_estimate,
+                            minimum_batch_size,
+                            fallback_on_invalid_prediction);
+}
+
+// Timeout predictions are caps on the CUDA-time batch estimate. They only
+// shrink the CUDA estimate when the wall-time model produces a meaningful
+// finite cap; exhausted budgets return one launch, while non-finite or
+// overflowing predictions return the CUDA estimate.
+nvbench::int64_t measure_hot_base::predict_timeout_batch_cap(nvbench::float64_t target_time,
+                                                             nvbench::float64_t time_estimate,
+                                                             nvbench::int64_t cuda_batch_size)
+{
+  if (target_time <= nvbench::float64_t{0})
   {
-    return fallback;
+    return nvbench::int64_t{1};
   }
 
-  const auto predicted_size = target_time / time_estimate;
-  if (!std::isfinite(predicted_size) || predicted_size <= static_cast<nvbench::float64_t>(fallback))
-  {
-    return fallback;
-  }
-
-  if (predicted_size >=
-      static_cast<nvbench::float64_t>(std::numeric_limits<nvbench::int64_t>::max()))
-  {
-    return fallback;
-  }
-
-  return static_cast<nvbench::int64_t>(predicted_size);
+  return predict_batch_size(target_time, time_estimate, nvbench::int64_t{1}, cuda_batch_size);
 }
 
 nvbench::int64_t measure_hot_base::grow_batch_size(nvbench::int64_t batch_size,

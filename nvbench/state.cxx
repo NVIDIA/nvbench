@@ -18,6 +18,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/detail/validate_batch_target_time.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/types.cuh>
 
@@ -80,6 +81,12 @@ state::state(const benchmark_base &bench,
     , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
     , m_cuda_stream{std::nullopt}
 {}
+
+void state::set_batch_target_time(nvbench::float64_t batch_target_time)
+{
+  nvbench::detail::validate_batch_target_time(batch_target_time);
+  m_batch_target_time = batch_target_time;
+}
 
 nvbench::int64_t state::get_int64(const std::string &axis_name) const
 {

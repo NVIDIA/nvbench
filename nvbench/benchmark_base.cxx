@@ -19,6 +19,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/transform_reduce.cuh>
+#include <nvbench/detail/validate_batch_target_time.cuh>
 
 #include <algorithm>
 #include <cstddef>
@@ -63,6 +64,13 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_stopping_criterion = m_stopping_criterion;
 
   return result;
+}
+
+benchmark_base &benchmark_base::set_batch_target_time(nvbench::float64_t batch_target_time)
+{
+  nvbench::detail::validate_batch_target_time(batch_target_time);
+  m_batch_target_time = batch_target_time;
+  return *this;
 }
 
 benchmark_base &benchmark_base::set_devices(std::vector<int> device_ids)

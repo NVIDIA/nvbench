@@ -75,12 +75,15 @@ protected:
 
   void block_stream();
 
-  static nvbench::int64_t predict_batch_size(nvbench::float64_t target_time,
-                                             nvbench::float64_t time_estimate,
-                                             nvbench::int64_t fallback_batch_size);
+  static nvbench::int64_t predict_cuda_batch_size(nvbench::float64_t target_time,
+                                                  nvbench::float64_t time_estimate,
+                                                  nvbench::int64_t minimum_batch_size,
+                                                  nvbench::int64_t fallback_on_invalid_prediction);
+  static nvbench::int64_t predict_timeout_batch_cap(nvbench::float64_t target_time,
+                                                    nvbench::float64_t time_estimate,
+                                                    nvbench::int64_t cuda_batch_size);
   static nvbench::int64_t grow_batch_size(nvbench::int64_t batch_size,
                                           nvbench::int64_t minimum_batch_size);
-  [[nodiscard]] bool use_timeout_batch_cap() const;
 
   static constexpr nvbench::int64_t minimum_hot_batch_size = 4;
 
@@ -163,26 +166,17 @@ private:
     // Use warmup results to estimate the number of iterations to run.
     // The .95 factor here pads the batch_size a bit to avoid needing a second
     // batch due to noise.
-    const auto time_estimate  = cuda_time_initial_estimate * 0.95;
-    const auto min_batch_size = minimum_hot_batch_size;
-    auto batch_size = this->predict_batch_size(m_batch_target_time, time_estimate, min_batch_size);
-
-    const bool use_timeout_batch_cap              = this->use_timeout_batch_cap();
-    const nvbench::int64_t timeout_min_batch_size = 1;
-    nvbench::int64_t timeout_batch_size           = timeout_min_batch_size;
-    if (use_timeout_batch_cap)
-    {
-      timeout_batch_size = this->predict_batch_size(m_timeout,
-                                                    wallclock_time_initial_estimate,
-                                                    timeout_min_batch_size);
-    }
+    const auto time_estimate = cuda_time_initial_estimate * 0.95;
+    auto batch_size          = this->predict_cuda_batch_size(m_batch_target_time,
+                                                             time_estimate,
+                                                             minimum_hot_batch_size,
+                                                             m_min_samples);
+    auto timeout_batch_size =
+      this->predict_timeout_batch_cap(m_timeout, wallclock_time_initial_estimate, batch_size);
 
     do
     {
-      if (use_timeout_batch_cap)
-      {
-        batch_size = std::min(batch_size, timeout_batch_size);
-      }
+      batch_size = std::min(batch_size, timeout_batch_size);
 
       nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
@@ -239,26 +233,25 @@ private:
       // Predict number of remaining iterations based on cuda-time budget
       const auto remaining_time  = m_batch_target_time - m_total_cuda_time;
       const auto time_per_sample = m_total_cuda_time / sample_count;
-      batch_size = this->predict_batch_size(remaining_time,
-                                            time_per_sample,
-                                            this->grow_batch_size(batch_size, min_batch_size));
+      batch_size =
+        this->predict_cuda_batch_size(remaining_time,
+                                      time_per_sample,
+                                      this->grow_batch_size(batch_size, minimum_hot_batch_size),
+                                      m_min_samples);
 
       m_walltime_timer.stop();
       const auto total_walltime = m_walltime_timer.get_duration();
-      if (use_timeout_batch_cap && total_walltime > m_timeout)
+      if (total_walltime > m_timeout)
       {
         m_max_time_exceeded = true;
         break;
       }
 
-      if (use_timeout_batch_cap)
-      {
-        // Predict number of remaining iterations based on timeout budget.
-        const auto remaining_walltime  = m_timeout - total_walltime;
-        const auto walltime_per_sample = total_walltime / sample_count;
-        timeout_batch_size =
-          this->predict_batch_size(remaining_walltime, walltime_per_sample, timeout_min_batch_size);
-      }
+      // Predict number of remaining iterations based on timeout budget.
+      const auto remaining_walltime  = m_timeout - total_walltime;
+      const auto walltime_per_sample = total_walltime / sample_count;
+      timeout_batch_size =
+        this->predict_timeout_batch_cap(remaining_walltime, walltime_per_sample, batch_size);
 
     } while (true);
 
