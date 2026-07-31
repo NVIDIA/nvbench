@@ -31,6 +31,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -332,6 +333,13 @@ py::dict py_get_axis_values(const nvbench::state &state)
 
 // essentially a global variable, but allocated on the heap during module initialization
 std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry{};
+
+std::unordered_map<nvbench::state *, py::object> &cuda_stream_provider_cache()
+{
+  // Avoid destroying py::object values after Python interpreter shutdown.
+  static auto *cache = new std::unordered_map<nvbench::state *, py::object>{};
+  return *cache;
+}
 
 cudaStream_t extract_cuda_stream_from_provider(const py::handle &stream_provider)
 {
@@ -946,7 +954,9 @@ Get `CudaStream` object from this configuration
 
   // method State.set_stream
   auto method_set_stream_impl = [](nvbench::state &state, py::handle stream_provider) {
-    const auto stream_handle   = extract_cuda_stream_from_provider(stream_provider);
+    const auto stream_handle             = extract_cuda_stream_from_provider(stream_provider);
+    cuda_stream_provider_cache()[&state] = py::reinterpret_borrow<py::object>(stream_provider);
+
     const auto &current_stream = state.get_cuda_stream_optional();
     if (!current_stream.has_value() || current_stream->get_stream() != stream_handle)
     {
@@ -957,15 +967,14 @@ Get `CudaStream` object from this configuration
 Set this configuration's CUDA stream from an object implementing __cuda_stream__.
 
 The stream provider owns the stream. NVBench stores a non-owning view and keeps
-the provider object alive while this State wrapper is alive.
+the current provider object alive until another provider replaces it.
 
 cuda.bench.CudaStream instances are not accepted.
 )XXXX";
   pystate_cls.def("set_stream",
                   method_set_stream_impl,
                   method_set_stream_doc,
-                  py::arg("stream_provider"),
-                  py::keep_alive<1, 2>());
+                  py::arg("stream_provider"));
 
   // method State.get_int64
   auto method_get_int64_impl                        = &nvbench::state::get_int64;

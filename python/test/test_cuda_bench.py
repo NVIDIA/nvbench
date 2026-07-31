@@ -14,7 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import gc
 import json
+import weakref
 from typing import Union
 
 import cuda.bench as bench
@@ -105,6 +107,14 @@ def test_cpu_only():
 
         state.set_stream(stream_provider)
         assert stream_provider.protocol_calls == 2
+
+        replaced_stream_provider = ExternalStreamProvider(0x5678)
+        replaced_stream_provider_ref = weakref.ref(replaced_stream_provider)
+        state.set_stream(replaced_stream_provider)
+        state.set_stream(stream_provider)
+        del replaced_stream_provider
+        gc.collect()
+        assert replaced_stream_provider_ref() is None
 
         class NonCallableProtocol:
             __cuda_stream__ = 1
