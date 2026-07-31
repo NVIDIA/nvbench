@@ -166,11 +166,13 @@ private:
     // Use warmup results to estimate the number of iterations to run.
     // The .95 factor here pads the batch_size a bit to avoid needing a second
     // batch due to noise.
-    const auto time_estimate = cuda_time_initial_estimate * 0.95;
-    auto batch_size          = this->predict_cuda_batch_size(m_batch_target_time,
-                                                             time_estimate,
-                                                             minimum_hot_batch_size,
-                                                             m_min_samples);
+    const auto hot_batch_size_floor = std::min(std::max(m_min_samples, nvbench::int64_t{1}),
+                                               minimum_hot_batch_size);
+    const auto time_estimate        = cuda_time_initial_estimate * 0.95;
+    auto batch_size                 = this->predict_cuda_batch_size(m_batch_target_time,
+                                                                    time_estimate,
+                                                                    hot_batch_size_floor,
+                                                                    m_min_samples);
     auto timeout_batch_size =
       this->predict_timeout_batch_cap(m_timeout, wallclock_time_initial_estimate, batch_size);
 
@@ -242,7 +244,7 @@ private:
       batch_size =
         this->predict_cuda_batch_size(remaining_time,
                                       time_per_sample,
-                                      this->grow_batch_size(batch_size, minimum_hot_batch_size),
+                                      this->grow_batch_size(batch_size, hot_batch_size_floor),
                                       fallback_size_on_invalid_cuda_prediction);
 
       m_walltime_timer.stop();
