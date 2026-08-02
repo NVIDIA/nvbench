@@ -44,6 +44,7 @@ def test_api_ctor(cls):
 def test_cpu_only():
     saved_timers = []
     observed = {}
+    stream_provider_refs = {}
     external_stream_handle = 0x1234
 
     class ExternalStreamProvider:
@@ -102,6 +103,7 @@ def test_cpu_only():
     @bench.option.set_is_cpu_only(True)
     def external_stream_state_probe(state: bench.State):
         stream_provider = ExternalStreamProvider(external_stream_handle)
+        stream_provider_refs["current"] = weakref.ref(stream_provider)
         assert state.set_stream(stream_provider) is None
         assert stream_provider.protocol_calls == 1
 
@@ -149,6 +151,9 @@ def test_cpu_only():
     assert saved_timers
     with pytest.raises(RuntimeError, match="Timer is no longer valid"):
         saved_timers[0].start()
+
+    gc.collect()
+    assert stream_provider_refs["current"]() is None
 
     assert observed == {
         "benchmark_runs": 13,

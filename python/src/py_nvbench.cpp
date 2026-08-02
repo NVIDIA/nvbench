@@ -40,6 +40,13 @@ namespace py = pybind11;
 namespace
 {
 
+std::unordered_map<nvbench::state *, py::object> &cuda_stream_provider_cache()
+{
+  // Avoid destroying py::object values after Python interpreter shutdown.
+  static auto *cache = new std::unordered_map<nvbench::state *, py::object>{};
+  return *cache;
+}
+
 struct PyObjectDeleter
 {
   void operator()(py::object *p)
@@ -89,6 +96,22 @@ struct benchmark_wrapper_t
     {
       throw std::runtime_error("No function to execute");
     }
+
+    struct cleanup_cuda_stream_provider
+    {
+      nvbench::state *state;
+
+      ~cleanup_cuda_stream_provider() noexcept
+      {
+        try
+        {
+          cuda_stream_provider_cache().erase(state);
+        }
+        catch (...)
+        {}
+      }
+    } cleanup{&state};
+
     // box as Python object, using reference semantics
     auto arg = py::cast(std::ref(state), py::return_value_policy::reference);
 
@@ -333,13 +356,6 @@ py::dict py_get_axis_values(const nvbench::state &state)
 
 // essentially a global variable, but allocated on the heap during module initialization
 std::unique_ptr<GlobalBenchmarkRegistry, py::nodelete> global_registry{};
-
-std::unordered_map<nvbench::state *, py::object> &cuda_stream_provider_cache()
-{
-  // Avoid destroying py::object values after Python interpreter shutdown.
-  static auto *cache = new std::unordered_map<nvbench::state *, py::object>{};
-  return *cache;
-}
 
 cudaStream_t extract_cuda_stream_from_provider(const py::handle &stream_provider)
 {
@@ -967,7 +983,8 @@ Get `CudaStream` object from this configuration
 Set this configuration's CUDA stream from an object implementing __cuda_stream__.
 
 The stream provider owns the stream. NVBench stores a non-owning view and keeps
-the current provider object alive until another provider replaces it.
+the current provider object alive until another provider replaces it or this
+benchmark callback returns.
 
 cuda.bench.CudaStream instances are not accepted.
 )XXXX";
