@@ -982,9 +982,12 @@ Get `CudaStream` object from this configuration
   static constexpr const char *method_set_stream_doc = R"XXXX(
 Set this configuration's CUDA stream from an object implementing __cuda_stream__.
 
-The stream provider owns the stream. NVBench stores a non-owning view and keeps
-the current provider object alive until another provider replaces it or this
-benchmark callback returns.
+The stream provider is expected to keep the returned stream valid. NVBench
+stores a non-owning view and keeps the current provider object alive until
+another provider replaces it or this benchmark callback returns.
+
+Call this method before State.exec, not from launcher callbacks. The returned
+stream must be valid for this state configuration's CUDA device.
 
 cuda.bench.CudaStream instances are not accepted.
 )XXXX";
@@ -1338,6 +1341,7 @@ Use argument True to disable use of blocking kernel by NVBench"
     The callable may be executed multiple times. The callable
     will be passed a `Launch` object argument by default. When `timer=True`,
     the callable will be passed `Launch` and `Timer` arguments.
+    The callable is invoked with the Python GIL held.
 
     Parameters
     ----------
@@ -1517,6 +1521,10 @@ Register benchmark function of type Callable[[nvbench.State], None]
   };
   static constexpr const char *func_run_all_benchmarks_doc = R"XXXX(
     Run all benchmarks registered with NVBench.
+
+    This function currently runs with the Python GIL held. Benchmark launcher
+    callbacks are invoked with the GIL held; native or extension functions
+    called by a launcher may release the GIL according to their own behavior.
 
     Parameters
     ----------
