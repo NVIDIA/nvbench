@@ -109,6 +109,21 @@ def test_cpu_only():
 
         state.set_stream(stream_provider)
         assert stream_provider.protocol_calls == 2
+        del stream_provider
+        gc.collect()
+        assert stream_provider_refs["current"]() is not None
+
+        same_handle_stream_provider = ExternalStreamProvider(external_stream_handle)
+        same_handle_stream_provider_ref = weakref.ref(same_handle_stream_provider)
+        state.set_stream(same_handle_stream_provider)
+        assert same_handle_stream_provider.protocol_calls == 1
+        del same_handle_stream_provider
+        gc.collect()
+        assert same_handle_stream_provider_ref() is None
+        assert stream_provider_refs["current"]() is not None
+
+        stream_provider = stream_provider_refs["current"]()
+        assert stream_provider is not None
 
         replaced_stream_provider = ExternalStreamProvider(0x5678)
         replaced_stream_provider_ref = weakref.ref(replaced_stream_provider)

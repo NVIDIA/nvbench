@@ -970,12 +970,12 @@ Get `CudaStream` object from this configuration
 
   // method State.set_stream
   auto method_set_stream_impl = [](nvbench::state &state, py::handle stream_provider) {
-    const auto stream_handle             = extract_cuda_stream_from_provider(stream_provider);
-    cuda_stream_provider_cache()[&state] = py::reinterpret_borrow<py::object>(stream_provider);
+    const auto stream_handle = extract_cuda_stream_from_provider(stream_provider);
 
     const auto &current_stream = state.get_cuda_stream_optional();
     if (!current_stream.has_value() || current_stream->get_stream() != stream_handle)
     {
+      cuda_stream_provider_cache()[&state] = py::reinterpret_borrow<py::object>(stream_provider);
       state.set_cuda_stream(nvbench::make_cuda_stream_view(stream_handle));
     }
   };
