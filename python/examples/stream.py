@@ -23,7 +23,8 @@ import cupy
 @bench.register()
 @bench.axis.int64_power_of_two("Elements", [22, 24, 26])
 def elementwise_square(state: bench.State):
-    # Provide cuda.bench stream to use for launching
+    # Tell NVBench to time/synchronize the CuPy current stream. The launched
+    # CuPy operation below uses that ambient stream rather than launch.get_stream().
     state.set_stream(cupy.cuda.get_current_stream())
 
     size = state.get_int64("Elements")
