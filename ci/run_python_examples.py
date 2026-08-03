@@ -141,6 +141,20 @@ EXAMPLE_RUNS = (
         description="CuPy external stream example.",
     ),
     ExampleRun(
+        name="stream",
+        path="python/examples/stream.py",
+        groups=("cupy",),
+        required_modules=("cuda.bench", "cupy"),
+        requires_gpu=True,
+        script_args=(
+            "-b",
+            "elementwise_square",
+            "-a",
+            "Elements[pow2]=22",
+        ),
+        description="State.set_stream example using a CuPy stream.",
+    ),
+    ExampleRun(
         name="cuda-compute-segmented-reduce",
         path="python/examples/cuda_compute_segmented_reduce.py",
         groups=("cuda-compute",),

@@ -13,6 +13,12 @@ source /workspace/ci/pyenv_helper.sh
 WHEELHOUSE_DIR="/workspace/wheelhouse"
 EXAMPLE_REQUIREMENTS_DIR="/workspace/python/examples/requirements"
 
+if [[ ! -d "${WHEELHOUSE_DIR}" ]]; then
+    echo "Error: Wheelhouse directory not found: ${WHEELHOUSE_DIR}" >&2
+    echo "Build or download the cuda-bench wheel into wheelhouse before running example tests." >&2
+    exit 1
+fi
+
 CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*manylinux*.whl' -print -quit)"
 if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
     CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*.whl' -print -quit)"
