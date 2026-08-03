@@ -623,9 +623,9 @@ def cutlass_gemm(state: bench.State) -> None:
     s = as_bindings_Stream(cs)
     core_s = as_core_Stream(cs)
 
-    A_d = core.DeviceMemoryResource(dev_id).allocate(A_h.nbytes, core_s)
-    B_d = core.DeviceMemoryResource(dev_id).allocate(B_h.nbytes, core_s)
-    C_d = core.DeviceMemoryResource(dev_id).allocate(C_h.nbytes, core_s)
+    A_d = core.DeviceMemoryResource(dev_id).allocate(A_h.nbytes, stream=core_s)
+    B_d = core.DeviceMemoryResource(dev_id).allocate(B_h.nbytes, stream=core_s)
+    C_d = core.DeviceMemoryResource(dev_id).allocate(C_h.nbytes, stream=core_s)
 
     driver.cuMemcpyAsync(A_d.handle, A_h.ctypes.data, A_h.nbytes, s)
     driver.cuMemcpyAsync(B_d.handle, B_h.ctypes.data, B_h.nbytes, s)
