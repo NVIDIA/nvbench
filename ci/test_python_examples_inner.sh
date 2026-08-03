@@ -12,6 +12,32 @@ source /workspace/ci/pyenv_helper.sh
 
 WHEELHOUSE_DIR="/workspace/wheelhouse"
 EXAMPLE_REQUIREMENTS_DIR="/workspace/python/examples/requirements"
+EXAMPLE_REQUIREMENTS_FILE="/workspace/python/examples/requirements.txt"
+CONSTRAINTS_FILE="${EXAMPLE_REQUIREMENTS_DIR}/constraints-${cuda_extra}-py${py_version//./}.txt"
+FREEZE_DIR="$(mktemp -d)"
+constraints_candidate_printed=0
+
+print_constraints_candidate() {
+    if [[ "${floating_deps:-0}" != "1" || "${constraints_candidate_printed}" == "1" ]]; then
+        return 0
+    fi
+    constraints_candidate_printed=1
+    python /workspace/ci/format_python_example_constraints.py \
+        --constraints-file "${CONSTRAINTS_FILE}" \
+        --requirements-file "${EXAMPLE_REQUIREMENTS_FILE}" \
+        --freeze-dir "${FREEZE_DIR}" \
+        --python-version "${py_version}" \
+        --cuda-extra "${cuda_extra}"
+}
+
+cleanup() {
+    local status=$?
+    print_constraints_candidate || true
+    rm -rf "${FREEZE_DIR}"
+    exit "${status}"
+}
+
+trap cleanup EXIT
 
 if [[ ! -d "${WHEELHOUSE_DIR}" ]]; then
     echo "Error: Wheelhouse directory not found: ${WHEELHOUSE_DIR}" >&2
@@ -22,6 +48,11 @@ fi
 CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*manylinux*.whl' -print -quit)"
 if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
     CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*.whl' -print -quit)"
+fi
+
+if [[ ! -f "${CONSTRAINTS_FILE}" ]]; then
+    echo "Error: Missing constraints file: ${CONSTRAINTS_FILE}" >&2
+    exit 1
 fi
 
 if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
@@ -64,8 +95,21 @@ run_example_env() {
     python -m pip install --upgrade pip
 
     echo "Installing wheel: ${CUDA_BENCH_WHEEL_PATH} with extra: ${cuda_extra}"
-    python -m pip install "${CUDA_BENCH_WHEEL_PATH}[${cuda_extra}]"
-    python -m pip install -r "${requirements_file}"
+    if [[ "${floating_deps:-0}" == "1" ]]; then
+        python -m pip install "${CUDA_BENCH_WHEEL_PATH}[${cuda_extra}]"
+        python -m pip install -r "${requirements_file}"
+    else
+        python -m pip install -c "${CONSTRAINTS_FILE}" "${CUDA_BENCH_WHEEL_PATH}[${cuda_extra}]"
+        python -m pip install -c "${CONSTRAINTS_FILE}" -r "${requirements_file}"
+    fi
+
+    if [[ "${floating_deps:-0}" == "1" ]]; then
+        local freeze_file="${FREEZE_DIR}/${env_name}.txt"
+        python -m pip freeze --exclude-editable | sort -f > "${freeze_file}"
+        echo "::group::Full pip freeze: ${env_name}"
+        cat "${freeze_file}"
+        echo "::endgroup::"
+    fi
 
     python /workspace/ci/run_python_examples.py "${runner_args[@]}"
     echo "::endgroup::"
@@ -92,3 +136,5 @@ if [[ "${include_heavy_examples:-0}" == "1" ]]; then
         cute \
         cute
 fi
+
+print_constraints_candidate

@@ -3,7 +3,7 @@ set -euo pipefail
 
 ci_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-usage="Usage: $0 -py-version <python_version> [-include-heavy-examples]"
+usage="Usage: $0 -py-version <python_version> [-include-heavy-examples] [-floating-deps]"
 
 # shellcheck source=ci/util/python/common_arg_parser.sh
 source "$ci_dir/util/python/common_arg_parser.sh"
@@ -11,10 +11,15 @@ source "$ci_dir/util/python/common_arg_parser.sh"
 parse_python_args "$@"
 
 include_heavy_examples=0
+floating_deps=0
 while [[ $# -gt 0 ]]; do
     case $1 in
         -include-heavy-examples)
             include_heavy_examples=1
+            shift
+            ;;
+        -floating-deps)
+            floating_deps=1
             shift
             ;;
         -py-version=*)
@@ -51,6 +56,7 @@ echo "::group::Testing Python examples on ${cuda_image}"
       --env "py_version=${py_version}" \
       --env "cuda_extra=${cuda_extra}" \
       --env "include_heavy_examples=${include_heavy_examples}" \
+      --env "floating_deps=${floating_deps}" \
       "${cuda_image}" \
       /workspace/ci/test_python_examples_inner.sh
   if [[ -n "${GITHUB_ACTIONS:-}" ]]; then

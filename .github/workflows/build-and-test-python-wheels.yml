@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      floating_python_example_dependencies:
+        description: "Test Python examples with unconstrained floating dependencies and print constraints candidates."
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       include_heavy_python_examples:
@@ -15,6 +20,13 @@ on:
         required: false
         type: boolean
         default: false
+      floating_python_example_dependencies:
+        description: "Test Python examples with unconstrained floating dependencies and print constraints candidates."
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: '0 10 * * 1'
 
 defaults:
   run:
@@ -112,10 +124,14 @@ jobs:
       - name: Test Python examples
         env:
           INCLUDE_HEAVY_PYTHON_EXAMPLES: ${{ inputs.include_heavy_python_examples }}
+          FLOATING_PYTHON_EXAMPLE_DEPENDENCIES: ${{ github.event_name == 'schedule' || inputs.floating_python_example_dependencies }}
         run: |
           args=()
           if [[ "${INCLUDE_HEAVY_PYTHON_EXAMPLES}" == "true" ]]; then
             args+=("-include-heavy-examples")
+          fi
+          if [[ "${FLOATING_PYTHON_EXAMPLE_DEPENDENCIES}" == "true" ]]; then
+            args+=("-floating-deps")
           fi
 
           bash ci/test_python_examples.sh \
