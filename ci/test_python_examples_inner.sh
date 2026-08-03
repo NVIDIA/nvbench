@@ -89,9 +89,10 @@ run_example_env() {
 
     python --version
     nvcc --version
-    export CXX="$(which g++)"
-    export CUDACXX="$(which nvcc)"
-    export CUDAHOSTCXX="$(which g++)"
+    CXX="$(which g++)" || { echo "Error: g++ not found in PATH" >&2; exit 1; }
+    CUDACXX="$(which nvcc)" || { echo "Error: nvcc not found in PATH" >&2; exit 1; }
+    CUDAHOSTCXX="$CXX"
+    export CXX CUDACXX CUDAHOSTCXX
     python -m pip install --upgrade pip
 
     echo "Installing wheel: ${CUDA_BENCH_WHEEL_PATH} with extra: ${cuda_extra}"
