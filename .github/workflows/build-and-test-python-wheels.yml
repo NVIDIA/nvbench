@@ -107,6 +107,7 @@ jobs:
     name: Test Python examples (standard, CUDA 13, Python 3.13)
     needs: build-wheels
     runs-on: linux-amd64-gpu-l4-latest-1
+    timeout-minutes: 60
     permissions:
       contents: read
 
