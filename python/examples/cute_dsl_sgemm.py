@@ -29,6 +29,8 @@ import cutlass.utils as utils
 import numpy as np
 from cutlass.cute.runtime import from_dlpack
 
+DEFAULT_CUSTREAM = driver.CUstream(driver.CUstream_flags.CU_STREAM_DEFAULT)
+
 
 def as_bindings_Stream(cs: bench.CudaStream) -> driver.CUstream:
     return driver.CUstream(cs.addressof())
@@ -85,9 +87,7 @@ class SGemm:
         mB: cute.Tensor,
         mC: cute.Tensor,
         epilogue_op: cutlass.Constexpr = lambda x: x,
-        stream: driver.CUstream = driver.CUstream(
-            driver.CUstream_flags.CU_STREAM_DEFAULT
-        ),
+        stream: driver.CUstream = DEFAULT_CUSTREAM,
     ):
         self.a_major_mode = utils.LayoutEnum.from_tensor(mA)
         self.b_major_mode = utils.LayoutEnum.from_tensor(mB)
@@ -246,8 +246,8 @@ class SGemm:
         epilogue_op: cutlass.Constexpr = lambda x: x,
     ):
         # Thread and block indices
-        tidx, tidy, tidz = cute.arch.thread_idx()
-        bidx, bidy, bidz = cute.arch.block_idx()
+        tidx, _tidy, _tidz = cute.arch.thread_idx()
+        bidx, bidy, _bidz = cute.arch.block_idx()
         tiler_coord = (bidx, bidy, None)
         thr_mma = tiled_mma.get_slice(tidx)
 
