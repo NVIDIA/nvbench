@@ -45,22 +45,29 @@ if [[ ! -d "${WHEELHOUSE_DIR}" ]]; then
     exit 1
 fi
 
-CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*manylinux*.whl' -print -quit)"
-if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
-    CUDA_BENCH_WHEEL_PATH="$(find "${WHEELHOUSE_DIR}" -maxdepth 1 -name 'cuda_bench-*.whl' -print -quit)"
-fi
+python_tag="cp${py_version//./}"
+mapfile -t cuda_bench_wheels < <(
+    find "${WHEELHOUSE_DIR}" -maxdepth 1 -name "cuda_bench-*-${python_tag}-*.whl" -print
+)
 
 if [[ ! -f "${CONSTRAINTS_FILE}" ]]; then
     echo "Error: Missing constraints file: ${CONSTRAINTS_FILE}" >&2
     exit 1
 fi
 
-if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
-    echo "Error: No cuda-bench wheel found in ${WHEELHOUSE_DIR}" >&2
+if [[ "${#cuda_bench_wheels[@]}" -eq 0 ]]; then
+    echo "Error: No cuda-bench wheel for Python ${py_version} found in ${WHEELHOUSE_DIR}" >&2
     echo "Contents of ${WHEELHOUSE_DIR}:" >&2
     ls -la "${WHEELHOUSE_DIR}/" || true
     exit 1
 fi
+if [[ "${#cuda_bench_wheels[@]}" -gt 1 ]]; then
+    echo "Error: Multiple cuda-bench wheels for Python ${py_version} found in ${WHEELHOUSE_DIR}" >&2
+    printf '  %s\n' "${cuda_bench_wheels[@]}" >&2
+    exit 1
+fi
+
+CUDA_BENCH_WHEEL_PATH="${cuda_bench_wheels[0]}"
 
 run_example_env() {
     (
