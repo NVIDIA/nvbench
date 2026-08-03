@@ -1,0 +1,75 @@
+name: Test Python Editable Install
+
+on:
+  workflow_call:
+    inputs:
+      python:
+        type: string
+        required: false
+      cuda:
+        type: string
+        required: false
+      host:
+        type: string
+        required: false
+      devcontainer_version:
+        type: string
+        required: false
+  workflow_dispatch:
+    inputs:
+      python:
+        description: "Python major.minor version override"
+        type: string
+        required: false
+      cuda:
+        description: "CUDA Toolkit major.minor version override"
+        type: string
+        required: false
+      host:
+        description: "Host compiler tag override"
+        type: string
+        required: false
+      devcontainer_version:
+        description: "RAPIDS devcontainer version override"
+        type: string
+        required: false
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+  test-editable-install:
+    name: Test editable install
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Test editable install
+        env:
+          PYTHON_INPUT: ${{ inputs.python }}
+          CUDA_INPUT: ${{ inputs.cuda }}
+          HOST_INPUT: ${{ inputs.host }}
+          DEVCONTAINER_INPUT: ${{ inputs.devcontainer_version }}
+        run: |
+          args=()
+          if [[ -n "${PYTHON_INPUT}" ]]; then
+            args+=("-py-version" "${PYTHON_INPUT}")
+          fi
+          if [[ -n "${CUDA_INPUT}" ]]; then
+            args+=("-cuda-version" "${CUDA_INPUT}")
+          fi
+          if [[ -n "${HOST_INPUT}" ]]; then
+            args+=("-host" "${HOST_INPUT}")
+          fi
+          if [[ -n "${DEVCONTAINER_INPUT}" ]]; then
+            args+=("-devcontainer-version" "${DEVCONTAINER_INPUT}")
+          fi
+          bash ci/test_cuda_bench_editable.sh "${args[@]}"

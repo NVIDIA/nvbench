@@ -58,6 +58,14 @@ void no_op_generator(nvbench::state &state)
 }
 NVBENCH_DEFINE_CALLABLE(no_op_generator, no_op_callable);
 
+void stream_allocating_generator(nvbench::state &state)
+{
+  // Force stream creation without running kernels
+  static_cast<void>(state.get_cuda_stream());
+  state.skip("stream allocated, skipping");
+}
+NVBENCH_DEFINE_CALLABLE(stream_allocating_generator, stream_allocating_callable);
+
 using float_types = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
 using int_types   = nvbench::type_list<nvbench::int32_t, nvbench::int64_t>;
 using misc_types  = nvbench::type_list<bool, void>;
@@ -448,10 +456,30 @@ Params: Float: 13 FloatT: F64 Int: 3 IntT: I64 MiscT: void String: Three
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
+void test_no_stream_kept()
+{
+  using benchmark_type = nvbench::benchmark<stream_allocating_callable>;
+  using runner_type    = nvbench::runner<benchmark_type>;
+
+  benchmark_type bench;
+  bench.set_devices(std::vector<int>{0});
+
+  runner_type runner{bench};
+  runner.generate_states();
+  runner.run();
+
+  for (auto &state : bench.get_states())
+  {
+    // Epilogue must free the stream
+    ASSERT(!state.get_cuda_stream_optional().has_value());
+  }
+}
+
 int main()
 {
   test_empty();
   test_non_types();
   test_types();
   test_both();
+  test_no_stream_kept();
 }
