@@ -129,10 +129,14 @@ run_example_env() {
 
 run_example_env_and_record_status() {
     local env_name="$1"
-    set +e
-    run_example_env "$@"
-    local status=$?
-    set -e
+    run_example_env "$@" &
+    local pid=$!
+    local status=0
+    if wait "${pid}"; then
+        status=0
+    else
+        status=$?
+    fi
     if [[ "${status}" -ne 0 ]]; then
         echo "Error: Python example environment '${env_name}' failed" >&2
         overall_status=1
