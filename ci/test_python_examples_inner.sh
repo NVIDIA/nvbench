@@ -95,6 +95,7 @@ run_example_env() {
     rm -rf "${NVBENCH_PYTHON_VENV}"
 
     echo "::group::Python examples: ${env_name}"
+    trap 'echo "::endgroup::"' EXIT
     setup_python_env "${py_version}"
 
     python --version
@@ -123,7 +124,6 @@ run_example_env() {
     fi
 
     python /workspace/ci/run_python_examples.py "${runner_args[@]}"
-    echo "::endgroup::"
     )
 }
 

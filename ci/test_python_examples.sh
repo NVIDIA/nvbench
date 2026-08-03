@@ -63,6 +63,7 @@ echo "::group::Testing Python examples on ${cuda_image}"
       --env "cuda_extra=${cuda_extra}" \
       --env "include_heavy_examples=${include_heavy_examples}" \
       --env "floating_deps=${floating_deps}" \
+      --env "PYTHONPYCACHEPREFIX=/tmp/nvbench-pycache" \
       "${cuda_image}" \
       /workspace/ci/test_python_examples_inner.sh
 )
