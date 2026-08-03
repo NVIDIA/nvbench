@@ -107,6 +107,7 @@ jobs:
     name: Test Python examples (standard, CUDA 13, Python 3.13)
     needs: build-wheels
     runs-on: linux-amd64-gpu-l4-latest-1
+    # Sized for the bounded per-case timeouts in ci/run_python_examples.py.
     timeout-minutes: 60
     permissions:
       contents: read
@@ -129,6 +130,7 @@ jobs:
           INCLUDE_HEAVY_PYTHON_EXAMPLES: ${{ github.event_name == 'schedule' || inputs.include_heavy_python_examples }}
           FLOATING_PYTHON_EXAMPLE_DEPENDENCIES: ${{ github.event_name == 'schedule' || inputs.floating_python_example_dependencies }}
         run: |
+          set -o pipefail
           args=()
           if [[ "${INCLUDE_HEAVY_PYTHON_EXAMPLES}" == "true" ]]; then
             args+=("-include-heavy-examples")
@@ -137,9 +139,18 @@ jobs:
             args+=("-floating-deps")
           fi
 
+          mkdir -p python-example-results
           bash ci/test_python_examples.sh \
             -py-version 3.13 \
-            "${args[@]}"
+            "${args[@]}" | tee python-example-results/output.log
+
+      - name: Upload Python example results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-example-results
+          path: python-example-results/
+          if-no-files-found: ignore
 
   verify-workflow:
     name: Verify all builds and tests succeeded

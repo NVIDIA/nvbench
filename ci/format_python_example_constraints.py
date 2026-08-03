@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 PIN_RE = re.compile(r"^\s*([A-Za-z0-9_.-]+)\s*==\s*(\S+)\s*$")
+DIRECT_REF_RE = re.compile(r"^\s*([A-Za-z0-9_.-]+)\s*@\s*(\S.*)$")
 REQ_NAME_RE = re.compile(r"^\s*([A-Za-z0-9_.-]+)")
 
 
@@ -20,6 +21,10 @@ def parse_requirement_include(stripped_line: str) -> str | None:
     if stripped_line.startswith(("-r ", "--requirement ")):
         _, include_path = stripped_line.split(maxsplit=1)
         return include_path
+    if stripped_line.startswith("--requirement="):
+        return stripped_line.split("=", 1)[1].strip()
+    if stripped_line.startswith("-r") and len(stripped_line) > 2:
+        return stripped_line[2:].strip()
     return None
 
 
@@ -59,6 +64,13 @@ def parse_freeze_file(path: Path) -> dict[str, str]:
         match = PIN_RE.match(line)
         if match:
             pins[normalize_name(match.group(1))] = f"{match.group(1)}=={match.group(2)}"
+            continue
+        match = DIRECT_REF_RE.match(line)
+        if match:
+            package_name = match.group(1)
+            pins[normalize_name(package_name)] = (
+                f"# DIRECT {package_name}: {line.strip()}"
+            )
     return pins
 
 

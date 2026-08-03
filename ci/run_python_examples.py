@@ -14,6 +14,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 QUIET_NVBENCH_ARG = "-q"
+DEFAULT_EXAMPLE_TIMEOUT_SECONDS = 90
+LONG_EXAMPLE_TIMEOUT_SECONDS = 180
+CUTE_DSL_TIMEOUT_SECONDS = 300
 
 
 @dataclass(frozen=True)
@@ -27,7 +30,7 @@ class ExampleRun:
     script_args: tuple[str, ...] = ()
     nvbench_args: tuple[str, ...] = ()
     nvbench_args_after_separator: bool = False
-    timeout_seconds: int = 300
+    timeout_seconds: int = DEFAULT_EXAMPLE_TIMEOUT_SECONDS
     description: str = ""
 
 
@@ -46,7 +49,6 @@ EXAMPLE_RUNS = (
         groups=("example-cpu",),
         required_modules=("cuda.bench", "cuda.cccl.headers", "cuda.core"),
         script_args=("-b", "cpu_only_sleep_bench"),
-        timeout_seconds=120,
         description="CPU-only benchmark from a committed example file.",
     ),
     ExampleRun(
@@ -203,7 +205,7 @@ EXAMPLE_RUNS = (
             "100",
         ),
         nvbench_args_after_separator=True,
-        timeout_seconds=300,
+        timeout_seconds=LONG_EXAMPLE_TIMEOUT_SECONDS,
         description="BenchmarkResult-driven autotune example with a small input.",
     ),
     ExampleRun(
@@ -213,7 +215,7 @@ EXAMPLE_RUNS = (
         required_modules=("cuda.bench", "torch"),
         requires_gpu=True,
         script_args=("-b", "torch_bench"),
-        timeout_seconds=300,
+        timeout_seconds=LONG_EXAMPLE_TIMEOUT_SECONDS,
         description="PyTorch external stream example.",
     ),
     ExampleRun(
@@ -230,7 +232,7 @@ EXAMPLE_RUNS = (
         ),
         requires_gpu=True,
         script_args=("-b", "cutlass_gemm", "-a", "R=16", "-a", "N=256"),
-        timeout_seconds=600,
+        timeout_seconds=CUTE_DSL_TIMEOUT_SECONDS,
         description="CUTLASS/CuTe DSL SGEMM example.",
     ),
 )
@@ -584,12 +586,16 @@ def main(argv: list[str] | None = None) -> int:
     skipped = 0
     passed = 0
 
+    def print_summary() -> None:
+        print(f"Summary: {passed} passed, {skipped} skipped, {failures} failed")
+
     if "syntax" in groups:
         if run_syntax_check(args, repo_root):
             passed += 1
         else:
             failures += 1
             if not args.continue_on_failure:
+                print_summary()
                 return 1
 
     try:
@@ -607,9 +613,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             failures += 1
             if not args.continue_on_failure:
+                print_summary()
                 return 1
 
-    print(f"Summary: {passed} passed, {skipped} skipped, {failures} failed")
+    print_summary()
     return 1 if failures else 0
 
 
