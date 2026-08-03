@@ -1,0 +1,2 @@
+-r numba.txt
+tabulate>=0.10.0
