@@ -63,6 +63,9 @@ if [[ -z "$CUDA_BENCH_WHEEL_PATH" ]]; then
 fi
 
 run_example_env() {
+    (
+    set -euo pipefail
+
     local env_name="$1"
     shift
     local group_spec="$1"
@@ -114,28 +117,43 @@ run_example_env() {
 
     python /workspace/ci/run_python_examples.py "${runner_args[@]}"
     echo "::endgroup::"
+    )
 }
 
-run_example_env \
+run_example_env_and_record_status() {
+    local env_name="$1"
+    set +e
+    run_example_env "$@"
+    local status=$?
+    set -e
+    if [[ "${status}" -ne 0 ]]; then
+        echo "Error: Python example environment '${env_name}' failed" >&2
+        overall_status=1
+    fi
+}
+
+overall_status=0
+run_example_env_and_record_status \
     core-cccl \
     pr,example-cpu,core-cccl
 
-run_example_env \
+run_example_env_and_record_status \
     numba-cupy \
     numba,cupy,cuda-compute
 
-run_example_env \
+run_example_env_and_record_status \
     autotune \
     autotune
 
 if [[ "${include_heavy_examples:-0}" == "1" ]]; then
-    run_example_env \
+    run_example_env_and_record_status \
         torch \
         torch
 
-    run_example_env \
+    run_example_env_and_record_status \
         cute \
         cute
 fi
 
 print_constraints_candidate
+exit "${overall_status}"
