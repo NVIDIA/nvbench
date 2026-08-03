@@ -302,15 +302,19 @@ def run_command(
 
 def tracked_example_scripts(repo_root: Path) -> list[Path]:
     command = ["git", "ls-files", "--", "python/examples"]
-    completed = subprocess.run(
-        command,
-        cwd=repo_root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        text=True,
-        check=False,
-    )
-    if completed.returncode == 0:
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=repo_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        completed = None
+
+    if completed is not None and completed.returncode == 0:
         paths = [
             Path(line) for line in completed.stdout.splitlines() if line.endswith(".py")
         ]
@@ -345,14 +349,17 @@ for module_name in sys.argv[1:]:
 print("\n".join(missing))
 raise SystemExit(1 if missing else 0)
 """
-    completed = subprocess.run(
-        [python, "-c", code, *modules],
-        cwd=repo_root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        text=True,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            [python, "-c", code, *modules],
+            cwd=repo_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+    except OSError as e:
+        return [f"failed to run {python}: {e}"]
     return [line for line in completed.stdout.splitlines() if line]
 
 
