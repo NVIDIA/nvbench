@@ -344,7 +344,7 @@ missing = []
 for module_name in sys.argv[1:]:
     try:
         spec = importlib.util.find_spec(module_name)
-    except (ImportError, AttributeError, ValueError):
+    except Exception:
         spec = None
     if spec is None:
         missing.append(module_name)
