@@ -14,7 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import gc
 import json
+import weakref
 from typing import Union
 
 import cuda.bench as bench
@@ -42,6 +44,17 @@ def test_api_ctor(cls):
 def test_cpu_only():
     saved_timers = []
     observed = {}
+    stream_provider_refs = {}
+    external_stream_handle = 0x1234
+
+    class ExternalStreamProvider:
+        def __init__(self, handle):
+            self.handle = handle
+            self.protocol_calls = 0
+
+        def __cuda_stream__(self):
+            self.protocol_calls += 1
+            return (0, self.handle)
 
     @bench.register()
     @bench.option.set_is_cpu_only(True)
@@ -86,17 +99,83 @@ def test_cpu_only():
 
         state.exec(lambda launch: None)
 
+    @bench.register()
+    @bench.option.set_is_cpu_only(True)
+    def external_stream_state_probe(state: bench.State):
+        stream_provider = ExternalStreamProvider(external_stream_handle)
+        stream_provider_refs["current"] = weakref.ref(stream_provider)
+        assert state.set_stream(stream_provider) is None
+        assert stream_provider.protocol_calls == 1
+
+        state.set_stream(stream_provider)
+        assert stream_provider.protocol_calls == 2
+        del stream_provider
+        gc.collect()
+        assert stream_provider_refs["current"]() is not None
+
+        same_handle_stream_provider = ExternalStreamProvider(external_stream_handle)
+        same_handle_stream_provider_ref = weakref.ref(same_handle_stream_provider)
+        state.set_stream(same_handle_stream_provider)
+        assert same_handle_stream_provider.protocol_calls == 1
+        del same_handle_stream_provider
+        gc.collect()
+        assert same_handle_stream_provider_ref() is None
+        assert stream_provider_refs["current"]() is not None
+
+        stream_provider = stream_provider_refs["current"]()
+        assert stream_provider is not None
+
+        replaced_stream_provider = ExternalStreamProvider(0x5678)
+        replaced_stream_provider_ref = weakref.ref(replaced_stream_provider)
+        state.set_stream(replaced_stream_provider)
+        state.set_stream(stream_provider)
+        del replaced_stream_provider
+        gc.collect()
+        assert replaced_stream_provider_ref() is None
+
+        class NonCallableProtocol:
+            __cuda_stream__ = 1
+
+        class BadProtocolReturn:
+            def __cuda_stream__(self):
+                return (0,)
+
+        class UnsupportedProtocolVersion:
+            def __cuda_stream__(self):
+                return (1, external_stream_handle)
+
+        with pytest.raises(TypeError, match="__cuda_stream__"):
+            state.set_stream(object())
+        with pytest.raises(TypeError, match="callable"):
+            state.set_stream(NonCallableProtocol())
+        with pytest.raises(TypeError, match="protocol_version"):
+            state.set_stream(BadProtocolReturn())
+        with pytest.raises(ValueError, match="version 0"):
+            state.set_stream(UnsupportedProtocolVersion())
+        with pytest.raises(TypeError, match="CudaStream"):
+            state.set_stream(state.get_stream())
+
+        state.exec(
+            lambda launch: observed.update(
+                {"external_stream_handle": launch.get_stream().addressof()}
+            )
+        )
+
     bench.run_all_benchmarks(["-q", "--profile"])
 
     assert saved_timers
     with pytest.raises(RuntimeError, match="Timer is no longer valid"):
         saved_timers[0].start()
 
+    gc.collect()
+    assert stream_provider_refs["current"]() is None
+
     assert observed == {
         "benchmark_runs": 13,
         "benchmark_walltime": 0.5,
         "state_runs": 3,
         "state_walltime": 0.125,
+        "external_stream_handle": external_stream_handle,
     }
 
 
@@ -307,6 +386,7 @@ def test_State_doc():
     cl = bench.State
     obj_has_docstring_check(cl)
     obj_has_docstring_check(cl.exec)
+    obj_has_docstring_check(cl.set_stream)
     obj_has_docstring_check(cl.get_int64)
     obj_has_docstring_check(cl.get_float64)
     obj_has_docstring_check(cl.get_string)
