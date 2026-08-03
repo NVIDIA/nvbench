@@ -100,6 +100,9 @@ jobs:
             -py-version ${{ matrix.python }} \
             -cuda-version ${{ matrix.cuda }}
 
+  # Exercise committed examples against the built wheel. PR runs use constrained
+  # dependencies for stability; scheduled/manual floating runs catch upstream
+  # dependency drift.
   test-python-examples:
     name: Test Python examples (standard, CUDA 13, Python 3.13)
     needs: build-wheels
