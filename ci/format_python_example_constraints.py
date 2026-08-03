@@ -23,24 +23,29 @@ def parse_requirement_include(stripped_line: str) -> str | None:
     return None
 
 
-def parse_constraint_names(path: Path, seen: set[Path] | None = None) -> dict[str, str]:
+def iter_requirement_lines(path: Path, seen: set[Path] | None = None):
     if seen is None:
         seen = set()
     path = path.resolve()
     if path in seen:
-        return {}
+        return
     seen.add(path)
 
-    names: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.split("#", 1)[0].strip()
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        stripped = raw_line.split("#", 1)[0].strip()
         if not stripped:
             continue
         if include_path := parse_requirement_include(stripped):
-            names.update(parse_constraint_names(path.parent / include_path, seen))
+            yield from iter_requirement_lines(path.parent / include_path, seen)
             continue
         if stripped.startswith("-"):
             continue
+        yield stripped
+
+
+def parse_constraint_names(path: Path) -> dict[str, str]:
+    names: dict[str, str] = {}
+    for stripped in iter_requirement_lines(path):
         match = REQ_NAME_RE.match(stripped)
         if match:
             original_name = match.group(1)
@@ -57,25 +62,9 @@ def parse_freeze_file(path: Path) -> dict[str, str]:
     return pins
 
 
-def parse_requirement_names(path: Path, seen: set[Path] | None = None) -> set[str]:
-    if seen is None:
-        seen = set()
-    path = path.resolve()
-    if path in seen:
-        return set()
-    seen.add(path)
-
+def parse_requirement_names(path: Path) -> set[str]:
     names: set[str] = set()
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        stripped = raw_line.split("#", 1)[0].strip()
-        if not stripped:
-            continue
-        if include_path := parse_requirement_include(stripped):
-            names.update(parse_requirement_names(path.parent / include_path, seen))
-            continue
-        if stripped.startswith("-"):
-            continue
-
+    for stripped in iter_requirement_lines(path):
         req = stripped.split(";", 1)[0].strip()
         req = req.split("[", 1)[0].strip()
         match = REQ_NAME_RE.match(req)
