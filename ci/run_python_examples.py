@@ -423,6 +423,28 @@ def build_run_command(
     return command
 
 
+def execute_and_report(
+    name: str,
+    command: list[str],
+    *,
+    cwd: Path,
+    timeout_seconds: int,
+    verbose: bool,
+) -> bool:
+    print(f"RUN {name}: {shell_join(command)}", flush=True)
+    passed, output, elapsed = run_command(
+        command,
+        cwd=cwd,
+        timeout_seconds=timeout_seconds,
+        verbose=verbose,
+    )
+    status = "PASS" if passed else "FAIL"
+    print(f"{status} {name} ({elapsed:.2f}s)")
+    if output:
+        print(output, end="" if output.endswith("\n") else "\n")
+    return passed
+
+
 def run_syntax_check(args: argparse.Namespace, repo_root: Path) -> bool:
     example_paths = tracked_example_scripts(repo_root)
     command = [
@@ -431,18 +453,13 @@ def run_syntax_check(args: argparse.Namespace, repo_root: Path) -> bool:
         "py_compile",
         *(str(path) for path in example_paths),
     ]
-    print(f"RUN syntax: {shell_join(command)}", flush=True)
-    passed, output, elapsed = run_command(
+    return execute_and_report(
+        "syntax",
         command,
         cwd=repo_root,
         timeout_seconds=args.timeout,
         verbose=args.verbose,
     )
-    status = "PASS" if passed else "FAIL"
-    print(f"{status} syntax ({elapsed:.2f}s)")
-    if output:
-        print(output, end="" if output.endswith("\n") else "\n")
-    return passed
 
 
 def run_example_case(args: argparse.Namespace, repo_root: Path, run: ExampleRun) -> str:
@@ -461,17 +478,13 @@ def run_example_case(args: argparse.Namespace, repo_root: Path, run: ExampleRun)
         return "failed"
 
     command = build_run_command(run, python=args.python, device=args.device)
-    print(f"RUN {run.name}: {shell_join(command)}", flush=True)
-    passed, output, elapsed = run_command(
+    passed = execute_and_report(
+        run.name,
         command,
         cwd=repo_root,
         timeout_seconds=run.timeout_seconds,
         verbose=args.verbose,
     )
-    status = "PASS" if passed else "FAIL"
-    print(f"{status} {run.name} ({elapsed:.2f}s)")
-    if output:
-        print(output, end="" if output.endswith("\n") else "\n")
     return "passed" if passed else "failed"
 
 
