@@ -123,7 +123,7 @@ jobs:
 
       - name: Test Python examples
         env:
-          INCLUDE_HEAVY_PYTHON_EXAMPLES: ${{ inputs.include_heavy_python_examples }}
+          INCLUDE_HEAVY_PYTHON_EXAMPLES: ${{ github.event_name == 'schedule' || inputs.include_heavy_python_examples }}
           FLOATING_PYTHON_EXAMPLE_DEPENDENCIES: ${{ github.event_name == 'schedule' || inputs.floating_python_example_dependencies }}
         run: |
           args=()
