@@ -48,6 +48,12 @@ readonly cuda_image=rapidsai/devcontainers:${devcontainer_version}-cpp-${host_ta
 echo "::group::Testing Python examples on ${cuda_image}"
 (
   set -x
+  # Prevent GHA runners from exhausting available storage with leftover images,
+  # even when the containerized example tests fail.
+  if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    trap 'docker rmi -f "${cuda_image}" || true' EXIT
+  fi
+
   docker pull "${cuda_image}"
   docker run --rm -i \
       --workdir /workspace \
@@ -59,8 +65,5 @@ echo "::group::Testing Python examples on ${cuda_image}"
       --env "floating_deps=${floating_deps}" \
       "${cuda_image}" \
       /workspace/ci/test_python_examples_inner.sh
-  if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-    docker rmi -f "${cuda_image}" || true
-  fi
 )
 echo "::endgroup::"

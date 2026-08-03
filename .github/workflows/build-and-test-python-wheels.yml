@@ -105,7 +105,6 @@ jobs:
     needs: build-wheels
     runs-on: linux-amd64-gpu-l4-latest-1
     permissions:
-      id-token: write
       contents: read
 
     steps:

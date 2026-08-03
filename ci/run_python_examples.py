@@ -319,7 +319,7 @@ def tracked_example_scripts(repo_root: Path) -> list[Path]:
 
     return sorted(
         path.relative_to(repo_root)
-        for path in (repo_root / "python" / "examples").glob("*.py")
+        for path in (repo_root / "python" / "examples").rglob("*.py")
     )
 
 

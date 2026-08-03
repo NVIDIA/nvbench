@@ -16,11 +16,30 @@ def normalize_name(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def parse_constraint_names(path: Path) -> dict[str, str]:
+def parse_requirement_include(stripped_line: str) -> str | None:
+    if stripped_line.startswith(("-r ", "--requirement ")):
+        _, include_path = stripped_line.split(maxsplit=1)
+        return include_path
+    return None
+
+
+def parse_constraint_names(path: Path, seen: set[Path] | None = None) -> dict[str, str]:
+    if seen is None:
+        seen = set()
+    path = path.resolve()
+    if path in seen:
+        return {}
+    seen.add(path)
+
     names: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.split("#", 1)[0].strip()
-        if not stripped or stripped.startswith("-"):
+        if not stripped:
+            continue
+        if include_path := parse_requirement_include(stripped):
+            names.update(parse_constraint_names(path.parent / include_path, seen))
+            continue
+        if stripped.startswith("-"):
             continue
         match = REQ_NAME_RE.match(stripped)
         if match:
@@ -51,8 +70,7 @@ def parse_requirement_names(path: Path, seen: set[Path] | None = None) -> set[st
         stripped = raw_line.split("#", 1)[0].strip()
         if not stripped:
             continue
-        if stripped.startswith(("-r ", "--requirement ")):
-            _, include_path = stripped.split(maxsplit=1)
+        if include_path := parse_requirement_include(stripped):
             names.update(parse_requirement_names(path.parent / include_path, seen))
             continue
         if stripped.startswith("-"):
