@@ -292,6 +292,9 @@ def run_command(
         if isinstance(output, bytes):
             output = output.decode(errors="replace")
         return False, f"Timed out after {timeout_seconds}s.\n{output}", elapsed
+    except OSError as e:
+        elapsed = time.perf_counter() - start
+        return False, f"Failed to run {shell_join(command)}: {e}", elapsed
 
     elapsed = time.perf_counter() - start
     output = completed.stdout or ""
