@@ -36,6 +36,9 @@ def elementwise_square(state: bench.State):
     state.add_global_memory_writes(y.nbytes)
 
     def launcher(launch: bench.Launch):
+        # This intentionally relies on CuPy's current stream: state.set_stream()
+        # told NVBench to time/synchronize that stream, and this example does not
+        # change it.
         cupy.square(x, out=y)
 
     state.exec(launcher, batched=False)

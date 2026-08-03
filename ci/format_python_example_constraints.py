@@ -101,7 +101,7 @@ def print_constraints_candidate(
     freeze_dir: Path,
     python_version: str,
     cuda_extra: str,
-) -> None:
+) -> bool:
     tracked_names = parse_constraint_names(constraints_file)
     package_to_envs = collect_freeze_pins(freeze_dir)
 
@@ -132,6 +132,7 @@ def print_constraints_candidate(
     for package_name in missing:
         print(f"# MISSING {package_name}")
     print("::endgroup::")
+    return not conflicts and not missing
 
 
 def print_untracked_direct_requirements(
@@ -166,7 +167,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    print_constraints_candidate(
+    constraints_ok = print_constraints_candidate(
         constraints_file=args.constraints_file,
         freeze_dir=args.freeze_dir,
         python_version=args.python_version,
@@ -176,7 +177,7 @@ def main() -> int:
         requirements_file=args.requirements_file,
         constraints_file=args.constraints_file,
     )
-    return 0
+    return 0 if constraints_ok else 1
 
 
 if __name__ == "__main__":
