@@ -3917,7 +3917,7 @@ def test_save_or_show_plot_creates_parent_directories(tmp_path, nvbench_compare)
     assert output.parent.is_dir()
 
 
-def test_resolve_plot_output_path_disambiguates_existing_files(
+def test_resolve_plot_output_path_allows_existing_files(
     tmp_path, capsys, nvbench_compare
 ):
     output = tmp_path / "compare.png"
@@ -3928,11 +3928,8 @@ def test_resolve_plot_output_path_disambiguates_existing_files(
         str(output), set(), description="comparison plot"
     )
 
-    assert resolved == str(tmp_path / "compare-copy-2.png")
-    warning = capsys.readouterr().err
-    assert "Warning: comparison plot output" in warning
-    assert str(output) in warning
-    assert str(tmp_path / "compare-copy-2.png") in warning
+    assert resolved == str(output)
+    assert capsys.readouterr().err == ""
 
 
 def test_save_or_show_plot_reports_parent_directory_errors(tmp_path, nvbench_compare):

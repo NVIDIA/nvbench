@@ -105,7 +105,7 @@ def resolve_plot_output_path(
         return None
 
     normalized_output_path = os.path.abspath(output)
-    if normalized_output_path not in output_paths and not os.path.exists(output):
+    if normalized_output_path not in output_paths:
         output_paths.add(normalized_output_path)
         return output
 
