@@ -1,0 +1,12 @@
+# Known-good Python example dependency constraints for required PR CI.
+# Floating scheduled/manual runs print an updated candidate for these packages.
+cuda-bindings==13.3.1
+cuda-cccl==1.1.1
+cuda-core==1.1.1
+cupy-cuda13x==14.1.1
+numba==0.66.0
+numba-cuda==0.30.4
+numpy==2.4.6
+nvidia-cutlass-dsl==4.6.1
+tabulate==0.10.0
+torch==2.11.0

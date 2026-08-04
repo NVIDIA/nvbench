@@ -2,7 +2,31 @@ name: Build and Test Python Wheels
 
 on:
   workflow_call:
+    inputs:
+      include_heavy_python_examples:
+        description: "Also test heavyweight Python examples such as Torch and CuTe."
+        required: false
+        type: boolean
+        default: false
+      floating_python_example_dependencies:
+        description: "Test Python examples with unconstrained floating dependencies and print constraints candidates."
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
+    inputs:
+      include_heavy_python_examples:
+        description: "Also test heavyweight Python examples such as Torch and CuTe."
+        required: false
+        type: boolean
+        default: false
+      floating_python_example_dependencies:
+        description: "Test Python examples with unconstrained floating dependencies and print constraints candidates."
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: '0 10 * * 1'
 
 defaults:
   run:
@@ -76,12 +100,65 @@ jobs:
             -py-version ${{ matrix.python }} \
             -cuda-version ${{ matrix.cuda }}
 
+  # Exercise committed examples against the built wheel. PR runs use constrained
+  # dependencies for stability; scheduled/manual floating runs catch upstream
+  # dependency drift.
+  test-python-examples:
+    name: Test Python examples (standard, CUDA 13, Python 3.13)
+    needs: build-wheels
+    runs-on: linux-amd64-gpu-l4-latest-1
+    # Sized for the bounded per-case timeouts in ci/run_python_examples.py.
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-cuda_bench-py3.13
+          path: wheelhouse
+
+      - name: Test Python examples
+        env:
+          INCLUDE_HEAVY_PYTHON_EXAMPLES: ${{ github.event_name == 'schedule' || inputs.include_heavy_python_examples }}
+          FLOATING_PYTHON_EXAMPLE_DEPENDENCIES: ${{ github.event_name == 'schedule' || inputs.floating_python_example_dependencies }}
+        run: |
+          set -o pipefail
+          args=()
+          if [[ "${INCLUDE_HEAVY_PYTHON_EXAMPLES}" == "true" ]]; then
+            args+=("-include-heavy-examples")
+          fi
+          if [[ "${FLOATING_PYTHON_EXAMPLE_DEPENDENCIES}" == "true" ]]; then
+            args+=("-floating-deps")
+          fi
+
+          mkdir -p python-example-results
+          bash ci/test_python_examples.sh \
+            -py-version 3.13 \
+            "${args[@]}" | tee python-example-results/output.log
+
+      - name: Upload Python example results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-example-results
+          path: python-example-results/
+          if-no-files-found: ignore
+
   verify-workflow:
     name: Verify all builds and tests succeeded
     if: ${{ always() }}
     needs:
       - build-wheels
       - test-wheels
+      - test-python-examples
     runs-on: ubuntu-latest
     steps:
       - name: Check build results
@@ -92,6 +169,10 @@ jobs:
           fi
           if [[ "${{ needs.test-wheels.result }}" != "success" ]]; then
             echo "Wheel tests failed!"
+            exit 1
+          fi
+          if [[ "${{ needs.test-python-examples.result }}" != "success" ]]; then
+            echo "Python example tests failed!"
             exit 1
           fi
           echo "All wheels built and tested successfully!"
