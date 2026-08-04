@@ -98,12 +98,13 @@ run_example_env() {
     trap 'echo "::endgroup::"' EXIT
     setup_python_env "${py_version}"
 
-    python --version
-    nvcc --version
-    CXX="$(which g++)" || { echo "Error: g++ not found in PATH" >&2; exit 1; }
-    CUDACXX="$(which nvcc)" || { echo "Error: nvcc not found in PATH" >&2; exit 1; }
+    CXX="$(command -v g++)" || { echo "Error: g++ not found in PATH" >&2; exit 1; }
+    CUDACXX="$(command -v nvcc)" || { echo "Error: nvcc not found in PATH" >&2; exit 1; }
     CUDAHOSTCXX="$CXX"
     export CXX CUDACXX CUDAHOSTCXX
+
+    python --version
+    "${CUDACXX}" --version
     python -m pip install --upgrade pip
 
     echo "Installing wheel: ${CUDA_BENCH_WHEEL_PATH} with extra: ${cuda_extra}"
