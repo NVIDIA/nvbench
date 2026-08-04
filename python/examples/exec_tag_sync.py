@@ -63,7 +63,9 @@ def synchronizing_bench(state: bench.State):
     n_bytes = n_values * ctypes.sizeof(ctypes.c_int32(0))
 
     alloc_s = as_core_Stream(state.get_stream())
-    buffer = core.DeviceMemoryResource(state.get_device()).allocate(n_bytes, alloc_s)
+    buffer = core.DeviceMemoryResource(state.get_device()).allocate(
+        n_bytes, stream=alloc_s
+    )
 
     state.add_element_count(n_values, "Items")
     state.add_global_memory_writes(n_bytes, "Size")

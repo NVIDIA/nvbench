@@ -141,8 +141,8 @@ def copy_sweep_grid_shape(state: bench.State):
 
     dev_id = state.get_device()
     alloc_s = as_core_Stream(state.get_stream())
-    input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
-    output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
+    input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, stream=alloc_s)
+    output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, stream=alloc_s)
 
     krn = make_copy_kernel()
     launch_config = core.LaunchConfig(grid=num_blocks, block=block_size, shmem_size=0)
@@ -181,8 +181,8 @@ def copy_type_sweep(state: bench.State):
 
     dev_id = state.get_device()
     alloc_s = as_core_Stream(state.get_stream())
-    input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
-    output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, alloc_s)
+    input_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, stream=alloc_s)
+    output_buf = core.DeviceMemoryResource(dev_id).allocate(nbytes, stream=alloc_s)
 
     krn = make_copy_kernel(value_cuda_t, value_cuda_t)
     launch_config = core.LaunchConfig(grid=256, block=256, shmem_size=0)

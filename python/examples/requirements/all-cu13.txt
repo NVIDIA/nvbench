@@ -1,0 +1,5 @@
+-r core-cccl.txt
+-r numba-cupy.txt
+-r autotune.txt
+-r torch.txt
+-r cute.txt

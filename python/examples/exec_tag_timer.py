@@ -107,8 +107,8 @@ def mod2_inplace(state: bench.State) -> None:
 
     alloc_stream = as_core_Stream(state.get_stream())
     mem = core.DeviceMemoryResource(state.get_device())
-    input_buf = mem.allocate(nbytes, alloc_stream)
-    data_buf = mem.allocate(nbytes, alloc_stream)
+    input_buf = mem.allocate(nbytes, stream=alloc_stream)
+    data_buf = mem.allocate(nbytes, stream=alloc_stream)
 
     state.add_element_count(num_values)
     state.add_global_memory_reads(nbytes)

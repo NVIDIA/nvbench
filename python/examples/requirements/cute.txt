@@ -1,0 +1,4 @@
+-r core-cccl.txt
+cupy-cuda13x>=14.0.0
+nvidia-cutlass-dsl[cu13]>=4.6.1
+numpy>=2.0
