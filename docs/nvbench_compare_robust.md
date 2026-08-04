@@ -696,9 +696,10 @@ plots or omit output paths for both plots.
 Directory comparisons can generate one summary plot per matched JSON file pair.
 When multiple summary plots resolve to the same output path, later plots are
 written to the first available sibling path using `-copy-N` before the file
-extension, such as `compare-copy-1.png`. The same disambiguation is used if the
-requested file already exists. The actual saved path and any disambiguation
-warning are written to stderr.
+extension, such as `compare-copy-1.png`. Pre-existing files are overwritten;
+the `-copy-N` fallback is used only to avoid duplicate output paths generated
+within the same command invocation. The actual saved path and any
+disambiguation warning are written to stderr.
 
 ### `--plot-along-output PATH_OR_TEMPLATE`
 
@@ -727,8 +728,9 @@ nvbench-compare-robust \
 A plain path without template fields is valid. If multiple plot-along figures
 resolve to the same path, later plots are written to the first available sibling
 path using `-copy-N` before the file extension, such as
-`plot-along-copy-1.png`. The same disambiguation is used if the requested file
-already exists. The actual saved path and any disambiguation warning are
+`plot-along-copy-1.png`. Pre-existing files are overwritten; the `-copy-N`
+fallback is used only to avoid duplicate output paths generated within the same
+command invocation. The actual saved path and any disambiguation warning are
 written to stderr.
 
 To avoid copy-suffixed filenames, narrow the comparison with `--benchmark`,
