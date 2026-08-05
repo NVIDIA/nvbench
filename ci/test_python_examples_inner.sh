@@ -167,5 +167,5 @@ if [[ "${include_heavy_examples:-0}" == "1" ]]; then
         cute
 fi
 
-print_constraints_candidate
+print_constraints_candidate || true
 exit "${overall_status}"
