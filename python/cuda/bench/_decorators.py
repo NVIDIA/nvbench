@@ -240,6 +240,16 @@ class _OptionDecorators:
             lambda benchmark: benchmark.set_timeout(duration_seconds)
         )
 
+    def batch_target_time(self, duration_seconds: float) -> Callable[[_F], _F]:
+        """Set the target accumulated GPU time for batched measurements."""
+        return self.set_batch_target_time(duration_seconds)
+
+    def set_batch_target_time(self, duration_seconds: float) -> Callable[[_F], _F]:
+        """Set the target accumulated GPU time for batched measurements."""
+        return _append_benchmark_action(
+            lambda benchmark: benchmark.set_batch_target_time(duration_seconds)
+        )
+
     def stopping_criterion(self, criterion: str) -> Callable[[_F], _F]:
         """Set the benchmark stopping criterion."""
         return self.set_stopping_criterion(criterion)

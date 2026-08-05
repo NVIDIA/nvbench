@@ -1,29 +1,42 @@
 ################################################################################
 # fmtlib/fmt
+set(fmt_export_set)
 set(export_set_details)
 set(install_fmt OFF)
 if(NOT BUILD_SHARED_LIBS AND NVBench_ENABLE_INSTALL_RULES)
-  set(export_set_details BUILD_EXPORT_SET nvbench-targets
-                         INSTALL_EXPORT_SET nvbench-targets)
+  set(fmt_export_set nvbench-targets)
+  set(export_set_details BUILD_EXPORT_SET ${fmt_export_set}
+                         INSTALL_EXPORT_SET ${fmt_export_set})
   set(install_fmt ON)
 endif()
 
-rapids_cpm_find(fmt 12.2.0 ${export_set_details}
-  CPM_ARGS
-    GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
-    GIT_TAG "12.2.0"
-    OPTIONS
-      # Force static to keep fmt internal.
-      "BUILD_SHARED_LIBS OFF"
-      # Suppress warnings from fmt headers by marking them as system.
-      "FMT_SYSTEM_HEADERS ON"
-      # Disable install rules since we're linking statically.
-      "FMT_INSTALL ${install_fmt}"
-      "CMAKE_POSITION_INDEPENDENT_CODE ON"
-)
-
-if(NOT fmt_ADDED)
+# fmt may already be provided by the enclosing project
+if(TARGET fmt::fmt)
+  message(STATUS "NVBench: using externally provided fmt ${fmt_VERSION}")
   set(fmt_is_external TRUE)
+  if(fmt_export_set)
+    include("${rapids-cmake-dir}/export/package.cmake")
+    rapids_export_package(BUILD fmt ${fmt_export_set})
+    rapids_export_package(INSTALL fmt ${fmt_export_set})
+  endif()
+else()
+  rapids_cpm_find(fmt 12.2.0 ${export_set_details}
+    CPM_ARGS
+      GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
+      GIT_TAG "12.2.0"
+      OPTIONS
+        # Force static to keep fmt internal.
+        "BUILD_SHARED_LIBS OFF"
+        # Suppress warnings from fmt headers by marking them as system.
+        "FMT_SYSTEM_HEADERS ON"
+        # Disable install rules since we're linking statically.
+        "FMT_INSTALL ${install_fmt}"
+        "CMAKE_POSITION_INDEPENDENT_CODE ON"
+  )
+
+  if(NOT fmt_ADDED)
+    set(fmt_is_external TRUE)
+  endif()
 endif()
 
 ################################################################################
