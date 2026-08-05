@@ -9,4 +9,4 @@ numba-cuda==0.30.4
 numpy==2.4.6
 nvidia-cutlass-dsl==4.6.1
 tabulate==0.10.0
-torch==2.11.0
+torch==2.13.0
