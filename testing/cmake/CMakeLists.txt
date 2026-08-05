@@ -62,6 +62,23 @@ function(nvbench_add_compile_test full_test_name_var subdir test_id)
   set(${full_test_name_var} ${test_name} PARENT_SCOPE)
 endfunction()
 
+# Add a configure-only CTest.
+# This catches configure-time regressions without compiling the nested project.
+function(nvbench_add_configure_test full_test_name_var subdir test_id)
+  set(test_name nvbench.test.cmake.${subdir}.${test_id})
+  set(src_dir "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}")
+  set(build_dir "${CMAKE_CURRENT_BINARY_DIR}/${subdir}/${test_id}")
+  add_test(NAME ${test_name}
+    COMMAND "${CMAKE_COMMAND}"
+      -S "${src_dir}"
+      -B "${build_dir}"
+      -G "${CMAKE_GENERATOR}"
+      ${cmake_opts}
+      ${ARGN}
+  )
+  set(${full_test_name_var} ${test_name} PARENT_SCOPE)
+endfunction()
+
 ################################################################################
 # Test against build tree export
 
@@ -85,7 +102,7 @@ nvbench_add_compile_test(test_name
 set_tests_properties(${test_name} PROPERTIES FIXTURES_REQUIRED install_tree)
 
 ################################################################################
-# Test configuring NVBench when fmt is provided by an enclosing project
+# Test consuming NVBench when fmt is provided by an enclosing project
 
 if(fmt_SOURCE_DIR AND EXISTS "${fmt_SOURCE_DIR}/CMakeLists.txt")
   set(external_fmt_cmake_opts)
@@ -113,23 +130,21 @@ if(fmt_SOURCE_DIR AND EXISTS "${fmt_SOURCE_DIR}/CMakeLists.txt")
     )
   endif()
 
-  nvbench_add_compile_test(test_name
-    external_fmt
-    find_package
-    ${external_fmt_cmake_opts}
-    -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
-    -D "FMT_SOURCE_DIR=${fmt_SOURCE_DIR}"
-    -D EXTERNAL_FMT_MODE=find_package
+  set(external_fmt_source_tree_cmake_opts ${external_fmt_cmake_opts})
+  list(APPEND external_fmt_source_tree_cmake_opts
+    -D "FETCHCONTENT_SOURCE_DIR_FMT=${fmt_SOURCE_DIR}"
   )
 
-  nvbench_add_compile_test(test_name
-    external_fmt
-    add_subdirectory
-    ${external_fmt_cmake_opts}
-    -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
-    -D "FMT_SOURCE_DIR=${fmt_SOURCE_DIR}"
-    -D EXTERNAL_FMT_MODE=add_subdirectory
-  )
+  foreach(external_fmt_mode find_package add_subdirectory)
+    nvbench_add_configure_test(test_name
+      external_fmt
+      source_tree_${external_fmt_mode}
+      ${external_fmt_source_tree_cmake_opts}
+      -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+      -D "FMT_SOURCE_DIR=${fmt_SOURCE_DIR}"
+      -D "EXTERNAL_FMT_MODE=${external_fmt_mode}"
+    )
+  endforeach()
 else()
   message(STATUS "Skipping external fmt CMake tests: fmt_SOURCE_DIR is unavailable.")
 endif()
