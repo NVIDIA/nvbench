@@ -101,10 +101,12 @@ nvbench_add_compile_test(test_name
 )
 set_tests_properties(${test_name} PROPERTIES FIXTURES_REQUIRED install_tree)
 
-################################################################################
-# Test consuming NVBench when fmt is provided by an enclosing project
+function(nvbench_add_external_fmt_tests)
+  if(NOT (fmt_SOURCE_DIR AND EXISTS "${fmt_SOURCE_DIR}/CMakeLists.txt"))
+    message(STATUS "Skipping external fmt CMake tests: fmt_SOURCE_DIR is unavailable.")
+    return()
+  endif()
 
-if(fmt_SOURCE_DIR AND EXISTS "${fmt_SOURCE_DIR}/CMakeLists.txt")
   set(external_fmt_cmake_opts)
 
   set(cpm_download_location "${CMAKE_BINARY_DIR}/cmake/CPM_0.42.0.cmake")
@@ -115,7 +117,8 @@ if(fmt_SOURCE_DIR AND EXISTS "${fmt_SOURCE_DIR}/CMakeLists.txt")
   endif()
 
   if(DEFINED rapids-cmake-dir)
-    get_filename_component(rapids_cmake_source_dir "${rapids-cmake-dir}" DIRECTORY)
+    set(rapids_cmake_dir "${rapids-cmake-dir}")
+    cmake_path(GET rapids_cmake_dir PARENT_PATH rapids_cmake_source_dir)
     if(EXISTS "${rapids_cmake_source_dir}/CMakeLists.txt")
       list(APPEND external_fmt_cmake_opts
         -D "FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE=${rapids_cmake_source_dir}"
@@ -145,9 +148,12 @@ if(fmt_SOURCE_DIR AND EXISTS "${fmt_SOURCE_DIR}/CMakeLists.txt")
       -D "EXTERNAL_FMT_MODE=${external_fmt_mode}"
     )
   endforeach()
-else()
-  message(STATUS "Skipping external fmt CMake tests: fmt_SOURCE_DIR is unavailable.")
-endif()
+endfunction()
+
+################################################################################
+# Test consuming NVBench when fmt is provided by an enclosing project
+
+nvbench_add_external_fmt_tests()
 
 ################################################################################
 # Install tree fixtures
