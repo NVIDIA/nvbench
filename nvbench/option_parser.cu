@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
@@ -109,6 +110,60 @@ std::string_view submatch_to_sv(const sv_submatch &in)
   return {&*in.first, static_cast<std::size_t>(in.length())};
 }
 //==============================================================================
+
+std::string format_criterion_param_options(const nvbench::criterion_params &params)
+{
+  auto names = params.get_names();
+  if (names.empty())
+  {
+    return "<none>";
+  }
+
+  fmt::memory_buffer buffer;
+  bool first = true;
+  for (const auto &name : names)
+  {
+    if (!first)
+    {
+      fmt::format_to(fmt::appender(buffer), ", ");
+    }
+    fmt::format_to(fmt::appender(buffer), "--{}", name);
+    first = false;
+  }
+  return fmt::to_string(buffer);
+}
+
+[[noreturn]] void
+throw_unrecognized_criterion_param(const std::string &prop_arg,
+                                   const std::string &criterion_name,
+                                   const nvbench::criterion_params &criterion_params)
+{
+  NVBENCH_THROW(std::runtime_error,
+                "{} is not valid for the active stopping criterion '{}'.\n"
+                "  Current criterion '{}' accepts: {}.",
+                prop_arg,
+                criterion_name,
+                criterion_name,
+                format_criterion_param_options(criterion_params));
+}
+
+std::string current_global_stopping_criterion(const std::vector<std::string> &global_args)
+{
+  std::string criterion_name = nvbench::detail::default_stopping_criterion();
+  for (auto arg_it = global_args.cbegin(); arg_it != global_args.cend(); ++arg_it)
+  {
+    if (*arg_it == "--stopping-criterion")
+    {
+      const auto value_it = std::next(arg_it);
+      if (value_it != global_args.cend())
+      {
+        criterion_name = *value_it;
+        arg_it         = value_it;
+      }
+    }
+  }
+  return criterion_name;
+}
 
 // These numeric overloads /could/ be written in a single function using
 // std::from_chars, but charconv is a mess on GCC. Even GCC 10 only partially
@@ -578,7 +633,8 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       first += 2;
     }
     else if (arg == "--skip-time" || arg == "--timeout" || arg == "--cold-max-warmup-walltime" ||
-             arg == "--throttle-threshold" || arg == "--throttle-recovery-delay")
+             arg == "--batch-target-time" || arg == "--throttle-threshold" ||
+             arg == "--throttle-recovery-delay")
     {
       check_params(1);
       this->update_float64_prop(first[0], first[1]);
@@ -1072,20 +1128,11 @@ try
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
-    // Any global params must either belong to the default criterion or follow a
-    // `--stopping-criterion` arg:
-    nvbench::criterion_params params =
-      criterion_manager::get()
-        .get_criterion(nvbench::detail::default_stopping_criterion())
-        .get_params();
-    if (!params.has_value(name) &&
-        std::find(m_global_benchmark_args.cbegin(),
-                  m_global_benchmark_args.cend(),
-                  "--stopping-criterion") == m_global_benchmark_args.cend())
+    const auto criterion_name = current_global_stopping_criterion(m_global_benchmark_args);
+    const auto params         = criterion_manager::get().get_criterion(criterion_name).get_params();
+    if (!params.has_value(name))
     {
-      NVBENCH_THROW(std::runtime_error,
-                    "Unrecognized stopping criterion parameter: `{}` for default criterion.",
-                    name);
+      throw_unrecognized_criterion_param(prop_arg, criterion_name, params);
     }
 
     m_global_benchmark_args.push_back(prop_arg);
@@ -1097,10 +1144,9 @@ try
 
   if (!bench.has_criterion_param(name))
   {
-    NVBENCH_THROW(std::runtime_error,
-                  "Unrecognized stopping criterion parameter: `{}` for `{}`.",
-                  name,
-                  bench.get_stopping_criterion());
+    throw_unrecognized_criterion_param(prop_arg,
+                                       bench.get_stopping_criterion(),
+                                       bench.get_criterion_params());
   }
 
   if (type == nvbench::named_values::type::float64)
@@ -1164,6 +1210,10 @@ try
   else if (prop_arg == "--cold-max-warmup-walltime")
   {
     bench.set_cold_max_warmup_walltime(value);
+  }
+  else if (prop_arg == "--batch-target-time")
+  {
+    bench.set_batch_target_time(value);
   }
   else if (prop_arg == "--throttle-threshold")
   {

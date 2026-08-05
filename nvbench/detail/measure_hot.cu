@@ -27,7 +27,9 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <variant>
@@ -35,22 +37,54 @@
 namespace nvbench::detail
 {
 
+namespace
+{
+
+nvbench::int64_t predict_batch_size(nvbench::float64_t target_duration,
+                                    nvbench::float64_t duration_per_launch,
+                                    nvbench::int64_t minimum_size,
+                                    nvbench::int64_t fallback_size_on_invalid_prediction)
+{
+  const auto clamped_min_size = std::max(minimum_size, nvbench::int64_t{1});
+  const auto clamped_fallback = std::max(fallback_size_on_invalid_prediction, nvbench::int64_t{1});
+  if (!std::isfinite(target_duration) || target_duration <= nvbench::float64_t{0} ||
+      !std::isfinite(duration_per_launch) || duration_per_launch <= nvbench::float64_t{0})
+  {
+    return clamped_fallback;
+  }
+
+  const auto predicted_launches = target_duration / duration_per_launch;
+  if (!std::isfinite(predicted_launches) ||
+      predicted_launches >=
+        static_cast<nvbench::float64_t>(std::numeric_limits<nvbench::int64_t>::max()))
+  {
+    return clamped_fallback;
+  }
+
+  if (predicted_launches <= static_cast<nvbench::float64_t>(clamped_min_size))
+  {
+    return clamped_min_size;
+  }
+
+  return static_cast<nvbench::int64_t>(predicted_launches);
+}
+
+} // namespace
+
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
     , m_min_samples{exec_state.get_min_samples()}
-    , m_min_time{exec_state.get_criterion_params().has_value("min-time")
-                   ? exec_state.get_criterion_params().get_float64("min-time")
-                   : 0.5}
+    , m_batch_target_time{exec_state.get_batch_target_time()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
 {
-  // Since cold measures converge to a stable result, increase the min_samples
-  // to match the cold result if available.
   try
   {
     nvbench::int64_t cold_samples = m_state.get_summary("nv/cold/sample_size").get_int64("value");
-    m_min_samples                 = std::max(m_min_samples, cold_samples);
+    // Since cold measures converge to a stable result, increase the min_samples
+    // to match the cold result if available.
+    m_min_samples = std::max(m_min_samples, cold_samples);
 
     // If the cold measurement ran successfully, disable skip_time. It'd just
     // be annoying to skip now.
@@ -59,13 +93,53 @@ measure_hot_base::measure_hot_base(state &exec_state)
   catch (...)
   {
     // If the above threw an exception, we don't have a cold measurement to use.
-    // Estimate a target_time between m_min_time and m_timeout.
-    // Use the average of the min_time and timeout, but don't go over 5x
-    // min_time in case timeout is huge.
-    // We could expose a `target_time` property on benchmark_base/state if
-    // needed.
-    m_min_time = std::min((m_min_time + m_timeout) / 2., m_min_time * 5);
   }
+}
+
+// CUDA-time predictions choose how many launches are needed to reach the
+// accumulated GPU-time target. Valid small predictions are raised to the
+// supplied minimum; invalid or overflowing predictions fall back to the
+// caller-provided conservative batch size, usually m_min_samples.
+nvbench::int64_t
+measure_hot_base::predict_cuda_batch_size(nvbench::float64_t target_time,
+                                          nvbench::float64_t time_estimate,
+                                          nvbench::int64_t minimum_batch_size,
+                                          nvbench::int64_t fallback_on_invalid_prediction)
+{
+  return predict_batch_size(target_time,
+                            time_estimate,
+                            minimum_batch_size,
+                            fallback_on_invalid_prediction);
+}
+
+// Timeout predictions are caps on the CUDA-time batch estimate. They only
+// shrink the CUDA estimate when the wall-time model produces a meaningful
+// finite cap; exhausted budgets return one launch, while non-finite or
+// overflowing predictions return the CUDA estimate.
+nvbench::int64_t measure_hot_base::predict_timeout_batch_cap(nvbench::float64_t target_time,
+                                                             nvbench::float64_t time_estimate,
+                                                             nvbench::int64_t cuda_batch_size)
+{
+  if (target_time <= nvbench::float64_t{0})
+  {
+    return nvbench::int64_t{1};
+  }
+
+  return predict_batch_size(target_time, time_estimate, nvbench::int64_t{1}, cuda_batch_size);
+}
+
+nvbench::int64_t measure_hot_base::grow_batch_size(nvbench::int64_t batch_size,
+                                                   nvbench::int64_t minimum_batch_size)
+{
+  const auto fallback           = std::max(minimum_batch_size, nvbench::int64_t{1});
+  const auto batch              = std::max(batch_size, fallback);
+  constexpr auto max_batch_size = std::numeric_limits<nvbench::int64_t>::max();
+  if (batch > max_batch_size / nvbench::int64_t{2})
+  {
+    return max_batch_size;
+  }
+
+  return std::max(batch * nvbench::int64_t{2}, fallback);
 }
 
 void measure_hot_base::check()
@@ -131,15 +205,15 @@ void measure_hot_base::generate_summaries()
                                 m_total_samples,
                                 m_min_samples));
       }
-      if (m_total_cuda_time < m_min_time)
+      if (m_total_cuda_time < m_batch_target_time)
       {
         printer.log(nvbench::log_level::warn,
                     fmt::format("Current measurement timed out ({:0.2f}s) "
-                                "before accumulating min_time ({:0.2f}s < "
+                                "before accumulating batch target time ({:0.2f}s < "
                                 "{:0.2f}s)",
                                 timeout,
                                 m_total_cuda_time,
-                                m_min_time));
+                                m_batch_target_time));
       }
     }
 

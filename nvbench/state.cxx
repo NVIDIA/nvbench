@@ -18,6 +18,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/throw.cuh>
+#include <nvbench/detail/validate_batch_target_time.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/types.cuh>
 
@@ -48,6 +49,7 @@ state::state(const benchmark_base &bench)
     , m_min_samples{bench.get_min_samples()}
     , m_cold_warmup_runs{bench.get_cold_warmup_runs()}
     , m_cold_max_warmup_walltime{bench.get_cold_max_warmup_walltime()}
+    , m_batch_target_time{bench.get_batch_target_time()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}
@@ -72,12 +74,19 @@ state::state(const benchmark_base &bench,
     , m_min_samples{bench.get_min_samples()}
     , m_cold_warmup_runs{bench.get_cold_warmup_runs()}
     , m_cold_max_warmup_walltime{bench.get_cold_max_warmup_walltime()}
+    , m_batch_target_time{bench.get_batch_target_time()}
     , m_skip_time{bench.get_skip_time()}
     , m_timeout{bench.get_timeout()}
     , m_throttle_threshold{bench.get_throttle_threshold()}
     , m_throttle_recovery_delay{bench.get_throttle_recovery_delay()}
     , m_cuda_stream{std::nullopt}
 {}
+
+void state::set_batch_target_time(nvbench::float64_t batch_target_time)
+{
+  nvbench::detail::validate_batch_target_time(batch_target_time);
+  m_batch_target_time = batch_target_time;
+}
 
 nvbench::int64_t state::get_int64(const std::string &axis_name) const
 {

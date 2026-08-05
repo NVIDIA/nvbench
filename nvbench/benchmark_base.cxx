@@ -19,6 +19,7 @@
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/transform_reduce.cuh>
+#include <nvbench/detail/validate_batch_target_time.cuh>
 
 #include <algorithm>
 #include <cstddef>
@@ -52,8 +53,9 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_cold_warmup_runs         = m_cold_warmup_runs;
   result->m_cold_max_warmup_walltime = m_cold_max_warmup_walltime;
 
-  result->m_skip_time = m_skip_time;
-  result->m_timeout   = m_timeout;
+  result->m_batch_target_time = m_batch_target_time;
+  result->m_skip_time         = m_skip_time;
+  result->m_timeout           = m_timeout;
 
   result->m_criterion_params        = m_criterion_params;
   result->m_throttle_threshold      = m_throttle_threshold;
@@ -62,6 +64,13 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   result->m_stopping_criterion = m_stopping_criterion;
 
   return result;
+}
+
+benchmark_base &benchmark_base::set_batch_target_time(nvbench::float64_t batch_target_time)
+{
+  nvbench::detail::validate_batch_target_time(batch_target_time);
+  m_batch_target_time = batch_target_time;
+  return *this;
 }
 
 benchmark_base &benchmark_base::set_devices(std::vector<int> device_ids)
