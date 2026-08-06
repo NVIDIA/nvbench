@@ -138,16 +138,25 @@ function(nvbench_add_external_fmt_tests)
     -D "FETCHCONTENT_SOURCE_DIR_FMT=${fmt_SOURCE_DIR}"
   )
 
-  foreach(external_fmt_mode find_package add_subdirectory)
-    nvbench_add_configure_test(test_name
-      external_fmt
-      source_tree_${external_fmt_mode}
-      ${external_fmt_source_tree_cmake_opts}
-      -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
-      -D "FMT_SOURCE_DIR=${fmt_SOURCE_DIR}"
-      -D "EXTERNAL_FMT_MODE=${external_fmt_mode}"
-    )
-  endforeach()
+  nvbench_add_configure_test(test_name
+    external_fmt
+    source_tree_find_package
+    ${external_fmt_source_tree_cmake_opts}
+    -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+    -D "FMT_SOURCE_DIR=${fmt_SOURCE_DIR}"
+    -D "EXTERNAL_FMT_MODE=find_package"
+    -D "NVBENCH_CONSUMPTION_MODE=source_tree"
+  )
+
+  nvbench_add_configure_test(test_name
+    external_fmt
+    build_tree_find_package
+    ${external_fmt_cmake_opts}
+    -D "NVBench_DIR=${NVBench_BINARY_DIR}"
+    -D "FMT_SOURCE_DIR=${fmt_SOURCE_DIR}"
+    -D "EXTERNAL_FMT_MODE=find_package"
+    -D "NVBENCH_CONSUMPTION_MODE=find_package"
+  )
 endfunction()
 
 ################################################################################
