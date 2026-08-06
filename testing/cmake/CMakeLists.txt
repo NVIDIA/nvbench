@@ -62,6 +62,23 @@ function(nvbench_add_compile_test full_test_name_var subdir test_id)
   set(${full_test_name_var} ${test_name} PARENT_SCOPE)
 endfunction()
 
+# Add a configure-only CTest.
+# This catches configure-time regressions without compiling the nested project.
+function(nvbench_add_configure_test full_test_name_var subdir test_id)
+  set(test_name nvbench.test.cmake.${subdir}.${test_id})
+  set(src_dir "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}")
+  set(build_dir "${CMAKE_CURRENT_BINARY_DIR}/${subdir}/${test_id}")
+  add_test(NAME ${test_name}
+    COMMAND "${CMAKE_COMMAND}"
+      -S "${src_dir}"
+      -B "${build_dir}"
+      -G "${CMAKE_GENERATOR}"
+      ${cmake_opts}
+      ${ARGN}
+  )
+  set(${full_test_name_var} ${test_name} PARENT_SCOPE)
+endfunction()
+
 ################################################################################
 # Test against build tree export
 
@@ -83,6 +100,57 @@ nvbench_add_compile_test(test_name
   -D TEST_TYPE=INSTALL_TREE
 )
 set_tests_properties(${test_name} PROPERTIES FIXTURES_REQUIRED install_tree)
+
+function(nvbench_add_external_fmt_tests)
+  if(NOT (fmt_SOURCE_DIR AND EXISTS "${fmt_SOURCE_DIR}/CMakeLists.txt"))
+    message(STATUS "Skipping external fmt CMake tests: fmt_SOURCE_DIR is unavailable.")
+    return()
+  endif()
+
+  set(external_fmt_cmake_opts)
+
+  set(cpm_download_location "${CMAKE_BINARY_DIR}/cmake/CPM_0.42.0.cmake")
+  if(EXISTS "${cpm_download_location}")
+    list(APPEND external_fmt_cmake_opts
+      -D "CPM_DOWNLOAD_LOCATION=${cpm_download_location}"
+    )
+  endif()
+
+  if(DEFINED rapids-cmake-dir)
+    set(rapids_cmake_dir "${rapids-cmake-dir}")
+    cmake_path(GET rapids_cmake_dir PARENT_PATH rapids_cmake_source_dir)
+    if(EXISTS "${rapids_cmake_source_dir}/CMakeLists.txt")
+      list(APPEND external_fmt_cmake_opts
+        -D "FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE=${rapids_cmake_source_dir}"
+      )
+    endif()
+  endif()
+
+  if(DEFINED CPM_PACKAGE_nlohmann_json_SOURCE_DIR AND
+     EXISTS "${CPM_PACKAGE_nlohmann_json_SOURCE_DIR}/include")
+    list(APPEND external_fmt_cmake_opts
+      -D "FETCHCONTENT_SOURCE_DIR_NLOHMANN_JSON=${CPM_PACKAGE_nlohmann_json_SOURCE_DIR}"
+    )
+  endif()
+
+  list(APPEND external_fmt_cmake_opts
+    -D "FETCHCONTENT_SOURCE_DIR_FMT=${fmt_SOURCE_DIR}"
+  )
+
+  nvbench_add_configure_test(test_name
+    external_fmt
+    source_tree_find_package
+    ${external_fmt_cmake_opts}
+    -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+    -D "FMT_SOURCE_DIR=${fmt_SOURCE_DIR}"
+  )
+
+endfunction()
+
+################################################################################
+# Test consuming NVBench when fmt is provided by an enclosing project
+
+nvbench_add_external_fmt_tests()
 
 ################################################################################
 # Install tree fixtures
