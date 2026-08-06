@@ -104,8 +104,8 @@ python examples/axes.py
 ```
 
 ```bash
-# Example benchmarking algorithms from cuda.cccl.parallel
-python examples/cccl_parallel_segmented_reduce.py
+# Example benchmarking algorithms from cuda.compute
+python examples/cccl_compute_segmented_reduce.py
 ```
 
 ```bash
