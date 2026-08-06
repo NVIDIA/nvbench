@@ -1,5 +1,7 @@
 set(fmt_VERSION "12.2.0")
 
+# Minimal synthetic fmt package used to create fmt::fmt before NVBench is configured.
+# This models only the target-presence condition needed for the external-fmt test.
 add_library(external_fmt STATIC "@FMT_SOURCE_DIR@/src/format.cc")
 target_include_directories(external_fmt SYSTEM PUBLIC "@FMT_SOURCE_DIR@/include")
 target_compile_features(external_fmt PUBLIC cxx_std_11)
