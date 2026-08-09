@@ -58,6 +58,7 @@ def current_tool_name() -> str:
 
 np: Any = None
 Fore: Any = None
+MARKDOWN_TABLE_PIPE_REPLACEMENT = "\u2758"
 
 
 def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
@@ -2709,10 +2710,10 @@ def format_timing_with_explicit_interval(center, interval, *, value_widths=None)
     prefix = longest_common_prefix(values)
     if not common_numeric_prefix_is_useful(prefix):
         values = align_interval_values(values, value_widths)
-        return f"[{values[0]} | {values[1]} | {values[2]}] {units}"
+        return f"[{values[0]} / {values[1]} / {values[2]}] {units}"
 
     suffixes = [value[len(prefix) :] for value in values]
-    return f"{prefix}[{suffixes[0]} | {suffixes[1]} | {suffixes[2]}] {units}"
+    return f"{prefix}[{suffixes[0]} / {suffixes[1]} / {suffixes[2]}] {units}"
 
 
 def format_percentage(percentage):
@@ -2762,8 +2763,8 @@ def get_display_headers(display):
     if display == "explain":
         return (
             [
-                "Ref [Lo | Ce | Hi]",
-                "Cmp [Lo | Ce | Hi]",
+                "Ref [Lo / Ce / Hi]",
+                "Cmp [Lo / Ce / Hi]",
                 "Ref Noise",
                 "Cmp Noise",
                 "Reason",
@@ -2780,6 +2781,19 @@ def get_display_headers(display):
     return (
         ["Ref", "Cmp", "Change", "Status"],
         ["right", "right", "right", "center"],
+    )
+
+
+def sanitize_markdown_table_cell(value):
+    if isinstance(value, str) and "|" in value:
+        return value.replace("|", MARKDOWN_TABLE_PIPE_REPLACEMENT)
+    return value
+
+
+def sanitize_markdown_table(headers, rows):
+    return (
+        [sanitize_markdown_table_cell(header) for header in headers],
+        [[sanitize_markdown_table_cell(value) for value in row] for row in rows],
     )
 
 
@@ -3185,16 +3199,24 @@ def compare_benches(
                         f"## [{ref_device['id']}] {ref_device['name']} vs. "
                         f"[{cmp_device['id']}] {cmp_device['name']}\n"
                     )
+                table_headers, table_rows = sanitize_markdown_table(headers, rows)
                 tabulate, tabulate_version = load_tabulate_for_table_output()
                 # colalign and github format require tabulate 0.8.3
                 if tabulate_version >= (0, 8, 3):
                     print(
                         tabulate.tabulate(
-                            rows, headers=headers, colalign=colalign, tablefmt="github"
+                            table_rows,
+                            headers=table_headers,
+                            colalign=colalign,
+                            tablefmt="github",
                         )
                     )
                 else:
-                    print(tabulate.tabulate(rows, headers=headers, tablefmt="pipe"))
+                    print(
+                        tabulate.tabulate(
+                            table_rows, headers=table_headers, tablefmt="pipe"
+                        )
+                    )
 
                 print("")
 
