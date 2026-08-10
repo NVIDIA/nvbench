@@ -1521,6 +1521,38 @@ void test_stopping_criterion()
         "Current criterion 'entropy' accepts: --max-angle, --min-r2.",
       });
   }
+  { // Multiple global criteria are ambiguous:
+    assert_parse_error_contains(
+      {
+        "--stopping-criterion",
+        "entropy",
+        "--stopping-criterion",
+        "sample-count",
+      },
+      {
+        "--stopping-criterion sample-count would overwrite a stopping criterion already specified "
+        "in this option scope: --stopping-criterion entropy.",
+        "Move benchmark-specific overrides after --benchmark, or remove the earlier "
+        "--stopping-criterion.",
+      });
+  }
+  { // Multiple per-benchmark criteria are ambiguous:
+    assert_parse_error_contains(
+      {
+        "--benchmark",
+        "DummyBench",
+        "--stopping-criterion",
+        "entropy",
+        "--stopping-criterion",
+        "sample-count",
+      },
+      {
+        "--stopping-criterion sample-count would overwrite a stopping criterion already specified "
+        "in this option scope: --stopping-criterion entropy.",
+        "Move benchmark-specific overrides after --benchmark, or remove the earlier "
+        "--stopping-criterion.",
+      });
+  }
   { // Global params to default criterion should work:
     nvbench::option_parser parser;
     parser.parse({
@@ -1548,6 +1580,26 @@ void test_stopping_criterion()
 
     ASSERT(criterion_params.get_float64("max-angle") == 0.42);
     ASSERT(criterion_params.get_float64("min-r2") == 0.6);
+  }
+  { // Per-benchmark criterion may override an inherited global criterion:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--stopping-criterion",
+      "entropy",
+      "--min-r2",
+      "0.2",
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "stdrel",
+      "--min-time",
+      "0.7",
+    });
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_stopping_criterion() == "stdrel");
+    ASSERT(states[0].get_criterion_params().get_float64("min-time") == 0.7);
   }
   { // Sample-count criterion default params
     nvbench::option_parser parser;
@@ -1717,45 +1769,37 @@ void test_stopping_criterion()
     }
     ASSERT(exception_thrown);
   }
-  { // global param-before-criterion throws exception:
-    bool exception_thrown = false;
-    try
-    {
-      nvbench::option_parser parser;
-      parser.parse({
-        "--min-r2", //
-        "0.6",
+  { // Global criterion does not discard earlier explicit parameters:
+    assert_parse_error_contains(
+      {
+        "--min-time",
+        "0.1",
         "--stopping-criterion",
         "entropy",
         "--benchmark",
         "DummyBench",
+      },
+      {
+        "--stopping-criterion entropy would discard previously specified stopping-criterion "
+        "parameter(s): --min-time.",
+        "Move --stopping-criterion before criterion-specific parameters.",
       });
-    }
-    catch (const std::runtime_error & /*ex*/)
-    {
-      exception_thrown = true;
-    }
-    ASSERT(exception_thrown);
   }
-  { // per-benchmark param-before-criterion throws exception:
-    bool exception_thrown = false;
-    try
-    {
-      nvbench::option_parser parser;
-      parser.parse({
-        "--benchmark", //
+  { // Per-benchmark criterion does not discard earlier explicit parameters:
+    assert_parse_error_contains(
+      {
+        "--benchmark",
         "DummyBench",
-        "--min-r2",
-        "0.6",
+        "--min-time",
+        "0.1",
         "--stopping-criterion",
         "entropy",
+      },
+      {
+        "--stopping-criterion entropy would discard previously specified stopping-criterion "
+        "parameter(s): --min-time.",
+        "Move --stopping-criterion before criterion-specific parameters.",
       });
-    }
-    catch (const std::runtime_error & /*ex*/)
-    {
-      exception_thrown = true;
-    }
-    ASSERT(exception_thrown);
   }
   { // Invalid param type throws exception:
     bool exception_thrown = false;
