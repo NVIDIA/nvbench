@@ -188,8 +188,6 @@ def run_driver(args: argparse.Namespace, nvbench_args: list[str]) -> int:
                 sys.executable,
                 str(Path(__file__).resolve()),
                 "--run-benchmark",
-                "--stopping-criterion",
-                "entropy",
                 "--tile-shape",
                 tile_shape,
                 "--image-width",
@@ -303,6 +301,7 @@ def run_benchmark(args: argparse.Namespace, nvbench_args: list[str]) -> None:
 
     benchmark = bench.register(stencil_autotune)
     benchmark.set_name(BENCHMARK_NAME)
+    benchmark.set_stopping_criterion("entropy")
     tile_shapes = [args.tile_shape] if args.tile_shape is not None else TILE_SHAPES
     benchmark.add_string_axis("TileShape", tile_shapes)
     bench.run_all_benchmarks([sys.argv[0], *nvbench_args])
