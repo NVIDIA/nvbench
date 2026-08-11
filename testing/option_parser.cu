@@ -1601,6 +1601,38 @@ void test_stopping_criterion()
     ASSERT(states[0].get_stopping_criterion() == "stdrel");
     ASSERT(states[0].get_criterion_params().get_float64("min-time") == 0.7);
   }
+  { // Per-benchmark criterion state does not leak to the next benchmark:
+    nvbench::option_parser parser;
+    parser.parse({
+      "--stopping-criterion",
+      "entropy",
+      "--min-r2",
+      "0.2",
+      "--benchmark",
+      "DummyBench",
+      "--stopping-criterion",
+      "stdrel",
+      "--min-time",
+      "0.7",
+      "--benchmark",
+      "TestBench",
+    });
+
+    auto &benches = parser.get_benchmarks();
+    ASSERT(benches.size() == 2);
+
+    benches[0]->run();
+    const auto &dummy_states = benches[0]->get_states();
+    ASSERT(dummy_states.size() == 1);
+    ASSERT(dummy_states[0].get_stopping_criterion() == "stdrel");
+    ASSERT(dummy_states[0].get_criterion_params().get_float64("min-time") == 0.7);
+
+    benches[1]->run();
+    const auto &test_states = benches[1]->get_states();
+    ASSERT(test_states.size() == 9);
+    ASSERT(test_states[0].get_stopping_criterion() == "entropy");
+    ASSERT(test_states[0].get_criterion_params().get_float64("min-r2") == 0.2);
+  }
   { // Sample-count criterion default params
     nvbench::option_parser parser;
     parser.parse({

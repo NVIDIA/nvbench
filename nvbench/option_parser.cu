@@ -136,13 +136,15 @@ std::string format_criterion_param_options(const nvbench::criterion_params &para
 std::string format_cli_options(const std::vector<std::string> &options)
 {
   fmt::memory_buffer buffer;
-  for (std::size_t i = 0; i < options.size(); ++i)
+  bool first = true;
+  for (const auto &option : options)
   {
-    if (i != 0)
+    if (!first)
     {
       fmt::format_to(fmt::appender(buffer), ", ");
     }
-    fmt::format_to(fmt::appender(buffer), "{}", options[i]);
+    fmt::format_to(fmt::appender(buffer), "{}", option);
+    first = false;
   }
   return fmt::to_string(buffer);
 }
