@@ -56,6 +56,14 @@ def current_tool_name() -> str:
     return os.path.basename(sys.argv[0]) or "nvbench-compare-robust"
 
 
+def configure_utf8_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except AttributeError:
+            pass
+
+
 np: Any = None
 Fore: Any = None
 MARKDOWN_TABLE_PIPE_REPLACEMENT = "\u2758"
@@ -3240,6 +3248,8 @@ def main() -> int:
 
     The number of detected regressions is reported in the summary output.
     """
+    configure_utf8_stdio()
+
     help_text = "%(prog)s [reference.json compare.json | reference_dir/ compare_dir/]"
     parser = argparse.ArgumentParser(usage=help_text)
     parser.add_argument(
