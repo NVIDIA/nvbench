@@ -349,8 +349,8 @@ SIMPLE_DISPLAY_HEADERS = [
 ]
 INTERVAL_DISPLAY_HEADERS = ["Ref", "Cmp", "Change", "Status"]
 EXPLAIN_DISPLAY_HEADERS = [
-    "Ref [Lo | Ce | Hi]",
-    "Cmp [Lo | Ce | Hi]",
+    "Ref [Lo / Ce / Hi]",
+    "Cmp [Lo / Ce / Hi]",
     "Ref Noise",
     "Cmp Noise",
     "Reason",
@@ -1826,7 +1826,7 @@ def test_format_timing_with_explicit_interval(nvbench_compare):
     )
     assert (
         nvbench_compare.format_timing_with_explicit_interval(0.001446, interval)
-        == "1.4[34 | 46 | 58] ms"
+        == "1.4[34 / 46 / 58] ms"
     )
 
     interval = nvbench_compare.TimingInterval(
@@ -1834,7 +1834,7 @@ def test_format_timing_with_explicit_interval(nvbench_compare):
     )
     assert (
         nvbench_compare.format_timing_with_explicit_interval(18.736e-6, interval)
-        == "[18.400 | 18.736 | 19.464] us"
+        == "[18.400 / 18.736 / 19.464] us"
     )
 
     interval = nvbench_compare.TimingInterval(
@@ -1842,7 +1842,7 @@ def test_format_timing_with_explicit_interval(nvbench_compare):
     )
     assert (
         nvbench_compare.format_timing_with_explicit_interval(19.944e-6, interval)
-        == "[19.380 | 19.944 | 20.508] us"
+        == "[19.380 / 19.944 / 20.508] us"
     )
 
     interval = nvbench_compare.TimingInterval(
@@ -1850,7 +1850,7 @@ def test_format_timing_with_explicit_interval(nvbench_compare):
     )
     assert (
         nvbench_compare.format_timing_with_explicit_interval(99.988e-6, interval)
-        == "[ 99.094 |  99.988 | 100.882] us"
+        == "[ 99.094 /  99.988 / 100.882] us"
     )
 
 
@@ -1899,10 +1899,10 @@ def test_align_explain_interval_columns_pads_values_across_rows(nvbench_compare)
 
     nvbench_compare.align_explain_interval_columns(rows, comparisons, axis_count=0)
 
-    assert rows[0][0] == "[ 19.380 |  19.944 |  20.508] us"
-    assert rows[1][0] == "[102.739 | 103.466 | 104.193] us"
-    assert rows[0][1] == "[ 96.849 |  97.712 |  98.574] us"
-    assert rows[1][1] == "[100.916 | 101.868 | 102.819] us"
+    assert rows[0][0] == "[ 19.380 /  19.944 /  20.508] us"
+    assert rows[1][0] == "[102.739 / 103.466 / 104.193] us"
+    assert rows[0][1] == "[ 96.849 /  97.712 /  98.574] us"
+    assert rows[1][1] == "[100.916 / 101.868 / 102.819] us"
 
 
 def test_align_timing_interval_columns_reserves_missing_interval_slot(nvbench_compare):
@@ -4032,10 +4032,54 @@ def test_compare_benches_explain_display_uses_explicit_intervals(
 
     table = find_tabulate_call(tabulate_calls, EXPLAIN_DISPLAY_HEADERS)
     row = table["rows"][0]
-    assert row[-7] == "1.0[00 | 20 | 30] s"
-    assert row[-6] == "1.0[10 | 30 | 40] s"
+    assert row[-7] == "1.0[00 / 20 / 30] s"
+    assert row[-6] == "1.0[10 / 30 / 40] s"
     assert row[-3] == "centers-far"
     assert row[-2] == ""
+
+
+def test_compare_benches_explain_display_sanitizes_markdown_cells(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
+    axis_name = "Config|Mode"
+    axis_value = "Fast|Path"
+    axis_metadata = [{"name": axis_name, "type": "string", "flags": ""}]
+
+    ref_state = make_state(nvbench_compare, "state", mean="1.0")
+    ref_state["axis_values"] = [
+        {"name": axis_name, "type": "string", "value": axis_value}
+    ]
+    cmp_state = make_state(nvbench_compare, "state", mean="1.01")
+    cmp_state["axis_values"] = [
+        {"name": axis_name, "type": "string", "value": axis_value}
+    ]
+
+    ref_bench = make_benchmark([ref_state])
+    ref_bench["axes"] = axis_metadata
+    cmp_bench = make_benchmark([cmp_state])
+    cmp_bench["axes"] = axis_metadata
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [ref_bench],
+        [cmp_bench],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        display="explain",
+    )
+
+    table = find_tabulate_call(tabulate_calls, EXPLAIN_DISPLAY_HEADERS)
+
+    assert table["headers"][0] == "Config\u2758Mode"
+    assert table["rows"][0][0] == "Fast\u2758Path"
+    assert all("|" not in header for header in table["headers"])
+    assert all("|" not in value for row in table["rows"] for value in row)
 
 
 def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_compare):
