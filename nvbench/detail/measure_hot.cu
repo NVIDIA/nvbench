@@ -98,10 +98,30 @@ measure_hot_base::measure_hot_base(state &exec_state)
   }
 }
 
+measure_hot_base::~measure_hot_base() = default;
+
+void measure_hot_base::initialize_persisting_l2_cache_disable()
+{
+  m_persisting_l2_cache_disable =
+    nvbench::detail::make_persisting_l2_cache_disable_if_requested(m_disable_persisting_l2_cache,
+                                                                   m_state.get_device());
+}
+
 void measure_hot_base::reset_persisting_l2_cache()
 {
-  nvbench::detail::reset_persisting_l2_cache_if_requested(m_disable_persisting_l2_cache,
-                                                          m_state.get_device());
+  if (m_persisting_l2_cache_disable)
+  {
+    m_persisting_l2_cache_disable->reset_before_measurement();
+  }
+}
+
+void measure_hot_base::restore_persisting_l2_cache()
+{
+  if (m_persisting_l2_cache_disable)
+  {
+    m_persisting_l2_cache_disable->restore();
+    m_persisting_l2_cache_disable.reset();
+  }
 }
 
 // CUDA-time predictions choose how many launches are needed to reach the

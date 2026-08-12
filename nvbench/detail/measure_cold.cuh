@@ -46,6 +46,7 @@
 #include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
 
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -59,10 +60,13 @@ struct state;
 namespace detail
 {
 
+struct persisting_l2_cache_disable;
+
 // non-templated code goes here:
 struct measure_cold_base
 {
   explicit measure_cold_base(nvbench::state &exec_state);
+  ~measure_cold_base();
   measure_cold_base(const measure_cold_base &)            = delete;
   measure_cold_base(measure_cold_base &&)                 = delete;
   measure_cold_base &operator=(const measure_cold_base &) = delete;
@@ -85,7 +89,9 @@ protected:
   void check_skip_time(nvbench::float64_t warmup_time);
 
   __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
+  void initialize_persisting_l2_cache_disable();
   void reset_persisting_l2_cache();
+  void restore_persisting_l2_cache();
 
   __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
   {
@@ -112,6 +118,7 @@ protected:
   nvbench::cpu_timer m_walltime_timer{};
   nvbench::detail::l2flush m_l2flush{};
   nvbench::blocking_kernel m_blocker{};
+  std::unique_ptr<nvbench::detail::persisting_l2_cache_disable> m_persisting_l2_cache_disable{};
 
   nvbench::criterion_params m_criterion_params{};
   nvbench::stopping_criterion_base &m_stopping_criterion;
@@ -254,11 +261,23 @@ struct measure_cold : public measure_cold_base
   {
     this->check();
     this->initialize();
-    this->run_warmup();
+    this->initialize_persisting_l2_cache_disable();
 
-    this->run_trials_prologue();
-    this->run_trials();
-    this->run_trials_epilogue();
+    try
+    {
+      this->run_warmup();
+
+      this->run_trials_prologue();
+      this->run_trials();
+      this->run_trials_epilogue();
+
+      this->restore_persisting_l2_cache();
+    }
+    catch (...)
+    {
+      this->restore_persisting_l2_cache();
+      throw;
+    }
 
     this->generate_summaries();
   }

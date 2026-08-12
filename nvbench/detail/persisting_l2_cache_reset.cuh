@@ -35,19 +35,18 @@
 
 #include <cuda_runtime_api.h>
 
+#include <cstddef>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 
 namespace nvbench::detail
 {
 
-struct persisting_l2_cache_reset
+struct persisting_l2_cache_disable
 {
-  explicit persisting_l2_cache_reset(int device_id)
+  explicit persisting_l2_cache_disable(int device_id)
       : m_device_id{device_id}
-  {}
-
-  void operator()() const
   {
     nvbench::detail::device_scope scope{m_device_id};
 
@@ -60,20 +59,50 @@ struct persisting_l2_cache_reset
       return;
     }
 
-    NVBENCH_CUDA_CALL(cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize, 0));
+    NVBENCH_CUDA_CALL(cudaDeviceGetLimit(&m_original_limit, cudaLimitPersistingL2CacheSize));
+    m_supported = true;
+  }
+
+  void reset_before_measurement()
+  {
+    if (!m_supported)
+    {
+      return;
+    }
+
+    nvbench::detail::device_scope scope{m_device_id};
+    NVBENCH_CUDA_CALL(cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize, std::size_t{0}));
+    m_limit_restored = false;
     NVBENCH_CUDA_CALL(cudaCtxResetPersistingL2Cache());
+  }
+
+  void restore()
+  {
+    if (!m_supported || m_limit_restored)
+    {
+      return;
+    }
+
+    nvbench::detail::device_scope scope{m_device_id};
+    NVBENCH_CUDA_CALL(cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize, m_original_limit));
+    NVBENCH_CUDA_CALL(cudaCtxResetPersistingL2Cache());
+    m_limit_restored = true;
   }
 
 private:
   int m_device_id{};
+  std::size_t m_original_limit{};
+  bool m_supported{false};
+  bool m_limit_restored{true};
 };
 
-inline void reset_persisting_l2_cache_if_requested(bool requested,
-                                                   const std::optional<nvbench::device_info> &device)
+inline std::unique_ptr<nvbench::detail::persisting_l2_cache_disable>
+make_persisting_l2_cache_disable_if_requested(bool requested,
+                                              const std::optional<nvbench::device_info> &device)
 {
   if (!requested)
   {
-    return;
+    return nullptr;
   }
 
   if (!device)
@@ -81,7 +110,7 @@ inline void reset_persisting_l2_cache_if_requested(bool requested,
     NVBENCH_THROW(std::runtime_error, "{}", "Device required to disable persisting L2 cache.");
   }
 
-  nvbench::detail::persisting_l2_cache_reset{device->get_id()}();
+  return std::make_unique<nvbench::detail::persisting_l2_cache_disable>(device->get_id());
 }
 
 } // namespace nvbench::detail

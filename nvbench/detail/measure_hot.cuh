@@ -39,6 +39,7 @@
 #include <cuda_runtime.h>
 
 #include <algorithm>
+#include <memory>
 
 namespace nvbench
 {
@@ -48,10 +49,13 @@ struct state;
 namespace detail
 {
 
+struct persisting_l2_cache_disable;
+
 // non-templated code goes here to keep instantiation cost down:
 struct measure_hot_base
 {
   explicit measure_hot_base(nvbench::state &exec_state);
+  ~measure_hot_base();
   measure_hot_base(const measure_hot_base &)            = delete;
   measure_hot_base(measure_hot_base &&)                 = delete;
   measure_hot_base &operator=(const measure_hot_base &) = delete;
@@ -74,7 +78,9 @@ protected:
   void check_skip_time(nvbench::float64_t warmup_time);
 
   void block_stream();
+  void initialize_persisting_l2_cache_disable();
   void reset_persisting_l2_cache();
+  void restore_persisting_l2_cache();
 
   static nvbench::int64_t predict_cuda_batch_size(nvbench::float64_t target_time,
                                                   nvbench::float64_t time_estimate,
@@ -104,6 +110,7 @@ protected:
   nvbench::cuda_timer m_cuda_timer;
   nvbench::cpu_timer m_walltime_timer;
   nvbench::blocking_kernel m_blocker;
+  std::unique_ptr<nvbench::detail::persisting_l2_cache_disable> m_persisting_l2_cache_disable{};
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_batch_target_time{};
@@ -131,8 +138,20 @@ struct measure_hot : public measure_hot_base
   {
     this->check();
     this->initialize();
-    this->run_warmup();
-    this->run_trials();
+    this->initialize_persisting_l2_cache_disable();
+
+    try
+    {
+      this->run_warmup();
+      this->run_trials();
+      this->restore_persisting_l2_cache();
+    }
+    catch (...)
+    {
+      this->restore_persisting_l2_cache();
+      throw;
+    }
+
     this->generate_summaries();
   }
 

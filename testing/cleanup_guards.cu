@@ -9,6 +9,7 @@
 #include <nvbench/detail/measure_cold.cuh>
 #include <nvbench/detail/measure_cold_launch_timer_core.cuh>
 #include <nvbench/detail/measure_hot.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset.cuh>
 #include <nvbench/detail/stream_cleanup_guard.cuh>
 #include <nvbench/detail/timestamps_kernel.cuh>
 
@@ -19,6 +20,7 @@
 #include <array>
 #include <cstddef>
 #include <initializer_list>
+#include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -358,6 +360,24 @@ void test_kernel_launch_timer_gpu_frequency_stop_throw()
                   action::cpu_timer_stop_noexcept});
 }
 
+void test_persisting_l2_cache_disable_not_requested_without_device()
+{
+  const std::optional<nvbench::device_info> no_device;
+  const auto disable = nvbench::detail::make_persisting_l2_cache_disable_if_requested(false,
+                                                                                      no_device);
+
+  ASSERT(!disable);
+}
+
+void test_persisting_l2_cache_disable_requires_device()
+{
+  const std::optional<nvbench::device_info> no_device;
+
+  assert_throws([&no_device] {
+    (void)nvbench::detail::make_persisting_l2_cache_disable_if_requested(true, no_device);
+  });
+}
+
 } // namespace
 
 int main()
@@ -368,6 +388,8 @@ try
   test_kernel_launch_timer_block_stream_throw();
   test_kernel_launch_timer_gpu_frequency_start_throw();
   test_kernel_launch_timer_gpu_frequency_stop_throw();
+  test_persisting_l2_cache_disable_not_requested_without_device();
+  test_persisting_l2_cache_disable_requires_device();
 
   return 0;
 }
