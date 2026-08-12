@@ -133,6 +133,22 @@ std::string format_criterion_param_options(const nvbench::criterion_params &para
   return fmt::to_string(buffer);
 }
 
+std::string format_cli_options(const std::vector<std::string> &options)
+{
+  fmt::memory_buffer buffer;
+  bool first = true;
+  for (const auto &option : options)
+  {
+    if (!first)
+    {
+      fmt::format_to(fmt::appender(buffer), ", ");
+    }
+    fmt::format_to(fmt::appender(buffer), "{}", option);
+    first = false;
+  }
+  return fmt::to_string(buffer);
+}
+
 [[noreturn]] void
 throw_unrecognized_criterion_param(const std::string &prop_arg,
                                    const std::string &criterion_name,
@@ -441,6 +457,8 @@ void option_parser::parse(std::vector<std::string> args)
 void option_parser::parse_impl()
 {
   m_global_benchmark_args.clear();
+  m_global_criterion_cli_scope_state = {};
+  m_local_criterion_cli_scope_state  = {};
 
   // Initialize to all devices:
   m_recent_devices = nvbench::device_manager::get().get_devices();
@@ -845,16 +863,43 @@ catch (std::exception &e)
 void option_parser::set_stopping_criterion(const std::string &criterion)
 try
 {
+  auto &scope_state = m_benchmarks.empty() ? m_global_criterion_cli_scope_state
+                                           : m_local_criterion_cli_scope_state;
+
+  if (scope_state.explicitly_selected_criterion)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "--stopping-criterion {} would overwrite a stopping criterion already "
+                  "specified in this option scope: --stopping-criterion {}.\n"
+                  "Move benchmark-specific overrides after --benchmark, or remove the earlier "
+                  "--stopping-criterion.",
+                  criterion,
+                  *scope_state.explicitly_selected_criterion);
+  }
+
+  if (!scope_state.explicitly_set_criterion_params.empty())
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "--stopping-criterion {} would discard previously specified stopping-criterion "
+                  "parameter(s): {}.\n"
+                  "Move --stopping-criterion before criterion-specific parameters.",
+                  criterion,
+                  format_cli_options(scope_state.explicitly_set_criterion_params));
+  }
+
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
     m_global_benchmark_args.push_back("--stopping-criterion");
     m_global_benchmark_args.push_back(criterion);
-    return;
+  }
+  else
+  {
+    benchmark_base &bench = *m_benchmarks.back();
+    bench.set_stopping_criterion(criterion);
   }
 
-  benchmark_base &bench = *m_benchmarks.back();
-  bench.set_stopping_criterion(criterion);
+  scope_state.explicitly_selected_criterion = criterion;
 }
 catch (std::exception &e)
 {
@@ -917,7 +962,9 @@ catch (std::exception &e)
 
 void option_parser::replay_global_args()
 {
+  m_local_criterion_cli_scope_state = {};
   this->parse_range(m_global_benchmark_args.cbegin(), m_global_benchmark_args.cend());
+  m_local_criterion_cli_scope_state = {};
 }
 
 void option_parser::update_devices(const std::string &devices)
@@ -1124,6 +1171,8 @@ void option_parser::update_criterion_prop(const std::string &prop_arg,
 try
 {
   const std::string name(prop_arg.begin() + 2, prop_arg.end());
+  auto &scope_state = m_benchmarks.empty() ? m_global_criterion_cli_scope_state
+                                           : m_local_criterion_cli_scope_state;
 
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
@@ -1137,6 +1186,7 @@ try
 
     m_global_benchmark_args.push_back(prop_arg);
     m_global_benchmark_args.push_back(prop_val);
+    scope_state.explicitly_set_criterion_params.push_back(prop_arg);
     return;
   }
 
@@ -1174,6 +1224,8 @@ try
   {
     NVBENCH_THROW(std::runtime_error, "Unrecognized type for property: `{}`", name);
   }
+
+  scope_state.explicitly_set_criterion_params.push_back(prop_arg);
 }
 catch (std::exception &e)
 {
