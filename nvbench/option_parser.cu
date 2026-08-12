@@ -572,6 +572,11 @@ void option_parser::parse_range(option_parser::arg_iterator_t first,
       this->disable_batched();
       first += 1;
     }
+    else if (arg == "--disable-persisting-l2-cache")
+    {
+      this->disable_persisting_l2_cache();
+      first += 1;
+    }
     else if (arg == "--quiet" || arg == "-q")
     {
       // Setting this flag prevents the default stdout printer from being
@@ -887,6 +892,18 @@ void option_parser::disable_batched()
   }
   benchmark_base &bench = *m_benchmarks.back();
   bench.set_skip_batched(true);
+}
+
+void option_parser::disable_persisting_l2_cache()
+{
+  // If no active benchmark, save args as global
+  if (m_benchmarks.empty())
+  {
+    m_global_benchmark_args.push_back("--disable-persisting-l2-cache");
+    return;
+  }
+  benchmark_base &bench = *m_benchmarks.back();
+  bench.set_disable_persisting_l2_cache(true);
 }
 
 void option_parser::add_benchmark(const std::string &name)

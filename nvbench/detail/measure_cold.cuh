@@ -85,6 +85,7 @@ protected:
   void check_skip_time(nvbench::float64_t warmup_time);
 
   __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
+  void reset_persisting_l2_cache();
 
   __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
   {
@@ -117,6 +118,7 @@ protected:
   nvbench::detail::gpu_frequency m_gpu_frequency{};
 
   bool m_disable_blocking_kernel{false};
+  bool m_disable_persisting_l2_cache{false};
   bool m_run_once{false};
   bool m_check_throttling{true};
 
@@ -190,6 +192,8 @@ struct measure_cold_base::kernel_launch_timer
   __forceinline__ void stop() { m_core.stop(); }
 
   __forceinline__ void flush_device_l2() { m_measure.flush_device_l2(); }
+
+  __forceinline__ void reset_persisting_l2_cache() { m_measure.reset_persisting_l2_cache(); }
 
   __forceinline__ void sync_stream() { m_measure.sync_stream(); }
 

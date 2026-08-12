@@ -74,6 +74,7 @@ protected:
   void check_skip_time(nvbench::float64_t warmup_time);
 
   void block_stream();
+  void reset_persisting_l2_cache();
 
   static nvbench::int64_t predict_cuda_batch_size(nvbench::float64_t target_time,
                                                   nvbench::float64_t time_estimate,
@@ -114,6 +115,7 @@ protected:
   nvbench::float64_t m_total_cuda_time{};
 
   bool m_disable_blocking_kernel{false};
+  bool m_disable_persisting_l2_cache{false};
   bool m_max_time_exceeded{false};
 };
 
@@ -141,6 +143,7 @@ private:
   {
     nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
+    this->reset_persisting_l2_cache();
     m_walltime_timer.start();
     {
       m_cuda_timer.start(m_launch.get_stream());
@@ -182,6 +185,7 @@ private:
 
       nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
+      this->reset_persisting_l2_cache();
       if (!m_disable_blocking_kernel)
       {
         // Block stream until some work is queued.

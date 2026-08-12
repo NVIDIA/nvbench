@@ -140,6 +140,7 @@ static_assert((verify_noexcept_contracts(), true), "Noexcept cleanup contracts m
 enum class action
 {
   flush_device_l2,
+  reset_persisting_l2_cache,
   sync_stream,
   sync_stream_noexcept,
   cpu_timer_start,
@@ -194,6 +195,7 @@ struct fake_measure
   }
 
   void flush_device_l2() { this->record_or_throw(action::flush_device_l2); }
+  void reset_persisting_l2_cache() { this->record_or_throw(action::reset_persisting_l2_cache); }
   void sync_stream() { this->record_or_throw(action::sync_stream); }
   int sync_stream_noexcept() noexcept
   {
@@ -301,7 +303,8 @@ void test_kernel_launch_timer_block_stream_throw()
   });
 
   assert_actions(measure,
-                 {action::flush_device_l2,
+                 {action::reset_persisting_l2_cache,
+                  action::flush_device_l2,
                   action::sync_stream,
                   action::cpu_timer_start,
                   action::block_stream,
@@ -323,7 +326,8 @@ void test_kernel_launch_timer_gpu_frequency_start_throw()
   });
 
   assert_actions(measure,
-                 {action::flush_device_l2,
+                 {action::reset_persisting_l2_cache,
+                  action::flush_device_l2,
                   action::sync_stream,
                   action::cpu_timer_start,
                   action::block_stream,

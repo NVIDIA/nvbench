@@ -20,6 +20,7 @@
 #include <nvbench/criterion_manager.cuh>
 #include <nvbench/detail/measure_cold.cuh>
 #include <nvbench/detail/measure_timeout_warnings.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
@@ -47,6 +48,7 @@ measure_cold_base::measure_cold_base(state &exec_state)
     , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(
         exec_state.get_stopping_criterion())}
     , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel()}
+    , m_disable_persisting_l2_cache{exec_state.get_disable_persisting_l2_cache()}
     , m_run_once{exec_state.get_run_once()}
     , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
@@ -64,6 +66,12 @@ measure_cold_base::measure_cold_base(state &exec_state)
     m_cuda_times.reserve(reserve_size);
     m_cpu_times.reserve(reserve_size);
   }
+}
+
+void measure_cold_base::reset_persisting_l2_cache()
+{
+  nvbench::detail::reset_persisting_l2_cache_if_requested(m_disable_persisting_l2_cache,
+                                                          m_state.get_device());
 }
 
 void measure_cold_base::check()
