@@ -109,6 +109,7 @@ private:
 
   void enable_profile();
   void disable_batched();
+  void disable_persisting_l2_cache();
 
   void add_benchmark(const std::string &name);
   void replay_global_args();

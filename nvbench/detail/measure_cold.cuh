@@ -36,6 +36,7 @@
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/measure_cold_launch_timer_core.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset_fwd.cuh>
 #include <nvbench/detail/statistics.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
@@ -63,6 +64,7 @@ namespace detail
 struct measure_cold_base
 {
   explicit measure_cold_base(nvbench::state &exec_state);
+  ~measure_cold_base();
   measure_cold_base(const measure_cold_base &)            = delete;
   measure_cold_base(measure_cold_base &&)                 = delete;
   measure_cold_base &operator=(const measure_cold_base &) = delete;
@@ -85,6 +87,9 @@ protected:
   void check_skip_time(nvbench::float64_t warmup_time);
 
   __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
+  void initialize_persisting_l2_cache_disable();
+  void reset_persisting_l2_cache();
+  void restore_persisting_l2_cache();
 
   __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
   {
@@ -111,12 +116,14 @@ protected:
   nvbench::cpu_timer m_walltime_timer{};
   nvbench::detail::l2flush m_l2flush{};
   nvbench::blocking_kernel m_blocker{};
+  nvbench::detail::persisting_l2_cache_disable_ptr m_persisting_l2_cache_disable{};
 
   nvbench::criterion_params m_criterion_params{};
   nvbench::stopping_criterion_base &m_stopping_criterion;
   nvbench::detail::gpu_frequency m_gpu_frequency{};
 
   bool m_disable_blocking_kernel{false};
+  bool m_disable_persisting_l2_cache{false};
   bool m_run_once{false};
   bool m_check_throttling{true};
 
@@ -191,6 +198,8 @@ struct measure_cold_base::kernel_launch_timer
 
   __forceinline__ void flush_device_l2() { m_measure.flush_device_l2(); }
 
+  __forceinline__ void reset_persisting_l2_cache() { m_measure.reset_persisting_l2_cache(); }
+
   __forceinline__ void sync_stream() { m_measure.sync_stream(); }
 
   __forceinline__ cudaError_t sync_stream_noexcept() const noexcept
@@ -250,11 +259,23 @@ struct measure_cold : public measure_cold_base
   {
     this->check();
     this->initialize();
-    this->run_warmup();
+    this->initialize_persisting_l2_cache_disable();
 
-    this->run_trials_prologue();
-    this->run_trials();
-    this->run_trials_epilogue();
+    try
+    {
+      this->run_warmup();
+
+      this->run_trials_prologue();
+      this->run_trials();
+      this->run_trials_epilogue();
+
+      this->restore_persisting_l2_cache();
+    }
+    catch (...)
+    {
+      this->restore_persisting_l2_cache();
+      throw;
+    }
 
     this->generate_summaries();
   }

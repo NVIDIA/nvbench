@@ -250,6 +250,16 @@ class _OptionDecorators:
             lambda benchmark: benchmark.set_batch_target_time(duration_seconds)
         )
 
+    def disable_persisting_l2_cache(self, value: bool = True) -> Callable[[_F], _F]:
+        """Set whether persisting-L2 cache state is disabled before GPU measurement work."""
+        return self.set_disable_persisting_l2_cache(value)
+
+    def set_disable_persisting_l2_cache(self, value: bool) -> Callable[[_F], _F]:
+        """Set whether persisting-L2 cache state is disabled before GPU measurement work."""
+        return _append_benchmark_action(
+            lambda benchmark: benchmark.set_disable_persisting_l2_cache(value)
+        )
+
     def stopping_criterion(self, criterion: str) -> Callable[[_F], _F]:
         """Set the benchmark stopping criterion."""
         return self.set_stopping_criterion(criterion)

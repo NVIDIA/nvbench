@@ -239,6 +239,18 @@ struct benchmark_base
   }
   /// @}
 
+  /// If true, persisting L2 cache state is disabled before GPU measurement work. @{
+  [[nodiscard]] bool get_disable_persisting_l2_cache() const
+  {
+    return m_disable_persisting_l2_cache;
+  }
+  benchmark_base &set_disable_persisting_l2_cache(bool v)
+  {
+    m_disable_persisting_l2_cache = v;
+    return *this;
+  }
+  /// @}
+
   /// If a warmup run finishes in less than `skip_time`, the measurement will
   /// be skipped.
   /// Extremely fast kernels (< 5000 ns) often timeout before they can
@@ -348,6 +360,7 @@ protected:
   bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
+  bool m_disable_persisting_l2_cache{false};
   bool m_skip_batched{false};
 
   nvbench::int64_t m_min_samples{10};

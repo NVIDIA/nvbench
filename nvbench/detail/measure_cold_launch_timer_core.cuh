@@ -101,6 +101,7 @@ public:
   {
     cleanup_guard cleanup{*this};
 
+    m_measure.reset_persisting_l2_cache();
     m_measure.flush_device_l2();
     m_measure.sync_stream();
 

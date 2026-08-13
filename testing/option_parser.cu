@@ -1293,6 +1293,58 @@ void test_timeout()
   ASSERT(std::abs(states[0].get_timeout() - 12345e2) < 1.);
 }
 
+void test_disable_persisting_l2_cache()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(!states[0].get_disable_persisting_l2_cache());
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "DummyBench", "--disable-persisting-l2-cache"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_disable_persisting_l2_cache());
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--disable-persisting-l2-cache", "--benchmark", "DummyBench"});
+    const auto &states = parser_to_states(parser);
+
+    ASSERT(states.size() == 1);
+    ASSERT(states[0].get_disable_persisting_l2_cache());
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse(
+      {"--disable-persisting-l2-cache", "--benchmark", "DummyBench", "--benchmark", "TestBench"});
+
+    const auto &benches = parser.get_benchmarks();
+    ASSERT(benches.size() == 2);
+    ASSERT(benches[0] != nullptr);
+    ASSERT(benches[1] != nullptr);
+
+    const auto dummy_states = nvbench::detail::state_generator::create(*benches[0]);
+    ASSERT(dummy_states.size() == 1);
+    ASSERT(dummy_states[0].get_disable_persisting_l2_cache());
+
+    const auto test_states = nvbench::detail::state_generator::create(*benches[1]);
+    ASSERT(!test_states.empty());
+    for (const auto &state : test_states)
+    {
+      ASSERT(state.get_disable_persisting_l2_cache());
+    }
+  }
+}
+
 void test_batch_target_time()
 {
   {
@@ -1890,6 +1942,7 @@ try
   test_skip_time();
   test_cold_max_warmup_walltime();
   test_timeout();
+  test_disable_persisting_l2_cache();
   test_batch_target_time();
   test_json_stream_destinations();
   test_output_parent_directories_created();
