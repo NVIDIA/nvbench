@@ -36,6 +36,7 @@
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/measure_cold_launch_timer_core.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset_fwd.cuh>
 #include <nvbench/detail/statistics.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
@@ -46,7 +47,6 @@
 #include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
 
-#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -59,8 +59,6 @@ struct state;
 
 namespace detail
 {
-
-struct persisting_l2_cache_disable;
 
 // non-templated code goes here:
 struct measure_cold_base
@@ -118,7 +116,7 @@ protected:
   nvbench::cpu_timer m_walltime_timer{};
   nvbench::detail::l2flush m_l2flush{};
   nvbench::blocking_kernel m_blocker{};
-  std::unique_ptr<nvbench::detail::persisting_l2_cache_disable> m_persisting_l2_cache_disable{};
+  nvbench::detail::persisting_l2_cache_disable_ptr m_persisting_l2_cache_disable{};
 
   nvbench::criterion_params m_criterion_params{};
   nvbench::stopping_criterion_base &m_stopping_criterion;

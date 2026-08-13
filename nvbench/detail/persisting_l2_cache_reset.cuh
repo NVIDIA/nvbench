@@ -30,13 +30,13 @@
 
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/detail/device_scope.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset_fwd.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 
 #include <cuda_runtime_api.h>
 
 #include <cstddef>
-#include <memory>
 #include <optional>
 #include <stdexcept>
 
@@ -96,7 +96,13 @@ private:
   bool m_limit_restored{true};
 };
 
-inline std::unique_ptr<nvbench::detail::persisting_l2_cache_disable>
+inline void
+persisting_l2_cache_disable_deleter::operator()(persisting_l2_cache_disable *ptr) const noexcept
+{
+  delete ptr;
+}
+
+inline nvbench::detail::persisting_l2_cache_disable_ptr
 make_persisting_l2_cache_disable_if_requested(bool requested,
                                               const std::optional<nvbench::device_info> &device)
 {
@@ -110,7 +116,8 @@ make_persisting_l2_cache_disable_if_requested(bool requested,
     NVBENCH_THROW(std::runtime_error, "{}", "Device required to disable persisting L2 cache.");
   }
 
-  return std::make_unique<nvbench::detail::persisting_l2_cache_disable>(device->get_id());
+  return nvbench::detail::persisting_l2_cache_disable_ptr{
+    new nvbench::detail::persisting_l2_cache_disable{device->get_id()}};
 }
 
 } // namespace nvbench::detail

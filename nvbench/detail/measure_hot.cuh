@@ -32,6 +32,7 @@
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset_fwd.cuh>
 #include <nvbench/detail/stream_cleanup_guard.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
@@ -39,7 +40,6 @@
 #include <cuda_runtime.h>
 
 #include <algorithm>
-#include <memory>
 
 namespace nvbench
 {
@@ -48,8 +48,6 @@ struct state;
 
 namespace detail
 {
-
-struct persisting_l2_cache_disable;
 
 // non-templated code goes here to keep instantiation cost down:
 struct measure_hot_base
@@ -110,7 +108,7 @@ protected:
   nvbench::cuda_timer m_cuda_timer;
   nvbench::cpu_timer m_walltime_timer;
   nvbench::blocking_kernel m_blocker;
-  std::unique_ptr<nvbench::detail::persisting_l2_cache_disable> m_persisting_l2_cache_disable{};
+  nvbench::detail::persisting_l2_cache_disable_ptr m_persisting_l2_cache_disable{};
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_batch_target_time{};
