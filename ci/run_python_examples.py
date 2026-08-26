@@ -13,7 +13,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-QUIET_NVBENCH_ARG = "-q"
 DEFAULT_EXAMPLE_TIMEOUT_SECONDS = 90
 LONG_EXAMPLE_TIMEOUT_SECONDS = 180
 CUTE_DSL_TIMEOUT_SECONDS = 300
@@ -97,8 +96,8 @@ EXAMPLE_RUNS = (
     ExampleRun(
         name="throughput",
         path="python/examples/throughput.py",
-        groups=("numba",),
-        required_modules=("cuda.bench", "numba", "numba.cuda", "numpy"),
+        groups=("numba-cuda-mlir",),
+        required_modules=("cuda.bench", "numba_cuda_mlir", "numpy"),
         requires_gpu=True,
         script_args=(
             "-b",
@@ -108,23 +107,7 @@ EXAMPLE_RUNS = (
             "-a",
             "ItemsPerThread=1",
         ),
-        description="Numba throughput example.",
-    ),
-    ExampleRun(
-        name="cuda-coop-block-reduce",
-        path="python/examples/cuda_coop_block_reduce.py",
-        groups=("numba",),
-        required_modules=("cuda.bench", "cuda.coop", "numba", "numpy"),
-        requires_gpu=True,
-        script_args=(
-            "-b",
-            "multi_block_bench",
-            "-a",
-            "ThreadsPerBlock=64",
-            "-a",
-            "NumBlocks[pow2]=10",
-        ),
-        description="cuda.coop block reduce example.",
+        description="Numba CUDA MLIR throughput example.",
     ),
     ExampleRun(
         name="cupy-extract",
@@ -186,7 +169,7 @@ EXAMPLE_RUNS = (
         required_modules=(
             "cuda.bench",
             "cuda.bench.results",
-            "numba",
+            "numba_cuda_mlir",
             "numpy",
             "tabulate",
         ),
@@ -242,13 +225,13 @@ GROUP_ALIASES = {
     "pr": ("syntax", "smoke"),
     "cpu": ("smoke", "example-cpu"),
     "light-gpu": ("core-cccl",),
-    "gpu": ("core-cccl", "numba", "cupy", "cuda-compute"),
+    "gpu": ("core-cccl", "numba-cuda-mlir", "cupy", "cuda-compute"),
     "all": (
         "syntax",
         "smoke",
         "example-cpu",
         "core-cccl",
-        "numba",
+        "numba-cuda-mlir",
         "cupy",
         "cuda-compute",
         "autotune",
@@ -412,7 +395,7 @@ def build_run_command(
     command = [python, run.path]
     command.extend(run.script_args)
 
-    nvbench_args = [QUIET_NVBENCH_ARG]
+    nvbench_args = []
     if run.use_profile:
         nvbench_args.append("--profile")
     if run.requires_gpu:

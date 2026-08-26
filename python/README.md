@@ -94,7 +94,7 @@ python test/smoke.py
 ### Run examples
 
 ```bash
-# Example benchmarking numba.cuda kernel
+# Example benchmarking Numba CUDA MLIR kernel
 python examples/throughput.py
 ```
 
