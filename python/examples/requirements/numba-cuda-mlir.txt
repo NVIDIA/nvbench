@@ -1,0 +1,2 @@
+numpy>=2.0
+numba-cuda-mlir>=0.5.0

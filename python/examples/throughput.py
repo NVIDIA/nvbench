@@ -18,7 +18,7 @@ import sys
 
 import cuda.bench as bench
 import numpy as np
-from numba import cuda
+from numba_cuda_mlir import cuda
 
 
 def as_cuda_stream(cs: bench.CudaStream) -> cuda.cudadrv.driver.Stream:

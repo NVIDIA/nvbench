@@ -150,8 +150,8 @@ run_example_env_and_record_status \
     pr,example-cpu,core-cccl
 
 run_example_env_and_record_status \
-    numba-cupy \
-    numba,cupy,cuda-compute
+    numba-cuda-mlir-cupy \
+    numba-cuda-mlir,cupy,cuda-compute
 
 run_example_env_and_record_status \
     autotune \
