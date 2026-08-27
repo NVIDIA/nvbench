@@ -37,6 +37,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace nvbench
@@ -62,10 +63,29 @@ struct option_parser
   void parse(int argc, char const *const argv[]);
   void parse(std::vector<std::string> args);
 
+  /*!
+   * Set the command line that invoked the executable, before any modification.
+   *
+   * Call this before `parse`. `parse` sends these args to the printers instead
+   * of its own args.
+   */
+  void set_raw_args(std::vector<std::string> raw_args) { m_raw_args = std::move(raw_args); }
+
   [[nodiscard]] benchmark_vector &get_benchmarks() { return m_benchmarks; };
   [[nodiscard]] const benchmark_vector &get_benchmarks() const { return m_benchmarks; };
 
+  /*!
+   * The args given to `parse`. A customization handler can modify these.
+   */
   [[nodiscard]] const std::vector<std::string> &get_args() const { return m_args; }
+
+  /*!
+   * The args given to `set_raw_args`, or `get_args` if it was not called.
+   */
+  [[nodiscard]] const std::vector<std::string> &get_raw_args() const
+  {
+    return m_raw_args ? *m_raw_args : m_args;
+  }
 
   /*!
    * Returns the output format requested by the parse options.
@@ -140,6 +160,9 @@ private:
 
   // Command line args
   std::vector<std::string> m_args;
+
+  // The unmodified command line, if the caller supplied one.
+  std::optional<std::vector<std::string>> m_raw_args;
 
   // Store benchmark modifiers passed in before any benchmarks are requested as
   // "global args". Replay them after every benchmark.

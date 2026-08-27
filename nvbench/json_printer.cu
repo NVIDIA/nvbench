@@ -418,7 +418,7 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
 
     {
       auto &argv = metadata["argv"];
-      for (const auto &arg : m_argv)
+      for (const auto &arg : this->get_argv())
       {
         argv.push_back(arg);
       }

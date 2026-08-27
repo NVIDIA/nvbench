@@ -76,7 +76,6 @@ struct json_printer : nvbench::printer_base
 
 protected:
   // Virtual API from printer_base:
-  void do_log_argv(const std::vector<std::string> &argv) override { m_argv = argv; }
   void do_process_bulk_data_float64(nvbench::state &state,
                                     const std::string &tag,
                                     const std::string &hint,
@@ -87,8 +86,6 @@ protected:
   bool m_enable_binary_output{false};
   std::size_t m_num_jsonbin_files{};
   std::size_t m_num_jsonbin_freq_files{};
-
-  std::vector<std::string> m_argv;
 };
 
 } // namespace nvbench

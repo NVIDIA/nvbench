@@ -96,8 +96,24 @@ struct printer_base
   /*!
    * Called once with the command line arguments used to invoke the current
    * executable.
+   *
+   * `NVBENCH_MAIN` supplies the command line as the user typed it, not the
+   * arguments that the customization handlers produce. Use
+   * `nvbench::option_parser::get_args` for the parsed arguments.
    */
-  void log_argv(const std::vector<std::string> &argv) { this->do_log_argv(argv); }
+  void log_argv(const std::vector<std::string> &argv)
+  {
+    m_argv = argv;
+    this->do_log_argv(argv);
+  }
+
+  /*!
+   * Print the command line used to invoke the current executable, if supported.
+   *
+   * Called before running benchmarks for active terminal output. Must be called
+   * after `log_argv`.
+   */
+  void print_argv() { this->do_print_argv(); }
 
   /*!
    * Print a summary of all detected devices, if supported.
@@ -192,8 +208,11 @@ struct printer_base
   /*!@}*/
 
 protected:
+  [[nodiscard]] const std::vector<std::string> &get_argv() const { return m_argv; }
+
   // Implementation hooks for subclasses:
   virtual void do_log_argv(const std::vector<std::string> &) {}
+  virtual void do_print_argv() {}
   virtual void do_print_device_info() {}
   virtual void do_print_log_preamble() {}
   virtual void do_print_log_epilogue() {}
@@ -226,6 +245,9 @@ protected:
 
   std::size_t m_completed_state_count{};
   std::size_t m_total_state_count{};
+
+private:
+  std::vector<std::string> m_argv;
 };
 
 } // namespace nvbench

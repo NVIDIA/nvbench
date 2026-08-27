@@ -31,6 +31,7 @@
 #include <nvbench/printer_base.cuh>
 
 #include <string>
+#include <vector>
 
 namespace nvbench
 {
@@ -62,6 +63,7 @@ struct markdown_printer : nvbench::printer_base
 
 protected:
   // Virtual API from printer_base:
+  void do_print_argv() override;
   void do_print_device_info() override;
   void do_print_log_preamble() override;
   void do_print_log_epilogue() override;

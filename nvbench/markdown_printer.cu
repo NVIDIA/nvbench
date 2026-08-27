@@ -41,6 +41,110 @@
 namespace nvbench
 {
 
+namespace
+{
+
+// Quote an argument for the shell of the current platform, so that the printed
+// command line can be copied and pasted.
+#ifdef _WIN32
+
+// The Windows command processor (cmd.exe) does not group text inside single
+// quotes, so use double quotes with backslash escapes.
+std::string shell_quote(const std::string &arg)
+{
+  if (!arg.empty() && arg.find_first_of(" \t\n\v\"^&|<>()%!") == std::string::npos)
+  {
+    return arg;
+  }
+
+  // Follow the rules of CommandLineToArgvW: a run of backslashes is only special
+  // when a double quote comes after it.
+  std::string result;
+
+  result.reserve((4 * arg.size()) + 2);
+  result += '\'';
+  for (auto iter = arg.begin(); iter != arg.end(); ++iter)
+  {
+    std::size_t num_backslashes = 0;
+    while (iter != arg.end() && *iter == '\\')
+    {
+      ++num_backslashes;
+      ++iter;
+    }
+
+    if (iter == arg.end())
+    { // Double the backslashes that come before the closing quote.
+      result.append(num_backslashes * 2, '\\');
+      break;
+    }
+
+    if (*iter == '"')
+    { // Double the backslashes that come before a quote, then escape the quote.
+      result.append(num_backslashes * 2, '\\');
+      result += "\\\"";
+    }
+    else
+    {
+      result.append(num_backslashes, '\\');
+      result += *iter;
+    }
+  }
+  result += '"';
+  return result;
+}
+
+#else
+
+// POSIX shells (sh, bash, zsh) take single quotes.
+std::string shell_quote(const std::string &arg)
+{
+  if (!arg.empty() && arg.find_first_of(" \t\n\"'\\$`|&;<>()*?[]{}#~!") == std::string::npos)
+  {
+    return arg;
+  }
+
+  std::string result;
+
+  result.reserve((4 * arg.size()) + 2);
+  result += '\'';
+  for (const char c : arg)
+  {
+    if (c == '\'')
+    { // A single quote cannot appear inside single quotes; close, escape, reopen.
+      result += "'\\''";
+    }
+    else
+    {
+      result += c;
+    }
+  }
+  result += '\'';
+  return result;
+}
+
+#endif // _WIN32
+
+} // namespace
+
+void markdown_printer::do_print_argv()
+{
+  const auto &argv = this->get_argv();
+  if (argv.empty())
+  {
+    return;
+  }
+
+  fmt::memory_buffer buffer;
+  fmt::format_to(fmt::appender(buffer), "# Command Line\n\n```\n");
+  for (std::size_t i = 0; i < argv.size(); ++i)
+  {
+    fmt::format_to(fmt::appender(buffer), "{}{}", i == 0 ? "" : " ", shell_quote(argv[i]));
+  }
+  fmt::format_to(fmt::appender(buffer), "\n```\n\n");
+
+  m_ostream << fmt::to_string(buffer);
+}
+
 void markdown_printer::do_print_device_info()
 {
   fmt::memory_buffer buffer;

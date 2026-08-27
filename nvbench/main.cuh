@@ -39,6 +39,7 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Advanced users can rebuild NVBench's `main` function using the macros in this file, or replace
@@ -57,12 +58,16 @@
 // Customization point, called before NVBench parsing. Update argc/argv if needed.
 // argc/argv are the usual command line arguments types. The ARGS version of this
 // macro is a bit more convenient.
+// NVBench captures the command line before this handler runs. Changes made here
+// do not alter the reported command line.
 #ifndef NVBENCH_MAIN_CUSTOM_ARGC_ARGV_HANDLER
 #define NVBENCH_MAIN_CUSTOM_ARGC_ARGV_HANDLER(argc, argv) []() {}()
 #endif
 
 // Customization point, called before NVBench parsing. Update args if needed.
 // Args is a vector of strings, each element is an argument.
+// NVBench captures the command line before this handler runs. Changes made here
+// do not alter the reported command line.
 #ifndef NVBENCH_MAIN_CUSTOM_ARGS_HANDLER
 #define NVBENCH_MAIN_CUSTOM_ARGS_HANDLER(args) []() {}()
 #endif
@@ -132,10 +137,12 @@
 
 #ifndef NVBENCH_MAIN_PARSE
 #define NVBENCH_MAIN_PARSE(argc, argv)                                                             \
+  std::vector<std::string> raw_args = nvbench::detail::main_convert_args(argc, argv);              \
   NVBENCH_MAIN_CUSTOM_ARGC_ARGV_HANDLER(argc, argv);                                               \
   std::vector<std::string> args = nvbench::detail::main_convert_args(argc, argv);                  \
   NVBENCH_MAIN_CUSTOM_ARGS_HANDLER(args);                                                          \
   nvbench::option_parser parser;                                                                   \
+  parser.set_raw_args(std::move(raw_args));                                                        \
   NVBENCH_MAIN_PARSE_CUSTOM_PRE(parser, args);                                                     \
   parser.parse(args);                                                                              \
   NVBENCH_MAIN_PARSE_CUSTOM_POST(parser)
@@ -209,6 +216,7 @@ inline void main_print_preamble(option_parser &parser)
 {
   auto &printer = parser.get_printer();
 
+  printer.print_argv();
   printer.print_device_info();
   printer.print_log_preamble();
 }

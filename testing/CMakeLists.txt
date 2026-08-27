@@ -11,6 +11,7 @@ set(test_srcs
   custom_main_custom_args.cu
   custom_main_custom_exceptions.cu
   custom_main_global_state_raii.cu
+  custom_main_raw_argv.cu
   enum_type_list.cu
   entropy_criterion.cu
   exception_safety.cu
@@ -38,6 +39,7 @@ set(test_srcs
 # CTest commands+args can't be modified after creation, so we need to rely on substitution.
 set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_args "--quiet" "--my-custom-arg" "--profile" "-d" "0")
 set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_exceptions "--quiet" "--profile" "-d" "0")
+set(NVBench_TEST_ARGS_nvbench.test.custom_main_raw_argv "--my-custom-arg" "-d" "0")
 
 # Metatarget for all tests:
 add_custom_target(nvbench.test.all)
@@ -59,6 +61,10 @@ endforeach()
 
 set_tests_properties(nvbench.test.custom_main_custom_exceptions PROPERTIES
   PASS_REGULAR_EXPRESSION "Custom error detected: Expected exception thrown."
+)
+set_tests_properties(nvbench.test.custom_main_raw_argv PROPERTIES
+  PASS_REGULAR_EXPRESSION "custom_main_raw_argv --my-custom-arg -d 0"
+  FAIL_REGULAR_EXPRESSION "custom_main_raw_argv --profile"
 )
 set_tests_properties(nvbench.test.exception_safety PROPERTIES TIMEOUT 20)
 
