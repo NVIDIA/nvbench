@@ -359,6 +359,35 @@ EXPLAIN_DISPLAY_HEADERS = [
 ]
 
 
+@pytest.mark.parametrize(
+    "status_arg, expected",
+    [
+        ("slow", {"SLOW"}),
+        ("FAST,SAME", {"FAST", "SAME"}),
+        ("unknown", {"????"}),
+        ("UNKN", {"????"}),
+        ("????", {"????"}),
+        ("ambiguous", {"AMBG"}),
+        ("undecided", {"AMBG"}),
+        ("AMBG", {"AMBG"}),
+        ("not-unknown", {"AMBG", "SAME", "FAST", "SLOW"}),
+        ("SLOW,not-unknown", {"AMBG", "SAME", "FAST", "SLOW"}),
+    ],
+)
+def test_parse_status_filter_accepts_names_and_display_codes(
+    nvbench_compare, status_arg, expected
+):
+    statuses = nvbench_compare.parse_status_filter(status_arg)
+
+    assert {status.value for status in statuses} == expected
+
+
+@pytest.mark.parametrize("status_arg", ["", "slow,", "missing"])
+def test_parse_status_filter_rejects_invalid_values(nvbench_compare, status_arg):
+    with pytest.raises(ValueError, match="--status"):
+        nvbench_compare.parse_status_filter(status_arg)
+
+
 def make_gpu_timing_data(
     nvbench_compare,
     *,
@@ -815,6 +844,86 @@ def test_compare_benches_collects_bulk_debug_rows(tmp_path, nvbench_compare):
     assert row["reference_frequency_filename"] == str(ref_freqs_file)
     assert row["compare_sample_filename"] == str(cmp_samples_file)
     assert row["compare_frequency_filename"] == str(cmp_freqs_file)
+
+
+def test_compare_benches_status_filter_selects_rows_and_bulk_debug(
+    monkeypatch, nvbench_compare
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+    tabulate_calls = capture_tabulate_calls(monkeypatch, nvbench_compare)
+
+    def fake_compare_gpu_timings(ref_timing, cmp_timing, comparison_thresholds=None):
+        del comparison_thresholds
+        status = (
+            nvbench_compare.ComparisonStatus.SLOW
+            if cmp_timing.mean > ref_timing.mean
+            else nvbench_compare.ComparisonStatus.SAME
+        )
+        return nvbench_compare.SummaryComparison(
+            ref_interval=None,
+            cmp_interval=None,
+            ref_estimate=nvbench_compare.TimeEstimate(
+                center=ref_timing.mean, relative_dispersion=ref_timing.stdev_relative
+            ),
+            cmp_estimate=nvbench_compare.TimeEstimate(
+                center=cmp_timing.mean, relative_dispersion=cmp_timing.stdev_relative
+            ),
+            ref_time=ref_timing.mean,
+            cmp_time=cmp_timing.mean,
+            ref_noise=ref_timing.stdev_relative,
+            cmp_noise=cmp_timing.stdev_relative,
+            diff=cmp_timing.mean - ref_timing.mean,
+            frac_diff=(cmp_timing.mean - ref_timing.mean) / ref_timing.mean,
+            diff_interval=None,
+            frac_diff_interval=None,
+            max_noise=max(ref_timing.stdev_relative, cmp_timing.stdev_relative),
+            status=status,
+            reason=nvbench_compare.DecisionReason("test", "test"),
+        )
+
+    monkeypatch.setattr(
+        nvbench_compare, "compare_gpu_timings", fake_compare_gpu_timings
+    )
+
+    ref_bench = make_benchmark(
+        [
+            make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+            make_state(nvbench_compare, "state", mean="1.0", axis_value=2),
+        ]
+    )
+    cmp_bench = make_benchmark(
+        [
+            make_state(nvbench_compare, "state", mean="1.0", axis_value=1),
+            make_state(nvbench_compare, "state", mean="1.2", axis_value=2),
+        ]
+    )
+    bulk_debug_rows = []
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [ref_bench],
+        [cmp_bench],
+        threshold=1.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+        status_filter=frozenset({nvbench_compare.ComparisonStatus.SLOW}),
+        bulk_debug_rows=bulk_debug_rows,
+    )
+
+    table = find_tabulate_call(tabulate_calls, INTERVAL_DISPLAY_HEADERS)
+    assert len(table["rows"]) == 1
+    assert table["rows"][0][0] == "2"
+    assert table["rows"][0][-1] == "\U0001f534 SLOW"
+
+    assert run_data.stats.config_count == 2
+    assert run_data.stats.pass_count == 1
+    assert run_data.stats.regression_count == 1
+    assert len(bulk_debug_rows) == 1
+    assert bulk_debug_rows[0]["status"] == nvbench_compare.ComparisonStatus.SLOW.value
+    assert bulk_debug_rows[0]["table_row_index"] == 0
 
 
 def test_bulk_debug_rows_store_absolute_sidecar_paths(
@@ -2350,7 +2459,7 @@ def test_plot_along_rejects_states_without_selected_axis(monkeypatch, nvbench_co
         )
 
 
-def test_plot_along_ignores_threshold_diff_table_filter(monkeypatch, nvbench_compare):
+def test_plot_along_ignores_status_table_filter(monkeypatch, nvbench_compare):
     run_data = make_comparison_run_data(nvbench_compare)
     plot_calls = []
     table_calls = []
@@ -2401,6 +2510,7 @@ def test_plot_along_ignores_threshold_diff_table_filter(monkeypatch, nvbench_com
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
         no_color=True,
+        status_filter=frozenset({nvbench_compare.ComparisonStatus.SLOW}),
     )
 
     assert run_data.stats.config_count == 2
@@ -2609,7 +2719,7 @@ def test_plot_along_output_disambiguates_duplicate_paths(
     assert "Warning: plot-along output" in capsys.readouterr().err
 
 
-def test_compare_benches_validates_device_metadata_when_threshold_hides_rows(
+def test_compare_benches_validates_device_metadata_when_status_filter_hides_rows(
     nvbench_compare,
 ):
     run_data = nvbench_compare.ComparisonRunData(
@@ -2635,6 +2745,7 @@ def test_compare_benches_validates_device_metadata_when_threshold_hides_rows(
             dark=False,
             filter_plan=make_filter_plan(nvbench_compare),
             no_color=True,
+            status_filter=frozenset({nvbench_compare.ComparisonStatus.SLOW}),
         )
 
 
@@ -4502,7 +4613,7 @@ def test_sanitize_plot_output_component_uses_fallback_for_empty_values(
     assert nvbench_compare.plotting.sanitize_plot_output_component("../../") == "value"
 
 
-def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_compare):
+def test_main_warns_threshold_diff_is_ignored(monkeypatch, capsys, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {
         "devices": devices,
@@ -4515,6 +4626,7 @@ def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_c
     def fake_compare_benches(*args, **kwargs):
         del args
         captured["threshold"] = kwargs["threshold"]
+        captured["status_filter"] = kwargs["status_filter"]
 
     monkeypatch.setattr(nvbench_compare, "compare_benches", fake_compare_benches)
     monkeypatch.setattr(
@@ -4530,13 +4642,44 @@ def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_c
     )
 
     assert nvbench_compare.main() == 0
-    assert captured["threshold"] == pytest.approx(0.05)
+    captured_output = capsys.readouterr()
+    assert "--threshold-diff is ignored" in captured_output.err
+    assert captured["threshold"] == pytest.approx(0.0)
+    assert captured["status_filter"] is None
 
 
-@pytest.mark.parametrize("threshold", ["nan", "inf", "-1"])
-def test_main_rejects_invalid_threshold_diff(
-    monkeypatch, capsys, nvbench_compare, threshold
-):
+def test_main_passes_status_filter_to_compare_benches(monkeypatch, nvbench_compare):
+    devices = [{"id": 0, "name": "Test GPU"}]
+    root = {
+        "devices": devices,
+        "benchmarks": [],
+    }
+    captured = {}
+
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+
+    def fake_compare_benches(*args, **kwargs):
+        del args
+        captured["status_filter"] = kwargs["status_filter"]
+
+    monkeypatch.setattr(nvbench_compare, "compare_benches", fake_compare_benches)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "nvbench_compare",
+            "--status",
+            "slow,ambg",
+            "ref.json",
+            "cmp.json",
+        ],
+    )
+
+    assert nvbench_compare.main() == 0
+    assert {status.value for status in captured["status_filter"]} == {"SLOW", "AMBG"}
+
+
+def test_main_rejects_invalid_status_filter(monkeypatch, capsys, nvbench_compare):
     monkeypatch.setattr(
         nvbench_compare,
         "load_nvbench_compare_tooling",
@@ -4549,15 +4692,12 @@ def test_main_rejects_invalid_threshold_diff(
         "argv",
         [
             "nvbench_compare",
-            "--threshold-diff",
-            threshold,
+            "--status",
+            "missing",
             "ref.json",
             "cmp.json",
         ],
     )
 
     assert nvbench_compare.main() == 1
-    assert (
-        "--threshold-diff must be a finite non-negative percentage"
-        in capsys.readouterr().out
-    )
+    assert "--status value 'missing' is invalid" in capsys.readouterr().out

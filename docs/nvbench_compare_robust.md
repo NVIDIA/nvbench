@@ -64,6 +64,16 @@ nvbench-compare-robust --display explain reference.json compare.json
 nvbench-compare-legacy reference.json compare.json
 ```
 
+Filter displayed rows by comparison status. Comma-separated statuses are combined
+with OR. Status names are case-insensitive; full names and display abbreviations
+are accepted:
+
+```bash
+nvbench-compare-robust --status slow reference.json compare.json
+nvbench-compare-robust --status slow,ambg reference.json compare.json
+nvbench-compare-robust --status not-unknown reference.json compare.json
+```
+
 Plot the comparison summary, or plot timings along a positive numeric axis. By
 default, plotting uses Matplotlib's interactive `plt.show()` behavior. Add
 `--dark` to the summary plot when it should use a dark theme:
@@ -259,7 +269,7 @@ the comparison as `AMBG`.
 `--bulk-debug-python /path/to/output.py` writes a Python script to the specified
 file. The generated script contains a `bulk_rows` list. Each entry corresponds
 to one row that `nvbench-compare-robust` prints in its display tables after all
-benchmark, axis, device, and threshold filters are applied.
+benchmark, axis, device, and status filters are applied.
 
 This output is also useful when the built-in `--plot` or `--plot-along` views
 are too generic. The generated `bulk_rows` data and `load_bulk_data(row)` helper
@@ -674,14 +684,27 @@ rare-value filtering has no repeated-value support to preserve.
 
 ## Other CLI Options
 
+### `--status STATUS[,STATUS...]`
+
+Filter displayed table rows to selected comparison statuses. Comma-separated
+statuses are combined with OR. The accepted spellings are:
+
+- `unknown`, `unkn`, `????`
+- `ambiguous`, `undecided`, `ambg`
+- `same`
+- `fast`
+- `slow`
+- `not-unknown` to select `ambiguous`, `same`, `fast`, and `slow`
+
+This option affects table output, generated `--bulk-debug-python` rows, and
+`--plot` summary entries. It does not change summary counters or the data used by
+`--plot-along`.
+
 ### `--threshold-diff PERCENT`
 
-Filter displayed table rows to comparisons whose absolute center-to-center
-relative difference is at least `PERCENT`. The value is a percentage, not a
-fraction: use `--threshold-diff 5` for a 5% threshold.
-
-This option affects table output. It does not change summary counters or the
-data used by `--plot-along`.
+Deprecated. The option is accepted for command-line compatibility, but
+`nvbench-compare-robust` ignores the value and prints a warning. Use `--status`
+to filter displayed rows.
 
 ### `--plot-output PATH`
 
