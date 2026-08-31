@@ -32,6 +32,7 @@
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
 #include <nvbench/cuda_timer.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset_fwd.cuh>
 #include <nvbench/detail/stream_cleanup_guard.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
@@ -52,6 +53,7 @@ namespace detail
 struct measure_hot_base
 {
   explicit measure_hot_base(nvbench::state &exec_state);
+  ~measure_hot_base();
   measure_hot_base(const measure_hot_base &)            = delete;
   measure_hot_base(measure_hot_base &&)                 = delete;
   measure_hot_base &operator=(const measure_hot_base &) = delete;
@@ -74,6 +76,9 @@ protected:
   void check_skip_time(nvbench::float64_t warmup_time);
 
   void block_stream();
+  void initialize_persisting_l2_cache_disable();
+  void reset_persisting_l2_cache();
+  void restore_persisting_l2_cache();
 
   static nvbench::int64_t predict_cuda_batch_size(nvbench::float64_t target_time,
                                                   nvbench::float64_t time_estimate,
@@ -103,6 +108,7 @@ protected:
   nvbench::cuda_timer m_cuda_timer;
   nvbench::cpu_timer m_walltime_timer;
   nvbench::blocking_kernel m_blocker;
+  nvbench::detail::persisting_l2_cache_disable_ptr m_persisting_l2_cache_disable{};
 
   nvbench::int64_t m_min_samples{};
   nvbench::float64_t m_batch_target_time{};
@@ -114,6 +120,7 @@ protected:
   nvbench::float64_t m_total_cuda_time{};
 
   bool m_disable_blocking_kernel{false};
+  bool m_disable_persisting_l2_cache{false};
   bool m_max_time_exceeded{false};
 };
 
@@ -129,8 +136,20 @@ struct measure_hot : public measure_hot_base
   {
     this->check();
     this->initialize();
-    this->run_warmup();
-    this->run_trials();
+    this->initialize_persisting_l2_cache_disable();
+
+    try
+    {
+      this->run_warmup();
+      this->run_trials();
+      this->restore_persisting_l2_cache();
+    }
+    catch (...)
+    {
+      this->restore_persisting_l2_cache();
+      throw;
+    }
+
     this->generate_summaries();
   }
 
@@ -141,6 +160,7 @@ private:
   {
     nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
+    this->reset_persisting_l2_cache();
     m_walltime_timer.start();
     {
       m_cuda_timer.start(m_launch.get_stream());
@@ -182,6 +202,7 @@ private:
 
       nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
+      this->reset_persisting_l2_cache();
       if (!m_disable_blocking_kernel)
       {
         // Block stream until some work is queued.
