@@ -138,4 +138,12 @@ void printer_multiplex::do_log_argv(const std::vector<std::string> &argv)
   }
 }
 
+void printer_multiplex::do_log_raw_argv(const std::vector<std::string> &argv)
+{
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->log_raw_argv(argv);
+  }
+}
+
 } // namespace nvbench

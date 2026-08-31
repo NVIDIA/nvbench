@@ -66,8 +66,8 @@ struct option_parser
   /*!
    * Set the command line that invoked the executable, before any modification.
    *
-   * Call this before `parse`. `parse` sends these args to the printers instead
-   * of its own args.
+   * Call this before `parse`. `parse` sends these args to the printers as raw
+   * args alongside the args that NVBench parsed.
    */
   void set_raw_args(std::vector<std::string> raw_args) { m_raw_args = std::move(raw_args); }
 
@@ -75,7 +75,7 @@ struct option_parser
   [[nodiscard]] const benchmark_vector &get_benchmarks() const { return m_benchmarks; };
 
   /*!
-   * The args given to `parse`. A customization handler can modify these.
+   * The args given to `parse` after customization handlers have modified them.
    */
   [[nodiscard]] const std::vector<std::string> &get_args() const { return m_args; }
 

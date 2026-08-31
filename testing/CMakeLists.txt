@@ -39,7 +39,8 @@ set(test_srcs
 # CTest commands+args can't be modified after creation, so we need to rely on substitution.
 set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_args "--quiet" "--my-custom-arg" "--profile" "-d" "0")
 set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_exceptions "--quiet" "--profile" "-d" "0")
-set(NVBench_TEST_ARGS_nvbench.test.custom_main_raw_argv "--my-custom-arg" "-d" "0")
+set(NVBench_TEST_ARGS_nvbench.test.custom_main_raw_argv
+  "--my-custom-arg" "-d" "0" "--json" "custom_main_raw_argv.json")
 
 # Metatarget for all tests:
 add_custom_target(nvbench.test.all)

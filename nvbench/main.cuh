@@ -58,16 +58,16 @@
 // Customization point, called before NVBench parsing. Update argc/argv if needed.
 // argc/argv are the usual command line arguments types. The ARGS version of this
 // macro is a bit more convenient.
-// NVBench captures the command line before this handler runs. Changes made here
-// do not alter the reported command line.
+// NVBench captures raw argv before this handler runs. Changes made here do not
+// alter the raw argv that printers may report separately from the parsed args.
 #ifndef NVBENCH_MAIN_CUSTOM_ARGC_ARGV_HANDLER
 #define NVBENCH_MAIN_CUSTOM_ARGC_ARGV_HANDLER(argc, argv) []() {}()
 #endif
 
 // Customization point, called before NVBench parsing. Update args if needed.
 // Args is a vector of strings, each element is an argument.
-// NVBench captures the command line before this handler runs. Changes made here
-// do not alter the reported command line.
+// NVBench captures raw argv before this handler runs. Changes made here do not
+// alter the raw argv that printers may report separately from the parsed args.
 #ifndef NVBENCH_MAIN_CUSTOM_ARGS_HANDLER
 #define NVBENCH_MAIN_CUSTOM_ARGS_HANDLER(args) []() {}()
 #endif

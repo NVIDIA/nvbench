@@ -128,7 +128,7 @@ std::string shell_quote(const std::string &arg)
 
 void markdown_printer::do_print_argv()
 {
-  const auto &argv = this->get_argv();
+  const auto &argv = this->get_raw_argv();
   if (argv.empty())
   {
     return;

@@ -19,11 +19,62 @@
 #include <nvbench/nvbench.cuh>
 
 #include <algorithm>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-// Rewrite "--my-custom-arg" into "--profile". The reported command line must keep
+namespace
+{
+
+const char *json_output_path = "custom_main_raw_argv.json";
+
+std::string read_json_output()
+{
+  std::ifstream stream{json_output_path};
+  if (!stream)
+  {
+    throw std::runtime_error("JSON output was not written.");
+  }
+
+  std::ostringstream buffer;
+  buffer << stream.rdbuf();
+  return buffer.str();
+}
+
+void verify_json_array(const std::string &json,
+                       const char *key,
+                       const char *expected,
+                       const char *unexpected)
+{
+  const auto key_pos = json.find(key);
+  if (key_pos == std::string::npos)
+  {
+    throw std::runtime_error(std::string{"JSON output is missing "} + key + ".");
+  }
+
+  const auto array_end = json.find("]", key_pos);
+  if (array_end == std::string::npos)
+  {
+    throw std::runtime_error(std::string{"JSON output has an unterminated "} + key + " array.");
+  }
+
+  const auto array = json.substr(key_pos, array_end - key_pos);
+  if (array.find(expected) == std::string::npos)
+  {
+    throw std::runtime_error(std::string{"JSON "} + key + " lost its expected argument.");
+  }
+  if (array.find(unexpected) != std::string::npos)
+  {
+    throw std::runtime_error(std::string{"JSON "} + key + " contains the wrong argument.");
+  }
+}
+
+} // namespace
+
+// Rewrite "--my-custom-arg" into "--profile". The printed command line must keep
 // the original argument.
 void custom_arg_handler(std::vector<std::string> &args)
 {
@@ -59,6 +110,17 @@ void verify(nvbench::option_parser &parser)
 
 #undef NVBENCH_MAIN_PARSE_CUSTOM_POST
 #define NVBENCH_MAIN_PARSE_CUSTOM_POST(parser) verify(parser)
+
+void verify_json_output()
+{
+  const auto json = read_json_output();
+  verify_json_array(json, "\"argv\"", "\"--profile\"", "\"--my-custom-arg\"");
+  verify_json_array(json, "\"raw_argv\"", "\"--my-custom-arg\"", "\"--profile\"");
+  std::remove(json_output_path);
+}
+
+#undef NVBENCH_MAIN_FINALIZE_CUSTOM_PRE
+#define NVBENCH_MAIN_FINALIZE_CUSTOM_PRE() verify_json_output()
 
 void bench(nvbench::state &state)
 {

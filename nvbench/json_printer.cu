@@ -381,7 +381,10 @@ void json_printer::do_process_bulk_data_float64(state &state,
   } // end hint == sample_freqs
 }
 
-static void add_devices_section(nlohmann::ordered_json &root)
+namespace
+{
+
+void add_devices_section(nlohmann::ordered_json &root)
 {
   auto &devices = root["devices"];
   for (const auto &dev_info : nvbench::device_manager::get().get_devices())
@@ -409,6 +412,19 @@ static void add_devices_section(nlohmann::ordered_json &root)
   }
 }
 
+void add_argv_array(nlohmann::ordered_json &metadata,
+                    const char *key,
+                    const std::vector<std::string> &args)
+{
+  auto &argv = metadata[key];
+  for (const auto &arg : args)
+  {
+    argv.push_back(arg);
+  }
+}
+
+} // namespace
+
 void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
 {
   nlohmann::ordered_json root;
@@ -416,13 +432,8 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
   {
     auto &metadata = root["meta"];
 
-    {
-      auto &argv = metadata["argv"];
-      for (const auto &arg : this->get_argv())
-      {
-        argv.push_back(arg);
-      }
-    } // "argv"
+    add_argv_array(metadata, "argv", this->get_argv());
+    add_argv_array(metadata, "raw_argv", this->get_raw_argv());
 
     {
       auto &version = metadata["version"];
