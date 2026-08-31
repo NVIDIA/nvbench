@@ -62,7 +62,7 @@ std::string shell_quote(const std::string &arg)
   std::string result;
 
   result.reserve((4 * arg.size()) + 2);
-  result += '\'';
+  result += '"';
   for (auto iter = arg.begin(); iter != arg.end(); ++iter)
   {
     std::size_t num_backslashes = 0;
