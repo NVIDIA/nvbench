@@ -18,6 +18,7 @@ set(test_srcs
   float64_axis.cu
   int64_axis.cu
   json_printer.cu
+  markdown_printer.cu
   measure_timeout_warnings.cu
   named_values.cu
   option_parser.cu

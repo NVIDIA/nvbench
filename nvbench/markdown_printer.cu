@@ -44,12 +44,11 @@ namespace nvbench
 namespace
 {
 
-// Quote an argument for the shell of the current platform, so that the printed
-// command line can be copied and pasted.
 #ifdef _WIN32
 
-// The Windows command processor (cmd.exe) does not group text inside single
-// quotes, so use double quotes with backslash escapes.
+// Quote an argument with the backslash/double-quote rules used by
+// CommandLineToArgvW. This is not a full cmd.exe escaping layer; cmd.exe
+// expansion rules may still apply when pasted into a shell.
 std::string shell_quote(const std::string &arg)
 {
   if (!arg.empty() && arg.find_first_of(" \t\n\v\"^&|<>()%!") == std::string::npos)
@@ -95,7 +94,8 @@ std::string shell_quote(const std::string &arg)
 
 #else
 
-// POSIX shells (sh, bash, zsh) take single quotes.
+// Quote an argument for POSIX shells (sh, bash, zsh), so that the printed
+// command line can be copied and pasted.
 std::string shell_quote(const std::string &arg)
 {
   if (!arg.empty() && arg.find_first_of(" \t\n\"'\\$`|&;<>()*?[]{}#~!") == std::string::npos)
@@ -124,6 +124,32 @@ std::string shell_quote(const std::string &arg)
 
 #endif // _WIN32
 
+std::size_t max_backtick_run(const std::string &str)
+{
+  std::size_t max_run{};
+  std::size_t current_run{};
+  for (const char c : str)
+  {
+    if (c == '`')
+    {
+      ++current_run;
+      max_run = current_run > max_run ? current_run : max_run;
+    }
+    else
+    {
+      current_run = 0;
+    }
+  }
+
+  return max_run;
+}
+
+std::string markdown_code_fence(const std::string &contents)
+{
+  const auto fence_size = max_backtick_run(contents) + 1;
+  return std::string(fence_size < 3 ? 3 : fence_size, '`');
+}
+
 } // namespace
 
 void markdown_printer::do_print_argv()
@@ -134,14 +160,24 @@ void markdown_printer::do_print_argv()
     return;
   }
 
-  fmt::memory_buffer buffer;
-  fmt::format_to(fmt::appender(buffer), "# Command Line\n\n```\n");
+  std::string command_line;
   for (std::size_t i = 0; i < argv.size(); ++i)
   {
-    fmt::format_to(fmt::appender(buffer), "{}{}", i == 0 ? "" : " ", shell_quote(argv[i]));
+    if (i != 0)
+    {
+      command_line += ' ';
+    }
+    command_line += shell_quote(argv[i]);
   }
-  fmt::format_to(fmt::appender(buffer), "\n```\n\n");
 
+  const auto fence = markdown_code_fence(command_line);
+
+  fmt::memory_buffer buffer;
+  fmt::format_to(fmt::appender(buffer),
+                 "# Command Line\n\n{}\n{}\n{}\n\n",
+                 fence,
+                 command_line,
+                 fence);
   m_ostream << fmt::to_string(buffer);
 }
 
