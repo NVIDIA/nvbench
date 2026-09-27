@@ -55,7 +55,10 @@ def test_normalize_legacy_launch_directory_path(tmp_path, normalizer, monkeypatc
     document, changes = normalizer.normalize_jsonbin(result)
 
     assert changes == [("result.json-bin/0.bin", "../launch/result.json-bin/0.bin")]
-    assert document["benchmarks"][0]["states"][0]["summaries"][0]["filename"] == changes[0][1]
+    assert (
+        document["benchmarks"][0]["states"][0]["summaries"][0]["filename"]
+        == changes[0][1]
+    )
 
 
 def test_normalize_rejects_ambiguous_sidecar(tmp_path, normalizer, monkeypatch):

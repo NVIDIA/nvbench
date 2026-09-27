@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
 SIDECAR_HINTS = {"file/sample_times", "file/sample_freqs"}
 
 
@@ -20,7 +19,9 @@ class SidecarResolutionError(ValueError):
     """Raised when a sidecar cannot be resolved unambiguously."""
 
 
-def _candidate_paths(filename: str, json_path: Path, sidecar_root: Path | None) -> list[Path]:
+def _candidate_paths(
+    filename: str, json_path: Path, sidecar_root: Path | None
+) -> list[Path]:
     path = Path(filename)
     if path.is_absolute():
         candidates = [path]
@@ -40,7 +41,9 @@ def _candidate_paths(filename: str, json_path: Path, sidecar_root: Path | None) 
     return candidates
 
 
-def resolve_sidecar(filename: str, json_path: Path, sidecar_root: Path | None = None) -> Path:
+def resolve_sidecar(
+    filename: str, json_path: Path, sidecar_root: Path | None = None
+) -> Path:
     """Resolve one sidecar filename, rejecting missing or ambiguous matches."""
     matches: list[tuple[Path, Path]] = []
     for candidate in _candidate_paths(filename, json_path, sidecar_root):
@@ -64,7 +67,9 @@ def resolve_sidecar(filename: str, json_path: Path, sidecar_root: Path | None = 
 
 def _iter_sidecar_records(value: Any):
     if isinstance(value, dict):
-        if value.get("hint") in SIDECAR_HINTS and isinstance(value.get("filename"), str):
+        if value.get("hint") in SIDECAR_HINTS and isinstance(
+            value.get("filename"), str
+        ):
             yield value
         for child in value.values():
             yield from _iter_sidecar_records(child)
@@ -106,7 +111,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        document, changes = normalize_jsonbin(args.json_file, sidecar_root=args.sidecar_root)
+        document, changes = normalize_jsonbin(
+            args.json_file, sidecar_root=args.sidecar_root
+        )
         if args.dry_run:
             for old_name, new_name in changes:
                 print(f"{old_name} -> {new_name}")
@@ -121,7 +128,9 @@ def main(argv: list[str] | None = None) -> int:
             shutil.copy2(args.json_file, backup)
             _write_result(args.json_file, document, args.json_file)
         else:
-            parser.error("choose --dry-run, --in-place, or --output when changes are needed")
+            parser.error(
+                "choose --dry-run, --in-place, or --output when changes are needed"
+            )
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"nvbench-normalize-jsonbin: {exc}", file=sys.stderr)
