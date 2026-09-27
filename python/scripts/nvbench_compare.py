@@ -687,20 +687,6 @@ def main():
         action="store_true",
         help="Use dark theme (black background, white text)",
     )
-    color_group = parser.add_mutually_exclusive_group()
-    color_group.add_argument(
-        "--color",
-        dest="no_color",
-        action="store_false",
-        help="Use ANSI color codes for status output",
-    )
-    color_group.add_argument(
-        "--no-color",
-        dest="no_color",
-        action="store_true",
-        help="Use emoji instead of ANSI color codes (default; useful for GitHub issues/PRs)",
-    )
-    parser.set_defaults(no_color=True)
     parser.add_argument(
         "-a",
         "--axis",
@@ -728,8 +714,9 @@ def main():
         parser.print_help()
         sys.exit(1)
 
+    no_color = True
     try:
-        load_nvbench_compare_tooling(load_color=not args.no_color)
+        load_nvbench_compare_tooling(load_color=not no_color)
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -763,12 +750,12 @@ def main():
         all_cmp_devices = cmp_root["devices"]
 
         if ref_root["devices"] != cmp_root["devices"]:
-            if args.no_color:
+            if no_color:
                 warn_fore = ""
             else:
                 warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
-            print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
+            print(colorize(msg_text, warn_fore, Emoji.NONE, no_color), end="")
             print(": ", end="")
 
             try:
@@ -794,7 +781,7 @@ def main():
                 args.dark,
                 axis_filters,
                 args.benchmark,
-                args.no_color,
+                no_color,
             )
         except MissingToolingDependencyError as exc:
             print(str(exc), file=sys.stderr)

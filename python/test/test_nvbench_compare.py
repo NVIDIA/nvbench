@@ -41,29 +41,9 @@ def run_main(nvbench_compare, monkeypatch, *arguments):
     return tooling_calls, compare_calls
 
 
-def test_compare_disables_color_by_default(nvbench_compare, monkeypatch):
+def test_compare_uses_emoji_statuses(nvbench_compare, monkeypatch):
     tooling_calls, compare_calls = run_main(
         nvbench_compare, monkeypatch, "reference.json", "compare.json"
-    )
-
-    assert tooling_calls == [{"load_color": False}]
-    assert compare_calls[0][-1] is True
-
-
-def test_compare_enables_color_only_with_color_flag(nvbench_compare, monkeypatch):
-    tooling_calls, compare_calls = run_main(
-        nvbench_compare, monkeypatch, "--color", "reference.json", "compare.json"
-    )
-
-    assert tooling_calls == [{"load_color": True}]
-    assert compare_calls[0][-1] is False
-
-
-def test_compare_keeps_no_color_flag_as_compatibility_alias(
-    nvbench_compare, monkeypatch
-):
-    tooling_calls, compare_calls = run_main(
-        nvbench_compare, monkeypatch, "--no-color", "reference.json", "compare.json"
     )
 
     assert tooling_calls == [{"load_color": False}]
