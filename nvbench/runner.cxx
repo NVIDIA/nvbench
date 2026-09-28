@@ -73,9 +73,9 @@ void runner_base::generate_throughput_summaries(state &exec_state) const
 {
   const auto find_summary = [&exec_state](std::string_view tag) -> const nvbench::summary * {
     const auto &summaries = exec_state.get_summaries();
-    const auto iter = std::find_if(summaries.cbegin(), summaries.cend(), [tag](const auto &summary) {
-      return summary.get_tag() == tag;
-    });
+    const auto iter = std::find_if(summaries.cbegin(),
+                                   summaries.cend(),
+                                   [tag](const auto &summary) { return summary.get_tag() == tag; });
     return iter == summaries.cend() ? nullptr : &*iter;
   };
 
@@ -104,9 +104,9 @@ void runner_base::generate_throughput_summaries(state &exec_state) const
         summ.set_string("name", "GlobalMem BW");
         summ.set_string("hint", "byte_rate");
         summ.set_string("description",
-                        add_utilization
-                          ? "Number of bytes read/written per second to the CUDA device's global memory"
-                          : "Number of bytes read/written per second.");
+                        add_utilization ? "Number of bytes read/written per second to the CUDA "
+                                          "device's global memory"
+                                        : "Number of bytes read/written per second.");
         summ.set_float64("value", avg_used_gmem_bw);
       }
 
@@ -115,8 +115,7 @@ void runner_base::generate_throughput_summaries(state &exec_state) const
         const auto &device = exec_state.get_device();
         if (device)
         {
-          const auto peak_gmem_bw =
-            static_cast<double>(device->get_global_memory_bus_bandwidth());
+          const auto peak_gmem_bw = static_cast<double>(device->get_global_memory_bus_bandwidth());
           if (peak_gmem_bw > 0.)
           {
             auto &summ = exec_state.add_summary(fmt::format("{}/bw/global/utilization", prefix));
