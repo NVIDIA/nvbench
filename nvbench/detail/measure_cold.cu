@@ -467,42 +467,6 @@ void measure_cold_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  if (const auto items = m_state.get_element_count(); items != 0)
-  {
-    auto &summ = m_state.add_summary("nv/cold/bw/item_rate");
-    summ.set_string("name", "Elem/s");
-    summ.set_string("hint", "item_rate");
-    summ.set_string("description", "Number of input elements processed per second");
-    summ.set_float64("value", static_cast<double>(items) / cuda_mean);
-  }
-
-  if (const auto bytes = m_state.get_global_memory_rw_bytes(); bytes != 0)
-  {
-    const auto avg_used_gmem_bw = static_cast<double>(bytes) / cuda_mean;
-    {
-      auto &summ = m_state.add_summary("nv/cold/bw/global/bytes_per_second");
-      summ.set_string("name", "GlobalMem BW");
-      summ.set_string("hint", "byte_rate");
-      summ.set_string("description",
-                      "Number of bytes read/written per second to the CUDA "
-                      "device's global memory");
-      summ.set_float64("value", avg_used_gmem_bw);
-    }
-
-    {
-      const auto peak_gmem_bw =
-        static_cast<double>(m_state.get_device()->get_global_memory_bus_bandwidth());
-
-      auto &summ = m_state.add_summary("nv/cold/bw/global/utilization");
-      summ.set_string("name", "BWUtil");
-      summ.set_string("hint", "percentage");
-      summ.set_string("description",
-                      "Global device memory utilization as a percentage of the "
-                      "device's peak bandwidth");
-      summ.set_float64("value", avg_used_gmem_bw / peak_gmem_bw);
-    }
-  } // bandwidth
-
   if (m_sm_clock_rate_accumulator != 0.)
   {
     const auto clock_mean = m_sm_clock_rate_accumulator / d_samples;
