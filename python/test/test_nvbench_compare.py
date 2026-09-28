@@ -46,5 +46,8 @@ def test_compare_uses_emoji_statuses(nvbench_compare, monkeypatch):
         nvbench_compare, monkeypatch, "reference.json", "compare.json"
     )
 
-    assert tooling_calls == [{"load_color": False}]
-    assert compare_calls[0][-1] is True
+    assert tooling_calls == [{}]
+    assert len(compare_calls[0]) == 8
+    assert (
+        nvbench_compare.format_status("SAME", nvbench_compare.Emoji.BLUE) == "🔵 SAME"
+    )
