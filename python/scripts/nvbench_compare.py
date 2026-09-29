@@ -722,7 +722,8 @@ def main():
 
         if ref_root["devices"] != cmp_root["devices"]:
             msg_text = "Device sections do not match"
-            print(msg_text, end="")
+            warning_emoji = Emoji.YELLOW if args.ignore_devices else Emoji.RED
+            print(format_status(msg_text, warning_emoji), end="")
             print(": ", end="")
 
             try:
