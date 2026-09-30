@@ -235,6 +235,14 @@ void test_invalid_option()
   ASSERT_THROWS_ANY(parser.parse({"--not-a-real-option"}));
 }
 
+void test_partial_number_rejected()
+{
+  nvbench::option_parser parser;
+  ASSERT_THROWS_ANY(parser.parse({"--benchmark", "TestBench", "--axis", "Ints=12abc"}));
+  ASSERT_THROWS_ANY(parser.parse({"--benchmark", "TestBench", "--axis", "Ints=0x10"}));
+  ASSERT_THROWS_ANY(parser.parse({"--benchmark", "TestBench", "--axis", "Floats=1.5xyz"}));
+}
+
 void test_benchmark_long() // --benchmark
 {
   const std::string ref =
@@ -1862,6 +1870,7 @@ try
   test_exec_name_tolerance();
   test_argc_argv_parse();
   test_invalid_option();
+  test_partial_number_rejected();
 
   test_benchmark_long();
   test_benchmark_short();

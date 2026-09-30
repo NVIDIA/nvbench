@@ -187,10 +187,21 @@ std::string current_global_stopping_criterion(const std::vector<std::string> &gl
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
+void require_whole_token(std::string_view input, std::size_t consumed)
+{
+  if (consumed != input.size())
+  {
+    throw std::invalid_argument{"unparsed suffix"};
+  }
+}
+
 void parse(std::string_view input, nvbench::int32_t &val)
 try
 {
-  val = std::stoi(std::string(input));
+  const std::string text(input);
+  std::size_t consumed = 0;
+  val = std::stoi(text, &consumed);
+  require_whole_token(input, consumed);
 }
 catch (const std::exception &)
 { // The default exception messages are not very useful on gcc...it's just "stoi".
@@ -200,7 +211,10 @@ catch (const std::exception &)
 void parse(std::string_view input, nvbench::int64_t &val)
 try
 {
-  val = std::stoll(std::string(input));
+  const std::string text(input);
+  std::size_t consumed = 0;
+  val = std::stoll(text, &consumed);
+  require_whole_token(input, consumed);
 }
 catch (const std::exception &)
 {
@@ -210,7 +224,10 @@ catch (const std::exception &)
 void parse(std::string_view input, nvbench::float64_t &val)
 try
 {
-  val = std::stod(std::string(input));
+  const std::string text(input);
+  std::size_t consumed = 0;
+  val = std::stod(text, &consumed);
+  require_whole_token(input, consumed);
 }
 catch (const std::exception &)
 {
