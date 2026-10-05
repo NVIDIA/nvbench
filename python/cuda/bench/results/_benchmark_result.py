@@ -7,9 +7,11 @@ import array
 import json
 import os
 import sys
-from collections.abc import ItemsView, Iterator, KeysView, ValuesView
+from collections.abc import Callable, ItemsView, Iterator, KeysView, ValuesView
 from dataclasses import dataclass
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
+
+from typing_extensions import Self
 
 __all__ = [
     "BenchmarkResult",
@@ -433,7 +435,7 @@ class BenchmarkResult:
         self.subbenches: dict[str, SubBenchmarkResult] = {}
 
     @classmethod
-    def empty(cls: type[BenchmarkResultT], *, metadata: Any = None) -> BenchmarkResultT:
+    def empty(cls, *, metadata: Any = None) -> Self:
         """Create an empty result container with optional user metadata."""
         result = cls(cls._construction_token)
         result.metadata = metadata
@@ -441,11 +443,11 @@ class BenchmarkResult:
 
     @classmethod
     def from_json(
-        cls: type[BenchmarkResultT],
+        cls,
         json_path: str | os.PathLike[str],
         *,
         metadata: Any = None,
-    ) -> BenchmarkResultT:
+    ) -> Self:
         """Read benchmark result data from an NVBench JSON output file."""
         result = cls.empty(metadata=metadata)
         result._parse_json(json_path)

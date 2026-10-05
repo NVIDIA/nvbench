@@ -612,7 +612,7 @@ def compare_benches(
             else:
                 print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
 
-            print("")
+            print()
 
             if plot_along:
                 plt.xscale("log")
