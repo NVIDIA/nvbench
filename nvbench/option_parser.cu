@@ -200,7 +200,7 @@ try
 {
   const std::string text(input);
   std::size_t consumed = 0;
-  val = std::stoi(text, &consumed);
+  val                  = std::stoi(text, &consumed);
   require_whole_token(input, consumed);
 }
 catch (const std::exception &)
@@ -213,7 +213,7 @@ try
 {
   const std::string text(input);
   std::size_t consumed = 0;
-  val = std::stoll(text, &consumed);
+  val                  = std::stoll(text, &consumed);
   require_whole_token(input, consumed);
 }
 catch (const std::exception &)
@@ -226,7 +226,7 @@ try
 {
   const std::string text(input);
   std::size_t consumed = 0;
-  val = std::stod(text, &consumed);
+  val                  = std::stod(text, &consumed);
   require_whole_token(input, consumed);
 }
 catch (const std::exception &)
