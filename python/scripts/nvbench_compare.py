@@ -29,9 +29,20 @@ def version_tuple(v):
 
 tabulate = None
 tabulate_version = (0, 0, 0)
+Fore = None
 
 
-def load_nvbench_compare_tooling():
+def load_nvbench_compare_tooling(*, use_color=False):
+    global Fore
+
+    if use_color and Fore is None:
+        colorama = require_tooling_dependency(
+            ToolingDependency(
+                "colorama", "colorama", "colored status output", extra="compare"
+            ),
+            tool_name="nvbench-compare-legacy",
+        )
+        Fore = colorama.Fore
     load_tabulate_for_table_output()
 
 
@@ -71,7 +82,16 @@ class Emoji(str, Enum):
     NONE = ""
 
 
-def format_status(status_label: str, emoji: Emoji) -> str:
+def format_status(status_label: str, emoji: Emoji, *, use_color=False) -> str:
+    if use_color:
+        color = {
+            Emoji.YELLOW: Fore.YELLOW,
+            Emoji.BLUE: Fore.BLUE,
+            Emoji.GREEN: Fore.GREEN,
+            Emoji.RED: Fore.RED,
+            Emoji.NONE: "",
+        }[emoji]
+        return f"{color}{status_label}{Fore.RESET}"
     prefix = f"{emoji.value} " if emoji.value else ""
     return f"{prefix}{status_label}"
 
@@ -340,6 +360,7 @@ def compare_benches(
     dark,
     axis_filters,
     benchmark_filters,
+    use_color,
 ):
     if plot_along:
         plt = require_tooling_dependency(
@@ -516,19 +537,25 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    status = format_status(status_label, Emoji.YELLOW)
+                    status = format_status(
+                        status_label, Emoji.YELLOW, use_color=use_color
+                    )
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    status = format_status(status_label, Emoji.BLUE)
+                    status = format_status(
+                        status_label, Emoji.BLUE, use_color=use_color
+                    )
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    status = format_status(status_label, Emoji.GREEN)
+                    status = format_status(
+                        status_label, Emoji.GREEN, use_color=use_color
+                    )
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    status = format_status(status_label, Emoji.RED)
+                    status = format_status(status_label, Emoji.RED, use_color=use_color)
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
@@ -660,6 +687,11 @@ def main():
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
+        "--color",
+        action="store_true",
+        help="Use ANSI colors for status output (requires colorama)",
+    )
+    parser.add_argument(
         "-a",
         "--axis",
         action="append",
@@ -687,7 +719,7 @@ def main():
         sys.exit(1)
 
     try:
-        load_nvbench_compare_tooling()
+        load_nvbench_compare_tooling(use_color=args.color)
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -723,7 +755,7 @@ def main():
         if ref_root["devices"] != cmp_root["devices"]:
             msg_text = "Device sections do not match"
             warning_emoji = Emoji.YELLOW if args.ignore_devices else Emoji.RED
-            print(format_status(msg_text, warning_emoji), end="")
+            print(format_status(msg_text, warning_emoji, use_color=args.color), end="")
             print(": ", end="")
 
             try:
@@ -749,6 +781,7 @@ def main():
                 args.dark,
                 axis_filters,
                 args.benchmark,
+                args.color,
             )
         except MissingToolingDependencyError as exc:
             print(str(exc), file=sys.stderr)
