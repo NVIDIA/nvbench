@@ -88,6 +88,44 @@ enum class stream_printer_spec
   return stream_printer_spec::none;
 }
 
+[[nodiscard]] bool wildcard_match(std::string_view pattern, std::string_view value)
+{
+  std::size_t pattern_pos        = 0;
+  std::size_t value_pos          = 0;
+  std::size_t wildcard_pos       = std::string_view::npos;
+  std::size_t wildcard_value_pos = 0;
+
+  while (value_pos < value.size())
+  {
+    if (pattern_pos < pattern.size() &&
+        (pattern[pattern_pos] == '?' || pattern[pattern_pos] == value[value_pos]))
+    {
+      ++pattern_pos;
+      ++value_pos;
+    }
+    else if (pattern_pos < pattern.size() && pattern[pattern_pos] == '*')
+    {
+      wildcard_pos       = pattern_pos++;
+      wildcard_value_pos = value_pos;
+    }
+    else if (wildcard_pos != std::string_view::npos)
+    {
+      pattern_pos = wildcard_pos + 1;
+      value_pos   = ++wildcard_value_pos;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  while (pattern_pos < pattern.size() && pattern[pattern_pos] == '*')
+  {
+    ++pattern_pos;
+  }
+  return pattern_pos == pattern.size();
+}
+
 //==============================================================================
 // helpers types for using std::string_view with std::regex
 using sv_citer          = std::string_view::const_iterator;
@@ -951,8 +989,6 @@ try
 {
   const auto &mgr = nvbench::benchmark_manager::get();
 
-  std::unique_ptr<nvbench::benchmark_base> new_bench;
-
   nvbench::int64_t idx{-1};
   try
   {
@@ -961,11 +997,46 @@ try
   catch (std::invalid_argument &)
   {}
 
-  m_benchmarks.push_back(idx >= 0 ? mgr.get_benchmark(static_cast<std::size_t>(idx)).clone()
-                                  : mgr.get_benchmark(name).clone());
+  const auto add_clone = [this](const nvbench::benchmark_base &benchmark) {
+    m_benchmarks.push_back(benchmark.clone());
+    this->replay_global_args();
+  };
 
-  // Initialize the new benchmark with any global arguments:
-  this->replay_global_args();
+  if (idx >= 0)
+  {
+    add_clone(mgr.get_benchmark(static_cast<std::size_t>(idx)));
+    return;
+  }
+
+  const auto &benchmarks = mgr.get_benchmarks();
+  const auto exact = std::find_if(benchmarks.cbegin(),
+                                  benchmarks.cend(),
+                                  [&name](const auto &bench) { return bench->get_name() == name; });
+  if (exact != benchmarks.cend())
+  {
+    add_clone(**exact);
+    return;
+  }
+
+  if (name.find_first_of("*?") != std::string::npos)
+  {
+    bool matched = false;
+    for (const auto &benchmark : benchmarks)
+    {
+      if (wildcard_match(name, benchmark->get_name()))
+      {
+        add_clone(*benchmark);
+        matched = true;
+      }
+    }
+    if (!matched)
+    {
+      NVBENCH_THROW(std::out_of_range, "No benchmarks match wildcard '{}'.", name);
+    }
+    return;
+  }
+
+  add_clone(mgr.get_benchmark(name));
 }
 catch (std::exception &e)
 {
