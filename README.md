@@ -74,6 +74,7 @@ various NVBench features and usecases:
 - [CPU-only benchmarking](examples/cpu_only.cu)
 - [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
+- [Collecting CUPTI metrics](examples/auto_throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
 - [Benchmarking on a specific stream](examples/stream.cu)
 - [Adding / hiding columns (summaries) in markdown output](examples/summaries.cu)
@@ -91,6 +92,9 @@ cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURES=70 .. && make
 Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on.
 
 Examples are built by default into `build/bin` and are prefixed with `nvbench.example`.
+
+See the [CUPTI integration guide](docs/cupti.md) for details about enabling
+CUPTI metrics and the requirements for running profiled benchmarks.
 
 <details>
   <summary>Example output from `nvbench.example.throughput`</summary>
