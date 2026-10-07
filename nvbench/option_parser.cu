@@ -209,32 +209,23 @@ catch (const std::exception &)
 
 void parse(std::string_view input, nvbench::int32_t &val)
 {
-  parse_numeric(input,
-                val,
-                "int32",
-                [](const std::string &text, std::size_t *consumed) {
-                  return std::stoi(text, consumed);
-                });
+  parse_numeric(input, val, "int32", [](const std::string &text, std::size_t *consumed) {
+    return std::stoi(text, consumed);
+  });
 }
 
 void parse(std::string_view input, nvbench::int64_t &val)
 {
-  parse_numeric(input,
-                val,
-                "int64",
-                [](const std::string &text, std::size_t *consumed) {
-                  return std::stoll(text, consumed);
-                });
+  parse_numeric(input, val, "int64", [](const std::string &text, std::size_t *consumed) {
+    return std::stoll(text, consumed);
+  });
 }
 
 void parse(std::string_view input, nvbench::float64_t &val)
 {
-  parse_numeric(input,
-                val,
-                "float64",
-                [](const std::string &text, std::size_t *consumed) {
-                  return std::stod(text, consumed);
-                });
+  parse_numeric(input, val, "float64", [](const std::string &text, std::size_t *consumed) {
+    return std::stod(text, consumed);
+  });
 }
 
 void parse(std::string_view input, std::string &val) { val = input; }
