@@ -2,7 +2,7 @@
 macro(nvbench_load_rapids_cmake version)
   # - Including directly, see https://github.com/rapidsai/rmm/pull/1886
   # - Versioned download URL:
-  #   https://raw.githubusercontent.com/rapidsai/rapids-cmake/branch-XX.YY/RAPIDS.cmake
+  #   https://raw.githubusercontent.com/rapidsai/rapids-cmake/release/XX.YY/RAPIDS.cmake
   # - This macro is always called before project() in the root CMakeLists.txt, so:
   #   - we can't just use NVBench_SOURCE_DIR, it's not defined yet.
   #   - We can't rely on CMAKE_CURRENT_LIST_DIR because of macro expansion.
