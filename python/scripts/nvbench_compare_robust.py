@@ -584,6 +584,61 @@ class ComparisonStatus(str, Enum):
     SLOW = "SLOW"
 
 
+STATUS_FILTER_ALIASES = {
+    "????": ComparisonStatus.UNKNOWN,
+    "unknown": ComparisonStatus.UNKNOWN,
+    "unkn": ComparisonStatus.UNKNOWN,
+    "ambg": ComparisonStatus.UNDECIDED,
+    "ambiguous": ComparisonStatus.UNDECIDED,
+    "undecided": ComparisonStatus.UNDECIDED,
+    "same": ComparisonStatus.SAME,
+    "fast": ComparisonStatus.FAST,
+    "slow": ComparisonStatus.SLOW,
+}
+
+
+STATUS_FILTER_GROUP_ALIASES = {
+    "not-unknown": frozenset(
+        {
+            ComparisonStatus.UNDECIDED,
+            ComparisonStatus.SAME,
+            ComparisonStatus.FAST,
+            ComparisonStatus.SLOW,
+        }
+    ),
+}
+
+
+def parse_status_filter(status_arg):
+    if status_arg is None:
+        return None
+
+    statuses = set()
+    for raw_token in status_arg.split(","):
+        token = raw_token.strip().lower()
+        if not token:
+            raise ValueError("--status must not contain an empty status")
+        status_group = STATUS_FILTER_GROUP_ALIASES.get(token)
+        if status_group is not None:
+            statuses.update(status_group)
+            continue
+        status = STATUS_FILTER_ALIASES.get(token)
+        if status is None:
+            valid = (
+                "unknown/unkn/????, ambiguous/undecided/ambg, same, fast, slow, "
+                "not-unknown"
+            )
+            raise ValueError(
+                f"--status value {raw_token!r} is invalid; expected {valid}"
+            )
+        statuses.add(status)
+    return frozenset(statuses)
+
+
+def status_matches_filter(status, status_filter):
+    return status_filter is None or status in status_filter
+
+
 @dataclass(frozen=True)
 class DecisionReason:
     code: str
@@ -829,11 +884,6 @@ def parse_device_filter(device_arg, option_name):
             "or comma-separated non-negative integers"
         )
     return device_ids
-
-
-def validate_threshold_diff(threshold):
-    if not math.isfinite(threshold) or threshold < 0.0:
-        raise ValueError("--threshold-diff must be a finite non-negative percentage")
 
 
 def select_devices(all_devices, device_filter, option_name):
@@ -2977,11 +3027,13 @@ def compare_benches(
     cmp_json_path=None,
     comparison_thresholds=None,
     display="intervals",
+    status_filter=None,
     bulk_debug_rows=None,
     plot_output=None,
     plot_along_output=None,
     plot_output_paths=None,
 ):
+    del threshold  # Kept for source compatibility; --threshold-diff is ignored.
     if comparison_thresholds is None:
         comparison_thresholds = get_default_thresholds()
     if plot_output_paths is None:
@@ -3138,10 +3190,7 @@ def compare_benches(
                 )
 
                 run_data.stats.record(comparison.status, comparison.reason)
-                if comparison.status == ComparisonStatus.UNKNOWN or (
-                    comparison.frac_diff is not None
-                    and abs(comparison.frac_diff) >= threshold
-                ):
+                if status_matches_filter(comparison.status, status_filter):
                     axis_filters = matching_axis_filters(cmp_state, axis_filter_groups)
                     append_display_row(row, comparison, no_color, display)
 
@@ -3263,8 +3312,17 @@ def main() -> int:
         "--threshold-diff",
         type=float,
         dest="threshold",
-        default=0.0,
-        help="only show rows where abs(%%Diff) is >= THRESHOLD percent",
+        default=None,
+        help="deprecated; accepted for compatibility but ignored",
+    )
+    parser.add_argument(
+        "--status",
+        default=None,
+        help=(
+            "only show rows with these comma-separated comparison statuses: "
+            "unknown/unkn/????, ambiguous/undecided/ambg, same, fast, slow, "
+            "not-unknown"
+        ),
     )
     parser.add_argument(
         "--preset",
@@ -3362,11 +3420,12 @@ def main() -> int:
 
     args = parser.parse_args()
     files_or_dirs = args.files_or_dirs
-    try:
-        validate_threshold_diff(args.threshold)
-    except ValueError as exc:
-        print(str(exc))
-        return 1
+    if args.threshold is not None:
+        print(
+            "Warning: --threshold-diff is ignored by nvbench-compare-robust; "
+            "use --status to select displayed rows.",
+            file=sys.stderr,
+        )
 
     try:
         comparison_preset, comparison_thresholds = resolve_comparison_thresholds(
@@ -3411,6 +3470,7 @@ def main() -> int:
 
     try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
+        status_filter = parse_status_filter(args.status)
         reference_device_filter = parse_device_filter(
             args.reference_devices, "--reference-devices"
         )
@@ -3529,7 +3589,7 @@ def main() -> int:
                 run_data,
                 ref_root["benchmarks"],
                 cmp_root["benchmarks"],
-                threshold=args.threshold / 100.0,
+                threshold=0.0,
                 plot_along=args.plot_along,
                 plot=args.plot,
                 dark=args.dark,
@@ -3543,6 +3603,7 @@ def main() -> int:
                 cmp_json_path=comp,
                 comparison_thresholds=comparison_thresholds,
                 display=args.display,
+                status_filter=status_filter,
                 bulk_debug_rows=bulk_debug_rows,
                 plot_output=args.plot_output,
                 plot_along_output=args.plot_along_output,
