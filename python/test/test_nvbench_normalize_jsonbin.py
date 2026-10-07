@@ -29,7 +29,21 @@ def make_result(path: Path, filename: str) -> None:
                         "states": [
                             {
                                 "summaries": [
-                                    {"hint": "file/sample_times", "filename": filename}
+                                    {
+                                        "hint": "file/sample_times",
+                                        "data": [
+                                            {
+                                                "name": "filename",
+                                                "type": "string",
+                                                "value": filename,
+                                            },
+                                            {
+                                                "name": "size",
+                                                "type": "int64",
+                                                "value": "4",
+                                            },
+                                        ],
+                                    }
                                 ]
                             }
                         ]
@@ -39,6 +53,10 @@ def make_result(path: Path, filename: str) -> None:
         ),
         encoding="utf-8",
     )
+
+
+def summary_filename(document: dict) -> str:
+    return document["benchmarks"][0]["states"][0]["summaries"][0]["data"][0]["value"]
 
 
 def test_normalize_legacy_launch_directory_path(tmp_path, normalizer, monkeypatch):
@@ -56,10 +74,25 @@ def test_normalize_legacy_launch_directory_path(tmp_path, normalizer, monkeypatc
     document, changes = normalizer.normalize_jsonbin(result)
 
     assert changes == [("result.json-bin/0.bin", "../launch/result.json-bin/0.bin")]
-    assert (
-        document["benchmarks"][0]["states"][0]["summaries"][0]["filename"]
-        == changes[0][1]
+    assert summary_filename(document) == changes[0][1]
+
+
+def test_normalize_legacy_inline_filename_record(tmp_path, normalizer):
+    sidecar = tmp_path / "sidecars" / "0.bin"
+    sidecar.parent.mkdir()
+    sidecar.write_bytes(b"data")
+    result = tmp_path / "result.json"
+    result.write_text(
+        json.dumps(
+            {"summary": {"hint": "file/sample_times", "filename": str(sidecar)}}
+        ),
+        encoding="utf-8",
     )
+
+    document, changes = normalizer.normalize_jsonbin(result)
+
+    assert document["summary"]["filename"] == "sidecars/0.bin"
+    assert changes == [(str(sidecar), "sidecars/0.bin")]
 
 
 def test_normalize_rejects_ambiguous_sidecar(tmp_path, normalizer, monkeypatch):
@@ -138,9 +171,7 @@ def test_output_rebases_sidecar_path_from_output_directory(tmp_path, normalizer)
     expected = os.path.relpath(sidecar.resolve(), output_dir.resolve()).replace(
         os.sep, "/"
     )
-    assert (
-        document["benchmarks"][0]["states"][0]["summaries"][0]["filename"] == expected
-    )
+    assert summary_filename(document) == expected
     assert changes == [("../sidecars/0.bin", expected)]
 
 

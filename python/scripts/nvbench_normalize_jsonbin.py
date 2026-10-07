@@ -67,12 +67,19 @@ def resolve_sidecar(
 def _iter_sidecar_records(value: Any):
     if isinstance(value, dict):
         hint = value.get("hint")
-        if (
-            isinstance(hint, str)
-            and hint in SIDECAR_HINTS
-            and isinstance(value.get("filename"), str)
-        ):
-            yield value
+        if isinstance(hint, str) and hint in SIDECAR_HINTS:
+            if isinstance(value.get("filename"), str):
+                yield value, "filename"
+            data = value.get("data")
+            if isinstance(data, list):
+                for item in data:
+                    if (
+                        isinstance(item, dict)
+                        and item.get("name") == "filename"
+                        and item.get("type") == "string"
+                        and isinstance(item.get("value"), str)
+                    ):
+                        yield item, "value"
         for child in value.values():
             yield from _iter_sidecar_records(child)
     elif isinstance(value, list):
@@ -89,14 +96,14 @@ def normalize_jsonbin(
     """Return normalized JSON and filename changes for one result file."""
     document = json.loads(json_path.read_text(encoding="utf-8"))
     changes = []
-    for record in _iter_sidecar_records(document):
-        old_name = record["filename"]
+    for record, filename_key in _iter_sidecar_records(document):
+        old_name = record[filename_key]
         resolved = resolve_sidecar(old_name, json_path, sidecar_root)
         output_dir = output_path.parent if output_path is not None else json_path.parent
         output_dir = os.path.realpath(os.path.abspath(output_dir))
         new_name = os.path.relpath(resolved, output_dir).replace(os.sep, "/")
         if new_name != old_name:
-            record["filename"] = new_name
+            record[filename_key] = new_name
             changes.append((old_name, new_name))
     return document, changes
 
