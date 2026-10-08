@@ -189,6 +189,17 @@ def test_output_copies_unchanged_json(tmp_path, normalizer):
     )
 
 
+def test_dry_run_reports_no_changes_for_normalized_json(tmp_path, normalizer, capsys):
+    sidecar = tmp_path / "result.json-bin" / "0.bin"
+    sidecar.parent.mkdir()
+    sidecar.write_bytes(b"data")
+    result = tmp_path / "result.json"
+    make_result(result, "result.json-bin/0.bin")
+
+    assert normalizer.main([str(result), "--dry-run"]) == 0
+    assert capsys.readouterr().out.strip() == f"No changes needed: {result}"
+
+
 def test_output_rejects_input_path_without_overwriting(tmp_path, normalizer):
     sidecar = tmp_path / "result.json-bin" / "0.bin"
     sidecar.parent.mkdir()

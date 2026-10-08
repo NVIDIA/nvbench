@@ -138,8 +138,11 @@ def main(argv: list[str] | None = None) -> int:
             args.json_file, sidecar_root=args.sidecar_root, output_path=args.output
         )
         if args.dry_run:
-            for old_name, new_name in changes:
-                print(f"{old_name} -> {new_name}")
+            if changes:
+                for old_name, new_name in changes:
+                    print(f"{old_name} -> {new_name}")
+            else:
+                print(f"No changes needed: {args.json_file}")
             return 0
         if args.output is not None:
             _write_result(args.json_file, document, args.output)
