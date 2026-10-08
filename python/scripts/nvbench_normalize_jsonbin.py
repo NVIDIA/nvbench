@@ -124,10 +124,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        if args.output is not None and os.path.realpath(
-            os.path.abspath(args.output)
-        ) == os.path.realpath(os.path.abspath(args.json_file)):
-            raise ValueError("--output must not name the input JSON file")
+        if args.output is not None:
+            input_path = os.path.abspath(args.json_file)
+            output_path = os.path.abspath(args.output)
+            same_path = os.path.realpath(output_path) == os.path.realpath(input_path)
+            same_file = os.path.exists(output_path) and os.path.samefile(
+                input_path, output_path
+            )
+            if same_path or same_file:
+                raise ValueError("--output must not name the input JSON file")
 
         document, changes = normalize_jsonbin(
             args.json_file, sidecar_root=args.sidecar_root, output_path=args.output

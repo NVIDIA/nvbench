@@ -199,3 +199,28 @@ def test_output_rejects_input_path_without_overwriting(tmp_path, normalizer):
 
     assert normalizer.main([str(result), "--output", str(result)]) == 2
     assert result.read_bytes() == original
+
+
+def test_output_rejects_hard_link_to_input_without_overwriting(
+    tmp_path, normalizer, monkeypatch
+):
+    sidecar_dir = tmp_path / "sidecars"
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    sidecar_dir.mkdir()
+    input_dir.mkdir()
+    output_dir.mkdir()
+    (sidecar_dir / "0.bin").write_bytes(b"data")
+    result = input_dir / "result.json"
+    make_result(result, "sidecars/0.bin")
+    output = output_dir / "linked.json"
+    try:
+        os.link(result, output)
+    except (NotImplementedError, OSError) as exc:
+        pytest.skip(f"hard links are unavailable: {exc}")
+    original = result.read_bytes()
+    monkeypatch.chdir(tmp_path)
+
+    assert normalizer.main([str(result), "--output", str(output)]) == 2
+    assert result.read_bytes() == original
+    assert output.read_bytes() == original
