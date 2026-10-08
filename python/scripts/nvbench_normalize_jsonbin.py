@@ -44,15 +44,14 @@ def resolve_sidecar(
     if sidecar_root is not None and not path.is_absolute():
         explicit = sidecar_root / path
         if explicit.is_file():
-            return Path(os.path.realpath(os.path.abspath(explicit)))
+            return Path(os.path.realpath(explicit))
 
     matches: list[tuple[Path, Path]] = []
     for candidate in _candidate_paths(filename, json_path):
         if candidate.is_file():
-            absolute = Path(os.path.abspath(candidate))
-            resolved = Path(os.path.realpath(absolute))
+            resolved = Path(os.path.realpath(candidate))
             if all(resolved != existing_resolved for _, existing_resolved in matches):
-                matches.append((absolute, resolved))
+                matches.append((candidate, resolved))
 
     if not matches:
         raise SidecarResolutionError(

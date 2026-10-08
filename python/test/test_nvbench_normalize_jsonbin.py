@@ -132,6 +132,30 @@ def test_sidecar_root_selects_matching_file_from_ambiguous_candidates(
     assert resolved == selected.resolve()
 
 
+def test_resolve_sidecar_preserves_symlink_before_parent_traversal(
+    tmp_path, normalizer, monkeypatch
+):
+    launch_dir = tmp_path / "launch"
+    launch_dir.mkdir()
+    result = launch_dir / "result.json"
+    make_result(result, "link/../foo/result.json-freqs-bin/0.bin")
+
+    target_dir = tmp_path / "other" / "nested"
+    target_dir.mkdir(parents=True)
+    (target_dir.parent / "foo" / "result.json-freqs-bin").mkdir(parents=True)
+    selected = target_dir.parent / "foo" / "result.json-freqs-bin" / "0.bin"
+    selected.write_bytes(b"selected")
+    (launch_dir / "link").symlink_to(target_dir, target_is_directory=True)
+    monkeypatch.chdir(launch_dir)
+
+    filename = "link/../foo/result.json-freqs-bin/0.bin"
+    assert normalizer.resolve_sidecar(filename, result) == selected.resolve()
+    assert (
+        normalizer.resolve_sidecar(filename, result, sidecar_root=launch_dir)
+        == selected.resolve()
+    )
+
+
 def test_unrelated_prefix_does_not_fall_back_to_json_sidecar(tmp_path, normalizer):
     result = tmp_path / "result.json"
     make_result(result, "other/result.json-bin/0.bin")
