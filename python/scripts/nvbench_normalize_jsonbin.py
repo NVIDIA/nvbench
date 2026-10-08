@@ -101,7 +101,7 @@ def normalize_jsonbin(
         old_name = record[filename_key]
         resolved = resolve_sidecar(old_name, json_path, sidecar_root)
         output_dir = output_path.parent if output_path is not None else json_path.parent
-        output_dir = os.path.realpath(os.path.abspath(output_dir))
+        output_dir = os.path.realpath(output_dir)
         new_name = os.path.relpath(resolved, output_dir).replace(os.sep, "/")
         if new_name != old_name:
             record[filename_key] = new_name
@@ -170,8 +170,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.output is not None:
-            input_path = os.path.abspath(args.json_file)
-            output_path = os.path.abspath(args.output)
+            input_path = Path(args.json_file)
+            output_path = Path(args.output)
             same_path = os.path.realpath(output_path) == os.path.realpath(input_path)
             same_file = os.path.exists(output_path) and os.path.samefile(
                 input_path, output_path

@@ -199,6 +199,35 @@ def test_output_rebases_sidecar_path_from_output_directory(tmp_path, normalizer)
     assert changes == [("../sidecars/0.bin", expected)]
 
 
+def test_output_rebases_sidecar_path_after_symlink_parent_traversal(
+    tmp_path, normalizer
+):
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output" / "nested" / "deep"
+    sidecar_dir = tmp_path / "sidecars"
+    input_dir.mkdir()
+    output_dir.mkdir(parents=True)
+    sidecar_dir.mkdir()
+    sidecar = sidecar_dir / "0.bin"
+    sidecar.write_bytes(b"data")
+    result = input_dir / "result.json"
+    make_result(result, "../sidecars/0.bin")
+
+    traversal_dir = tmp_path / "other"
+    traversal_dir.mkdir()
+    (traversal_dir / "link").symlink_to(output_dir, target_is_directory=True)
+    output = traversal_dir / "link" / ".." / "normalized.json"
+
+    document, changes = normalizer.normalize_jsonbin(result, output_path=output)
+
+    resolved_output_dir = output_dir.parent.resolve()
+    expected = os.path.relpath(sidecar.resolve(), resolved_output_dir).replace(
+        os.sep, "/"
+    )
+    assert summary_filename(document) == expected
+    assert changes == [("../sidecars/0.bin", expected)]
+
+
 def test_output_copies_unchanged_json(tmp_path, normalizer):
     sidecar = tmp_path / "result.json-bin" / "0.bin"
     sidecar.parent.mkdir()
@@ -234,6 +263,25 @@ def test_output_rejects_input_path_without_overwriting(tmp_path, normalizer):
 
     assert normalizer.main([str(result), "--output", str(result)]) == 2
     assert result.read_bytes() == original
+
+
+def test_output_rejects_input_after_symlink_parent_traversal(tmp_path, normalizer):
+    input_dir = tmp_path / "input"
+    (input_dir / "nested").mkdir(parents=True)
+    result = input_dir / "result.json"
+    make_result(result, "result.json-bin/0.bin")
+    (input_dir / "result.json-bin").mkdir()
+    (input_dir / "result.json-bin" / "0.bin").write_bytes(b"data")
+    original = result.read_bytes()
+
+    traversal_dir = tmp_path / "other"
+    traversal_dir.mkdir()
+    (traversal_dir / "link").symlink_to(input_dir / "nested", target_is_directory=True)
+    output = traversal_dir / "link" / ".." / "result.json"
+
+    assert normalizer.main([str(result), "--output", str(output)]) == 2
+    assert result.read_bytes() == original
+    assert not (traversal_dir / "result.json").exists()
 
 
 def test_output_rejects_hard_link_to_input_without_overwriting(
