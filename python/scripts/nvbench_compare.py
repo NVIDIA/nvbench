@@ -27,22 +27,11 @@ def version_tuple(v):
     return tuple(map(int, (v.split("."))))
 
 
-Fore = None
 tabulate = None
 tabulate_version = (0, 0, 0)
 
 
-def load_nvbench_compare_tooling(*, load_color=True):
-    global Fore
-
-    if load_color and Fore is None:
-        colorama = require_tooling_dependency(
-            ToolingDependency(
-                "colorama", "colorama", "colored status output", extra="compare"
-            ),
-            tool_name="nvbench-compare-legacy",
-        )
-        Fore = colorama.Fore
+def load_nvbench_compare_tooling():
     load_tabulate_for_table_output()
 
 
@@ -82,21 +71,9 @@ class Emoji(str, Enum):
     NONE = ""
 
 
-def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
-    if no_color:
-        prefix = ""
-        if emoji_s := emoji.value:
-            prefix = f"{emoji_s} "
-        return f"{prefix}{msg}"
-    else:
-        return f"{fore}{msg}{Fore.RESET}"
-
-
-def colorize_status(
-    status_label: str, fore_name: str, emoji: Emoji, no_color: bool
-) -> str:
-    fore = "" if no_color else getattr(Fore, fore_name)
-    return colorize(status_label, fore, emoji, no_color)
+def format_status(status_label: str, emoji: Emoji) -> str:
+    prefix = f"{emoji.value} " if emoji.value else ""
+    return f"{prefix}{status_label}"
 
 
 def find_matching_bench(needle, haystack):
@@ -363,7 +340,6 @@ def compare_benches(
     dark,
     axis_filters,
     benchmark_filters,
-    no_color,
 ):
     if plot_along:
         plt = require_tooling_dependency(
@@ -540,23 +516,19 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    status = colorize_status(
-                        status_label, "YELLOW", Emoji.YELLOW, no_color
-                    )
+                    status = format_status(status_label, Emoji.YELLOW)
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    status = colorize_status(status_label, "BLUE", Emoji.BLUE, no_color)
+                    status = format_status(status_label, Emoji.BLUE)
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    status = colorize_status(
-                        status_label, "GREEN", Emoji.GREEN, no_color
-                    )
+                    status = format_status(status_label, Emoji.GREEN)
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    status = colorize_status(status_label, "RED", Emoji.RED, no_color)
+                    status = format_status(status_label, Emoji.RED)
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
@@ -688,12 +660,6 @@ def main():
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
-        "--no-color",
-        dest="no_color",
-        action="store_true",
-        help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
-    )
-    parser.add_argument(
         "-a",
         "--axis",
         action="append",
@@ -721,7 +687,7 @@ def main():
         sys.exit(1)
 
     try:
-        load_nvbench_compare_tooling(load_color=not args.no_color)
+        load_nvbench_compare_tooling()
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -755,12 +721,9 @@ def main():
         all_cmp_devices = cmp_root["devices"]
 
         if ref_root["devices"] != cmp_root["devices"]:
-            if args.no_color:
-                warn_fore = ""
-            else:
-                warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
-            print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
+            warning_emoji = Emoji.YELLOW if args.ignore_devices else Emoji.RED
+            print(format_status(msg_text, warning_emoji), end="")
             print(": ", end="")
 
             try:
@@ -786,7 +749,6 @@ def main():
                 args.dark,
                 axis_filters,
                 args.benchmark,
-                args.no_color,
             )
         except MissingToolingDependencyError as exc:
             print(str(exc), file=sys.stderr)
