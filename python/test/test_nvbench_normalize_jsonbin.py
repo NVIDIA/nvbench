@@ -235,3 +235,68 @@ def test_output_rejects_hard_link_to_input_without_overwriting(
     assert normalizer.main([str(result), "--output", str(output)]) == 2
     assert result.read_bytes() == original
     assert output.read_bytes() == original
+
+
+def test_output_preserves_existing_file_when_atomic_replace_fails(
+    tmp_path, normalizer, monkeypatch
+):
+    sidecar = tmp_path / "sidecars" / "0.bin"
+    sidecar.parent.mkdir()
+    sidecar.write_bytes(b"data")
+    result_dir = tmp_path / "input"
+    result_dir.mkdir()
+    result = result_dir / "result.json"
+    make_result(result, "../sidecars/0.bin")
+    output = tmp_path / "output.json"
+    output.write_text("existing output\n", encoding="utf-8")
+    original_output = output.read_bytes()
+    temporary_files = list(tmp_path.glob(f".{output.name}.*"))
+    assert temporary_files == []
+
+    def fail_replace(*args):
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr(normalizer.os, "replace", fail_replace)
+
+    assert normalizer.main([str(result), "--output", str(output)]) == 2
+    assert output.read_bytes() == original_output
+    assert list(tmp_path.glob(f".{output.name}.*")) == []
+
+
+def test_in_place_refuses_to_overwrite_existing_backup(
+    tmp_path, normalizer, monkeypatch
+):
+    sidecar = tmp_path / "sidecars" / "0.bin"
+    sidecar.parent.mkdir()
+    sidecar.write_bytes(b"data")
+    result_dir = tmp_path / "input"
+    result_dir.mkdir()
+    result = result_dir / "result.json"
+    make_result(result, str(sidecar.resolve()))
+    backup = result.with_name(result.name + ".bak")
+    backup.write_bytes(b"preserve this backup")
+    original = result.read_bytes()
+    original_backup = backup.read_bytes()
+    monkeypatch.chdir(tmp_path)
+
+    assert normalizer.main([str(result), "--in-place"]) == 2
+    assert result.read_bytes() == original
+    assert backup.read_bytes() == original_backup
+
+
+def test_in_place_normalizes_after_creating_backup(tmp_path, normalizer, monkeypatch):
+    sidecar = tmp_path / "sidecars" / "0.bin"
+    sidecar.parent.mkdir()
+    sidecar.write_bytes(b"data")
+    result_dir = tmp_path / "input"
+    result_dir.mkdir()
+    result = result_dir / "result.json"
+    make_result(result, str(sidecar.resolve()))
+    original = result.read_bytes()
+    monkeypatch.chdir(tmp_path)
+
+    assert normalizer.main([str(result), "--in-place"]) == 0
+    assert summary_filename(json.loads(result.read_text(encoding="utf-8"))) == (
+        "../sidecars/0.bin"
+    )
+    assert result.with_name(result.name + ".bak").read_bytes() == original

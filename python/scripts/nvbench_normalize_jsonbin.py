@@ -7,7 +7,9 @@ import argparse
 import json
 import os
 import shutil
+import stat
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -109,7 +111,51 @@ def normalize_jsonbin(
 
 
 def _write_result(json_path: Path, document: dict[str, Any], output: Path) -> None:
-    output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    try:
+        mode = stat.S_IMODE(output.stat().st_mode)
+    except FileNotFoundError:
+        current_umask = os.umask(0)
+        os.umask(current_umask)
+        mode = 0o666 & ~current_umask
+
+    file_descriptor, temporary_path = tempfile.mkstemp(
+        prefix=f".{output.name}.", dir=output.parent
+    )
+    try:
+        with os.fdopen(file_descriptor, "w", encoding="utf-8") as temporary_file:
+            temporary_file.write(json.dumps(document, indent=2) + "\n")
+            temporary_file.flush()
+            os.fsync(temporary_file.fileno())
+        os.chmod(temporary_path, mode)
+        os.replace(temporary_path, output)
+        if os.name != "nt":
+            directory_descriptor = os.open(output.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_descriptor)
+            finally:
+                os.close(directory_descriptor)
+    finally:
+        if os.path.exists(temporary_path):
+            os.unlink(temporary_path)
+
+
+def _create_backup(source: Path) -> None:
+    backup = source.with_name(source.name + ".bak")
+    backup_created = False
+    try:
+        with backup.open("xb") as backup_file:
+            backup_created = True
+            with source.open("rb") as source_file:
+                shutil.copyfileobj(source_file, backup_file)
+            backup_file.flush()
+            os.fsync(backup_file.fileno())
+        shutil.copystat(source, backup)
+    except FileExistsError as exc:
+        raise ValueError(f"refusing to overwrite existing backup: {backup}") from exc
+    except OSError:
+        if backup_created:
+            backup.unlink(missing_ok=True)
+        raise
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -150,8 +196,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"No changes needed: {args.json_file}")
             return 0
         elif args.in_place:
-            backup = args.json_file.with_name(args.json_file.name + ".bak")
-            shutil.copy2(args.json_file, backup)
+            _create_backup(args.json_file)
             _write_result(args.json_file, document, args.json_file)
         else:
             parser.error(
