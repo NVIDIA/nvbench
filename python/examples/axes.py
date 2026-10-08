@@ -16,11 +16,9 @@
 
 import ctypes
 import sys
-from typing import Dict, Optional, Tuple
 
-import cuda.bench as bench
-import cuda.cccl.headers as headers
-import cuda.core as core
+from cuda import bench, core
+from cuda.cccl import headers
 
 
 def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
@@ -93,7 +91,7 @@ def default_value(state: bench.State):
     single_float64_axis(state)
 
 
-def make_copy_kernel(in_type: Optional[str] = None, out_type: Optional[str] = None):
+def make_copy_kernel(in_type: str | None = None, out_type: str | None = None):
     src = r"""
 #include <cuda/std/cstdint>
 #include <cuda/std/cstddef>
@@ -155,11 +153,11 @@ def copy_sweep_grid_shape(state: bench.State):
 
 
 @bench.register()
-@bench.axis.int64("TypeID", range(0, 6))
+@bench.axis.int64("TypeID", range(6))
 def copy_type_sweep(state: bench.State):
     type_id = state.get_int64("TypeID")
 
-    types_map: Dict[int, Tuple[type, str]] = {
+    types_map: dict[int, tuple[type, str]] = {
         0: (ctypes.c_uint8, "cuda::std::uint8_t"),
         1: (ctypes.c_uint16, "cuda::std::uint16_t"),
         2: (ctypes.c_uint32, "cuda::std::uint32_t"),

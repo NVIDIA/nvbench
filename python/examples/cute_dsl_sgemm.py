@@ -16,17 +16,13 @@
 
 
 import sys
-from typing import Tuple
 
-import cuda.bench as bench
-import cuda.bindings.driver as driver
-import cuda.core as core
 import cupy as cp
 import cutlass
-import cutlass.cute as cute
-import cutlass.pipeline as pipeline
-import cutlass.utils as utils
 import numpy as np
+from cuda import bench, core
+from cuda.bindings import driver
+from cutlass import cute, pipeline, utils
 from cutlass.cute.runtime import from_dlpack
 
 DEFAULT_CUSTREAM = driver.CUstream(driver.CUstream_flags.CU_STREAM_DEFAULT)
@@ -62,7 +58,7 @@ class SGemm:
 
     def __init__(
         self,
-        cta_tiler: Tuple[int, int, int] = (128, 128, 8),
+        cta_tiler: tuple[int, int, int] = (128, 128, 8),
         num_stages: int = 3,
         num_threads: int = 256,
     ):
@@ -599,7 +595,6 @@ class SGemm:
             predC[i] = cute.elem_less(tCpC[i], (residue_m, residue_n))
         atom = cute.make_copy_atom(cute.nvgpu.CopyUniversalOp(), mC.element_type)
         cute.copy(atom, tCrC, tCgC, pred=predC)
-        return
 
 
 @bench.register()

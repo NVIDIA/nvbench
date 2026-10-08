@@ -16,8 +16,8 @@
 
 import sys
 
-import cuda.bench as bench
 import torch
+from cuda import bench
 
 
 def as_torch_cuda_Stream(
