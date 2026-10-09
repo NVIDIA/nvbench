@@ -29,6 +29,8 @@ namespace nvbench
  * In constrast to CUDA events, kernel launch overhead and idle time frames between operations are
  * excluded. In addition, work queued outside of the window, such as blocking kernel or an L2 flush,
  * is ignored.
+ *
+ * Not thread-safe: all cupti_timer instances must be used from the same thread.
  */
 struct cupti_timer
 {
@@ -51,8 +53,6 @@ private:
   bool m_pushed          = false;
   // nullopt_t means the duration is not yet available.
   mutable std::optional<nvbench::float64_t> m_duration{};
-
-  void pop_noexcept() noexcept;
 };
 
 } // namespace nvbench
