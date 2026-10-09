@@ -187,34 +187,45 @@ std::string current_global_stopping_criterion(const std::vector<std::string> &gl
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
-void parse(std::string_view input, nvbench::int32_t &val)
+template <typename T, typename Convert>
+void parse_numeric(std::string_view input, T &val, std::string_view type_name, Convert convert)
 try
 {
-  val = std::stoi(std::string(input));
+  const std::string text(input);
+  std::size_t consumed = 0;
+  val                  = convert(text, &consumed);
+  if (consumed != input.size())
+  {
+    throw std::invalid_argument{"unparsed suffix"};
+  }
 }
 catch (const std::exception &)
 { // The default exception messages are not very useful on gcc...it's just "stoi".
-  NVBENCH_THROW(std::invalid_argument, "Failed to parse int32 value from string '{}'", input);
+  NVBENCH_THROW(std::invalid_argument,
+                "Failed to parse {} value from string '{}'",
+                type_name,
+                input);
+}
+
+void parse(std::string_view input, nvbench::int32_t &val)
+{
+  parse_numeric(input, val, "int32", [](const std::string &text, std::size_t *consumed) {
+    return std::stoi(text, consumed);
+  });
 }
 
 void parse(std::string_view input, nvbench::int64_t &val)
-try
 {
-  val = std::stoll(std::string(input));
-}
-catch (const std::exception &)
-{
-  NVBENCH_THROW(std::invalid_argument, "Failed to parse int64 value from string '{}'", input);
+  parse_numeric(input, val, "int64", [](const std::string &text, std::size_t *consumed) {
+    return std::stoll(text, consumed);
+  });
 }
 
 void parse(std::string_view input, nvbench::float64_t &val)
-try
 {
-  val = std::stod(std::string(input));
-}
-catch (const std::exception &)
-{
-  NVBENCH_THROW(std::invalid_argument, "Failed to parse float64 value from string '{}'", input);
+  parse_numeric(input, val, "float64", [](const std::string &text, std::size_t *consumed) {
+    return std::stod(text, consumed);
+  });
 }
 
 void parse(std::string_view input, std::string &val) { val = input; }
