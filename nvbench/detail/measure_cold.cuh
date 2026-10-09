@@ -31,8 +31,8 @@
 #include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
-#include <nvbench/cuda_timer.cuh>
 #include <nvbench/detail/gpu_frequency.cuh>
+#include <nvbench/detail/gpu_timer.cuh>
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
 #include <nvbench/detail/measure_cold_launch_timer_core.cuh>
@@ -106,7 +106,7 @@ protected:
   nvbench::state &m_state;
 
   nvbench::launch m_launch;
-  nvbench::cuda_timer m_cuda_timer{};
+  nvbench::detail::gpu_timer m_cuda_timer;
   nvbench::cpu_timer m_cpu_timer{};
   nvbench::cpu_timer m_walltime_timer{};
   nvbench::detail::l2flush m_l2flush{};

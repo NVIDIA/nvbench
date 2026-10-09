@@ -43,10 +43,12 @@ namespace nvbench::detail
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
+    , m_cuda_timer{exec_state.get_cupti_timer() && !exec_state.get_run_once()}
     , m_criterion_params{exec_state.get_criterion_params()}
     , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(
         exec_state.get_stopping_criterion())}
-    , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel()}
+    , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel() ||
+                                m_cuda_timer.uses_cupti()}
     , m_run_once{exec_state.get_run_once()}
     , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
@@ -367,8 +369,8 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "Min GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description",
-                    "Fastest isolated kernel execution time "
-                    "(measured with CUDA events)");
+                    fmt::format("Fastest isolated kernel execution time ({})",
+                                m_cuda_timer.description()));
     summ.set_float64("value", m_min_cuda_time);
     summ.set_string("hide", "Hidden by default.");
   }
@@ -378,8 +380,8 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "Max GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description",
-                    "Slowest isolated kernel execution time "
-                    "(measured with CUDA events)");
+                    fmt::format("Slowest isolated kernel execution time ({})",
+                                m_cuda_timer.description()));
     summ.set_float64("value", m_max_cuda_time);
     summ.set_string("hide", "Hidden by default.");
   }
@@ -390,8 +392,8 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description",
-                    "Mean isolated kernel execution time "
-                    "(measured with CUDA events)");
+                    fmt::format("Mean isolated kernel execution time ({})",
+                                m_cuda_timer.description()));
     summ.set_float64("value", cuda_mean);
   }
 
