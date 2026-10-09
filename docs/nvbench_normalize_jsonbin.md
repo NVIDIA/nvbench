@@ -17,9 +17,12 @@ nvbench-normalize-jsonbin --output normalized.json result.json
 nvbench-normalize-jsonbin --in-place result.json
 ```
 
-The tool resolves sample-time and sample-frequency sidecars relative to the
-JSON file or launch directory. A matching file under `--sidecar-root` takes
-precedence; otherwise, missing or ambiguous sidecars are errors. Paths in an
-`--output` copy are relative to that output file, and the copy is written even
-when the input already has normalized paths. `--output` cannot name the input;
-use `--in-place` to update it with a backup.
+The tool resolves relative sample-time and sample-frequency sidecar filenames
+only against `--sidecar-root`, which defaults to the input JSON's directory.
+For legacy results, pass the original launch directory explicitly. Absolute
+filenames are used directly; a missing sidecar is an error and is not searched
+for elsewhere. References are rewritten relative to the output JSON's
+directory using resolved physical locations, so symlink-based paths may change
+even when they already resolve correctly. An `--output` copy is written even
+when no references change. `--output` cannot name the input; use `--in-place`
+to update it with a backup.

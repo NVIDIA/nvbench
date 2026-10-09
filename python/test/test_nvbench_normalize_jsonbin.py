@@ -71,7 +71,7 @@ def test_normalize_legacy_launch_directory_path(tmp_path, normalizer, monkeypatc
     make_result(result, "result.json-bin/0.bin")
     monkeypatch.chdir(launch_dir)
 
-    document, changes = normalizer.normalize_jsonbin(result)
+    document, changes = normalizer.normalize_jsonbin(result, sidecar_root=launch_dir)
 
     assert changes == [("result.json-bin/0.bin", "../launch/result.json-bin/0.bin")]
     assert summary_filename(document) == changes[0][1]
@@ -95,7 +95,9 @@ def test_normalize_legacy_inline_filename_record(tmp_path, normalizer):
     assert changes == [(str(sidecar), "sidecars/0.bin")]
 
 
-def test_normalize_rejects_ambiguous_sidecar(tmp_path, normalizer, monkeypatch):
+def test_default_sidecar_root_ignores_launch_directory_candidate(
+    tmp_path, normalizer, monkeypatch
+):
     result = tmp_path / "result.json"
     make_result(result, "result.json-bin/0.bin")
     (tmp_path / "result.json-bin").mkdir()
@@ -106,11 +108,13 @@ def test_normalize_rejects_ambiguous_sidecar(tmp_path, normalizer, monkeypatch):
     (launch_dir / "result.json-bin" / "0.bin").write_bytes(b"launch")
     monkeypatch.chdir(launch_dir)
 
-    with pytest.raises(normalizer.SidecarResolutionError, match="ambiguous"):
-        normalizer.normalize_jsonbin(result)
+    document, changes = normalizer.normalize_jsonbin(result)
+
+    assert changes == []
+    assert summary_filename(document) == "result.json-bin/0.bin"
 
 
-def test_sidecar_root_selects_matching_file_from_ambiguous_candidates(
+def test_sidecar_root_resolves_only_from_the_selected_root(
     tmp_path, normalizer, monkeypatch
 ):
     result = tmp_path / "result.json"
@@ -130,6 +134,24 @@ def test_sidecar_root_selects_matching_file_from_ambiguous_candidates(
     )
 
     assert resolved == selected.resolve()
+
+
+def test_sidecar_root_does_not_fall_back_when_file_is_missing(
+    tmp_path, normalizer, monkeypatch
+):
+    result = tmp_path / "result.json"
+    make_result(result, "result.json-bin/0.bin")
+    local = tmp_path / "result.json-bin" / "0.bin"
+    local.parent.mkdir()
+    local.write_bytes(b"local")
+    launch_dir = tmp_path / "launch"
+    launch_dir.mkdir()
+    monkeypatch.chdir(launch_dir)
+
+    with pytest.raises(normalizer.SidecarResolutionError, match="is not a file"):
+        normalizer.resolve_sidecar(
+            "result.json-bin/0.bin", result, sidecar_root=launch_dir
+        )
 
 
 def test_resolve_sidecar_preserves_symlink_before_parent_traversal(

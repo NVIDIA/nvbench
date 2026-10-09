@@ -17,23 +17,7 @@ SIDECAR_HINTS = {"file/sample_times", "file/sample_freqs"}
 
 
 class SidecarResolutionError(ValueError):
-    """Raised when a sidecar cannot be resolved unambiguously."""
-
-
-def _candidate_paths(filename: str, json_path: Path) -> list[Path]:
-    path = Path(filename)
-    if path.is_absolute():
-        candidates = [path]
-    else:
-        candidates = [json_path.parent / path, Path.cwd() / path]
-        # Older NVBench files sometimes recorded a path that included the
-        # jsonbin directory while resolving it from the launch directory.
-        parts = path.parts
-        json_sidecar_names = {json_path.name + "-bin", json_path.name + "-freqs-bin"}
-        if parts and parts[0] in json_sidecar_names:
-            candidates.append(json_path.parent.joinpath(*parts))
-
-    return candidates
+    """Raised when a sidecar cannot be resolved."""
 
 
 def resolve_sidecar(
@@ -41,28 +25,15 @@ def resolve_sidecar(
 ) -> Path:
     """Resolve one sidecar filename, rejecting missing or ambiguous matches."""
     path = Path(filename)
-    if sidecar_root is not None and not path.is_absolute():
-        explicit = sidecar_root / path
-        if explicit.is_file():
-            return Path(os.path.realpath(explicit))
+    root = sidecar_root if sidecar_root is not None else json_path.parent
+    candidate = path if path.is_absolute() else root / path
 
-    matches: list[tuple[Path, Path]] = []
-    for candidate in _candidate_paths(filename, json_path):
-        if candidate.is_file():
-            resolved = Path(os.path.realpath(candidate))
-            if all(resolved != existing_resolved for _, existing_resolved in matches):
-                matches.append((candidate, resolved))
-
-    if not matches:
+    if not candidate.is_file():
         raise SidecarResolutionError(
-            f"could not resolve sidecar {filename!r} referenced by {json_path}"
+            f"could not resolve sidecar {filename!r} referenced by {json_path}: "
+            f"{candidate} is not a file"
         )
-    if len(matches) > 1:
-        choices = ", ".join(str(path) for path, _ in matches)
-        raise SidecarResolutionError(
-            f"ambiguous sidecar {filename!r} referenced by {json_path}: {choices}"
-        )
-    return matches[0][1]
+    return Path(os.path.realpath(candidate))
 
 
 def _iter_sidecar_records(value: Any):
@@ -161,7 +132,11 @@ def main(argv: list[str] | None = None) -> int:
     """Run the jsonbin path normalizer CLI."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("json_file", type=Path)
-    parser.add_argument("--sidecar-root", type=Path)
+    parser.add_argument(
+        "--sidecar-root",
+        type=Path,
+        help="resolve relative sidecar paths from this directory (defaults to the JSON file's directory)",
+    )
     parser.add_argument("--dry-run", action="store_true")
     destination = parser.add_mutually_exclusive_group()
     destination.add_argument("--in-place", action="store_true")
