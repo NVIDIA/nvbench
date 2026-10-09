@@ -36,6 +36,10 @@ set(test_srcs
   type_list.cu
 )
 
+if (NVBench_ENABLE_CUPTI)
+  list(APPEND test_srcs cupti_timer.cu)
+endif()
+
 # Custom arguments:
 # CTest commands+args can't be modified after creation, so we need to rely on substitution.
 set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_args "--quiet" "--my-custom-arg" "--profile" "-d" "0")
