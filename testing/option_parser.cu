@@ -328,6 +328,32 @@ void test_benchmark_short() // -b
   }
 }
 
+void test_benchmark_wildcards()
+{
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "*Bench"});
+    ASSERT(parser.get_benchmarks().size() == 2);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "Test*"});
+    ASSERT(parser.get_benchmarks().size() == 1);
+  }
+
+  {
+    nvbench::option_parser parser;
+    parser.parse({"--benchmark", "?ummyBench"});
+    ASSERT(parser.get_benchmarks().size() == 1);
+  }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "Missing*"}));
+  }
+}
+
 void test_int64_axis_single()
 {
   const std::string ref =
@@ -1898,6 +1924,7 @@ try
 
   test_benchmark_long();
   test_benchmark_short();
+  test_benchmark_wildcards();
 
   test_int64_axis_single();
   test_int64_axis_multi();
