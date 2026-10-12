@@ -63,8 +63,8 @@ void custom_args_bench(nvbench::state &state)
 {
   state.exec(nvbench::exec_tag::no_gpu, [](nvbench::launch &) {
     volatile int sink = 0;
-    int k              = 0;
-    constexpr int p    = 1009;
+    int k             = 0;
+    constexpr int p   = 1009;
     for (int i = 0; i < g_iterations; ++i)
     {
       k    = (k + 1 < p) ? k + 1 : 0;
