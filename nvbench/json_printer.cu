@@ -625,8 +625,9 @@ void json_printer::do_print_benchmark_list(const benchmark_vector &benches)
     const auto bench_index = benchmarks.size();
     auto &bench            = benchmarks.emplace_back();
 
-    bench["name"]  = bench_ptr->get_name();
-    bench["index"] = bench_index;
+    bench["name"]        = bench_ptr->get_name();
+    bench["description"] = bench_ptr->get_description();
+    bench["index"]       = bench_index;
 
     // We have to ensure that the axes are represented as an array, not an
     // nil object when there are no axes.

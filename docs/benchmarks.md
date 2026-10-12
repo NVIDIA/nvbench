@@ -41,6 +41,15 @@ attributes to be modified.
 NVBENCH_BENCH(my_benchmark).set_name("my_kernel<<<num_blocks, 256>>>");
 ```
 
+# Benchmark Description
+
+A benchmark can include an optional description. Descriptions are shown by the
+`--list` option and can provide context about what a benchmark measures.
+
+```cpp
+NVBENCH_BENCH(my_benchmark).set_description("Measures the execution time of my kernel.");
+```
+
 # CUDA Streams
 
 NVBench records GPU execution times on a specific CUDA stream. By default, a new

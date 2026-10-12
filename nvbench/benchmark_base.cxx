@@ -39,9 +39,10 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
   auto result = this->do_clone();
 
   // Do not copy states.
-  result->m_name    = m_name;
-  result->m_axes    = m_axes;
-  result->m_devices = m_devices;
+  result->m_name        = m_name;
+  result->m_description = m_description;
+  result->m_axes        = m_axes;
+  result->m_devices     = m_devices;
 
   result->m_printer_ptr = m_printer_ptr;
 

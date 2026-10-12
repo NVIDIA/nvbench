@@ -70,7 +70,7 @@ struct benchmark_base
    * Returns a pointer to a new instance of the concrete benchmark<...>
    * subclass.
    *
-   * The result will have the same name and axes as the source benchmark.
+   * The result will have the same name, description, and axes as the source benchmark.
    * The `get_states()` vector of the result will always be empty.
    */
   [[nodiscard]] std::unique_ptr<benchmark_base> clone() const;
@@ -82,6 +82,14 @@ struct benchmark_base
   }
 
   [[nodiscard]] const std::string &get_name() const { return m_name; }
+
+  benchmark_base &set_description(std::string description)
+  {
+    m_description = std::move(description);
+    return *this;
+  }
+
+  [[nodiscard]] const std::string &get_description() const { return m_description; }
 
   benchmark_base &set_type_axes_names(std::vector<std::string> names)
   {
@@ -341,6 +349,7 @@ protected:
   friend struct nvbench::runner;
 
   std::string m_name;
+  std::string m_description;
   nvbench::axes_metadata m_axes;
   std::vector<nvbench::device_info> m_devices;
   std::vector<nvbench::state> m_states;
