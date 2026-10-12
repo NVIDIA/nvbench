@@ -318,9 +318,10 @@ void markdown_printer::do_print_benchmark_list(const printer_base::benchmark_vec
                    bench_ptr->get_name(),
                    num_configs);
 
-    if (!bench_ptr->get_description().empty())
+    if (const auto &benchmark_description = bench_ptr->get_description();
+        !benchmark_description.empty())
     {
-      fmt::format_to(fmt::appender(buffer), "{}\n\n", bench_ptr->get_description());
+      fmt::format_to(fmt::appender(buffer), "{}\n\n", benchmark_description);
     }
 
     fmt::format_to(fmt::appender(buffer), "### Axes\n\n");
