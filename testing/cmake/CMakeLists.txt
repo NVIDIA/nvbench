@@ -169,6 +169,14 @@ nvbench_add_configure_test(test_name
   -D "NVML_COPY_ENABLED=ON"
 )
 
+nvbench_add_configure_test(test_name
+  test_nvml
+  dll_copy_enabled_without_driver_dll
+  -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+  -D "NVML_COPY_ENABLED=ON"
+  -D "NVML_DLL_AVAILABLE=OFF"
+)
+
 ################################################################################
 # Install tree fixtures
 add_test(NAME nvbench.test.cmake.install_tree.install

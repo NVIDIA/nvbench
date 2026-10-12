@@ -22,9 +22,10 @@ function(nvbench_setup_dep_dlls target_name)
         target_type STREQUAL "SHARED_LIBRARY" OR
         target_type STREQUAL "MODULE_LIBRARY"))
     set(runtime_dlls "$<TARGET_RUNTIME_DLLS:${target_name}>")
-    if (NVBench_ENABLE_NVML)
+    if (NVBench_ENABLE_NVML AND NVBench_NVML_DLL)
       # CUDA::nvml is an UNKNOWN imported target and is omitted by
-      # TARGET_RUNTIME_DLLS, so add its driver-installed DLL explicitly.
+      # TARGET_RUNTIME_DLLS, so add its driver-installed DLL explicitly when
+      # it is available on the build machine.
       list(APPEND runtime_dlls "${NVBench_NVML_DLL}")
     endif()
 
