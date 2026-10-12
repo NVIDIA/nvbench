@@ -153,6 +153,23 @@ endfunction()
 nvbench_add_external_fmt_tests()
 
 ################################################################################
+# NVML target and optional driver DLL discovery
+
+nvbench_add_configure_test(test_name
+  test_nvml
+  dll_copy_disabled
+  -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+  -D "NVML_COPY_ENABLED=OFF"
+)
+
+nvbench_add_configure_test(test_name
+  test_nvml
+  dll_copy_enabled
+  -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+  -D "NVML_COPY_ENABLED=ON"
+)
+
+################################################################################
 # Install tree fixtures
 add_test(NAME nvbench.test.cmake.install_tree.install
   COMMAND "${CMAKE_COMMAND}"

@@ -4,8 +4,14 @@ if (NOT TARGET CUDA::toolkit)
   find_package(CUDAToolkit REQUIRED)
 endif()
 
+if (NOT TARGET CUDA::nvml)
+  message(FATAL_ERROR "NVML support is enabled, but CUDA::nvml was not found.")
+endif()
+if (NOT TARGET nvbench::nvml)
+  add_library(nvbench::nvml ALIAS CUDA::nvml)
+endif()
 
-if (WIN32)
+if (WIN32 AND NVBench_ADD_DEPENDENT_DLLS_TO_BUILD)
   # FindCUDAToolkit exposes nvml as an UNKNOWN imported target, so
   # TARGET_RUNTIME_DLLS cannot discover its runtime DLL.
   set(nvbench_nvml_runtime_hints)
