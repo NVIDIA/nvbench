@@ -228,27 +228,6 @@ void measure_cpu_only_base::generate_summaries()
     summ.set_string("hide", "Hidden by default.");
   }
 
-  if (const auto items = m_state.get_element_count(); items != 0)
-  {
-    auto &summ = m_state.add_summary("nv/cpu_only/bw/item_rate");
-    summ.set_string("name", "Elem/s");
-    summ.set_string("hint", "item_rate");
-    summ.set_string("description", "Number of input elements processed per second");
-    summ.set_float64("value", static_cast<double>(items) / cpu_mean);
-  }
-
-  if (const auto bytes = m_state.get_global_memory_rw_bytes(); bytes != 0)
-  {
-    const auto avg_used_gmem_bw = static_cast<double>(bytes) / cpu_mean;
-    {
-      auto &summ = m_state.add_summary("nv/cpu_only/bw/global/bytes_per_second");
-      summ.set_string("name", "GlobalMem BW");
-      summ.set_string("hint", "byte_rate");
-      summ.set_string("description", "Number of bytes read/written per second.");
-      summ.set_float64("value", avg_used_gmem_bw);
-    }
-  } // bandwidth
-
   {
     auto &summ = m_state.add_summary("nv/cpu_only/walltime");
     summ.set_string("name", "Walltime");
