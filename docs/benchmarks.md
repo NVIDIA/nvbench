@@ -266,6 +266,55 @@ In general::
 
 More examples can found in [examples/throughput.cu](../examples/throughput.cu).
 
+# Interpreting Benchmark Output
+
+Each result row represents one benchmark configuration, including one choice
+from every parameter axis. The default markdown output reports cold and batch
+measurements separately when both are enabled.
+
+## Samples and timings
+
+- **Samples** is the number of executions used by that measurement. Cold
+  measurements execute the kernel once per sample with an isolated (flushed)
+  L2 cache. Batch measurements execute the kernel repeatedly and report the
+  average of those executions. The count is selected adaptively, so it can
+  differ between configurations. Use `--min-samples`, `--stopping-criterion`,
+  and the related options in the [CLI guide](cli_help.md#stopping-criteria) to
+  control collection.
+- **CPU Time** is the mean host-side time for one isolated execution.
+- **GPU Time** is the mean device execution time for one isolated execution,
+  measured with CUDA events.
+- **Noise** is the relative standard deviation of the corresponding isolated
+  execution time, expressed as a percentage. Lower values indicate more stable
+  measurements; a high value means that repeated executions vary and should be
+  investigated before comparing small performance differences. The default
+  stopping target is `0.5%`; see [`--max-noise`](cli_help.md#stdrel-stopping-criterion-parameters)
+  for details.
+- **Batch GPU** is the mean device execution time per kernel launch in the
+  batch measurement. **Batch** is the number of launches included in that
+  measurement. Batch measurements run launches back-to-back with a warm cache,
+  so compare them with other batch results rather than with cold GPU times.
+
+## Throughput columns
+
+Throughput columns are derived from the counts declared with the
+`nvbench::state` API:
+
+- **Elem/s** is the number of declared elements processed per second.
+- **GlobalMem BW** is the declared global-memory traffic per second, based on
+  the reads and writes registered with the state.
+- **BWPeak** is the reported global-memory bandwidth as a percentage of the
+  device's theoretical peak bandwidth.
+
+Throughput results are meaningful only when the benchmark declares its work
+accurately. A missing read, write, or element count can make the derived
+throughput appear better or worse without changing the measured kernel time.
+
+When comparing configurations, keep the measurement type, device, clock
+settings, and declared work consistent. Treat timeout warnings and unusually
+high noise as reasons to investigate the measurement before drawing a
+performance conclusion.
+
 # Skip Uninteresting / Invalid Benchmarks
 
 Sometimes particular combinations of parameters aren't useful or interesting —
