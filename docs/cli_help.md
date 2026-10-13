@@ -136,6 +136,14 @@
   * Applied to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--disable-persisting-l2-cache`
+  * Disable persisting-L2 cache reservation and state before GPU warmups and
+    measurement work.
+  * Intended to isolate benchmark iterations from persisting-L2 state left by
+    earlier work.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
 * `--batch-target-time <seconds>`
   * Target accumulated GPU time for batched measurements.
   * Default is 0.5 seconds.

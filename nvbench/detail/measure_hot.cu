@@ -18,6 +18,7 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/detail/measure_hot.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/printer_base.cuh>
@@ -78,6 +79,7 @@ measure_hot_base::measure_hot_base(state &exec_state)
     , m_batch_target_time{exec_state.get_batch_target_time()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
+    , m_disable_persisting_l2_cache{exec_state.get_disable_persisting_l2_cache()}
 {
   try
   {
@@ -93,6 +95,32 @@ measure_hot_base::measure_hot_base(state &exec_state)
   catch (...)
   {
     // If the above threw an exception, we don't have a cold measurement to use.
+  }
+}
+
+measure_hot_base::~measure_hot_base() = default;
+
+void measure_hot_base::initialize_persisting_l2_cache_disable()
+{
+  m_persisting_l2_cache_disable =
+    nvbench::detail::make_persisting_l2_cache_disable_if_requested(m_disable_persisting_l2_cache,
+                                                                   m_state.get_device());
+}
+
+void measure_hot_base::reset_persisting_l2_cache()
+{
+  if (m_persisting_l2_cache_disable)
+  {
+    m_persisting_l2_cache_disable->reset_before_measurement();
+  }
+}
+
+void measure_hot_base::restore_persisting_l2_cache()
+{
+  if (m_persisting_l2_cache_disable)
+  {
+    m_persisting_l2_cache_disable->restore();
+    m_persisting_l2_cache_disable.reset();
   }
 }
 

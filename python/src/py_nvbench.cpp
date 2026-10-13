@@ -720,6 +720,21 @@ Set target accumulated GPU time for batched measurements, in seconds
                        py::return_value_policy::reference,
                        py::arg("duration_seconds"));
 
+  // method Benchmark.set_disable_persisting_l2_cache
+  auto method_set_disable_persisting_l2_cache_impl = [](nvbench::benchmark_base &self,
+                                                        bool disable_persisting_l2_cache) {
+    self.set_disable_persisting_l2_cache(disable_persisting_l2_cache);
+    return std::ref(self);
+  };
+  static constexpr const char *benchmark_method_set_disable_persisting_l2_cache_doc = R"XXXX(
+Set whether persisting-L2 cache state is disabled before GPU measurement work
+)XXXX";
+  py_benchmark_cls.def("set_disable_persisting_l2_cache",
+                       method_set_disable_persisting_l2_cache_impl,
+                       benchmark_method_set_disable_persisting_l2_cache_doc,
+                       py::return_value_policy::reference,
+                       py::arg("disable_persisting_l2_cache"));
+
   // method Benchmark.set_throttle_threshold
   auto method_set_throttle_threshold_impl = [](nvbench::benchmark_base &self,
                                                nvbench::float32_t threshold) {
@@ -1232,6 +1247,23 @@ Use argument True to disable use of blocking kernel by NVBench"
                   &nvbench::state::set_disable_blocking_kernel,
                   method_set_disable_blocking_kernel_doc,
                   py::arg("disable_blocking_kernel"));
+
+  // method State.get_disable_persisting_l2_cache
+  static constexpr const char *method_get_disable_persisting_l2_cache_doc = R"XXXX(
+Return True if persisting-L2 cache state is disabled before GPU measurement work
+)XXXX";
+  pystate_cls.def("get_disable_persisting_l2_cache",
+                  &nvbench::state::get_disable_persisting_l2_cache,
+                  method_get_disable_persisting_l2_cache_doc);
+
+  // method State.set_disable_persisting_l2_cache
+  static constexpr const char *state_method_set_disable_persisting_l2_cache_doc = R"XXXX(
+Use argument True to disable persisting-L2 cache state before GPU measurement work
+)XXXX";
+  pystate_cls.def("set_disable_persisting_l2_cache",
+                  &nvbench::state::set_disable_persisting_l2_cache,
+                  state_method_set_disable_persisting_l2_cache_doc,
+                  py::arg("disable_persisting_l2_cache"));
 
   // method State.get_run_once
   static constexpr const char *method_get_run_once_doc =

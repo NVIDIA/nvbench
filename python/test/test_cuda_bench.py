@@ -119,6 +119,22 @@ def test_cpu_only():
         with pytest.raises(ValueError, match="finite and positive"):
             batch_target_benchmark.set_batch_target_time(duration_seconds)
 
+    def persisting_l2_state_probe(state: bench.State):
+        observed["benchmark_disable_persisting_l2_cache"] = (
+            state.get_disable_persisting_l2_cache()
+        )
+
+        state.set_disable_persisting_l2_cache(False)
+        observed["state_disable_persisting_l2_cache"] = (
+            state.get_disable_persisting_l2_cache()
+        )
+
+        state.exec(lambda launch: None)
+
+    persisting_l2_benchmark = bench.register(persisting_l2_state_probe)
+    persisting_l2_benchmark.set_is_cpu_only(True)
+    persisting_l2_benchmark.set_disable_persisting_l2_cache(True)
+
     @bench.register()
     @bench.option.set_is_cpu_only(True)
     def external_stream_state_probe(state: bench.State):
@@ -197,6 +213,8 @@ def test_cpu_only():
         "state_walltime": 0.125,
         "benchmark_batch_target_time": 0.75,
         "state_batch_target_time": 0.125,
+        "benchmark_disable_persisting_l2_cache": True,
+        "state_disable_persisting_l2_cache": False,
         "external_stream_handle": external_stream_handle,
     }
 
@@ -245,6 +263,8 @@ def test_decorator_docstrings():
     obj_has_docstring_check(bench.option.set_timeout)
     obj_has_docstring_check(bench.option.batch_target_time)
     obj_has_docstring_check(bench.option.set_batch_target_time)
+    obj_has_docstring_check(bench.option.disable_persisting_l2_cache)
+    obj_has_docstring_check(bench.option.set_disable_persisting_l2_cache)
     obj_has_docstring_check(bench.option.stopping_criterion)
     obj_has_docstring_check(bench.option.set_stopping_criterion)
     obj_has_docstring_check(bench.option.criterion_param_float64)
@@ -288,6 +308,10 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
             self.calls.append(("batch_target_time", duration_seconds))
             return self
 
+        def set_disable_persisting_l2_cache(self, value):
+            self.calls.append(("disable_persisting_l2_cache", value))
+            return self
+
     fake_benchmark = FakeBenchmark()
     registered_functions = []
 
@@ -303,6 +327,7 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
     @bench.option.cold_warmup_runs(7)
     @bench.option.cold_max_warmup_walltime(0.25)
     @bench.option.batch_target_time(0.75)
+    @bench.option.disable_persisting_l2_cache()
     def decorated(state: bench.State):
         pass
 
@@ -313,6 +338,7 @@ def test_register_decorator_preserves_function_and_applies_options(monkeypatch):
         ("cold_warmup_runs", 7),
         ("cold_max_warmup_walltime", 0.25),
         ("batch_target_time", 0.75),
+        ("disable_persisting_l2_cache", True),
     ]
     assert callable(decorated)
 
@@ -346,6 +372,35 @@ def test_set_cold_warmup_option_decorators_apply_options(monkeypatch):
     assert fake_benchmark.calls == [
         ("cold_warmup_runs", 13),
         ("cold_max_warmup_walltime", 0.5),
+    ]
+    assert callable(decorated)
+
+
+def test_disable_persisting_l2_cache_option_decorators_apply_options(monkeypatch):
+    class FakeBenchmark:
+        def __init__(self):
+            self.calls = []
+
+        def set_disable_persisting_l2_cache(self, value):
+            self.calls.append(("disable_persisting_l2_cache", value))
+            return self
+
+    fake_benchmark = FakeBenchmark()
+
+    def fake_register(fn):
+        return fake_benchmark
+
+    monkeypatch.setattr(bench, "_register", fake_register)
+
+    @bench.register()
+    @bench.option.set_disable_persisting_l2_cache(False)
+    @bench.option.disable_persisting_l2_cache()
+    def decorated(state: bench.State):
+        pass
+
+    assert fake_benchmark.calls == [
+        ("disable_persisting_l2_cache", False),
+        ("disable_persisting_l2_cache", True),
     ]
     assert callable(decorated)
 
