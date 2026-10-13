@@ -6,10 +6,17 @@ set(example_srcs
   enums.cu
   exec_tag_sync.cu
   exec_tag_timer.cu
+  frequency_criterion.cu
   skip.cu
   stream.cu
   summaries.cu
   throughput.cu
+)
+
+# These examples use custom stopping criteria that don't support the --min-time argument:
+set(no_min_time_examples
+  custom_criterion.cu
+  frequency_criterion.cu
 )
 
 # Metatarget for all examples:
@@ -30,8 +37,8 @@ function (nvbench_add_examples_target target_prefix cuda_std)
     set_target_properties(${example_name} PROPERTIES COMPILE_FEATURES cuda_std_${cuda_std})
 
     set(example_args --timeout 0.1)
-    # The custom_criterion example doesn't support the --min-time argument:
-    if (NOT "${example_src}" STREQUAL "custom_criterion.cu")
+    # Some examples use custom criteria that don't support the --min-time argument:
+    if (NOT "${example_src}" IN_LIST no_min_time_examples)
       list(APPEND example_args --min-time 1e-5)
     endif()
 
