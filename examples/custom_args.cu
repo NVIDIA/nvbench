@@ -17,7 +17,6 @@
 #include <nvbench/nvbench.cuh>
 
 #include <algorithm>
-#include <charconv>
 #include <iterator>
 #include <stdexcept>
 #include <string>
@@ -42,9 +41,22 @@ void parse_custom_args(std::vector<std::string> &args)
     throw std::invalid_argument("--iterations requires a positive integer");
   }
 
-  int iterations    = 0;
-  const auto result = std::from_chars(value->data(), value->data() + value->size(), iterations);
-  if (result.ec != std::errc{} || result.ptr != value->data() + value->size() || iterations <= 0)
+  if (value->empty() ||
+      !std::all_of(value->begin(), value->end(), [](char c) { return c >= '0' && c <= '9'; }))
+  {
+    throw std::invalid_argument("--iterations requires a positive integer");
+  }
+
+  int iterations = 0;
+  try
+  {
+    iterations = std::stoi(*value);
+  }
+  catch (const std::out_of_range &)
+  {
+    throw std::invalid_argument("--iterations requires a positive integer");
+  }
+  if (iterations <= 0)
   {
     throw std::invalid_argument("--iterations requires a positive integer");
   }
