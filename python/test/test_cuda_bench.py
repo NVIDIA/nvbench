@@ -17,10 +17,9 @@
 import gc
 import json
 import weakref
-from typing import Union
 
-import cuda.bench as bench
 import pytest
+from cuda import bench
 
 
 def test_cpp_exception():
@@ -201,7 +200,7 @@ def test_cpu_only():
     }
 
 
-def docstring_check(doc_str: Union[str, None]) -> None:
+def docstring_check(doc_str: str | None) -> None:
     assert isinstance(doc_str, str)
     assert len(doc_str) > 0
 

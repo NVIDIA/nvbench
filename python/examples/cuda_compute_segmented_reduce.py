@@ -16,13 +16,10 @@
 
 import sys
 
-import cuda.bench as bench
-import cuda.compute.algorithms as algorithms
-import cuda.compute.iterators as iterators
-import cuda.core as core
 import cupy as cp
 import numpy as np
-from cuda.compute import OpKind
+from cuda import bench, core
+from cuda.compute import OpKind, algorithms, iterators
 
 
 def as_core_Stream(cs: bench.CudaStream) -> core.Stream:

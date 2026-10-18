@@ -241,8 +241,8 @@ def run_driver(args: argparse.Namespace, nvbench_args: list[str]) -> int:
 
 
 def run_benchmark(args: argparse.Namespace, nvbench_args: list[str]) -> None:
-    import cuda.bench as bench
     import numpy as np
+    from cuda import bench
     from numba_cuda_mlir import cuda
 
     def as_cuda_stream(cs: bench.CudaStream) -> cuda.cudadrv.driver.Stream:

@@ -16,8 +16,8 @@
 
 import sys
 
-import cuda.bench as bench
 import cupy
+from cuda import bench
 
 
 @bench.register()

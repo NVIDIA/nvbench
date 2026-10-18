@@ -13,11 +13,11 @@ import re
 import sys
 import warnings
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Any, BinaryIO, Protocol, TypeAlias
 
 if TYPE_CHECKING:
     import numpy as _np
@@ -3226,7 +3226,7 @@ def compare_benches(
                         )
                     )
 
-                print("")
+                print()
 
             if has_plot_along_data:
                 plot_collector.render_plot_along(

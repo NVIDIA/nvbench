@@ -16,8 +16,8 @@
 
 import sys
 
-import cuda.bench as bench
 import numpy as np
+from cuda import bench
 from numba_cuda_mlir import cuda
 
 
