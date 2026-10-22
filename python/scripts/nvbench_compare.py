@@ -399,8 +399,11 @@ def compare_benches(
         for cmp_device_id in cmp_device_ids:
             rows = []
             plot_data = {"cmp": {}, "ref": {}, "cmp_noise": {}, "ref_noise": {}}
+            ref_device_id = None
 
             for cmp_state in cmp_states:
+                if cmp_state["device"] != cmp_device_id:
+                    continue
                 cmp_state_name = cmp_state["name"]
                 ref_state = next(
                     filter(lambda st: st["name"] == cmp_state_name, ref_states), None
@@ -540,6 +543,7 @@ def compare_benches(
                     row.append(status)
 
                     rows.append(row)
+                    ref_device_id = ref_state["device"]
                     if plot:
                         axis_label = format_axis_values(axis_values, axes, axis_filters)
                         if axis_label:
@@ -559,7 +563,7 @@ def compare_benches(
                 continue
 
             cmp_device = find_device_by_id(cmp_device_id, all_cmp_devices)
-            ref_device = find_device_by_id(ref_state["device"], all_ref_devices)
+            ref_device = find_device_by_id(ref_device_id, all_ref_devices)
 
             if cmp_device == ref_device:
                 print("## [%d] %s\n" % (cmp_device["id"], cmp_device["name"]))
