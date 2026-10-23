@@ -151,6 +151,19 @@ process exit status alone.
 
 ## Matching Inputs
 
+Both comparison scripts require the same GPU timing method. The JSON file
+contains a `gpu_timer` field:
+
+- `cuda_events` measures elapsed GPU time, including host activities and idle gaps.
+- `cupti` measures GPU active time excluding host and idle gaps.
+- `null` for CPU only measurement.
+
+The field records the timing method used in the normal workflow. For example,
+`--profile --cupti-timer` still reports `cuda_events` because it collects one sample only.
+
+The scripts return an error when different timer methods are used.
+The scripts also return an error with incompatible script versions.
+
 `nvbench-compare-robust` matches benchmark states by benchmark name and by positional
 device pairing after any device filters are applied. Within each paired device
 section, states are matched by normalized state name plus their full axis-value

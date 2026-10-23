@@ -129,6 +129,7 @@ private:
 
   void enable_profile();
   void disable_batched();
+  void enable_cupti_timer();
 
   void add_benchmark(const std::string &name);
   void replay_global_args();
