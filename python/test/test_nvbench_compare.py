@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 import importlib
+import json
 import sys
 from pathlib import Path
 
@@ -28,7 +29,11 @@ def run_main(nvbench_compare, monkeypatch, *arguments):
     monkeypatch.setattr(
         nvbench_compare.reader,
         "read_file",
-        lambda path: {"devices": [], "benchmarks": []},
+        lambda path: {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
+            "devices": [],
+            "benchmarks": [],
+        },
     )
     monkeypatch.setattr(
         nvbench_compare,
@@ -51,3 +56,57 @@ def test_compare_uses_emoji_statuses(nvbench_compare, monkeypatch):
     assert (
         nvbench_compare.format_status("SAME", nvbench_compare.Emoji.BLUE) == "🔵 SAME"
     )
+
+
+def test_main_rejects_mismatched_timers(nvbench_compare, monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(nvbench_compare, "load_nvbench_compare_tooling", lambda: None)
+    paths = []
+    for timer in ("cuda_events", "cupti"):
+        path = tmp_path / f"{timer}.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "meta": {"version": {"scripts": {"string": "1.0.0"}}},
+                    "devices": [{"id": 0, "name": "GPU"}],
+                    "benchmarks": [
+                        {
+                            "name": "bench",
+                            "devices": [0],
+                            "axes": [],
+                            "states": [
+                                {
+                                    "name": "state",
+                                    "device": 0,
+                                    "axis_values": [],
+                                    "gpu_timer": timer,
+                                    "summaries": [{"tag": "nv/cold/time/gpu/mean"}],
+                                }
+                            ],
+                        }
+                    ],
+                }
+            )
+        )
+        paths.append(str(path))
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "--ignore-devices", *paths])
+    assert nvbench_compare.main() == 1
+    assert "incompatible GPU timing methodologies" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "versions", [(None, "1.0.0"), ("1.0.0", "1.1.0"), ("1.0.0", "2.0.0")]
+)
+def test_main_rejects_incompatible_script_versions(
+    nvbench_compare, monkeypatch, capsys, versions
+):
+    monkeypatch.setattr(nvbench_compare, "load_nvbench_compare_tooling", lambda: None)
+    roots = {}
+    for filename, version in zip(("ref.json", "cmp.json"), versions):
+        root = {"devices": [], "benchmarks": []}
+        if version is not None:
+            root["meta"] = {"version": {"scripts": {"string": version}}}
+        roots[filename] = root
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda path: roots[path])
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+    assert nvbench_compare.main() == 1
+    assert "script compatibility version" in capsys.readouterr().err

@@ -5,6 +5,7 @@
 #include <nvbench/create.cuh>
 #include <nvbench/cuda_stream.cuh>
 #include <nvbench/cupti_timer.cuh>
+#include <nvbench/json_printer.cuh>
 #include <nvbench/option_parser.cuh>
 #include <nvbench/state.cuh>
 #include <nvbench/test_kernels.cuh>
@@ -13,6 +14,8 @@
 #include <fmt/format.h>
 
 #include <chrono>
+#include <memory>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -165,11 +168,12 @@ struct sleep_generator
   }
 };
 
-void test_measurements(bool run_once, const char *expected)
+void test_measurements(bool run_once, const char *expected, bool use_cupti = true)
 {
-  nvbench::benchmark<sleep_generator> bench;
+  auto bench_ptr = std::make_unique<nvbench::benchmark<sleep_generator>>();
+  auto &bench    = *bench_ptr;
   bench.add_device(0);
-  bench.set_cupti_timer(true);
+  bench.set_cupti_timer(use_cupti);
   bench.set_run_once(run_once);
   bench.set_min_samples(5);
   bench.set_timeout(1.0);
@@ -194,6 +198,17 @@ void test_measurements(bool run_once, const char *expected)
     ASSERT_MSG(desc.find(expected) != std::string::npos, "{}: '{}'", tag, desc);
     ASSERT_MSG(value >= 1e-4 * 0.9 && value < 1e-3, "{}: {}s", tag, value);
   }
+
+  nvbench::printer_base::benchmark_vector benches;
+  benches.push_back(std::move(bench_ptr));
+  std::ostringstream output;
+  nvbench::json_printer printer{output};
+  printer.print_benchmark_results(benches);
+  const auto metadata = fmt::format("\"gpu_timer\": \"{}\"",
+                                    use_cupti && !run_once ? "cupti" : "cuda_events");
+  ASSERT_MSG(output.str().find(metadata) != std::string::npos,
+             "Expected timer metadata: {}",
+             metadata);
 }
 
 // Syncing inside the launcher without exec_tag::sync deadlocks behind a blocking kernel.
@@ -248,6 +263,7 @@ int main()
   test_read_while_other_timer_active();
   test_measurements(false, "measured with CUPTI");
   test_measurements(true, "measured with CUDA events");
+  test_measurements(false, "measured with CUDA events", false);
   test_no_blocking_kernel();
   test_option_parser();
 }
