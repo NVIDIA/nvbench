@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -89,6 +90,7 @@ struct activity_store
   std::unordered_map<nvbench::uint32_t, nvbench::uint64_t> external_ids;
 
   // Only accessed by the thread using cupti_timer.
+  std::unordered_set<nvbench::uint64_t> pending_measurements;
   nvbench::int64_t users    = 0;
   bool callbacks_registered = false;
   nvbench::uint64_t next_id = 0;
@@ -233,15 +235,29 @@ cupti_timer::~cupti_timer()
     nvbench::uint64_t id{};
     (void)cuptiActivityPopExternalCorrelationId(external_kind, &id);
   }
+  get_store().pending_measurements.erase(m_id);
   release_activities();
 }
 
 void cupti_timer::start(cudaStream_t stream)
 {
   this->stop(stream); // Close previous external correlation ID, if any
+  auto &store = get_store();
+  store.pending_measurements.erase(m_id);
   m_duration.reset();
-  m_id = ++get_store().next_id;
-  NVBENCH_CUPTI_CALL(cuptiActivityPushExternalCorrelationId(external_kind, m_id));
+  m_id          = 0;
+  const auto id = ++store.next_id;
+  store.pending_measurements.insert(id);
+  try
+  {
+    NVBENCH_CUPTI_CALL(cuptiActivityPushExternalCorrelationId(external_kind, id));
+  }
+  catch (...)
+  {
+    store.pending_measurements.erase(id);
+    throw;
+  }
+  m_id     = id;
   m_pushed = true;
 }
 
@@ -279,8 +295,8 @@ nvbench::float64_t cupti_timer::get_duration() const
       const auto it = store.external_ids.find(rec.correlation_id);
       if (it != store.external_ids.end() && it->second == m_id)
       {
-        // Zero timestamps are unavailable; reversed intervals may be incomplete after a forced flush.
-        // Keep their correlation IDs so only the affected measurement is rejected.
+        // Zero timestamps are unavailable; reversed intervals may be incomplete after a forced
+        // flush. Keep their correlation IDs so only the affected measurement is rejected.
         if (rec.start == 0 || rec.end < rec.start)
         {
           switch (rec.kind)
@@ -307,17 +323,14 @@ nvbench::float64_t cupti_timer::get_duration() const
     if (invalid_records != 0)
     {
       // Preserve the evidence so subsequent reads cannot report a successful zero duration.
-      throw std::runtime_error(fmt::format(
-        "CUPTI timer measurement is incomplete: {} activity record(s) have invalid timestamps "
-        "(kernels: {}, memcpys: {}, memsets: {}).",
-        invalid_records,
-        invalid_kernels,
-        invalid_memcpys,
-        invalid_memsets));
+      throw std::runtime_error(fmt::format("CUPTI timer measurement is incomplete: {} activity "
+                                           "record(s) have invalid timestamps "
+                                           "(kernels: {}, memcpys: {}, memsets: {}).",
+                                           invalid_records,
+                                           invalid_kernels,
+                                           invalid_memcpys,
+                                           invalid_memsets));
     }
-    // Everything issued until now has completed; older records are no longer needed.
-    store.records.clear();
-    store.external_ids.clear();
   }
 
   std::sort(intervals.begin(), intervals.end());
@@ -340,6 +353,39 @@ nvbench::float64_t cupti_timer::get_duration() const
   }
 
   m_duration = static_cast<nvbench::float64_t>(busy_ns) * 1e-9;
+  // cleans up after duration has been cached
+  // A record is in one of the following states:
+  // - Consumed: get_duration() successfully completed.
+  // - Abandoned: the timer starts a new measurement, invalidating the previous ones.
+  // - No correlation mapping: events outsides timer start/stop range
+  {
+    auto &store = get_store();
+    std::lock_guard lock{store.mutex};
+    store.pending_measurements.erase(m_id);
+    // Completed work may still belong to another timer whose result has not been read.
+    // Deletes records related to consumed/invalid measurements and records without a
+    // correlation mapping.
+    auto remove_it =
+      std::remove_if(store.records.begin(), store.records.end(), [&store](const auto &rec) {
+        // correlation id -> external id
+        const auto it = store.external_ids.find(rec.correlation_id);
+        return it == store.external_ids.end() || store.pending_measurements.count(it->second) == 0;
+      });
+    store.records.erase(remove_it, store.records.end());
+
+    // delete pending measurements that have no correlation mapping
+    for (auto it = store.external_ids.begin(); it != store.external_ids.end();)
+    {
+      if (store.pending_measurements.count(it->second) == 0)
+      {
+        it = store.external_ids.erase(it);
+      }
+      else
+      {
+        ++it;
+      }
+    }
+  }
   return *m_duration;
 }
 

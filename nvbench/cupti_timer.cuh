@@ -29,6 +29,7 @@ namespace nvbench
  * In constrast to CUDA events, kernel launch overhead and idle time frames between operations are
  * excluded. In addition, work queued outside of the window, such as blocking kernel or an L2 flush,
  * is ignored.
+ * Completed measurements may be read in any order across timer instances.
  *
  * Not thread-safe: all cupti_timer instances must be used from the same thread.
  */
@@ -50,7 +51,7 @@ struct cupti_timer
   [[nodiscard]] nvbench::float64_t get_duration() const;
 
 private:
-  nvbench::uint64_t m_id = 0;
+  nvbench::uint64_t m_id = 0; // External correlation ID
   bool m_pushed          = false;
   // nullopt_t means the duration is not yet available.
   mutable std::optional<nvbench::float64_t> m_duration{};

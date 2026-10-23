@@ -95,6 +95,66 @@ void test_concurrent_kernels_not_double_counted()
              duration);
 }
 
+void test_multiple_timers(bool read_second_first)
+{
+  nvbench::cuda_stream stream;
+  nvbench::cupti_timer first_timer;
+  nvbench::cupti_timer second_timer;
+
+  first_timer.start(stream);
+  nvbench::sleep_kernel<<<1, 1, 0, stream>>>(kernel_time);
+  first_timer.stop(stream);
+
+  second_timer.start(stream);
+  nvbench::sleep_kernel<<<1, 1, 0, stream>>>(2 * kernel_time);
+  second_timer.stop(stream);
+
+  // Read both completed windows in either order, including a repeated cached read.
+  auto &read_first    = read_second_first ? second_timer : first_timer;
+  auto &read_second   = read_second_first ? first_timer : second_timer;
+  const auto duration = read_first.get_duration();
+  ASSERT(read_first.get_duration() == duration);
+  (void)read_second.get_duration();
+
+  const auto first_duration  = first_timer.get_duration();
+  const auto second_duration = second_timer.get_duration();
+  ASSERT_MSG(first_duration >= kernel_time * 0.9 && first_duration < kernel_time * 1.5,
+             "First timer expected ~{}s, got {}s",
+             kernel_time,
+             first_duration);
+  ASSERT_MSG(second_duration >= 2 * kernel_time * 0.9 && second_duration < 3 * kernel_time,
+             "Second timer expected ~{}s, got {}s",
+             2 * kernel_time,
+             second_duration);
+}
+
+void test_read_while_other_timer_active()
+{
+  nvbench::cuda_stream stream;
+  nvbench::cupti_timer first_timer;
+  nvbench::cupti_timer second_timer;
+
+  first_timer.start(stream);
+  nvbench::sleep_kernel<<<1, 1, 0, stream>>>(kernel_time);
+  first_timer.stop(stream);
+
+  second_timer.start(stream);
+  nvbench::sleep_kernel<<<1, 1, 0, stream>>>(kernel_time);
+  const auto first_duration = first_timer.get_duration();
+  nvbench::sleep_kernel<<<1, 1, 0, stream>>>(kernel_time);
+  second_timer.stop(stream);
+
+  const auto second_duration = second_timer.get_duration();
+  ASSERT_MSG(first_duration >= kernel_time * 0.9 && first_duration < kernel_time * 1.5,
+             "First timer expected ~{}s, got {}s",
+             kernel_time,
+             first_duration);
+  ASSERT_MSG(second_duration >= 2 * kernel_time * 0.9 && second_duration < 3 * kernel_time,
+             "Active timer expected ~{}s across the other timer's read, got {}s",
+             2 * kernel_time,
+             second_duration);
+}
+
 struct sleep_generator
 {
   void operator()(nvbench::state &state, nvbench::type_list<>) const
@@ -183,6 +243,9 @@ int main()
   test_excludes_host_gap();
   test_excludes_work_outside_window();
   test_concurrent_kernels_not_double_counted();
+  test_multiple_timers(false);
+  test_multiple_timers(true);
+  test_read_while_other_timer_active();
   test_measurements(false, "measured with CUPTI");
   test_measurements(true, "measured with CUDA events");
   test_no_blocking_kernel();
