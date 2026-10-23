@@ -30,7 +30,7 @@ namespace nvbench::detail
 // Measures GPU time with CUPTI when requested, and with CUDA events otherwise.
 struct gpu_timer
 {
-  explicit gpu_timer([[maybe_unused]] bool use_cupti) noexcept
+  explicit gpu_timer([[maybe_unused]] bool use_cupti)
   {
 #ifdef NVBENCH_HAS_CUPTI
     if (use_cupti)
