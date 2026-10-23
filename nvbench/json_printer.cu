@@ -336,6 +336,12 @@ json_printer::version_t json_printer::get_json_file_version()
   // Major version: backwards incompatible changes
   // Minor version: backwards compatible additions
   // Patch version: backwards compatible bugfixes/patches
+  return {1, 1, 0};
+}
+
+json_printer::version_t json_printer::get_scripts_version()
+{
+  // Keep in sync with script_version in python/scripts/nvbench_json/version.py.
   return {1, 0, 0};
 }
 
@@ -449,6 +455,15 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       } // "json"
 
       {
+        const auto version_info   = json_printer::get_scripts_version();
+        auto &scripts_version     = version["scripts"];
+        scripts_version["major"]  = version_info.major;
+        scripts_version["minor"]  = version_info.minor;
+        scripts_version["patch"]  = version_info.patch;
+        scripts_version["string"] = version_info.get_string();
+      } // "scripts"
+
+      {
         auto &nvb_version = version["nvbench"];
 
         nvb_version["major"]  = NVBENCH_VERSION_MAJOR;
@@ -551,7 +566,22 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
         st["skip_time"]                = exec_state.get_skip_time();
         st["timeout"]                  = exec_state.get_timeout();
 
-        st["device"]            = exec_state.get_device()->get_id();
+        if (exec_state.get_is_cpu_only())
+        {
+          st["gpu_timer"] = nullptr;
+        }
+        else
+        {
+          st["gpu_timer"] = exec_state.get_cupti_timer() && !exec_state.get_run_once()
+                              ? "cupti"
+                              : "cuda_events";
+        }
+
+        st["device"] = nullptr;
+        if (const auto &device = exec_state.get_device())
+        {
+          st["device"] = device->get_id();
+        }
         st["type_config_index"] = exec_state.get_type_config_index();
 
         // TODO I'd like to replace this with:
