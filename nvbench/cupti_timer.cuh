@@ -26,7 +26,7 @@ namespace nvbench
  * GPU timer based on the CUPTI Activity API.
  *
  * Measures the GPU busy time of the kernels, memcpys, and memsets between `start()` and `stop()`:
- * In constrast to CUDA events, kernel launch overhead and idle time frames between operations are
+ * In contrast to CUDA events, kernel launch overhead and idle time frames between operations are
  * excluded. In addition, work queued outside of the window, such as blocking kernel or an L2 flush,
  * is ignored.
  * Completed measurements may be read in any order across timer instances.
