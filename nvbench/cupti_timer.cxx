@@ -77,6 +77,7 @@ struct activity_record
   nvbench::uint32_t correlation_id;
   nvbench::uint64_t start;
   nvbench::uint64_t end;
+  CUpti_ActivityKind kind;
 };
 
 struct activity_store
@@ -127,16 +128,6 @@ void CUPTIAPI buffer_completed(CUcontext,
   try
   {
     std::lock_guard lock{store.mutex};
-    // start == 0 means that CUPTI cannot time the operation
-    // end < start means the record is not finished (CUPTI_ACTIVITY_FLAG_FLUSH_FORCED)
-    auto add_record =
-      [&store](nvbench::uint32_t correlation_id, nvbench::uint64_t start, nvbench::uint64_t end) {
-        if (start != 0 && end >= start)
-        {
-          store.records.push_back({correlation_id, start, end});
-        }
-      };
-
     // The start, end, and correlationId fields have the same layout in every
     // version of these records, so the oldest struct versions are used.
     CUpti_Activity *record = nullptr;
@@ -147,17 +138,17 @@ void CUPTIAPI buffer_completed(CUcontext,
         case CUPTI_ACTIVITY_KIND_KERNEL:
         case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL: {
           const auto *rec = reinterpret_cast<const CUpti_ActivityKernel4 *>(record);
-          add_record(rec->correlationId, rec->start, rec->end);
+          store.records.push_back({rec->correlationId, rec->start, rec->end, record->kind});
           break;
         }
         case CUPTI_ACTIVITY_KIND_MEMCPY: {
           const auto *rec = reinterpret_cast<const CUpti_ActivityMemcpy *>(record);
-          add_record(rec->correlationId, rec->start, rec->end);
+          store.records.push_back({rec->correlationId, rec->start, rec->end, record->kind});
           break;
         }
         case CUPTI_ACTIVITY_KIND_MEMSET: {
           const auto *rec = reinterpret_cast<const CUpti_ActivityMemset *>(record);
-          add_record(rec->correlationId, rec->start, rec->end);
+          store.records.push_back({rec->correlationId, rec->start, rec->end, record->kind});
           break;
         }
         case CUPTI_ACTIVITY_KIND_EXTERNAL_CORRELATION: {
@@ -279,14 +270,50 @@ nvbench::float64_t cupti_timer::get_duration() const
   {
     auto &store = get_store();
     std::lock_guard lock{store.mutex};
+    std::size_t invalid_kernels = 0;
+    std::size_t invalid_memcpys = 0;
+    std::size_t invalid_memsets = 0;
     // for all records, find the ones that have the same external id as the current measurement
     for (const auto &rec : store.records)
     {
       const auto it = store.external_ids.find(rec.correlation_id);
       if (it != store.external_ids.end() && it->second == m_id)
       {
+        // Zero timestamps are unavailable; reversed intervals may be incomplete after a forced flush.
+        // Keep their correlation IDs so only the affected measurement is rejected.
+        if (rec.start == 0 || rec.end < rec.start)
+        {
+          switch (rec.kind)
+          {
+            case CUPTI_ACTIVITY_KIND_KERNEL:
+            case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
+              ++invalid_kernels;
+              break;
+            case CUPTI_ACTIVITY_KIND_MEMCPY:
+              ++invalid_memcpys;
+              break;
+            case CUPTI_ACTIVITY_KIND_MEMSET:
+              ++invalid_memsets;
+              break;
+            default:
+              break;
+          }
+          continue;
+        }
         intervals.emplace_back(rec.start, rec.end);
       }
+    }
+    const auto invalid_records = invalid_kernels + invalid_memcpys + invalid_memsets;
+    if (invalid_records != 0)
+    {
+      // Preserve the evidence so subsequent reads cannot report a successful zero duration.
+      throw std::runtime_error(fmt::format(
+        "CUPTI timer measurement is incomplete: {} activity record(s) have invalid timestamps "
+        "(kernels: {}, memcpys: {}, memsets: {}).",
+        invalid_records,
+        invalid_kernels,
+        invalid_memcpys,
+        invalid_memsets));
     }
     // Everything issued until now has completed; older records are no longer needed.
     store.records.clear();

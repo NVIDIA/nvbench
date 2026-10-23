@@ -46,6 +46,7 @@ struct cupti_timer
   void stop(cudaStream_t stream);
 
   // In seconds. Synchronizes the device.
+  // Throws if an activity in this measurement has unavailable or invalid timestamps.
   [[nodiscard]] nvbench::float64_t get_duration() const;
 
 private:

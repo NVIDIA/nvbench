@@ -28,6 +28,18 @@ namespace
 
 constexpr double kernel_time = 0.002;
 
+void test_empty_measurement()
+{
+  nvbench::cuda_stream stream;
+  nvbench::cupti_timer timer;
+
+  timer.start(stream);
+  timer.stop(stream);
+
+  ASSERT(timer.get_duration() == 0.);
+  ASSERT(timer.get_duration() == 0.);
+}
+
 void test_excludes_host_gap()
 {
   nvbench::cuda_stream stream;
@@ -167,6 +179,7 @@ void test_option_parser()
 
 int main()
 {
+  test_empty_measurement();
   test_excludes_host_gap();
   test_excludes_work_outside_window();
   test_concurrent_kernels_not_double_counted();
