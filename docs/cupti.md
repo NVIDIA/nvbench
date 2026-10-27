@@ -1,12 +1,15 @@
 # CUPTI integration
 
-NVBench can collect hardware performance metrics through CUPTI while it runs a
-benchmark. CUPTI collection is optional and is enabled by default when the
-CUDA Toolkit is at least 11.3 and the required CUPTI libraries are available.
+CUPTI support is optional. CMake enables it by default for CUDA Toolkit
+versions 11.3 and later, and disables it by default for older versions. The
+CUPTI libraries are required when this option is enabled. If they are missing,
+set `NVBench_ENABLE_CUPTI=OFF` to build without CUPTI support. Benchmarks collect
+metrics only when they call a `state.collect_*()` method.
 
 ## Build with CUPTI
 
-Enable CUPTI explicitly when configuring NVBench:
+To enable CUPTI explicitly, set `NVBench_ENABLE_CUPTI=ON` when configuring
+NVBench:
 
 ```console
 cmake -S . -B build \
@@ -15,9 +18,6 @@ cmake -S . -B build \
   -DCMAKE_CUDA_ARCHITECTURES=native
 cmake --build build
 ```
-
-Set `NVBench_ENABLE_CUPTI=OFF` to build without CUPTI support. The default is
-automatically disabled for CUDA Toolkit versions older than 11.3.
 
 ## Collect metrics in a benchmark
 
