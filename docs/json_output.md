@@ -19,7 +19,7 @@ The top-level JSON object contains these keys:
 | Key | Description |
 | --- | --- |
 | `meta` | Command-line arguments and NVBench/JSON format versions. |
-| `devices` | Device properties used by the benchmark run. |
+| `devices` | Properties for all detected CUDA devices. Each benchmark lists its selected device IDs in `benchmarks[].devices`. |
 | `benchmarks` | Benchmark definitions and their measured states. |
 
 The JSON format is versioned at `meta.version.json`. Consumers should inspect
