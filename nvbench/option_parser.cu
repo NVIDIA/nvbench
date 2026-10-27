@@ -978,13 +978,17 @@ try
 {
   const auto &mgr = nvbench::benchmark_manager::get();
 
+  const bool has_wildcard = name.find_first_of("*?") != std::string::npos;
   nvbench::int64_t idx{-1};
-  try
+  if (!has_wildcard)
   {
-    ::parse(name, idx);
+    try
+    {
+      ::parse(name, idx);
+    }
+    catch (std::invalid_argument &)
+    {}
   }
-  catch (std::invalid_argument &)
-  {}
 
   const auto add_clone = [this](const nvbench::benchmark_base &benchmark) {
     m_benchmarks.push_back(benchmark.clone());
@@ -1007,7 +1011,7 @@ try
     return;
   }
 
-  if (name.find_first_of("*?") != std::string::npos)
+  if (has_wildcard)
   {
     bool matched = false;
     for (const auto &benchmark : benchmarks)

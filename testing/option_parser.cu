@@ -321,6 +321,11 @@ void test_benchmark_wildcards()
     nvbench::option_parser parser;
     ASSERT_THROWS_ANY(parser.parse({"--benchmark", "Missing*"}));
   }
+
+  {
+    nvbench::option_parser parser;
+    ASSERT_THROWS_ANY(parser.parse({"--benchmark", "1*"}));
+  }
 }
 
 void test_int64_axis_single()
