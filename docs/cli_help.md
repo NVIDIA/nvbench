@@ -61,6 +61,9 @@
 
 * `--benchmark <benchmark name/index>`, `-b <benchmark name/index>`
   * Execute a specific benchmark.
+  * A benchmark name may contain `*` to match any sequence of characters or `?`
+    to match one character. A wildcard selects every matching benchmark. An
+    exact benchmark name takes precedence over wildcard matching.
   * Argument is a benchmark name or index, taken from `--list`.
   * If not specified, all benchmarks will run.
   * `--benchmark` may be specified multiple times to run several benchmarks.
