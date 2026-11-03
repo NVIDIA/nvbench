@@ -257,6 +257,20 @@ void test_partial_number_rejected()
                               {"float64", "1.5xyz"});
 }
 
+void test_range_stride_must_be_positive()
+{
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=[0:10:0]"},
+                              {"stride must be positive", "0:10:0"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=[0:10:-1]"},
+                              {"stride must be positive", "0:10:-1"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "PO2s[pow2]=[0:10:0]"},
+                              {"stride must be positive", "0:10:0"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Floats=[0.0:1.0:0.0]"},
+                              {"stride must be positive", "0.0:1.0:0.0"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Floats=[0.0:1.0:-0.1]"},
+                              {"stride must be positive", "0.0:1.0:-0.1"});
+}
+
 void test_scientific_float_axis()
 {
   nvbench::option_parser parser;
@@ -1894,6 +1908,7 @@ try
   test_argc_argv_parse();
   test_invalid_option();
   test_partial_number_rejected();
+  test_range_stride_must_be_positive();
   test_scientific_float_axis();
 
   test_benchmark_long();
