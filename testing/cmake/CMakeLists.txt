@@ -45,10 +45,11 @@ function(nvbench_add_compile_test full_test_name_var subdir test_id)
     COMMAND "${CMAKE_CTEST_COMMAND}"
       --build-and-test "${src_dir}" "${build_dir}"
       --build-generator "${CMAKE_GENERATOR}"
+      --build-config "$<CONFIG>"
       --build-options
         ${cmake_opts}
         ${ARGN}
-      --test-command "${CMAKE_CTEST_COMMAND}" --output-on-failure
+      --test-command "${CMAKE_CTEST_COMMAND}" -C "$<CONFIG>" --output-on-failure
   )
   if (WIN32)
     set(path_mods "PATH=path_list_prepend:$<SHELL_PATH:${NVBench_EXECUTABLE_OUTPUT_DIR}>")
@@ -176,6 +177,16 @@ nvbench_add_configure_test(test_name
   -D "NVML_COPY_ENABLED=ON"
   -D "NVML_DLL_AVAILABLE=OFF"
 )
+
+# Host-only post-build coverage, including empty runtime DLL lists.
+foreach(copy_case IN ITEMS spaces special empty disabled static)
+  nvbench_add_compile_test(test_name
+    test_dep_dlls
+    ${copy_case}
+    -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+    -D "COPY_CASE=${copy_case}"
+  )
+endforeach()
 
 ################################################################################
 # Install tree fixtures

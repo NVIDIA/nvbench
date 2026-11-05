@@ -31,10 +31,12 @@ function(nvbench_setup_dep_dlls target_name)
 
     add_custom_command(TARGET ${target_name}
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E copy
-        ${runtime_dlls}
+      # The explicit destination also permits an empty runtime DLL list.
+      COMMAND "${CMAKE_COMMAND}" -E copy -t
         "$<TARGET_FILE_DIR:${target_name}>"
+        ${runtime_dlls}
       COMMAND_EXPAND_LISTS
+      VERBATIM
     )
   endif()
 endfunction()
