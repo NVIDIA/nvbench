@@ -6,6 +6,7 @@ set_target_properties(nvbench.ctl PROPERTIES
   EXPORT_NAME ctl
 )
 add_dependencies(nvbench.all nvbench.ctl)
+nvbench_setup_dep_dlls(nvbench.ctl)
 nvbench_install_executables(nvbench.ctl)
 
 if (NVBench_ENABLE_TESTING)
