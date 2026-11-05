@@ -72,7 +72,10 @@ struct type_strings<nvbench::enum_type<Value, T>>
     {
       return std::to_string(static_cast<std::underlying_type_t<T>>(Value));
     }
-    return std::to_string(Value);
+    else
+    {
+      return std::to_string(Value);
+    }
   }
 
   static std::string description() { return nvbench::demangle<nvbench::enum_type<Value, T>>(); }
