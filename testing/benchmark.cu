@@ -242,6 +242,7 @@ void test_clone()
 {
   lots_of_types_bench bench;
   bench.set_devices(std::vector<int>{});
+  bench.set_description("A benchmark description");
   bench.set_type_axes_names({"Integer", "Float", "Other"});
   bench.add_string_axis("Strings", {"string a", "string b", "string c"});
   bench.add_int64_power_of_two_axis("I64 POT Axis", {10, 20});
@@ -255,6 +256,7 @@ void test_clone()
   ASSERT(clone != nullptr);
 
   ASSERT(bench.get_name() == clone->get_name());
+  ASSERT(bench.get_description() == clone->get_description());
 
   const auto &ref_axes   = bench.get_axes().get_axes();
   const auto &clone_axes = clone->get_axes().get_axes();
