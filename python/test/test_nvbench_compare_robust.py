@@ -2212,6 +2212,60 @@ def test_compare_benches_reports_regression_when_robust_intervals_and_clock_conf
     assert run_data.stats.unknown_count == 0
 
 
+@pytest.mark.parametrize(
+    ("change", "expected_status"),
+    [
+        (0.01, "SLOW"),
+        (0.02, "SLOW"),
+        (0.05, "SLOW"),
+        (-0.01, "FAST"),
+        (-0.02, "FAST"),
+        (-0.05, "FAST"),
+    ],
+)
+def test_compare_benches_detects_synthetic_performance_alterations(
+    nvbench_compare, change, expected_status
+):
+    run_data = make_comparison_run_data(nvbench_compare)
+
+    def make_synthetic_state(mean):
+        formatted_mean = f"{mean:.6f}"
+        state = make_state(nvbench_compare, "state", mean=formatted_mean, noise="0.001")
+        state["summaries"].extend(
+            [
+                make_summary(nvbench_compare, "GPU_TIME_MIN_TAG", formatted_mean),
+                make_summary(nvbench_compare, "GPU_TIME_Q1_TAG", formatted_mean),
+                make_summary(nvbench_compare, "GPU_TIME_MEDIAN_TAG", formatted_mean),
+                make_summary(nvbench_compare, "GPU_TIME_Q3_TAG", formatted_mean),
+                make_summary(nvbench_compare, "GPU_TIME_IQR_RELATIVE_TAG", "0.0"),
+                make_summary(nvbench_compare, "GPU_SM_CLOCK_RATE_MEAN_TAG", "100.0"),
+            ]
+        )
+        return state
+
+    nvbench_compare.compare_benches(
+        run_data,
+        [make_benchmark([make_synthetic_state(1.0)])],
+        [make_benchmark([make_synthetic_state(1.0 + change)])],
+        threshold=0.0,
+        plot_along=None,
+        plot=False,
+        dark=False,
+        filter_plan=make_filter_plan(nvbench_compare),
+        no_color=True,
+    )
+
+    assert run_data.stats.config_count == 1
+    assert run_data.stats.undecided_count == 0
+    assert run_data.stats.unknown_count == 0
+    if expected_status == "SLOW":
+        assert run_data.stats.regression_count == 1
+        assert run_data.stats.improvement_count == 0
+    else:
+        assert run_data.stats.regression_count == 0
+        assert run_data.stats.improvement_count == 1
+
+
 def test_compare_benches_accepts_custom_comparison_thresholds(
     monkeypatch, nvbench_compare
 ):
