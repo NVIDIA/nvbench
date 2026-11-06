@@ -96,7 +96,7 @@ class Target:
         # Allow for modest floating-point errors
         epsilon = 0.000002
         if self.weighted_duration > self.Duration() + epsilon:
-            print("%s > %s?" % (self.weighted_duration, self.Duration()))
+            print(f"{self.weighted_duration} > {self.Duration()}?")
         assert self.weighted_duration <= self.Duration() + epsilon
         return self.weighted_duration
 
@@ -122,7 +122,7 @@ def ReadTargets(log, show_all):
     # targets.
     if not header:
         return []
-    assert header == "# ninja log v5\n", "unrecognized ninja log version %r" % header
+    assert header == "# ninja log v5\n", f"unrecognized ninja log version {header!r}"
     targets_dict = {}
     last_end_seen = 0.0
     for line in log:
@@ -226,8 +226,7 @@ def SummarizeEntries(entries, extra_step_types, elapsed_time_sorting):
     for target in entries:
         if earliest < 0 or target.start < earliest:
             earliest = target.start
-        if target.end > latest:
-            latest = target.end
+        latest = max(latest, target.end)
         total_cpu_time += target.Duration()
         task_start_stop_times.append((target.start, "start", target))
         task_start_stop_times.append((target.end, "stop", target))
@@ -273,8 +272,7 @@ def SummarizeEntries(entries, extra_step_types, elapsed_time_sorting):
     if abs(length - weighted_total) > 500:
         print(
             "Warning: Possible corrupt ninja log, results may be "
-            "untrustworthy. Length = %.3f, weighted total = %.3f"
-            % (length, weighted_total)
+            f"untrustworthy. Length = {length:.3f}, weighted total = {weighted_total:.3f}"
         )
 
     # Print the slowest build steps:
@@ -285,8 +283,8 @@ def SummarizeEntries(entries, extra_step_types, elapsed_time_sorting):
         entries.sort(key=lambda x: x.WeightedDuration())
     for target in entries[-long_count:]:
         print(
-            "      %8.1f weighted s to build %s (%.1f s elapsed time)"
-            % (target.WeightedDuration(), target.DescribeTargets(), target.Duration())
+            f"      {target.WeightedDuration():8.1f} weighted s to build "
+            f"{target.DescribeTargets()} ({target.Duration():.1f} s elapsed time)"
         )
 
     # Sum up the time by file extension/type of the output file
@@ -313,18 +311,17 @@ def SummarizeEntries(entries, extra_step_types, elapsed_time_sorting):
     # Print the slowest build target types:
     for time, extension in weighted_time_by_ext_sorted[-long_ext_count:]:
         print(
-            "      %8.1f s weighted time to generate %d %s files "
-            "(%1.1f s elapsed time sum)"
-            % (time, count_by_ext[extension], extension, time_by_ext[extension])
+            f"      {time:8.1f} s weighted time to generate "
+            f"{count_by_ext[extension]} {extension} files "
+            f"({time_by_ext[extension]:1.1f} s elapsed time sum)"
         )
 
     print(
-        "    %.1f s weighted time (%.1f s elapsed time sum, %1.1fx "
-        "parallelism)" % (length, total_cpu_time, total_cpu_time * 1.0 / length)
+        f"    {length:.1f} s weighted time ({total_cpu_time:.1f} s elapsed time sum, "
+        f"{total_cpu_time * 1.0 / length:1.1f}x parallelism)"
     )
     print(
-        "    %d build steps completed, average of %1.2f/s"
-        % (len(entries), len(entries) / (length))
+        f"    {len(entries)} build steps completed, average of {len(entries) / length:1.2f}/s"
     )
 
 
@@ -372,7 +369,7 @@ def main():
             cmd.extend(["--step_types", args.step_types])
         if args.elapsed_time_sorting:
             cmd.append("--elapsed_time_sorting")
-        subprocess.run(cmd)
+        subprocess.run(cmd, check=False)
     else:
         try:
             with open(log_file, "r") as log:
@@ -381,8 +378,8 @@ def main():
                     SummarizeEntries(
                         entries, args.step_types, args.elapsed_time_sorting
                     )
-        except IOError:
-            print("Log file %r not found, no build summary created." % log_file)
+        except OSError:
+            print(f"Log file {log_file!r} not found, no build summary created.")
             return errno.ENOENT
 
 
