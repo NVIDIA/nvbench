@@ -63,7 +63,7 @@ def extract_summary_data_value(summary: dict, name: str, expected_type: str) -> 
 def extract_filename(summary: dict) -> str:
     value = extract_summary_data_value(summary, "filename", "string")
     if not isinstance(value, str):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'filename' "
             "value must be a string"
         )
@@ -156,7 +156,7 @@ def parse_summary(summary: dict) -> BenchmarkResultSummary:
     for value_data in summary.get("data", []):
         field_name = value_data.get("name")
         if not isinstance(field_name, str):
-            raise ValueError(
+            raise TypeError(
                 f"summary {summary_tag!r} has a data entry with a missing "
                 "or non-string name"
             )
