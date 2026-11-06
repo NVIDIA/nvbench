@@ -88,7 +88,29 @@ mkdir -p build
 cd build
 cmake -DNVBench_ENABLE_EXAMPLES=ON -DCMAKE_CUDA_ARCHITECTURES=70 .. && make
 ```
-Be sure to set `CMAKE_CUDA_ARCHITECTURE` based on the GPU you are running on.
+Be sure to set `CMAKE_CUDA_ARCHITECTURES` based on the GPU you are running on.
+
+### CUDA architecture compatibility
+
+NVBench uses the CUDA architecture selected at configure time in its compiled
+device code and headers. When NVBench is built separately from a benchmark
+project, configure both projects with compatible architecture lists. Either
+build them with the same `CMAKE_CUDA_ARCHITECTURES` values, or build NVBench
+with every architecture that the downstream benchmarks may target. For
+example:
+
+```sh
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES="70;80;90"
+```
+
+An architecture list that is too narrow can make a benchmark fail to run on a
+supported GPU; using different lists between NVBench and a downstream project
+can also produce misleading device information or undefined behaviour. For
+that reason, prefer adding NVBench to the benchmark project (for example with
+CPM or a submodule) so both are configured together. If no architecture is
+specified, NVBench defaults to CMake's `native` architecture selection, which
+is appropriate for a local build but should not be treated as a portable
+pre-built library configuration.
 
 Examples are built by default into `build/bin` and are prefixed with `nvbench.example`.
 
