@@ -740,9 +740,20 @@ def test_extract_binary_size_accepts_integral_values(value, nvbench_compare):
     )
 
 
-@pytest.mark.parametrize("value", [True, False, 3.0, 3.5, "3.5"])
-def test_extract_binary_size_rejects_non_integral_values(value, nvbench_compare):
-    with pytest.raises(ValueError, match="is not an int64"):
+@pytest.mark.parametrize(
+    "value, exception_type",
+    [
+        (True, TypeError),
+        (False, TypeError),
+        (3.0, TypeError),
+        (3.5, TypeError),
+        ("3.5", ValueError),
+    ],
+)
+def test_extract_binary_size_rejects_non_integral_values(
+    value, exception_type, nvbench_compare
+):
+    with pytest.raises(exception_type, match="is not an int64"):
         nvbench_compare.extract_binary_size(
             make_raw_binary_size_summary(nvbench_compare, value)
         )
@@ -3243,22 +3254,38 @@ def test_parse_comparison_config_data_validates_grouped_thresholds(nvbench_compa
 
 
 @pytest.mark.parametrize(
-    "config_data, match",
+    "config_data, exception_type, match",
     [
-        ({}, "version"),
-        ({"version": 2}, "unsupported"),
-        ({"version": 1, "rare_support": {}}, "unknown top-level"),
-        ({"version": 1, "bulk": {"unknown": 0.1}}, r"\[bulk\]"),
-        ({"version": 1, "clear_gap": {"rare_support": {}}}, r"\[clear_gap\]"),
-        ({"version": 1, "bulk": {"sample_coverage": 1.5}}, "<= 1"),
-        ({"version": 1, "same": {"center_relative": "tight"}}, "finite number"),
-        ({"version": 1, "preset": {"name": "aggressive"}}, "unknown comparison preset"),
+        ([], TypeError, "TOML table"),
+        ({}, TypeError, "version"),
+        ({"version": True}, TypeError, "version"),
+        ({"version": 2}, ValueError, "unsupported"),
+        ({"version": 1, "rare_support": {}}, ValueError, "unknown top-level"),
+        ({"version": 1, "bulk": {"unknown": 0.1}}, ValueError, r"\[bulk\]"),
+        (
+            {"version": 1, "clear_gap": {"rare_support": {}}},
+            ValueError,
+            r"\[clear_gap\]",
+        ),
+        ({"version": 1, "bulk": {"sample_coverage": 1.5}}, ValueError, "<= 1"),
+        (
+            {"version": 1, "same": {"center_relative": "tight"}},
+            TypeError,
+            "finite number",
+        ),
+        ({"version": 1, "same": {"center_relative": True}}, TypeError, "finite number"),
+        ({"version": 1, "same": []}, TypeError, r"\[same\]"),
+        (
+            {"version": 1, "preset": {"name": "aggressive"}},
+            ValueError,
+            "unknown comparison preset",
+        ),
     ],
 )
 def test_parse_comparison_config_data_rejects_invalid_config(
-    nvbench_compare, config_data, match
+    nvbench_compare, config_data, exception_type, match
 ):
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(exception_type, match=match):
         nvbench_compare.parse_comparison_config_data(config_data)
 
 
@@ -3334,6 +3361,34 @@ def test_main_dump_config_merges_config_and_cli_preset(
     assert 'name = "permissive"' in output
     assert "relative = 0.0025" in output
     assert "sample_coverage = 0.93" in output
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("tomllib") is None
+    and importlib.util.find_spec("tomli") is None,
+    reason="TOML config support requires tomllib or tomli",
+)
+@pytest.mark.parametrize(
+    "config_text, message",
+    [
+        ("version = true\n", "must specify integer version"),
+        ("version = 1\nsame = []\n", "must be a TOML table"),
+        ('version = 1\n[same]\ncenter_relative = "tight"\n', "finite number"),
+    ],
+)
+def test_main_reports_config_type_errors(
+    tmp_path, monkeypatch, capsys, nvbench_compare, config_text, message
+):
+    config_path = tmp_path / "settings.toml"
+    config_path.write_text(config_text, encoding="utf-8")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["nvbench_compare", "--config", str(config_path), "--dump-config"],
+    )
+
+    assert nvbench_compare.main() == 1
+    assert message in capsys.readouterr().out
 
 
 def test_main_rejects_unknown_options(monkeypatch, nvbench_compare):
@@ -3433,6 +3488,47 @@ def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):
     output = capsys.readouterr().out
     assert "failed to read NVBench JSON file 'ref.json'" in output
     assert "cannot open file" in output
+
+
+@pytest.mark.parametrize(
+    "root, message",
+    [
+        ([], "root must be an object"),
+        ({"devices": {}, "benchmarks": []}, "must be an array"),
+        ({"devices": [None], "benchmarks": []}, "must be an object"),
+    ],
+)
+def test_read_nvbench_json_root_rejects_invalid_types(
+    monkeypatch, nvbench_compare, root, message
+):
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+
+    with pytest.raises(TypeError, match=message):
+        nvbench_compare.read_nvbench_json_root("ref.json")
+
+
+@pytest.mark.parametrize(
+    "filename, size", [(None, 3), ("samples.bin", True), ("samples.bin", 3.0)]
+)
+def test_main_reports_binary_metadata_type_errors(
+    monkeypatch, capsys, nvbench_compare, filename, size
+):
+    state = make_state(nvbench_compare, "state")
+    summary = make_binary_summary(nvbench_compare, "SAMPLE_TIMES_TAG", filename, 3)
+    summary["data"][1]["value"] = size
+    state["summaries"].append(summary)
+    root = {
+        "devices": [{"id": 0, "name": "Test GPU"}],
+        "benchmarks": [make_benchmark([state])],
+    }
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "invalid NVBench JSON structure" in output
+    message = "filename" if filename is None else "is not an int64"
+    assert message in output
 
 
 def test_main_reports_missing_required_root_keys(monkeypatch, capsys, nvbench_compare):

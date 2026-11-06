@@ -96,20 +96,20 @@ def format_int64_axis_value(axis_name, axis_value, axes):
     value = int(axis_value["value"])
     if axis_flags == "pow2":
         value = math.log2(value)
-        return "2^%d" % value
-    return "%d" % value
+        return f"2^{int(value):d}"
+    return f"{value:d}"
 
 
 def format_float64_axis_value(axis_name, axis_value, axes):
-    return "%.5g" % float(axis_value["value"])
+    return f"{float(axis_value['value']):.5g}"
 
 
 def format_type_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_string_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_axis_value(axis_name, axis_value, axes):
@@ -215,7 +215,7 @@ def format_duration(seconds):
     else:
         multiplier = 1e6
         units = "us"
-    return "%0.3f %s" % (seconds * multiplier, units)
+    return f"{seconds * multiplier:0.3f} {units}"
 
 
 def format_percentage(percentage):
@@ -562,16 +562,11 @@ def compare_benches(
             ref_device = find_device_by_id(ref_state["device"], all_ref_devices)
 
             if cmp_device == ref_device:
-                print("## [%d] %s\n" % (cmp_device["id"], cmp_device["name"]))
+                print(f"## [{cmp_device['id']:d}] {cmp_device['name']}\n")
             else:
                 print(
-                    "## [%d] %s vs. [%d] %s\n"
-                    % (
-                        ref_device["id"],
-                        ref_device["name"],
-                        cmp_device["id"],
-                        cmp_device["name"],
-                    )
+                    f"## [{ref_device['id']:d}] {ref_device['name']} vs. "
+                    f"[{cmp_device['id']:d}] {cmp_device['name']}\n"
                 )
             # colalign and github format require tabulate 0.8.3
             load_tabulate_for_table_output()
@@ -593,8 +588,8 @@ def compare_benches(
                 plt.ylabel("time [s]")
                 plt.title(cmp_device["name"])
 
-                def plot_line(key, shape, label):
-                    x = [float(x) for x in plot_data[key][axis].keys()]
+                def plot_line(plot_data, axis, key, shape, label):
+                    x = [float(x) for x in plot_data[key][axis]]
                     y = list(plot_data[key][axis].values())
 
                     noise = list(plot_data[key + "_noise"][axis].values())
@@ -605,9 +600,9 @@ def compare_benches(
                     p = plt.plot(x, y, shape, marker="o", label=label)
                     plt.fill_between(x, bottom, top, color=p[0].get_color(), alpha=0.1)
 
-                for axis in plot_data["cmp"].keys():
-                    plot_line("cmp", "-", axis)
-                    plot_line("ref", "--", axis + " ref")
+                for axis in plot_data["cmp"]:
+                    plot_line(plot_data, axis, "cmp", "-", axis)
+                    plot_line(plot_data, axis, "ref", "--", axis + " ref")
 
                 plt.legend()
                 plt.show()
@@ -755,10 +750,10 @@ def main():
             return 1
 
     print("# Summary\n")
-    print("- Total Matches: %d" % config_count)
-    print("  - Pass    (diff <= min_noise): %d" % pass_count)
-    print("  - Unknown (infinite noise):    %d" % unknown_count)
-    print("  - Failure (diff > min_noise):  %d" % failure_count)
+    print(f"- Total Matches: {config_count:d}")
+    print(f"  - Pass    (diff <= min_noise): {pass_count:d}")
+    print(f"  - Unknown (infinite noise):    {unknown_count:d}")
+    print(f"  - Failure (diff > min_noise):  {failure_count:d}")
     return failure_count
 
 

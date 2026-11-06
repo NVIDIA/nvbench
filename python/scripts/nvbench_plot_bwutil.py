@@ -209,11 +209,11 @@ def strip_axis_filters_from_state_name(state_name, axis_filters):
         return state_name
 
     tokens = state_name.split()
-    filter_prefixes = set(
+    filter_prefixes = {
         "{}=".format(axis_filter["name"])
         for axis_filter in axis_filters
         if len(axis_filter["values"]) == 1
-    )
+    }
     tokens = [
         token
         for token in tokens

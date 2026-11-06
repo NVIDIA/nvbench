@@ -47,9 +47,9 @@ all_devices = []
 
 def format_axis_value(axis_value, axis_type):
     if axis_type == "int64":
-        return "%d" % int(axis_value)
+        return f"{int(axis_value):d}"
     elif axis_type == "float64":
-        return "%.5g" % float(axis_value)
+        return f"{float(axis_value):.5g}"
     else:
         return axis_value
 
@@ -347,7 +347,7 @@ def main():
     help_text = "%(prog)s [nvbench.out.json | dir/]..."
     parser = argparse.ArgumentParser(prog="nvbench_walltime", usage=help_text)
 
-    args, files_or_dirs = parser.parse_known_args()
+    _args, files_or_dirs = parser.parse_known_args()
 
     filenames = []
     for file_or_dir in files_or_dirs:
