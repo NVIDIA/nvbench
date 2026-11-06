@@ -57,7 +57,8 @@ def segmented_reduce(state: bench.State):
 
     end_offsets = start_offsets + 1
 
-    h_init = np.zeros(tuple(), dtype=np.int32)
+    scalar_shape = ()
+    h_init = np.zeros(scalar_shape, dtype=np.int32)
     with cp_stream:
         rng = cp.random.default_rng()
         mat = rng.integers(low=-31, high=32, dtype=np.int32, size=(n_rows, n_cols))
@@ -88,7 +89,7 @@ def segmented_reduce(state: bench.State):
         h_init=h_init,
         stream=cccl_stream,
     )
-    h_init = np.zeros(tuple(), dtype=np.int32)
+    h_init = np.zeros(scalar_shape, dtype=np.int32)
 
     with cp_stream:
         temp_storage = cp.empty(temp_nbytes, dtype=cp.uint8)
