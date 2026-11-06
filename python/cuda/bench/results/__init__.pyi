@@ -4,11 +4,13 @@
 from array import array
 from collections.abc import Callable, ItemsView, Iterator, KeysView, ValuesView
 from os import PathLike
-from typing import Any, TypeVar, overload
+from typing import Any, TypeAlias, TypeVar, overload
+
+from typing_extensions import Self
 
 ResultT = TypeVar("ResultT")
-BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
-_SummaryValue = int | float | str | None
+BenchmarkResultT = TypeVar("BenchmarkResultT", bound=BenchmarkResult)
+_SummaryValue: TypeAlias = int | float | str | None
 
 class BenchmarkResultDevice:
     id: int
@@ -71,16 +73,14 @@ class BenchmarkResult:
     subbenches: dict[str, SubBenchmarkResult]
     def __init__(self, token: object | None = None) -> None: ...
     @classmethod
-    def empty(
-        cls: type[BenchmarkResultT], *, metadata: Any = None
-    ) -> BenchmarkResultT: ...
+    def empty(cls, *, metadata: Any = None) -> Self: ...
     @classmethod
     def from_json(
-        cls: type[BenchmarkResultT],
+        cls,
         json_path: str | PathLike[str],
         *,
         metadata: Any = None,
-    ) -> BenchmarkResultT: ...
+    ) -> Self: ...
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[str]: ...
     def __contains__(self, subbench_name: object) -> bool: ...

@@ -130,12 +130,12 @@ def parse_axis_filters(axis_args):
     filters = []
     for axis_arg in axis_args:
         if "=" not in axis_arg:
-            raise ValueError("Axis filter must be NAME=VALUE: {}".format(axis_arg))
+            raise ValueError(f"Axis filter must be NAME=VALUE: {axis_arg}")
         name, value = axis_arg.split("=", 1)
         name = name.strip()
         value = value.strip()
         if not name or not value:
-            raise ValueError("Axis filter must be NAME=VALUE: {}".format(axis_arg))
+            raise ValueError(f"Axis filter must be NAME=VALUE: {axis_arg}")
 
         values = []
         display_values = []
@@ -154,25 +154,21 @@ def parse_axis_filters(axis_args):
         if name.endswith("[pow2]"):
             name = name[: -len("[pow2]")].strip()
             if not name:
-                raise ValueError(
-                    "Axis filter missing name before [pow2]: {}".format(axis_arg)
-                )
+                raise ValueError(f"Axis filter missing name before [pow2]: {axis_arg}")
             try:
                 exponents = [int(v) for v in values]
             except ValueError as exc:
                 raise ValueError(
-                    "Axis filter [pow2] value must be integer: {}".format(axis_arg)
+                    f"Axis filter [pow2] value must be integer: {axis_arg}"
                 ) from exc
             values = [str(2**exponent) for exponent in exponents]
-            display_values = ["2^{}".format(exponent) for exponent in exponents]
+            display_values = [f"2^{exponent}" for exponent in exponents]
 
         if not values:
-            raise ValueError(
-                "Axis filter must specify at least one value: {}".format(axis_arg)
-            )
+            raise ValueError(f"Axis filter must specify at least one value: {axis_arg}")
 
         if len(display_values) == 1:
-            display = "{}={}".format(name, display_values[0])
+            display = f"{name}={display_values[0]}"
         else:
             display = "{}=[{}]".format(name, ",".join(display_values))
         filters.append(
@@ -250,7 +246,7 @@ def collect_entries(
                 if len(parts) == 2:
                     state_name = parts[1]
             state_name = strip_axis_filters_from_state_name(state_name, axis_filters)
-            label = "{} | {}".format(bench_name, state_name)
+            label = f"{bench_name} | {state_name}"
             device_name = devices.get(state.get("device"))
             if device_name:
                 device_names.add(device_name)
@@ -326,10 +322,10 @@ def main():
     if title is None:
         title = "%SOL Bandwidth"
         if len(device_names) == 1:
-            title = "{} - {}".format(title, next(iter(device_names)))
+            title = f"{title} - {next(iter(device_names))}"
     if axis_filters:
         axis_label = ", ".join(axis_filter["display"] for axis_filter in axis_filters)
-        title = "{} ({})".format(title, axis_label)
+        title = f"{title} ({axis_label})"
 
     return plot_entries(entries, title=title, output=args.output, dark=args.dark)
 

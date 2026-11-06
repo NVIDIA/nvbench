@@ -61,10 +61,10 @@ def format_walltime(seconds_in):
     ms = math.floor((seconds_in * 1000) % 1000)
 
     return "{}{}{}{}".format(
-        "{:0>2d}:".format(h) if h > 1e-9 else "",
-        "{:0>2d}:".format(m) if (h > 1e-9 or m > 1e-9) else "",
-        "{:0>2d}.".format(s) if (h > 1e-9 or m > 1e-9) else "{:d}.".format(s),
-        "{:0>3d}".format(ms),
+        f"{h:0>2d}:" if h > 1e-9 else "",
+        f"{m:0>2d}:" if (h > 1e-9 or m > 1e-9) else "",
+        f"{s:0>2d}." if (h > 1e-9 or m > 1e-9) else f"{s:d}.",
+        f"{ms:0>3d}",
     )
 
 
@@ -92,7 +92,7 @@ def get_measures(state):
     summaries = state["summaries"]
     times = {}
     for name in measure_names:
-        measure_walltime_tag = "nv/{}/walltime".format(name)
+        measure_walltime_tag = f"nv/{name}/walltime"
         summary = next(
             filter(lambda s: s["tag"] == measure_walltime_tag, summaries), None
         )
@@ -303,7 +303,7 @@ def print_files_section(data):
 
 
 def print_file_section(filename, file):
-    print("## File: {}\n".format(filename))
+    print(f"## File: {filename}\n")
 
     items = file["benches"]
     total_measures = file["measures"]
@@ -321,7 +321,7 @@ def print_file_section(filename, file):
 
 
 def print_bench_section(bench_name, bench):
-    print("### Benchmark: {}\n".format(bench_name))
+    print(f"### Benchmark: {bench_name}\n")
 
     # TODO split this up so each axis is a column
     items = bench["states"]

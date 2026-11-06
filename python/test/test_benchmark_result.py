@@ -6,8 +6,8 @@ import struct
 from dataclasses import dataclass
 
 import cuda.bench
-import cuda.bench.results as results
 import pytest
+from cuda.bench import results
 
 
 def write_json(path, data):
