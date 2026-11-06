@@ -11,8 +11,6 @@ from collections.abc import Callable, ItemsView, Iterator, KeysView, ValuesView
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
-from typing_extensions import Self
-
 __all__ = [
     "BenchmarkResult",
     "BenchmarkResultDevice",
@@ -22,7 +20,7 @@ __all__ = [
 ]
 
 ResultT = TypeVar("ResultT")
-BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
+_BenchmarkResultT = TypeVar("_BenchmarkResultT", bound="BenchmarkResult")
 _SummaryValue = int | float | str | None
 
 
@@ -435,7 +433,9 @@ class BenchmarkResult:
         self.subbenches: dict[str, SubBenchmarkResult] = {}
 
     @classmethod
-    def empty(cls, *, metadata: Any = None) -> Self:
+    def empty(
+        cls: type[_BenchmarkResultT], *, metadata: Any = None
+    ) -> _BenchmarkResultT:
         """Create an empty result container with optional user metadata."""
         result = cls(cls._construction_token)
         result.metadata = metadata
@@ -443,11 +443,11 @@ class BenchmarkResult:
 
     @classmethod
     def from_json(
-        cls,
+        cls: type[_BenchmarkResultT],
         json_path: str | os.PathLike[str],
         *,
         metadata: Any = None,
-    ) -> Self:
+    ) -> _BenchmarkResultT:
         """Read benchmark result data from an NVBench JSON output file."""
         result = cls.empty(metadata=metadata)
         result._parse_json(json_path)

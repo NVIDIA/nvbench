@@ -6,9 +6,8 @@ from collections.abc import Callable, ItemsView, Iterator, KeysView, ValuesView
 from os import PathLike
 from typing import Any, TypeAlias, TypeVar, overload
 
-from typing_extensions import Self
-
 _ResultT = TypeVar("_ResultT")
+_BenchmarkResultT = TypeVar("_BenchmarkResultT", bound=BenchmarkResult)
 _SummaryValue: TypeAlias = int | float | str | None
 
 class BenchmarkResultDevice:
@@ -72,14 +71,16 @@ class BenchmarkResult:
     subbenches: dict[str, SubBenchmarkResult]
     def __init__(self, token: object | None = None) -> None: ...
     @classmethod
-    def empty(cls, *, metadata: Any = None) -> Self: ...
+    def empty(
+        cls: type[_BenchmarkResultT], *, metadata: Any = None
+    ) -> _BenchmarkResultT: ...
     @classmethod
     def from_json(
-        cls,
+        cls: type[_BenchmarkResultT],
         json_path: str | PathLike[str],
         *,
         metadata: Any = None,
-    ) -> Self: ...
+    ) -> _BenchmarkResultT: ...
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[str]: ...
     def __contains__(self, subbench_name: object) -> bool: ...
