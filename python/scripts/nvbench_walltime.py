@@ -89,8 +89,9 @@ def init_measures():
 
 
 def get_measures(state):
-    summaries = state["summaries"]
-    times = {}
+    # Skipped states are written with "summaries": null.
+    summaries = state.get("summaries") or []
+    times = init_measures()
     for name in measure_names:
         measure_walltime_tag = "nv/{}/walltime".format(name)
         summary = next(
