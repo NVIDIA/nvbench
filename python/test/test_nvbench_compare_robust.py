@@ -204,6 +204,7 @@ def make_state(
 ):
     return {
         "name": name,
+        "gpu_timer": "cuda_events",
         "device": device,
         "axis_values": []
         if axis_value is None
@@ -246,6 +247,9 @@ def make_raw_binary_size_summary(nvbench_compare, value):
 
 
 def make_reader_for_roots(ref_root, cmp_root):
+    for root in (ref_root, cmp_root):
+        root.setdefault("meta", {"version": {"scripts": {"string": "1.0.0"}}})
+
     def read_file(path):
         if path == "ref.json":
             return ref_root
@@ -429,6 +433,64 @@ def make_comparison_run_data(nvbench_compare, ref_devices=None, cmp_devices=None
 
 def make_filter_plan(nvbench_compare, filter_actions=None):
     return nvbench_compare.build_benchmark_filter_plan(filter_actions or [])
+
+
+def test_compare_benches_rejects_mismatched_timers(nvbench_compare):
+    run_data = make_comparison_run_data(nvbench_compare)
+    reference = make_state(nvbench_compare, "state")
+    comparison = make_state(nvbench_compare, "state")
+    comparison["gpu_timer"] = "cupti"
+    with pytest.raises(ValueError, match="incompatible GPU timing methodologies"):
+        nvbench_compare.compare_benches(
+            run_data,
+            [make_benchmark([reference])],
+            [make_benchmark([comparison])],
+            threshold=0.0,
+            plot_along=None,
+            plot=False,
+            dark=False,
+            filter_plan=make_filter_plan(nvbench_compare),
+            no_color=True,
+        )
+    assert run_data.stats.config_count == 0
+
+
+def test_main_rejects_mismatched_timers(nvbench_compare, monkeypatch, capsys):
+    reference = make_state(nvbench_compare, "state")
+    comparison = make_state(nvbench_compare, "state")
+    comparison["gpu_timer"] = "cupti"
+    devices = [{"id": 0, "name": "Test GPU"}]
+    monkeypatch.setattr(
+        nvbench_compare.reader,
+        "read_file",
+        make_reader_for_roots(
+            {"devices": devices, "benchmarks": [make_benchmark([reference])]},
+            {"devices": devices, "benchmarks": [make_benchmark([comparison])]},
+        ),
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["nvbench_compare", "--ignore-devices", "ref.json", "cmp.json"]
+    )
+    assert nvbench_compare.main() == 1
+    assert "incompatible GPU timing methodologies" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "versions", [(None, "1.0.0"), ("1.0.0", "1.1.0"), ("1.0.0", "2.0.0")]
+)
+def test_main_rejects_incompatible_script_versions(
+    nvbench_compare, monkeypatch, capsys, versions
+):
+    roots = {}
+    for filename, version in zip(("ref.json", "cmp.json"), versions):
+        root = {"devices": [], "benchmarks": []}
+        if version is not None:
+            root["meta"] = {"version": {"scripts": {"string": version}}}
+        roots[filename] = root
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda path: roots[path])
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+    assert nvbench_compare.main() == 1
+    assert "script compatibility version" in capsys.readouterr().out
 
 
 def test_compare_benches_accepts_matching_duplicate_state_counts(
@@ -3436,7 +3498,14 @@ def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):
 
 
 def test_main_reports_missing_required_root_keys(monkeypatch, capsys, nvbench_compare):
-    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: {"devices": []})
+    monkeypatch.setattr(
+        nvbench_compare.reader,
+        "read_file",
+        lambda _: {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
+            "devices": [],
+        },
+    )
     monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
 
     assert nvbench_compare.main() == 1
@@ -3449,7 +3518,11 @@ def test_main_rejects_non_array_root_keys(monkeypatch, capsys, nvbench_compare):
     monkeypatch.setattr(
         nvbench_compare.reader,
         "read_file",
-        lambda _: {"devices": {}, "benchmarks": []},
+        lambda _: {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
+            "devices": {},
+            "benchmarks": [],
+        },
     )
     monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
 
@@ -3464,7 +3537,11 @@ def test_main_rejects_non_object_root_array_entries(
     monkeypatch.setattr(
         nvbench_compare.reader,
         "read_file",
-        lambda _: {"devices": [None], "benchmarks": []},
+        lambda _: {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
+            "devices": [None],
+            "benchmarks": [],
+        },
     )
     monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
 
@@ -3482,7 +3559,11 @@ def test_main_reports_invalid_device_entry_structure(
     monkeypatch.setattr(
         nvbench_compare.reader,
         "read_file",
-        lambda _: {"devices": [{}], "benchmarks": []},
+        lambda _: {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
+            "devices": [{}],
+            "benchmarks": [],
+        },
     )
     monkeypatch.setattr(
         sys,
@@ -3510,7 +3591,11 @@ def test_main_reports_invalid_benchmark_entry_structure(
     monkeypatch.setattr(
         nvbench_compare.reader,
         "read_file",
-        lambda _: {"devices": [], "benchmarks": [{}]},
+        lambda _: {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
+            "devices": [],
+            "benchmarks": [{}],
+        },
     )
     monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
 
@@ -3524,6 +3609,7 @@ def test_main_reports_invalid_nested_json_structure(
     monkeypatch, capsys, nvbench_compare
 ):
     root = {
+        "meta": {"version": {"scripts": {"string": "1.0.0"}}},
         "devices": [{"id": 0, "name": "Test GPU"}],
         "benchmarks": [
             {
@@ -3572,6 +3658,7 @@ def test_main_rejects_directory_inputs_without_matching_json_files(
 def test_main_prints_bulk_debug_python_to_stdout(monkeypatch, capsys, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {
+        "meta": {"version": {"scripts": {"string": "1.0.0"}}},
         "devices": devices,
         "benchmarks": [],
     }
@@ -4085,6 +4172,7 @@ def test_compare_benches_explain_display_sanitizes_markdown_cells(
 def test_main_passes_selected_preset_to_compare_benches(monkeypatch, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {
+        "meta": {"version": {"scripts": {"string": "1.0.0"}}},
         "devices": devices,
         "benchmarks": [],
     }
@@ -4123,6 +4211,7 @@ def test_main_passes_plot_output_options_to_compare_benches(
 ):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {
+        "meta": {"version": {"scripts": {"string": "1.0.0"}}},
         "devices": devices,
         "benchmarks": [],
     }
@@ -4282,6 +4371,7 @@ def make_directory_compare_inputs(tmp_path, nvbench_compare, filenames=None):
     for filename in filenames:
         benchmark_name = f"bench_{Path(filename).stem}"
         roots[ref_dir / filename] = {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
             "devices": devices,
             "benchmarks": [
                 make_benchmark(
@@ -4291,6 +4381,7 @@ def make_directory_compare_inputs(tmp_path, nvbench_compare, filenames=None):
             ],
         }
         roots[cmp_dir / filename] = {
+            "meta": {"version": {"scripts": {"string": "1.0.0"}}},
             "devices": devices,
             "benchmarks": [
                 make_benchmark(
@@ -4505,6 +4596,7 @@ def test_sanitize_plot_output_component_uses_fallback_for_empty_values(
 def test_main_converts_threshold_diff_percent_to_fraction(monkeypatch, nvbench_compare):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {
+        "meta": {"version": {"scripts": {"string": "1.0.0"}}},
         "devices": devices,
         "benchmarks": [],
     }

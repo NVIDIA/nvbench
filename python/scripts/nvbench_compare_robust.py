@@ -31,7 +31,7 @@ else:
 
 if __package__:
     from . import _nvbench_compare_plotting as plotting
-    from .nvbench_json import reader
+    from .nvbench_json import methodology, reader
     from .nvbench_tooling_deps import (
         MissingToolingDependencyError,
         ToolingDependency,
@@ -39,7 +39,7 @@ if __package__:
     )
 else:
     import _nvbench_compare_plotting as plotting  # type: ignore[no-redef]
-    from nvbench_json import reader  # type: ignore[no-redef]
+    from nvbench_json import methodology, reader  # type: ignore[no-redef]
     from nvbench_tooling_deps import (  # type: ignore[no-redef]
         MissingToolingDependencyError,
         ToolingDependency,
@@ -171,6 +171,7 @@ def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
                     f"{index} must be an object"
                 )
 
+    reader.version.check_script_version(filename, root)
     return root
 
 
@@ -3073,6 +3074,9 @@ def compare_benches(
                 # Duplicate state names with identical axis values are matched
                 # by occurrence order within the filtered device section.
                 ref_state = ref_states_by_name[cmp_state_key][occurrence]
+                methodology.require_matching_gpu_timers(
+                    ref_state, cmp_state, cmp_bench["name"]
+                )
                 axis_values = cmp_state["axis_values"]
                 if not axis_values:
                     axis_values = []

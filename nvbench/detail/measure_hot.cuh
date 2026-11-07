@@ -31,7 +31,7 @@
 #include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
-#include <nvbench/cuda_timer.cuh>
+#include <nvbench/detail/gpu_timer.cuh>
 #include <nvbench/detail/stream_cleanup_guard.cuh>
 #include <nvbench/exec_tag.cuh>
 #include <nvbench/launch.cuh>
@@ -100,7 +100,7 @@ protected:
   nvbench::state &m_state;
 
   nvbench::launch m_launch;
-  nvbench::cuda_timer m_cuda_timer;
+  nvbench::detail::gpu_timer m_cuda_timer;
   nvbench::cpu_timer m_walltime_timer;
   nvbench::blocking_kernel m_blocker;
 

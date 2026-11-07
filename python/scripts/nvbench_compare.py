@@ -7,14 +7,14 @@ import sys
 from enum import Enum
 
 if __package__:
-    from .nvbench_json import reader
+    from .nvbench_json import methodology, reader
     from .nvbench_tooling_deps import (
         MissingToolingDependencyError,
         ToolingDependency,
         require_tooling_dependency,
     )
 else:
-    from nvbench_json import reader
+    from nvbench_json import methodology, reader
     from nvbench_tooling_deps import (
         MissingToolingDependencyError,
         ToolingDependency,
@@ -410,6 +410,10 @@ def compare_benches(
                 if not matches_axis_filters(cmp_state, axis_filters):
                     continue
 
+                methodology.require_matching_gpu_timers(
+                    ref_state, cmp_state, cmp_bench["name"]
+                )
+
                 axis_values = cmp_state["axis_values"]
                 if not axis_values:
                     axis_values = []
@@ -712,8 +716,14 @@ def main():
         to_compare = [(files_or_dirs[0], files_or_dirs[1])]
 
     for ref, comp in to_compare:
-        ref_root = reader.read_file(ref)
-        cmp_root = reader.read_file(comp)
+        try:
+            ref_root = reader.read_file(ref)
+            cmp_root = reader.read_file(comp)
+            reader.version.check_script_version(ref, ref_root)
+            reader.version.check_script_version(comp, cmp_root)
+        except (KeyError, OSError, TypeError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
 
         global all_ref_devices
         global all_cmp_devices
@@ -751,6 +761,10 @@ def main():
                 args.benchmark,
             )
         except MissingToolingDependencyError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+
+        except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1
 

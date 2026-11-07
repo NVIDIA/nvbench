@@ -35,6 +35,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -239,6 +240,24 @@ struct benchmark_base
   }
   /// @}
 
+  /// If true, GPU times of cold and batch measurements are measured with the CUPTI Activity API
+  /// instead of CUDA events, and the blocking kernel is not used. Ignored when `run_once` is set,
+  /// e.g. by `--profile`. Requires NVBench to be built with CUPTI. @{
+  [[nodiscard]] bool get_cupti_timer() const { return m_cupti_timer; }
+  benchmark_base &set_cupti_timer(bool value)
+  {
+#ifndef NVBENCH_HAS_CUPTI
+    if (value)
+    {
+      throw std::runtime_error("CUPTI timer requested, but NVBench was built without CUPTI "
+                               "support (NVBench_ENABLE_CUPTI=OFF).");
+    }
+#endif
+    m_cupti_timer = value;
+    return *this;
+  }
+  /// @}
+
   /// If a warmup run finishes in less than `skip_time`, the measurement will
   /// be skipped.
   /// Extremely fast kernels (< 5000 ns) often timeout before they can
@@ -348,6 +367,7 @@ protected:
   bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
+  bool m_cupti_timer{false};
   bool m_skip_batched{false};
 
   nvbench::int64_t m_min_samples{10};
