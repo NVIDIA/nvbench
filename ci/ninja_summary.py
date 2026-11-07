@@ -369,7 +369,7 @@ def main():
             cmd.extend(["--step_types", args.step_types])
         if args.elapsed_time_sorting:
             cmd.append("--elapsed_time_sorting")
-        subprocess.run(cmd, check=False)
+        return subprocess.run(cmd, check=False).returncode
     else:
         try:
             with open(log_file, "r") as log:
