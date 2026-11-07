@@ -33,7 +33,7 @@ from ._paths import get_nvbench_prefix as get_nvbench_prefix
 
 try:
     __version__ = importlib.metadata.version("cuda-bench")
-except importlib.metadata.PackageNotFoundError as e:
+except (importlib.metadata.PackageNotFoundError, OSError, UnicodeDecodeError) as e:
     __version__ = "0.0.0dev"
     warnings.warn(
         "Could not retrieve version of cuda-bench package dynamically from its metadata. "
