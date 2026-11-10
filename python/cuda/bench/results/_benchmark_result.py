@@ -19,7 +19,7 @@ __all__ = [
     "SubBenchmarkState",
 ]
 
-ResultT = TypeVar("ResultT")
+_ResultT = TypeVar("_ResultT")
 _BenchmarkResultT = TypeVar("_BenchmarkResultT", bound="BenchmarkResult")
 _SummaryValue = int | float | str | None
 
@@ -332,14 +332,14 @@ class SubBenchmarkState:
             return self.state_name
         return " ".join(f"{k}={v}" for k, v in self.point.items())
 
-    def center(self, estimator: Callable[[array.array], ResultT]) -> ResultT | None:
+    def center(self, estimator: Callable[[array.array], _ResultT]) -> _ResultT | None:
         if self.samples is None:
             return None
         return estimator(self.samples)
 
     def center_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> ResultT | None:
+        self, estimator: Callable[[array.array, array.array], _ResultT]
+    ) -> _ResultT | None:
         if self.samples is None or self.frequencies is None:
             return None
         return estimator(self.samples, self.frequencies)
@@ -387,16 +387,16 @@ class SubBenchmarkResult:
         return iter(self.states)
 
     def centers(
-        self, estimator: Callable[[array.array], ResultT]
-    ) -> dict[str, ResultT | None]:
+        self, estimator: Callable[[array.array], _ResultT]
+    ) -> dict[str, _ResultT | None]:
         result = {}
         for state in self.states:
             result[state.name()] = state.center(estimator)
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> dict[str, ResultT | None]:
+        self, estimator: Callable[[array.array, array.array], _ResultT]
+    ) -> dict[str, _ResultT | None]:
         result = {}
         for state in self.states:
             result[state.name()] = state.center_with_frequencies(estimator)
@@ -495,16 +495,16 @@ class BenchmarkResult:
         return self.subbenches.items()
 
     def centers(
-        self, estimator: Callable[[array.array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]:
+        self, estimator: Callable[[array.array], _ResultT]
+    ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
             result[subbench] = self.subbenches[subbench].centers(estimator)
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]:
+        self, estimator: Callable[[array.array, array.array], _ResultT]
+    ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
             result[subbench] = self.subbenches[subbench].centers_with_frequencies(

@@ -20,7 +20,6 @@ def check_file_version(filename, root_node):
         print(f"  {filename} was written using a different NVBench JSON file version.")
         print("  It may not read correctly.")
         print(
-            "  (file version: {} reader version: {})".format(
-                version_node["string"], file_version_string
-            )
+            f"  (file vestion: {version_node['string']};"
+            f" reader version: {file_version_string}"
         )
