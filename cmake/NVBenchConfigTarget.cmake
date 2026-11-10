@@ -1,4 +1,4 @@
-include(CheckCXXCompilerFlag)
+include(CheckCompilerFlag)
 
 option(NVBench_ENABLE_WERROR
   "Treat warnings as errors while compiling NVBench."
@@ -22,20 +22,29 @@ set_target_properties(nvbench.build_interface PROPERTIES
 )
 
 function(nvbench_add_cxx_flag target_name type flag)
-  string(MAKE_C_IDENTIFIER "NVBench_CXX_FLAG_${flag}" var)
-  check_cxx_compiler_flag(${flag} ${var})
+  string(MAKE_C_IDENTIFIER "NVBench_CXX_FLAG_${flag}" cxx_var)
+  check_compiler_flag(CXX "${flag}" ${cxx_var})
 
-  if (${${var}})
+  if (${cxx_var})
     target_compile_options(${target_name} ${type}
       $<$<COMPILE_LANGUAGE:CXX>:${flag}>
-      $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcompiler=${flag}>
     )
+  endif()
+
+  if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+    string(MAKE_C_IDENTIFIER "NVBench_CUDA_HOST_FLAG_${flag}" cuda_host_var)
+    check_compiler_flag(CUDA "-Xcompiler=${flag}" ${cuda_host_var})
+
+    if (${cuda_host_var})
+      target_compile_options(${target_name} ${type}
+        $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcompiler=${flag}>
+      )
+    endif()
   endif()
 endfunction()
 
-# We test to see if C++ compiler options exist using try-compiles in the CXX lang, and then reuse those flags as
-# -Xcompiler flags for CUDA targets. This requires that the CXX compiler and CUDA_HOST compilers are the same when
-# using nvcc.
+# Check warning support independently for the C++ compiler and the CUDA host compiler. The top-level developer
+# build check below still requires matching compilers when using nvcc.
 if (NVBench_TOPLEVEL_PROJECT AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
   set(cuda_host_matches_cxx_compiler FALSE)
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.31)
