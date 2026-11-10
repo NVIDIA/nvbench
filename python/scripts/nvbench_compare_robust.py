@@ -13,11 +13,11 @@ import re
 import sys
 import warnings
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Any, BinaryIO, Protocol, TypeAlias
 
 if TYPE_CHECKING:
     import numpy as _np
@@ -149,7 +149,7 @@ def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
         ) from exc
 
     if not isinstance(root, Mapping):
-        raise ValueError(f"NVBench JSON file {filename!r} root must be an object")
+        raise TypeError(f"NVBench JSON file {filename!r} root must be an object")
 
     missing_keys = [key for key in ("devices", "benchmarks") if key not in root]
     if missing_keys:
@@ -161,12 +161,12 @@ def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
     for key in ("devices", "benchmarks"):
         value = root[key]
         if not isinstance(value, list):
-            raise ValueError(
+            raise TypeError(
                 f"NVBench JSON file {filename!r} root key {key!r} must be an array"
             )
         for index, entry in enumerate(value):
             if not isinstance(entry, Mapping):
-                raise ValueError(
+                raise TypeError(
                     f"NVBench JSON file {filename!r} root key {key!r} entry "
                     f"{index} must be an object"
                 )
@@ -308,12 +308,12 @@ def load_toml_module() -> TomlModule:
 
 def validate_config_table(value: object, table_name: str) -> None:
     if not isinstance(value, Mapping):
-        raise ValueError(f"config table [{table_name}] must be a TOML table")
+        raise TypeError(f"config table [{table_name}] must be a TOML table")
 
 
 def validate_config_float(value: object, key: str, field_name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
-        raise ValueError(f"config value {key!r} must be a finite number")
+        raise TypeError(f"config value {key!r} must be a finite number")
 
     value = float(value)
     if not math.isfinite(value):
@@ -350,7 +350,7 @@ def parse_comparison_config_data(
     config_data: Mapping[str, Any],
 ) -> tuple[str | None, dict[str, float]]:
     if not isinstance(config_data, Mapping):
-        raise ValueError("comparison config must be a TOML table")
+        raise TypeError("comparison config must be a TOML table")
 
     unknown_top_level = set(config_data) - ({"version"} | COMPARISON_CONFIG_TABLES)
     if unknown_top_level:
@@ -359,7 +359,7 @@ def parse_comparison_config_data(
 
     version = config_data.get("version")
     if isinstance(version, bool) or not isinstance(version, int):
-        raise ValueError(
+        raise TypeError(
             f"comparison config must specify integer version = {COMPARISON_CONFIG_VERSION}"
         )
     if version != COMPARISON_CONFIG_VERSION:
@@ -460,18 +460,24 @@ def dump_comparison_config(preset_name: str, thresholds: ComparisonThresholds) -
         "[same]",
         f"center_relative = {format_toml_float(thresholds.same_center_relative)}",
         f"overlap_fraction = {format_toml_float(thresholds.same_overlap_fraction)}",
-        "relative_dispersion_ceiling = "
-        f"{format_toml_float(thresholds.same_relative_dispersion_ceiling)}",
+        (
+            "relative_dispersion_ceiling = "
+            f"{format_toml_float(thresholds.same_relative_dispersion_ceiling)}"
+        ),
         "",
         "[bulk]",
         f"sample_coverage = {format_toml_float(thresholds.bulk_same_sample_coverage)}",
         f"support_coverage = {format_toml_float(thresholds.bulk_same_support_coverage)}",
         "",
         "[bulk.rare_support]",
-        "sample_fraction = "
-        f"{format_toml_float(thresholds.bulk_support_rare_sample_fraction)}",
-        "max_removed_sample_fraction = "
-        f"{format_toml_float(thresholds.bulk_support_max_removed_sample_fraction)}",
+        (
+            "sample_fraction = "
+            f"{format_toml_float(thresholds.bulk_support_rare_sample_fraction)}"
+        ),
+        (
+            "max_removed_sample_fraction = "
+            f"{format_toml_float(thresholds.bulk_support_max_removed_sample_fraction)}"
+        ),
     ]
     return "\n".join(lines) + "\n"
 
@@ -954,7 +960,7 @@ def extract_summary_float_with_fallback(
 def extract_binary_filename(summary):
     value = extract_summary_data_value(summary, "filename", "string")
     if not isinstance(value, str):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'filename' "
             "value must be a string"
         )
@@ -964,12 +970,12 @@ def extract_binary_filename(summary):
 def extract_binary_size(summary):
     value = extract_summary_data_value(summary, "size", "int64")
     if isinstance(value, bool):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
             f"value {value!r} is not an int64"
         )
     if isinstance(value, float):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
             f"value {value!r} is not an int64"
         )
@@ -1433,18 +1439,18 @@ def make_decision(status, code, message, *, severity=0.0):
 def compare_intervals_for_clear_gap(ref_interval, cmp_interval, thresholds):
     # These ratios are equivalent to log(ref/cmp) >= log(1 + delta), but avoid
     # evaluating logarithms on every comparison.
-    if cmp_interval.upper < ref_interval.lower:
-        if (
-            symmetric_frac_diff(ref_interval.lower, cmp_interval.upper)
-            >= thresholds.clear_gap_relative
-        ):
-            return ComparisonStatus.FAST
-    if cmp_interval.lower > ref_interval.upper:
-        if (
-            symmetric_frac_diff(cmp_interval.lower, ref_interval.upper)
-            >= thresholds.clear_gap_relative
-        ):
-            return ComparisonStatus.SLOW
+    if (
+        cmp_interval.upper < ref_interval.lower
+        and symmetric_frac_diff(ref_interval.lower, cmp_interval.upper)
+        >= thresholds.clear_gap_relative
+    ):
+        return ComparisonStatus.FAST
+    if (
+        cmp_interval.lower > ref_interval.upper
+        and symmetric_frac_diff(cmp_interval.lower, ref_interval.upper)
+        >= thresholds.clear_gap_relative
+    ):
+        return ComparisonStatus.SLOW
     return None
 
 
@@ -2374,7 +2380,7 @@ def format_int64_axis_value(axis_name, axis_value, axis):
 
 
 def format_float64_axis_value(axis_name, axis_value, axes):
-    return "%.5g" % float(axis_value["value"])
+    return f"{float(axis_value['value']):.5g}"
 
 
 def format_type_axis_value(axis_name, axis_value, axes):
@@ -2583,7 +2589,7 @@ def duration_precision_for_center(center, delta_multiplier):
     center_quantum = 10.0**-3 * (delta_multiplier / center_multiplier)
     if center_quantum >= 1.0:
         return 0
-    return int(math.ceil(-math.log10(center_quantum)))
+    return math.ceil(-math.log10(center_quantum))
 
 
 def format_duration_range(bounds):
@@ -3226,7 +3232,7 @@ def compare_benches(
                         )
                     )
 
-                print("")
+                print()
 
             if has_plot_along_data:
                 plot_collector.render_plot_along(
@@ -3372,7 +3378,7 @@ def main() -> int:
         comparison_preset, comparison_thresholds = resolve_comparison_thresholds(
             args.preset, args.config
         )
-    except ValueError as exc:
+    except (TypeError, ValueError) as exc:
         print(str(exc))
         return 1
 
