@@ -3442,7 +3442,7 @@ def test_main_validates_device_filters_before_loading_tooling(
     assert "--reference-devices" in capsys.readouterr().out
 
 
-def test_main_no_color_does_not_require_colorama(monkeypatch, nvbench_compare):
+def test_main_uses_emoji_statuses_without_colorama(monkeypatch, nvbench_compare):
     calls = []
     monkeypatch.setattr(nvbench_compare, "Fore", None)
 
@@ -3469,7 +3469,7 @@ def test_main_no_color_does_not_require_colorama(monkeypatch, nvbench_compare):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["nvbench_compare", "--no-color", "ref.json", "cmp.json"],
+        ["nvbench_compare", "ref.json", "cmp.json"],
     )
 
     assert nvbench_compare.main() == 0

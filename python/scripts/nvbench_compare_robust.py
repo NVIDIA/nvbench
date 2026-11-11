@@ -3331,12 +3331,6 @@ def main() -> int:
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
-        "--no-color",
-        dest="no_color",
-        action="store_true",
-        help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
-    )
-    parser.add_argument(
         "--reference-devices",
         default="all",
         help="Reference devices to compare: all, a non-negative integer id, or comma-separated ids",
@@ -3457,8 +3451,9 @@ def main() -> int:
         )
         return 1
 
+    no_color = True
     try:
-        load_nvbench_compare_tooling(load_color=not args.no_color)
+        load_nvbench_compare_tooling(load_color=not no_color)
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -3506,12 +3501,12 @@ def main() -> int:
                 print(str(exc), file=sys.stderr)
                 return 1
 
-            if args.no_color:
+            if no_color:
                 warn_fore = ""
             else:
                 warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
-            print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
+            print(colorize(msg_text, warn_fore, Emoji.NONE, no_color), end="")
             print(": ", end="")
 
             print(
@@ -3540,7 +3535,7 @@ def main() -> int:
                 plot=args.plot,
                 dark=args.dark,
                 filter_plan=filter_plan,
-                no_color=args.no_color,
+                no_color=no_color,
                 reference_device_filter=reference_device_filter,
                 compare_device_filter=compare_device_filter,
                 ref_json_dir=os.path.dirname(ref),

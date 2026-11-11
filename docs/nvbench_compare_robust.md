@@ -104,12 +104,9 @@ nvbench-compare-robust \
   reference.json compare.json
 ```
 
-Disable ANSI color codes. In this mode, status values are prefixed with emoji
-markers so copied output still carries the status category:
-
-```bash
-nvbench-compare-robust --no-color reference.json compare.json
-```
+Status values are always prefixed with emoji markers instead of ANSI color
+codes, so copied output (e.g. into GitHub issues/PRs) still carries the status
+category.
 
 Use a built-in comparison preset:
 
