@@ -179,7 +179,9 @@ nvbench_add_configure_test(test_name
 )
 
 # Host-only post-build coverage, including empty runtime DLL lists.
-foreach(copy_case IN ITEMS spaces special empty disabled static)
+foreach(copy_case IN ITEMS
+    spaces special empty disabled static
+    static_consumer static_consumer_disabled static_consumer_cupti)
   nvbench_add_compile_test(test_name
     test_dep_dlls
     ${copy_case}
