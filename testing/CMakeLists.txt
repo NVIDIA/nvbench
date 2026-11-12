@@ -65,8 +65,8 @@ set_tests_properties(nvbench.test.custom_main_custom_exceptions PROPERTIES
   PASS_REGULAR_EXPRESSION "Custom error detected: Expected exception thrown."
 )
 set_tests_properties(nvbench.test.custom_main_raw_argv PROPERTIES
-  PASS_REGULAR_EXPRESSION "custom_main_raw_argv --my-custom-arg -d 0"
-  FAIL_REGULAR_EXPRESSION "custom_main_raw_argv --profile"
+  PASS_REGULAR_EXPRESSION "custom_main_raw_argv(\\.exe)? --my-custom-arg -d 0"
+  FAIL_REGULAR_EXPRESSION "custom_main_raw_argv(\\.exe)? --profile"
 )
 set_tests_properties(nvbench.test.exception_safety PROPERTIES TIMEOUT 20)
 
