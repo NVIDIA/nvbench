@@ -16,9 +16,8 @@
 
 import sys
 
-import cuda.bench as bench
-import cuda.cccl.headers as headers
-import cuda.core as core
+from cuda import bench, core
+from cuda.cccl import headers
 
 
 def as_core_Stream(cs: bench.CudaStream) -> core.Stream:

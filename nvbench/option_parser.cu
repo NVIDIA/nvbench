@@ -307,6 +307,13 @@ std::vector<T> parse_range_values(std::string_view range_spec, nvbench::wrapped_
   const T last   = range_params[1];
   const T stride = range_params.size() == 3 ? range_params[2] : T{1};
 
+  // nvbench::range steps from `first` while `first <= last`, so a zero or
+  // negative stride never terminates.
+  if (!(stride > T{0}))
+  {
+    NVBENCH_THROW(std::runtime_error, "Range stride must be positive: {}", range_spec);
+  }
+
   return nvbench::range<T, T>(first, last, stride);
 }
 

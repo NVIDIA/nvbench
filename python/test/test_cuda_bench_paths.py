@@ -21,9 +21,9 @@
 
 from pathlib import Path
 
-import cuda.bench as bench
 import cuda.bench._paths as paths
 import pytest
+from cuda import bench
 
 
 def test_embedded_nvbench_prefix_helpers(tmp_path, monkeypatch):

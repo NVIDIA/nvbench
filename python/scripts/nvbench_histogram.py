@@ -58,7 +58,7 @@ def parse_files():
     help_text = "%(prog)s [nvbench.out.json | dir/] ..."
     parser = argparse.ArgumentParser(prog="nvbench_histogram", usage=help_text)
 
-    args, files_or_dirs = parser.parse_known_args()
+    _args, files_or_dirs = parser.parse_known_args()
 
     filenames = []
     for file_or_dir in files_or_dirs:
@@ -76,7 +76,7 @@ def parse_files():
 
     if not filenames:
         parser.print_help()
-        exit(0)
+        sys.exit(0)
 
     return filenames
 
@@ -130,7 +130,7 @@ def parse_samples(filename, state):
 
 
 def to_df(data):
-    return pd.DataFrame.from_dict(dict([(k, pd.Series(v)) for k, v in data.items()]))
+    return pd.DataFrame.from_dict({k: pd.Series(v) for k, v in data.items()})
 
 
 def parse_json(filename):
