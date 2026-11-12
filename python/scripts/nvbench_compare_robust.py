@@ -65,12 +65,11 @@ def configure_utf8_stdio() -> None:
 
 
 np: Any = None
-Fore: Any = None
 MARKDOWN_TABLE_PIPE_REPLACEMENT = "\u2758"
 
 
-def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
-    global Fore, np
+def load_nvbench_compare_tooling() -> None:
+    global np
 
     if np is None:
         np = require_tooling_dependency(
@@ -79,14 +78,6 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
             ),
             tool_name=current_tool_name(),
         )
-    if load_color and Fore is None:
-        colorama = require_tooling_dependency(
-            ToolingDependency(
-                "colorama", "colorama", "colored status output", extra="compare"
-            ),
-            tool_name=current_tool_name(),
-        )
-        Fore = colorama.Fore
 
 
 def load_tabulate_for_table_output() -> tuple[Any, tuple[int, ...]]:
@@ -892,14 +883,9 @@ class Emoji(str, Enum):
     NONE = ""
 
 
-def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
-    if no_color:
-        prefix = ""
-        if emoji_s := emoji.value:
-            prefix = f"{emoji_s} "
-        return f"{prefix}{msg}"
-    else:
-        return f"{fore}{msg}{Fore.RESET}"
+def format_status(msg: str, emoji: Emoji) -> str:
+    prefix = f"{emoji.value} " if emoji.value else ""
+    return f"{prefix}{msg}"
 
 
 def lookup_summary(summaries, tag):
@@ -2811,7 +2797,7 @@ def sanitize_markdown_table(headers, rows):
     )
 
 
-def append_display_row(row, comparison, no_color, display):
+def append_display_row(row, comparison, display):
     if display == "simple":
         row.append(format_duration(comparison.ref_time))
         row.append(format_interval_span(comparison.ref_interval))
@@ -2819,7 +2805,7 @@ def append_display_row(row, comparison, no_color, display):
         row.append(format_interval_span(comparison.cmp_interval))
         row.append(format_center_diff(comparison.ref_time, comparison.cmp_time))
         row.append(format_change(comparison))
-        row.append(colorize_comparison_status(comparison.status, no_color))
+        row.append(format_comparison_status(comparison.status))
         return
 
     row.append(
@@ -2839,7 +2825,7 @@ def append_display_row(row, comparison, no_color, display):
         row.append(format_percentage(comparison.cmp_noise))
         row.append(format_reason_display_code(comparison.reason.code))
     row.append(format_change(comparison))
-    row.append(colorize_comparison_status(comparison.status, no_color))
+    row.append(format_comparison_status(comparison.status))
 
 
 def align_explain_interval_columns(rows, comparisons, axis_count):
@@ -2924,25 +2910,19 @@ def is_usable_noise(noise):
     return is_nonnegative_finite(noise)
 
 
-def colorize_comparison_status(status, no_color):
+def format_comparison_status(status):
     if status == ComparisonStatus.UNKNOWN:
-        fore_name = "YELLOW"
         emoji = Emoji.YELLOW
     elif status == ComparisonStatus.UNDECIDED:
-        fore_name = "LIGHTBLACK_EX"
         emoji = Emoji.SHRUG
     elif status == ComparisonStatus.SAME:
-        fore_name = "BLUE"
         emoji = Emoji.BLUE
     elif status == ComparisonStatus.FAST:
-        fore_name = "GREEN"
         emoji = Emoji.GREEN
     else:
-        fore_name = "RED"
         emoji = Emoji.RED
 
-    fore = "" if no_color else getattr(Fore, fore_name)
-    return colorize(status.value, fore, emoji, no_color)
+    return format_status(status.value, emoji)
 
 
 def format_axis_values(axis_values, axes, axis_filters=None):
@@ -2974,7 +2954,6 @@ def compare_benches(
     plot,
     dark,
     filter_plan,
-    no_color,
     reference_device_filter=None,
     compare_device_filter=None,
     ref_json_dir=None,
@@ -3149,7 +3128,7 @@ def compare_benches(
                     and abs(comparison.frac_diff) >= threshold
                 ):
                     axis_filters = matching_axis_filters(cmp_state, axis_filter_groups)
-                    append_display_row(row, comparison, no_color, display)
+                    append_display_row(row, comparison, display)
 
                     rows.append(row)
                     row_comparisons.append(comparison)
@@ -3331,12 +3310,6 @@ def main() -> int:
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
-        "--no-color",
-        dest="no_color",
-        action="store_true",
-        help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
-    )
-    parser.add_argument(
         "--reference-devices",
         default="all",
         help="Reference devices to compare: all, a non-negative integer id, or comma-separated ids",
@@ -3458,7 +3431,7 @@ def main() -> int:
         return 1
 
     try:
-        load_nvbench_compare_tooling(load_color=not args.no_color)
+        load_nvbench_compare_tooling()
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -3506,12 +3479,8 @@ def main() -> int:
                 print(str(exc), file=sys.stderr)
                 return 1
 
-            if args.no_color:
-                warn_fore = ""
-            else:
-                warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
-            print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
+            print(format_status(msg_text, Emoji.NONE), end="")
             print(": ", end="")
 
             print(
@@ -3540,7 +3509,6 @@ def main() -> int:
                 plot=args.plot,
                 dark=args.dark,
                 filter_plan=filter_plan,
-                no_color=args.no_color,
                 reference_device_filter=reference_device_filter,
                 compare_device_filter=compare_device_filter,
                 ref_json_dir=os.path.dirname(ref),
