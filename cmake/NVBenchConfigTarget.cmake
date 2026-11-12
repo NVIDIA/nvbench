@@ -124,6 +124,10 @@ function(nvbench_config_target target_name)
     LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
   )
+  # Final executables need their own copy step when nvbench is static or the
+  # control executable is disabled/not built. The helper skips static targets.
+  nvbench_setup_dep_dlls(${target_name})
+
   # CUPTI libraries are installed in random locations depending on the platform
   # and installation method. Sometimes they're next to the CUDA libraries and in
   # the library path, other times they're in a subdirectory that isn't added to

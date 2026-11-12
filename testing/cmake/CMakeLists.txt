@@ -45,10 +45,11 @@ function(nvbench_add_compile_test full_test_name_var subdir test_id)
     COMMAND "${CMAKE_CTEST_COMMAND}"
       --build-and-test "${src_dir}" "${build_dir}"
       --build-generator "${CMAKE_GENERATOR}"
+      --build-config "$<CONFIG>"
       --build-options
         ${cmake_opts}
         ${ARGN}
-      --test-command "${CMAKE_CTEST_COMMAND}" --output-on-failure
+      --test-command "${CMAKE_CTEST_COMMAND}" -C "$<CONFIG>" --output-on-failure
   )
   if (WIN32)
     set(path_mods "PATH=path_list_prepend:$<SHELL_PATH:${NVBench_EXECUTABLE_OUTPUT_DIR}>")
@@ -151,6 +152,43 @@ endfunction()
 # Test consuming NVBench when fmt is provided by an enclosing project
 
 nvbench_add_external_fmt_tests()
+
+################################################################################
+# NVML target and optional driver DLL discovery
+
+nvbench_add_configure_test(test_name
+  test_nvml
+  dll_copy_disabled
+  -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+  -D "NVML_COPY_ENABLED=OFF"
+)
+
+nvbench_add_configure_test(test_name
+  test_nvml
+  dll_copy_enabled
+  -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+  -D "NVML_COPY_ENABLED=ON"
+)
+
+nvbench_add_configure_test(test_name
+  test_nvml
+  dll_copy_enabled_without_driver_dll
+  -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+  -D "NVML_COPY_ENABLED=ON"
+  -D "NVML_DLL_AVAILABLE=OFF"
+)
+
+# Host-only post-build coverage, including empty runtime DLL lists.
+foreach(copy_case IN ITEMS
+    spaces special empty disabled static
+    static_consumer static_consumer_disabled static_consumer_cupti)
+  nvbench_add_compile_test(test_name
+    test_dep_dlls
+    ${copy_case}
+    -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+    -D "COPY_CASE=${copy_case}"
+  )
+endforeach()
 
 ################################################################################
 # Install tree fixtures
