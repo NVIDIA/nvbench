@@ -50,6 +50,14 @@ else()
 endif()
 
 include("${NVBench_SOURCE_DIR}/cmake/NVBenchDependentDlls.cmake")
+if (COPY_CASE STREQUAL "parallel")
+  foreach(target_number RANGE 1 8)
+    set(target_name "copy_fixture_parallel_${target_number}")
+    add_executable(${target_name} main.cxx)
+    nvbench_setup_dep_dlls(${target_name})
+  endforeach()
+endif()
+
 if (COPY_CASE MATCHES "^static_consumer")
   # Keep the dependency DLL outside the executable directory. No control
   # executable or shared NVBench library can supply the missing copy step.

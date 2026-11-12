@@ -29,13 +29,22 @@ function(nvbench_setup_dep_dlls target_name)
       list(APPEND runtime_dlls "${NVBench_NVML_DLL}")
     endif()
 
+    # Targets in different directories can share a runtime output directory.
+    # A per-configuration lock prevents parallel post-build steps from copying
+    # the same DLL to that directory at the same time.
+    set(runtime_dlls_manifest "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_runtime_dlls-$<CONFIG>.txt")
+    file(GENERATE
+      OUTPUT "${runtime_dlls_manifest}"
+      CONTENT "${runtime_dlls}"
+    )
+
     add_custom_command(TARGET ${target_name}
       POST_BUILD
-      # The explicit destination also permits an empty runtime DLL list.
-      COMMAND "${CMAKE_COMMAND}" -E copy -t
-        "$<TARGET_FILE_DIR:${target_name}>"
-        ${runtime_dlls}
-      COMMAND_EXPAND_LISTS
+      COMMAND "${CMAKE_COMMAND}"
+        "-DNVBENCH_RUNTIME_DLLS_FILE=${runtime_dlls_manifest}"
+        "-DNVBENCH_RUNTIME_DLLS_DEST=$<TARGET_FILE_DIR:${target_name}>"
+        "-DNVBENCH_RUNTIME_DLLS_LOCK=${CMAKE_BINARY_DIR}/CMakeFiles/nvbench-runtime-dll-copy-$<CONFIG>.lock"
+        -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/NVBenchCopyRuntimeDlls.cmake"
       VERBATIM
     )
   endif()
