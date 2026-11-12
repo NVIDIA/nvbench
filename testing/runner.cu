@@ -66,6 +66,26 @@ void stream_allocating_generator(nvbench::state &state)
 }
 NVBENCH_DEFINE_CALLABLE(stream_allocating_generator, stream_allocating_callable);
 
+void late_gpu_throughput_generator(nvbench::state &state)
+{
+  // Simulate cold GPU measurements before the benchmark declares throughput metadata.
+  auto &gpu_mean = state.add_summary("nv/cold/time/gpu/mean");
+  gpu_mean.set_float64("value", 0.5);
+  state.add_element_count(100);
+  state.add_global_memory_reads(50);
+}
+NVBENCH_DEFINE_CALLABLE(late_gpu_throughput_generator, late_gpu_throughput_callable);
+
+void late_cpu_throughput_generator(nvbench::state &state)
+{
+  // Simulate CPU-only measurements before the benchmark declares throughput metadata.
+  auto &cpu_mean = state.add_summary("nv/cpu_only/time/cpu/mean");
+  cpu_mean.set_float64("value", 0.25);
+  state.add_element_count(100);
+  state.add_global_memory_reads(50);
+}
+NVBENCH_DEFINE_CALLABLE(late_cpu_throughput_generator, late_cpu_throughput_callable);
+
 using float_types = nvbench::type_list<nvbench::float32_t, nvbench::float64_t>;
 using int_types   = nvbench::type_list<nvbench::int32_t, nvbench::int64_t>;
 using misc_types  = nvbench::type_list<bool, void>;
@@ -456,6 +476,40 @@ Params: Float: 13 FloatT: F64 Int: 3 IntT: I64 MiscT: void String: Three
   ASSERT_MSG(test == ref, "Expected:\n\"{}\"\n\nActual:\n\"{}\"", ref, test);
 }
 
+void test_late_gpu_throughput_summaries()
+{
+  using benchmark_type = nvbench::benchmark<late_gpu_throughput_callable>;
+  using runner_type    = nvbench::runner<benchmark_type>;
+
+  benchmark_type bench;
+  bench.set_devices(std::vector<int>{});
+
+  runner_type runner{bench};
+  runner.generate_states();
+  runner.run();
+
+  const auto &state = bench.get_states().front();
+  ASSERT(state.get_summary("nv/cold/bw/item_rate").get_float64("value") == 200.);
+  ASSERT(state.get_summary("nv/cold/bw/global/bytes_per_second").get_float64("value") == 100.);
+}
+
+void test_late_cpu_throughput_summaries()
+{
+  using benchmark_type = nvbench::benchmark<late_cpu_throughput_callable>;
+  using runner_type    = nvbench::runner<benchmark_type>;
+
+  benchmark_type bench;
+  bench.set_devices(std::vector<int>{});
+
+  runner_type runner{bench};
+  runner.generate_states();
+  runner.run();
+
+  const auto &state = bench.get_states().front();
+  ASSERT(state.get_summary("nv/cpu_only/bw/item_rate").get_float64("value") == 400.);
+  ASSERT(state.get_summary("nv/cpu_only/bw/global/bytes_per_second").get_float64("value") == 200.);
+}
+
 void test_no_stream_kept()
 {
   using benchmark_type = nvbench::benchmark<stream_allocating_callable>;
@@ -481,5 +535,7 @@ int main()
   test_non_types();
   test_types();
   test_both();
+  test_late_gpu_throughput_summaries();
+  test_late_cpu_throughput_summaries();
   test_no_stream_kept();
 }

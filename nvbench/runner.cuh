@@ -59,6 +59,8 @@ struct runner_base
   void run_state_prologue(state &exec_state) const;
   void run_state_epilogue(state &exec_state) const;
 
+  void generate_throughput_summaries(state &exec_state) const;
+
   void print_skip_notification(nvbench::state &exec_state) const;
 
   nvbench::benchmark_base &m_benchmark;
