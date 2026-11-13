@@ -65,6 +65,11 @@ foreach(test_src IN LISTS test_srcs)
   add_dependencies(nvbench.test.all ${test_name})
 endforeach()
 
+if (NVBench_ENABLE_CUPTI)
+  # Other GPU tests can delay these kernels and invalidate the timing/overlap assertions
+  set_tests_properties(nvbench.test.cupti_timer PROPERTIES RUN_SERIAL TRUE)
+endif()
+
 set_tests_properties(nvbench.test.custom_main_custom_exceptions PROPERTIES
   PASS_REGULAR_EXPRESSION "Custom error detected: Expected exception thrown."
 )
