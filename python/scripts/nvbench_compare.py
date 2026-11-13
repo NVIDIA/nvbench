@@ -220,9 +220,9 @@ def format_duration(seconds):
 
 def format_percentage(percentage):
     # When there aren't enough samples for a meaningful noise measurement,
-    # the noise is recorded as infinity. Unfortunately, JSON spec doesn't
-    # allow for inf, so these get turned into null.
-    if percentage is None:
+    # the noise is recorded as infinity ("inf" in the JSON, or null in
+    # older files).
+    if percentage is None or math.isinf(percentage):
         return "inf"
     return "%0.2f%%" % (percentage * 100.0)
 
@@ -473,18 +473,17 @@ def compare_benches(
                 diff = cmp_time - ref_time
                 frac_diff = diff / ref_time
 
-                if ref_noise and cmp_noise:
-                    ref_noise = float(ref_noise)
-                    cmp_noise = float(cmp_noise)
-                    min_noise = min(ref_noise, cmp_noise)
-                elif ref_noise:
-                    ref_noise = float(ref_noise)
-                    min_noise = ref_noise
-                elif cmp_noise:
-                    cmp_noise = float(cmp_noise)
-                    min_noise = cmp_noise
-                else:
-                    min_noise = None  # Noise is inf
+                # NVBench writes noise that could not be estimated as "inf"
+                # (older files may contain null). Only finite noise can be
+                # used to classify the change.
+                ref_noise = None if ref_noise is None else float(ref_noise)
+                cmp_noise = None if cmp_noise is None else float(cmp_noise)
+                finite_noises = [
+                    noise
+                    for noise in (ref_noise, cmp_noise)
+                    if noise is not None and math.isfinite(noise)
+                ]
+                min_noise = min(finite_noises) if finite_noises else None
 
                 if plot_along:
                     axis_name = []
