@@ -33,6 +33,7 @@
 #include <cstddef>
 #include <iosfwd>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -94,10 +95,32 @@ struct printer_base
   printer_base &operator=(printer_base &&)      = delete;
 
   /*!
-   * Called once with the command line arguments used to invoke the current
-   * executable.
+   * Called once with the command line arguments that NVBench parsed.
    */
-  void log_argv(const std::vector<std::string> &argv) { this->do_log_argv(argv); }
+  void log_argv(const std::vector<std::string> &argv)
+  {
+    m_argv = argv;
+    this->do_log_argv(argv);
+  }
+
+  /*!
+   * Called once with the command line arguments used to invoke the current
+   * executable, before any customization handlers modify them.
+   */
+  void log_raw_argv(const std::vector<std::string> &argv)
+  {
+    m_raw_argv = argv;
+    this->do_log_raw_argv(argv);
+  }
+
+  /*!
+   * Print the command line used to invoke the current executable, if supported.
+   *
+   * Called before running benchmarks for active terminal output. Must be called
+   * after `log_argv`. If `log_raw_argv` has been called, printers can use the
+   * raw command line.
+   */
+  void print_argv() { this->do_print_argv(); }
 
   /*!
    * Print a summary of all detected devices, if supported.
@@ -192,8 +215,16 @@ struct printer_base
   /*!@}*/
 
 protected:
+  [[nodiscard]] const std::vector<std::string> &get_argv() const { return m_argv; }
+  [[nodiscard]] const std::vector<std::string> &get_raw_argv() const
+  {
+    return m_raw_argv ? *m_raw_argv : m_argv;
+  }
+
   // Implementation hooks for subclasses:
   virtual void do_log_argv(const std::vector<std::string> &) {}
+  virtual void do_log_raw_argv(const std::vector<std::string> &) {}
+  virtual void do_print_argv() {}
   virtual void do_print_device_info() {}
   virtual void do_print_log_preamble() {}
   virtual void do_print_log_epilogue() {}
@@ -226,6 +257,10 @@ protected:
 
   std::size_t m_completed_state_count{};
   std::size_t m_total_state_count{};
+
+private:
+  std::vector<std::string> m_argv;
+  std::optional<std::vector<std::string>> m_raw_argv;
 };
 
 } // namespace nvbench

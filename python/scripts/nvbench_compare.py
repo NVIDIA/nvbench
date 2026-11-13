@@ -27,22 +27,11 @@ def version_tuple(v):
     return tuple(map(int, (v.split("."))))
 
 
-Fore = None
 tabulate = None
 tabulate_version = (0, 0, 0)
 
 
-def load_nvbench_compare_tooling(*, load_color=True):
-    global Fore
-
-    if load_color and Fore is None:
-        colorama = require_tooling_dependency(
-            ToolingDependency(
-                "colorama", "colorama", "colored status output", extra="compare"
-            ),
-            tool_name="nvbench-compare-legacy",
-        )
-        Fore = colorama.Fore
+def load_nvbench_compare_tooling():
     load_tabulate_for_table_output()
 
 
@@ -82,21 +71,9 @@ class Emoji(str, Enum):
     NONE = ""
 
 
-def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
-    if no_color:
-        prefix = ""
-        if emoji_s := emoji.value:
-            prefix = f"{emoji_s} "
-        return f"{prefix}{msg}"
-    else:
-        return f"{fore}{msg}{Fore.RESET}"
-
-
-def colorize_status(
-    status_label: str, fore_name: str, emoji: Emoji, no_color: bool
-) -> str:
-    fore = "" if no_color else getattr(Fore, fore_name)
-    return colorize(status_label, fore, emoji, no_color)
+def format_status(status_label: str, emoji: Emoji) -> str:
+    prefix = f"{emoji.value} " if emoji.value else ""
+    return f"{prefix}{status_label}"
 
 
 def find_matching_bench(needle, haystack):
@@ -119,20 +96,20 @@ def format_int64_axis_value(axis_name, axis_value, axes):
     value = int(axis_value["value"])
     if axis_flags == "pow2":
         value = math.log2(value)
-        return "2^%d" % value
-    return "%d" % value
+        return f"2^{int(value):d}"
+    return f"{value:d}"
 
 
 def format_float64_axis_value(axis_name, axis_value, axes):
-    return "%.5g" % float(axis_value["value"])
+    return f"{float(axis_value['value']):.5g}"
 
 
 def format_type_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_string_axis_value(axis_name, axis_value, axes):
-    return "%s" % axis_value["value"]
+    return f"{axis_value['value']}"
 
 
 def format_axis_value(axis_name, axis_value, axes):
@@ -238,7 +215,7 @@ def format_duration(seconds):
     else:
         multiplier = 1e6
         units = "us"
-    return "%0.3f %s" % (seconds * multiplier, units)
+    return f"{seconds * multiplier:0.3f} {units}"
 
 
 def format_percentage(percentage):
@@ -363,7 +340,6 @@ def compare_benches(
     dark,
     axis_filters,
     benchmark_filters,
-    no_color,
 ):
     if plot_along:
         plt = require_tooling_dependency(
@@ -540,23 +516,19 @@ def compare_benches(
                 if not min_noise:
                     unknown_count += 1
                     status_label = "????"
-                    status = colorize_status(
-                        status_label, "YELLOW", Emoji.YELLOW, no_color
-                    )
+                    status = format_status(status_label, Emoji.YELLOW)
                 elif abs(frac_diff) <= min_noise:
                     pass_count += 1
                     status_label = "SAME"
-                    status = colorize_status(status_label, "BLUE", Emoji.BLUE, no_color)
+                    status = format_status(status_label, Emoji.BLUE)
                 elif diff < 0:
                     failure_count += 1
                     status_label = "FAST"
-                    status = colorize_status(
-                        status_label, "GREEN", Emoji.GREEN, no_color
-                    )
+                    status = format_status(status_label, Emoji.GREEN)
                 else:
                     failure_count += 1
                     status_label = "SLOW"
-                    status = colorize_status(status_label, "RED", Emoji.RED, no_color)
+                    status = format_status(status_label, Emoji.RED)
 
                 if abs(frac_diff) >= threshold:
                     row.append(format_duration(ref_time))
@@ -590,16 +562,11 @@ def compare_benches(
             ref_device = find_device_by_id(ref_state["device"], all_ref_devices)
 
             if cmp_device == ref_device:
-                print("## [%d] %s\n" % (cmp_device["id"], cmp_device["name"]))
+                print(f"## [{cmp_device['id']:d}] {cmp_device['name']}\n")
             else:
                 print(
-                    "## [%d] %s vs. [%d] %s\n"
-                    % (
-                        ref_device["id"],
-                        ref_device["name"],
-                        cmp_device["id"],
-                        cmp_device["name"],
-                    )
+                    f"## [{ref_device['id']:d}] {ref_device['name']} vs. "
+                    f"[{cmp_device['id']:d}] {cmp_device['name']}\n"
                 )
             # colalign and github format require tabulate 0.8.3
             load_tabulate_for_table_output()
@@ -612,7 +579,7 @@ def compare_benches(
             else:
                 print(tabulate.tabulate(rows, headers=headers, tablefmt="markdown"))
 
-            print("")
+            print()
 
             if plot_along:
                 plt.xscale("log")
@@ -621,8 +588,8 @@ def compare_benches(
                 plt.ylabel("time [s]")
                 plt.title(cmp_device["name"])
 
-                def plot_line(key, shape, label):
-                    x = [float(x) for x in plot_data[key][axis].keys()]
+                def plot_line(plot_data, axis, key, shape, label):
+                    x = [float(x) for x in plot_data[key][axis]]
                     y = list(plot_data[key][axis].values())
 
                     noise = list(plot_data[key + "_noise"][axis].values())
@@ -633,9 +600,9 @@ def compare_benches(
                     p = plt.plot(x, y, shape, marker="o", label=label)
                     plt.fill_between(x, bottom, top, color=p[0].get_color(), alpha=0.1)
 
-                for axis in plot_data["cmp"].keys():
-                    plot_line("cmp", "-", axis)
-                    plot_line("ref", "--", axis + " ref")
+                for axis in plot_data["cmp"]:
+                    plot_line(plot_data, axis, "cmp", "-", axis)
+                    plot_line(plot_data, axis, "ref", "--", axis + " ref")
 
                 plt.legend()
                 plt.show()
@@ -688,12 +655,6 @@ def main():
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
-        "--no-color",
-        dest="no_color",
-        action="store_true",
-        help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
-    )
-    parser.add_argument(
         "-a",
         "--axis",
         action="append",
@@ -721,7 +682,7 @@ def main():
         sys.exit(1)
 
     try:
-        load_nvbench_compare_tooling(load_color=not args.no_color)
+        load_nvbench_compare_tooling()
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -755,12 +716,9 @@ def main():
         all_cmp_devices = cmp_root["devices"]
 
         if ref_root["devices"] != cmp_root["devices"]:
-            if args.no_color:
-                warn_fore = ""
-            else:
-                warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
-            print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
+            warning_emoji = Emoji.YELLOW if args.ignore_devices else Emoji.RED
+            print(format_status(msg_text, warning_emoji), end="")
             print(": ", end="")
 
             try:
@@ -786,17 +744,16 @@ def main():
                 args.dark,
                 axis_filters,
                 args.benchmark,
-                args.no_color,
             )
         except MissingToolingDependencyError as exc:
             print(str(exc), file=sys.stderr)
             return 1
 
     print("# Summary\n")
-    print("- Total Matches: %d" % config_count)
-    print("  - Pass    (diff <= min_noise): %d" % pass_count)
-    print("  - Unknown (infinite noise):    %d" % unknown_count)
-    print("  - Failure (diff > min_noise):  %d" % failure_count)
+    print(f"- Total Matches: {config_count:d}")
+    print(f"  - Pass    (diff <= min_noise): {pass_count:d}")
+    print(f"  - Unknown (infinite noise):    {unknown_count:d}")
+    print(f"  - Failure (diff > min_noise):  {failure_count:d}")
     return failure_count
 
 

@@ -123,7 +123,7 @@ constexpr void verify_noexcept_contracts()
 
   verify_stream_cleanup_measure_noexcept_contract<hot_cleanup_probe>();
   verify_cold_measure_noexcept_contract<cold_cleanup_probe>();
-#if defined(CUDART_VERSION) && CUDART_VERSION > 12600
+#if defined(CUDART_VERSION) && CUDART_VERSION > 12060
   // CUDA 12.0 through 12.6 can exhaust host memory in cudafe++ while checking
   // this contract.
   verify_cold_launch_timer_noexcept_contract<cold_launch_timer_probe>();

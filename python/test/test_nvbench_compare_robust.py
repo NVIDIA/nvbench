@@ -137,20 +137,6 @@ def nvbench_compare(monkeypatch):
             __version__="0.8.10", tabulate=lambda *args, **kwargs: ""
         ),
     )
-    monkeypatch.setitem(
-        sys.modules,
-        "colorama",
-        types.SimpleNamespace(
-            Fore=types.SimpleNamespace(
-                BLUE="",
-                GREEN="",
-                LIGHTBLACK_EX="",
-                RED="",
-                RESET="",
-                YELLOW="",
-            )
-        ),
-    )
 
     module_path = (
         Path(__file__).resolve().parents[1] / "scripts" / "nvbench_compare_robust.py"
@@ -270,45 +256,28 @@ def test_compare_tooling_loader_recovers_after_partial_failure(
 ):
     attempts = []
     nvbench_compare.np = None
-    nvbench_compare.Fore = None
     tool_name = "nvbench-compare-robust"
     monkeypatch.setattr(nvbench_compare.sys, "argv", [tool_name])
 
     def fake_require_tooling_dependency(dependency, *, tool_name):
         attempts.append((dependency.import_name, tool_name))
-        if dependency.import_name == "numpy":
-            return types.SimpleNamespace()
-        if (
-            dependency.import_name == "colorama"
-            and attempts.count(("colorama", tool_name)) == 1
-        ):
-            raise nvbench_compare.MissingToolingDependencyError("missing colorama")
-        return types.SimpleNamespace(Fore=types.SimpleNamespace(RESET=""))
+        if len(attempts) == 1:
+            raise nvbench_compare.MissingToolingDependencyError("missing numpy")
+        return types.SimpleNamespace()
 
     monkeypatch.setattr(
         nvbench_compare, "require_tooling_dependency", fake_require_tooling_dependency
     )
 
-    nvbench_compare.load_nvbench_compare_tooling(load_color=False)
-
-    assert nvbench_compare.np is not None
-    assert nvbench_compare.Fore is None
-    assert attempts == [("numpy", tool_name)]
-
-    attempts.clear()
-
     with pytest.raises(nvbench_compare.MissingToolingDependencyError):
         nvbench_compare.load_nvbench_compare_tooling()
 
-    assert nvbench_compare.Fore is None
+    assert nvbench_compare.np is None
 
     nvbench_compare.load_nvbench_compare_tooling()
 
-    assert nvbench_compare.Fore is not None
-    assert attempts == [
-        ("colorama", tool_name),
-        ("colorama", tool_name),
-    ]
+    assert nvbench_compare.np is not None
+    assert attempts == [("numpy", tool_name), ("numpy", tool_name)]
 
 
 def capture_tabulate_calls(monkeypatch, nvbench_compare):
@@ -493,7 +462,6 @@ def test_compare_benches_accepts_matching_duplicate_state_counts(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 3
@@ -542,7 +510,6 @@ def test_compare_benches_rejects_swapped_duplicate_state_counts(
             plot=False,
             dark=False,
             filter_plan=make_filter_plan(nvbench_compare),
-            no_color=True,
         )
 
 
@@ -577,7 +544,6 @@ def test_compare_benches_matches_duplicate_states_after_axis_filter(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare, [("axis", "A=2")]),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 1
@@ -651,7 +617,6 @@ def test_compare_benches_matches_duplicate_states_by_axis_values(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert observed_pairs == [(2.0, 2.0), (1.0, 1.0)]
@@ -691,7 +656,6 @@ def test_compare_benches_counts_non_finite_centers_as_unknown(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 3
@@ -769,9 +733,20 @@ def test_extract_binary_size_accepts_integral_values(value, nvbench_compare):
     )
 
 
-@pytest.mark.parametrize("value", [True, False, 3.0, 3.5, "3.5"])
-def test_extract_binary_size_rejects_non_integral_values(value, nvbench_compare):
-    with pytest.raises(ValueError, match="is not an int64"):
+@pytest.mark.parametrize(
+    "value, exception_type",
+    [
+        (True, TypeError),
+        (False, TypeError),
+        (3.0, TypeError),
+        (3.5, TypeError),
+        ("3.5", ValueError),
+    ],
+)
+def test_extract_binary_size_rejects_non_integral_values(
+    value, exception_type, nvbench_compare
+):
+    with pytest.raises(exception_type, match="is not an int64"):
         nvbench_compare.extract_binary_size(
             make_raw_binary_size_summary(nvbench_compare, value)
         )
@@ -821,7 +796,6 @@ def test_compare_benches_collects_bulk_debug_rows(tmp_path, nvbench_compare):
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         ref_json_dir=str(tmp_path),
         cmp_json_dir=str(tmp_path),
         ref_json_path="ref.json",
@@ -908,7 +882,6 @@ def test_compare_benches_status_filter_selects_rows_and_bulk_debug(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         status_filter=frozenset({nvbench_compare.ComparisonStatus.SLOW}),
         bulk_debug_rows=bulk_debug_rows,
     )
@@ -950,7 +923,6 @@ def test_bulk_debug_rows_store_absolute_sidecar_paths(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         ref_json_dir="data",
         cmp_json_dir="data",
         ref_json_path="data/ref.json",
@@ -1898,14 +1870,10 @@ def test_format_change_only_reports_fast_and_slow_rows(nvbench_compare):
     assert nvbench_compare.format_change(undecided) == ""
 
 
-def test_ambiguous_status_uses_shrug_marker_without_colorama(
-    monkeypatch, nvbench_compare
-):
-    monkeypatch.setattr(nvbench_compare, "Fore", None)
-
+def test_ambiguous_status_uses_shrug_marker(nvbench_compare):
     assert (
-        nvbench_compare.colorize_comparison_status(
-            nvbench_compare.ComparisonStatus.UNDECIDED, no_color=True
+        nvbench_compare.format_comparison_status(
+            nvbench_compare.ComparisonStatus.UNDECIDED
         )
         == "\U0001f937 AMBG"
     )
@@ -2310,7 +2278,6 @@ def test_compare_benches_reports_regression_when_robust_intervals_and_clock_conf
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 1
@@ -2356,7 +2323,6 @@ def test_compare_benches_accepts_custom_comparison_thresholds(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         comparison_thresholds=replace(
             nvbench_compare.get_default_thresholds(), same_center_relative=0.02
         ),
@@ -2401,7 +2367,6 @@ def test_compare_benches_marks_unavailable_noise_undecided(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 2
@@ -2455,7 +2420,6 @@ def test_plot_along_rejects_states_without_selected_axis(monkeypatch, nvbench_co
             plot=True,
             dark=False,
             filter_plan=make_filter_plan(nvbench_compare),
-            no_color=True,
         )
 
 
@@ -2509,7 +2473,6 @@ def test_plot_along_ignores_status_table_filter(monkeypatch, nvbench_compare):
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         status_filter=frozenset({nvbench_compare.ComparisonStatus.SLOW}),
     )
 
@@ -2534,7 +2497,6 @@ def test_plot_along_output_saves_without_showing(tmp_path, nvbench_compare):
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         plot_along_output=str(output),
     )
 
@@ -2561,7 +2523,6 @@ def test_plot_outputs_force_agg_once_when_both_plot_modes_save(
         plot=True,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         plot_output=str(plot_output),
         plot_along_output=str(plot_along_output),
     )
@@ -2587,7 +2548,6 @@ def test_compare_benches_rejects_empty_plot_along_axis(nvbench_compare):
             plot=False,
             dark=False,
             filter_plan=make_filter_plan(nvbench_compare),
-            no_color=True,
         )
 
 
@@ -2619,7 +2579,6 @@ def test_plot_along_output_template_expands_per_plot(tmp_path, nvbench_compare):
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         plot_along_output=output_template,
     )
 
@@ -2663,7 +2622,6 @@ def test_plot_along_output_template_pair_disambiguates_repeated_compare_devices(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         reference_device_filter=[0, 1],
         compare_device_filter=[0, 0],
         plot_along_output=output_template,
@@ -2708,7 +2666,6 @@ def test_plot_along_output_disambiguates_duplicate_paths(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         plot_along_output=str(tmp_path / "plot.png"),
     )
 
@@ -2744,7 +2701,6 @@ def test_compare_benches_validates_device_metadata_when_status_filter_hides_rows
             plot=False,
             dark=False,
             filter_plan=make_filter_plan(nvbench_compare),
-            no_color=True,
             status_filter=frozenset({nvbench_compare.ComparisonStatus.SLOW}),
         )
 
@@ -2788,7 +2744,6 @@ def test_plot_along_separates_duplicate_state_occurrences(monkeypatch, nvbench_c
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 2
@@ -2826,7 +2781,6 @@ def test_plot_along_rejects_non_numeric_axis_values(monkeypatch, nvbench_compare
             plot=False,
             dark=False,
             filter_plan=make_filter_plan(nvbench_compare),
-            no_color=True,
         )
 
 
@@ -2858,7 +2812,6 @@ def test_plot_along_rejects_non_positive_or_non_finite_axis_values(
             plot=False,
             dark=False,
             filter_plan=make_filter_plan(nvbench_compare),
-            no_color=True,
         )
 
 
@@ -2984,7 +2937,6 @@ def test_compare_benches_pairs_filtered_devices_by_position(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         reference_device_filter=[0],
         compare_device_filter=[1],
     )
@@ -3045,7 +2997,6 @@ def test_axis_filter_applies_to_most_recent_benchmark(monkeypatch, nvbench_compa
             nvbench_compare,
             [("benchmark", "bench1"), ("axis", "A=2"), ("benchmark", "bench2")],
         ),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 3
@@ -3106,7 +3057,6 @@ def test_global_axis_filter_does_not_select_unmatched_benchmark(
             nvbench_compare,
             [("axis", "A=2"), ("benchmark", "bench1")],
         ),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 1
@@ -3167,7 +3117,6 @@ def test_global_axis_filter_applies_to_each_selected_benchmark(
             nvbench_compare,
             [("axis", "A=2"), ("benchmark", "bench1"), ("benchmark", "bench2")],
         ),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 2
@@ -3354,22 +3303,38 @@ def test_parse_comparison_config_data_validates_grouped_thresholds(nvbench_compa
 
 
 @pytest.mark.parametrize(
-    "config_data, match",
+    "config_data, exception_type, match",
     [
-        ({}, "version"),
-        ({"version": 2}, "unsupported"),
-        ({"version": 1, "rare_support": {}}, "unknown top-level"),
-        ({"version": 1, "bulk": {"unknown": 0.1}}, r"\[bulk\]"),
-        ({"version": 1, "clear_gap": {"rare_support": {}}}, r"\[clear_gap\]"),
-        ({"version": 1, "bulk": {"sample_coverage": 1.5}}, "<= 1"),
-        ({"version": 1, "same": {"center_relative": "tight"}}, "finite number"),
-        ({"version": 1, "preset": {"name": "aggressive"}}, "unknown comparison preset"),
+        ([], TypeError, "TOML table"),
+        ({}, TypeError, "version"),
+        ({"version": True}, TypeError, "version"),
+        ({"version": 2}, ValueError, "unsupported"),
+        ({"version": 1, "rare_support": {}}, ValueError, "unknown top-level"),
+        ({"version": 1, "bulk": {"unknown": 0.1}}, ValueError, r"\[bulk\]"),
+        (
+            {"version": 1, "clear_gap": {"rare_support": {}}},
+            ValueError,
+            r"\[clear_gap\]",
+        ),
+        ({"version": 1, "bulk": {"sample_coverage": 1.5}}, ValueError, "<= 1"),
+        (
+            {"version": 1, "same": {"center_relative": "tight"}},
+            TypeError,
+            "finite number",
+        ),
+        ({"version": 1, "same": {"center_relative": True}}, TypeError, "finite number"),
+        ({"version": 1, "same": []}, TypeError, r"\[same\]"),
+        (
+            {"version": 1, "preset": {"name": "aggressive"}},
+            ValueError,
+            "unknown comparison preset",
+        ),
     ],
 )
 def test_parse_comparison_config_data_rejects_invalid_config(
-    nvbench_compare, config_data, match
+    nvbench_compare, config_data, exception_type, match
 ):
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(exception_type, match=match):
         nvbench_compare.parse_comparison_config_data(config_data)
 
 
@@ -3447,6 +3412,34 @@ def test_main_dump_config_merges_config_and_cli_preset(
     assert "sample_coverage = 0.93" in output
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("tomllib") is None
+    and importlib.util.find_spec("tomli") is None,
+    reason="TOML config support requires tomllib or tomli",
+)
+@pytest.mark.parametrize(
+    "config_text, message",
+    [
+        ("version = true\n", "must specify integer version"),
+        ("version = 1\nsame = []\n", "must be a TOML table"),
+        ('version = 1\n[same]\ncenter_relative = "tight"\n', "finite number"),
+    ],
+)
+def test_main_reports_config_type_errors(
+    tmp_path, monkeypatch, capsys, nvbench_compare, config_text, message
+):
+    config_path = tmp_path / "settings.toml"
+    config_path.write_text(config_text, encoding="utf-8")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["nvbench_compare", "--config", str(config_path), "--dump-config"],
+    )
+
+    assert nvbench_compare.main() == 1
+    assert message in capsys.readouterr().out
+
+
 def test_main_rejects_unknown_options(monkeypatch, nvbench_compare):
     monkeypatch.setattr(
         sys,
@@ -3498,41 +3491,6 @@ def test_main_validates_device_filters_before_loading_tooling(
     assert "--reference-devices" in capsys.readouterr().out
 
 
-def test_main_no_color_does_not_require_colorama(monkeypatch, nvbench_compare):
-    calls = []
-    monkeypatch.setattr(nvbench_compare, "Fore", None)
-
-    def fake_load_tooling(*, load_color=True):
-        calls.append(load_color)
-        nvbench_compare.np = np
-        if load_color:
-            raise AssertionError("color tooling should not load")
-
-    monkeypatch.setattr(
-        nvbench_compare, "load_nvbench_compare_tooling", fake_load_tooling
-    )
-    monkeypatch.setattr(
-        nvbench_compare.reader,
-        "read_file",
-        make_reader_for_roots(
-            {"devices": [], "benchmarks": []},
-            {"devices": [], "benchmarks": []},
-        ),
-    )
-    monkeypatch.setattr(
-        nvbench_compare, "compare_benches", lambda *args, **kwargs: None
-    )
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        ["nvbench_compare", "--no-color", "ref.json", "cmp.json"],
-    )
-
-    assert nvbench_compare.main() == 0
-    assert calls == [False]
-    assert nvbench_compare.Fore is None
-
-
 def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):
     def read_file(_):
         raise OSError("cannot open file")
@@ -3544,6 +3502,47 @@ def test_main_reports_input_read_failures(monkeypatch, capsys, nvbench_compare):
     output = capsys.readouterr().out
     assert "failed to read NVBench JSON file 'ref.json'" in output
     assert "cannot open file" in output
+
+
+@pytest.mark.parametrize(
+    "root, message",
+    [
+        ([], "root must be an object"),
+        ({"devices": {}, "benchmarks": []}, "must be an array"),
+        ({"devices": [None], "benchmarks": []}, "must be an object"),
+    ],
+)
+def test_read_nvbench_json_root_rejects_invalid_types(
+    monkeypatch, nvbench_compare, root, message
+):
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+
+    with pytest.raises(TypeError, match=message):
+        nvbench_compare.read_nvbench_json_root("ref.json")
+
+
+@pytest.mark.parametrize(
+    "filename, size", [(None, 3), ("samples.bin", True), ("samples.bin", 3.0)]
+)
+def test_main_reports_binary_metadata_type_errors(
+    monkeypatch, capsys, nvbench_compare, filename, size
+):
+    state = make_state(nvbench_compare, "state")
+    summary = make_binary_summary(nvbench_compare, "SAMPLE_TIMES_TAG", filename, 3)
+    summary["data"][1]["value"] = size
+    state["summaries"].append(summary)
+    root = {
+        "devices": [{"id": 0, "name": "Test GPU"}],
+        "benchmarks": [make_benchmark([state])],
+    }
+    monkeypatch.setattr(nvbench_compare.reader, "read_file", lambda _: root)
+    monkeypatch.setattr(sys, "argv", ["nvbench_compare", "ref.json", "cmp.json"])
+
+    assert nvbench_compare.main() == 1
+    output = capsys.readouterr().out
+    assert "invalid NVBench JSON structure" in output
+    message = "filename" if filename is None else "is not an int64"
+    assert message in output
 
 
 def test_main_reports_missing_required_root_keys(monkeypatch, capsys, nvbench_compare):
@@ -3745,7 +3744,6 @@ def test_compare_benches_counts_unusable_timing_as_unknown(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 1
@@ -3777,7 +3775,6 @@ def test_compare_benches_counts_skipped_state_as_unknown(monkeypatch, nvbench_co
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 1
@@ -3812,7 +3809,6 @@ def test_compare_benches_counts_missing_summaries_as_unknown(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 1
@@ -3855,7 +3851,6 @@ def test_compare_benches_plot_skips_unknown_rows(monkeypatch, nvbench_compare):
         plot=True,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert run_data.stats.config_count == 1
@@ -3879,7 +3874,6 @@ def test_compare_benches_defaults_to_interval_display(monkeypatch, nvbench_compa
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     table = find_tabulate_call(tabulate_calls, INTERVAL_DISPLAY_HEADERS)
@@ -3905,7 +3899,6 @@ def test_compare_benches_simple_display_uses_center_diff(monkeypatch, nvbench_co
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         display="simple",
     )
 
@@ -3945,7 +3938,6 @@ def test_compare_benches_old_tabulate_fallback_uses_pipe_format(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert tabulate_calls[0]["kwargs"]["tablefmt"] == "pipe"
@@ -3972,7 +3964,6 @@ def test_compare_benches_summary_plot_title_describes_timing(
         plot=True,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
     )
 
     assert plot_calls[0]["kwargs"]["title"] == "GPU timing change - Test GPU"
@@ -4137,7 +4128,6 @@ def test_compare_benches_explain_display_uses_explicit_intervals(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         display="explain",
     )
 
@@ -4181,7 +4171,6 @@ def test_compare_benches_explain_display_sanitizes_markdown_cells(
         plot=False,
         dark=False,
         filter_plan=make_filter_plan(nvbench_compare),
-        no_color=True,
         display="explain",
     )
 

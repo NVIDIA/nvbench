@@ -13,11 +13,11 @@ import re
 import sys
 import warnings
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Any, BinaryIO, Protocol, TypeAlias
 
 if TYPE_CHECKING:
     import numpy as _np
@@ -65,12 +65,11 @@ def configure_utf8_stdio() -> None:
 
 
 np: Any = None
-Fore: Any = None
 MARKDOWN_TABLE_PIPE_REPLACEMENT = "\u2758"
 
 
-def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
-    global Fore, np
+def load_nvbench_compare_tooling() -> None:
+    global np
 
     if np is None:
         np = require_tooling_dependency(
@@ -79,14 +78,6 @@ def load_nvbench_compare_tooling(*, load_color: bool = True) -> None:
             ),
             tool_name=current_tool_name(),
         )
-    if load_color and Fore is None:
-        colorama = require_tooling_dependency(
-            ToolingDependency(
-                "colorama", "colorama", "colored status output", extra="compare"
-            ),
-            tool_name=current_tool_name(),
-        )
-        Fore = colorama.Fore
 
 
 def load_tabulate_for_table_output() -> tuple[Any, tuple[int, ...]]:
@@ -149,7 +140,7 @@ def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
         ) from exc
 
     if not isinstance(root, Mapping):
-        raise ValueError(f"NVBench JSON file {filename!r} root must be an object")
+        raise TypeError(f"NVBench JSON file {filename!r} root must be an object")
 
     missing_keys = [key for key in ("devices", "benchmarks") if key not in root]
     if missing_keys:
@@ -161,12 +152,12 @@ def read_nvbench_json_root(filename: str) -> Mapping[str, Any]:
     for key in ("devices", "benchmarks"):
         value = root[key]
         if not isinstance(value, list):
-            raise ValueError(
+            raise TypeError(
                 f"NVBench JSON file {filename!r} root key {key!r} must be an array"
             )
         for index, entry in enumerate(value):
             if not isinstance(entry, Mapping):
-                raise ValueError(
+                raise TypeError(
                     f"NVBench JSON file {filename!r} root key {key!r} entry "
                     f"{index} must be an object"
                 )
@@ -308,12 +299,12 @@ def load_toml_module() -> TomlModule:
 
 def validate_config_table(value: object, table_name: str) -> None:
     if not isinstance(value, Mapping):
-        raise ValueError(f"config table [{table_name}] must be a TOML table")
+        raise TypeError(f"config table [{table_name}] must be a TOML table")
 
 
 def validate_config_float(value: object, key: str, field_name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, int | float):
-        raise ValueError(f"config value {key!r} must be a finite number")
+        raise TypeError(f"config value {key!r} must be a finite number")
 
     value = float(value)
     if not math.isfinite(value):
@@ -350,7 +341,7 @@ def parse_comparison_config_data(
     config_data: Mapping[str, Any],
 ) -> tuple[str | None, dict[str, float]]:
     if not isinstance(config_data, Mapping):
-        raise ValueError("comparison config must be a TOML table")
+        raise TypeError("comparison config must be a TOML table")
 
     unknown_top_level = set(config_data) - ({"version"} | COMPARISON_CONFIG_TABLES)
     if unknown_top_level:
@@ -359,7 +350,7 @@ def parse_comparison_config_data(
 
     version = config_data.get("version")
     if isinstance(version, bool) or not isinstance(version, int):
-        raise ValueError(
+        raise TypeError(
             f"comparison config must specify integer version = {COMPARISON_CONFIG_VERSION}"
         )
     if version != COMPARISON_CONFIG_VERSION:
@@ -460,18 +451,24 @@ def dump_comparison_config(preset_name: str, thresholds: ComparisonThresholds) -
         "[same]",
         f"center_relative = {format_toml_float(thresholds.same_center_relative)}",
         f"overlap_fraction = {format_toml_float(thresholds.same_overlap_fraction)}",
-        "relative_dispersion_ceiling = "
-        f"{format_toml_float(thresholds.same_relative_dispersion_ceiling)}",
+        (
+            "relative_dispersion_ceiling = "
+            f"{format_toml_float(thresholds.same_relative_dispersion_ceiling)}"
+        ),
         "",
         "[bulk]",
         f"sample_coverage = {format_toml_float(thresholds.bulk_same_sample_coverage)}",
         f"support_coverage = {format_toml_float(thresholds.bulk_same_support_coverage)}",
         "",
         "[bulk.rare_support]",
-        "sample_fraction = "
-        f"{format_toml_float(thresholds.bulk_support_rare_sample_fraction)}",
-        "max_removed_sample_fraction = "
-        f"{format_toml_float(thresholds.bulk_support_max_removed_sample_fraction)}",
+        (
+            "sample_fraction = "
+            f"{format_toml_float(thresholds.bulk_support_rare_sample_fraction)}"
+        ),
+        (
+            "max_removed_sample_fraction = "
+            f"{format_toml_float(thresholds.bulk_support_max_removed_sample_fraction)}"
+        ),
     ]
     return "\n".join(lines) + "\n"
 
@@ -936,14 +933,9 @@ class Emoji(str, Enum):
     NONE = ""
 
 
-def colorize(msg: str, fore: str, emoji: Emoji, no_color: bool) -> str:
-    if no_color:
-        prefix = ""
-        if emoji_s := emoji.value:
-            prefix = f"{emoji_s} "
-        return f"{prefix}{msg}"
-    else:
-        return f"{fore}{msg}{Fore.RESET}"
+def format_status(msg: str, emoji: Emoji) -> str:
+    prefix = f"{emoji.value} " if emoji.value else ""
+    return f"{prefix}{msg}"
 
 
 def lookup_summary(summaries, tag):
@@ -1004,7 +996,7 @@ def extract_summary_float_with_fallback(
 def extract_binary_filename(summary):
     value = extract_summary_data_value(summary, "filename", "string")
     if not isinstance(value, str):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'filename' "
             "value must be a string"
         )
@@ -1014,12 +1006,12 @@ def extract_binary_filename(summary):
 def extract_binary_size(summary):
     value = extract_summary_data_value(summary, "size", "int64")
     if isinstance(value, bool):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
             f"value {value!r} is not an int64"
         )
     if isinstance(value, float):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'size' "
             f"value {value!r} is not an int64"
         )
@@ -1483,18 +1475,18 @@ def make_decision(status, code, message, *, severity=0.0):
 def compare_intervals_for_clear_gap(ref_interval, cmp_interval, thresholds):
     # These ratios are equivalent to log(ref/cmp) >= log(1 + delta), but avoid
     # evaluating logarithms on every comparison.
-    if cmp_interval.upper < ref_interval.lower:
-        if (
-            symmetric_frac_diff(ref_interval.lower, cmp_interval.upper)
-            >= thresholds.clear_gap_relative
-        ):
-            return ComparisonStatus.FAST
-    if cmp_interval.lower > ref_interval.upper:
-        if (
-            symmetric_frac_diff(cmp_interval.lower, ref_interval.upper)
-            >= thresholds.clear_gap_relative
-        ):
-            return ComparisonStatus.SLOW
+    if (
+        cmp_interval.upper < ref_interval.lower
+        and symmetric_frac_diff(ref_interval.lower, cmp_interval.upper)
+        >= thresholds.clear_gap_relative
+    ):
+        return ComparisonStatus.FAST
+    if (
+        cmp_interval.lower > ref_interval.upper
+        and symmetric_frac_diff(cmp_interval.lower, ref_interval.upper)
+        >= thresholds.clear_gap_relative
+    ):
+        return ComparisonStatus.SLOW
     return None
 
 
@@ -2424,7 +2416,7 @@ def format_int64_axis_value(axis_name, axis_value, axis):
 
 
 def format_float64_axis_value(axis_name, axis_value, axes):
-    return "%.5g" % float(axis_value["value"])
+    return f"{float(axis_value['value']):.5g}"
 
 
 def format_type_axis_value(axis_name, axis_value, axes):
@@ -2633,7 +2625,7 @@ def duration_precision_for_center(center, delta_multiplier):
     center_quantum = 10.0**-3 * (delta_multiplier / center_multiplier)
     if center_quantum >= 1.0:
         return 0
-    return int(math.ceil(-math.log10(center_quantum)))
+    return math.ceil(-math.log10(center_quantum))
 
 
 def format_duration_range(bounds):
@@ -2855,7 +2847,7 @@ def sanitize_markdown_table(headers, rows):
     )
 
 
-def append_display_row(row, comparison, no_color, display):
+def append_display_row(row, comparison, display):
     if display == "simple":
         row.append(format_duration(comparison.ref_time))
         row.append(format_interval_span(comparison.ref_interval))
@@ -2863,7 +2855,7 @@ def append_display_row(row, comparison, no_color, display):
         row.append(format_interval_span(comparison.cmp_interval))
         row.append(format_center_diff(comparison.ref_time, comparison.cmp_time))
         row.append(format_change(comparison))
-        row.append(colorize_comparison_status(comparison.status, no_color))
+        row.append(format_comparison_status(comparison.status))
         return
 
     row.append(
@@ -2883,7 +2875,7 @@ def append_display_row(row, comparison, no_color, display):
         row.append(format_percentage(comparison.cmp_noise))
         row.append(format_reason_display_code(comparison.reason.code))
     row.append(format_change(comparison))
-    row.append(colorize_comparison_status(comparison.status, no_color))
+    row.append(format_comparison_status(comparison.status))
 
 
 def align_explain_interval_columns(rows, comparisons, axis_count):
@@ -2968,25 +2960,19 @@ def is_usable_noise(noise):
     return is_nonnegative_finite(noise)
 
 
-def colorize_comparison_status(status, no_color):
+def format_comparison_status(status):
     if status == ComparisonStatus.UNKNOWN:
-        fore_name = "YELLOW"
         emoji = Emoji.YELLOW
     elif status == ComparisonStatus.UNDECIDED:
-        fore_name = "LIGHTBLACK_EX"
         emoji = Emoji.SHRUG
     elif status == ComparisonStatus.SAME:
-        fore_name = "BLUE"
         emoji = Emoji.BLUE
     elif status == ComparisonStatus.FAST:
-        fore_name = "GREEN"
         emoji = Emoji.GREEN
     else:
-        fore_name = "RED"
         emoji = Emoji.RED
 
-    fore = "" if no_color else getattr(Fore, fore_name)
-    return colorize(status.value, fore, emoji, no_color)
+    return format_status(status.value, emoji)
 
 
 def format_axis_values(axis_values, axes, axis_filters=None):
@@ -3018,7 +3004,6 @@ def compare_benches(
     plot,
     dark,
     filter_plan,
-    no_color,
     reference_device_filter=None,
     compare_device_filter=None,
     ref_json_dir=None,
@@ -3192,7 +3177,7 @@ def compare_benches(
                 run_data.stats.record(comparison.status, comparison.reason)
                 if status_matches_filter(comparison.status, status_filter):
                     axis_filters = matching_axis_filters(cmp_state, axis_filter_groups)
-                    append_display_row(row, comparison, no_color, display)
+                    append_display_row(row, comparison, display)
 
                     rows.append(row)
                     row_comparisons.append(comparison)
@@ -3275,7 +3260,7 @@ def compare_benches(
                         )
                     )
 
-                print("")
+                print()
 
             if has_plot_along_data:
                 plot_collector.render_plot_along(
@@ -3383,12 +3368,6 @@ def main() -> int:
         help="Use dark theme (black background, white text)",
     )
     parser.add_argument(
-        "--no-color",
-        dest="no_color",
-        action="store_true",
-        help="Use emoji instead of ANSI color codes (useful for GitHub issues/PRs)",
-    )
-    parser.add_argument(
         "--reference-devices",
         default="all",
         help="Reference devices to compare: all, a non-negative integer id, or comma-separated ids",
@@ -3431,7 +3410,7 @@ def main() -> int:
         comparison_preset, comparison_thresholds = resolve_comparison_thresholds(
             args.preset, args.config
         )
-    except ValueError as exc:
+    except (TypeError, ValueError) as exc:
         print(str(exc))
         return 1
 
@@ -3512,7 +3491,7 @@ def main() -> int:
         return 1
 
     try:
-        load_nvbench_compare_tooling(load_color=not args.no_color)
+        load_nvbench_compare_tooling()
     except MissingToolingDependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -3560,12 +3539,8 @@ def main() -> int:
                 print(str(exc), file=sys.stderr)
                 return 1
 
-            if args.no_color:
-                warn_fore = ""
-            else:
-                warn_fore = Fore.YELLOW if args.ignore_devices else Fore.RED
             msg_text = "Device sections do not match"
-            print(colorize(msg_text, warn_fore, Emoji.NONE, args.no_color), end="")
+            print(format_status(msg_text, Emoji.NONE), end="")
             print(": ", end="")
 
             print(
@@ -3594,7 +3569,6 @@ def main() -> int:
                 plot=args.plot,
                 dark=args.dark,
                 filter_plan=filter_plan,
-                no_color=args.no_color,
                 reference_device_filter=reference_device_filter,
                 compare_device_filter=compare_device_filter,
                 ref_json_dir=os.path.dirname(ref),

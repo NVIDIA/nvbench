@@ -1,0 +1,41 @@
+cmake_minimum_required(VERSION 3.30.4)
+project(nvbench_test_nvml NONE)
+
+add_library(CUDA::toolkit INTERFACE IMPORTED)
+add_library(CUDA::nvml UNKNOWN IMPORTED)
+
+if (NOT DEFINED NVML_DLL_AVAILABLE)
+  set(NVML_DLL_AVAILABLE ON)
+endif()
+
+# Exercise the Windows-specific branch on every platform.
+set(WIN32 TRUE)
+if (NVML_COPY_ENABLED)
+  set(NVBench_ADD_DEPENDENT_DLLS_TO_BUILD ON)
+  set(nvml_dir "${CMAKE_CURRENT_BINARY_DIR}/nvml/NVIDIA Corporation/NVSMI")
+  if (NVML_DLL_AVAILABLE)
+    file(MAKE_DIRECTORY "${nvml_dir}")
+    file(WRITE "${nvml_dir}/nvml.dll" "test fixture")
+  endif()
+  set(ENV{ProgramW6432} "${CMAKE_CURRENT_BINARY_DIR}/nvml")
+  set(ENV{WINDIR} "${CMAKE_CURRENT_BINARY_DIR}/windows")
+else()
+  set(NVBench_ADD_DEPENDENT_DLLS_TO_BUILD OFF)
+  unset(ENV{ProgramW6432})
+  unset(ENV{WINDIR})
+endif()
+
+include("${NVBench_SOURCE_DIR}/cmake/NVBenchNVML.cmake")
+
+get_target_property(nvml_alias nvbench::nvml ALIASED_TARGET)
+if (NOT nvml_alias STREQUAL "CUDA::nvml")
+  message(FATAL_ERROR "nvbench::nvml must alias CUDA::nvml, got '${nvml_alias}'")
+endif()
+
+if (NVML_COPY_ENABLED AND NVML_DLL_AVAILABLE AND NOT NVBench_NVML_DLL)
+  message(FATAL_ERROR "NVML DLL should be found when copying is enabled")
+elseif (NVML_COPY_ENABLED AND NOT NVML_DLL_AVAILABLE AND NVBench_NVML_DLL)
+  message(FATAL_ERROR "NVML DLL should not be found when it is unavailable")
+elseif (NOT NVML_COPY_ENABLED AND NVBench_NVML_DLL)
+  message(FATAL_ERROR "NVML DLL should not be searched when copying is disabled")
+endif()

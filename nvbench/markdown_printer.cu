@@ -41,6 +41,146 @@
 namespace nvbench
 {
 
+namespace
+{
+
+#ifdef _WIN32
+
+// Quote an argument with the backslash/double-quote rules used by
+// CommandLineToArgvW. This is not a full cmd.exe escaping layer; cmd.exe
+// expansion rules may still apply when pasted into a shell.
+std::string shell_quote(const std::string &arg)
+{
+  if (!arg.empty() && arg.find_first_of(" \t\n\v\"^&|<>()%!") == std::string::npos)
+  {
+    return arg;
+  }
+
+  // Follow the rules of CommandLineToArgvW: a run of backslashes is only special
+  // when a double quote comes after it.
+  std::string result;
+
+  result.reserve((4 * arg.size()) + 2);
+  result += '"';
+  for (auto iter = arg.begin(); iter != arg.end(); ++iter)
+  {
+    std::size_t num_backslashes = 0;
+    while (iter != arg.end() && *iter == '\\')
+    {
+      ++num_backslashes;
+      ++iter;
+    }
+
+    if (iter == arg.end())
+    { // Double the backslashes that come before the closing quote.
+      result.append(num_backslashes * 2, '\\');
+      break;
+    }
+
+    if (*iter == '"')
+    { // Double the backslashes that come before a quote, then escape the quote.
+      result.append(num_backslashes * 2, '\\');
+      result += "\\\"";
+    }
+    else
+    {
+      result.append(num_backslashes, '\\');
+      result += *iter;
+    }
+  }
+  result += '"';
+  return result;
+}
+
+#else
+
+// Quote an argument for POSIX shells (sh, bash, zsh), so that the printed
+// command line can be copied and pasted.
+std::string shell_quote(const std::string &arg)
+{
+  if (!arg.empty() && arg.find_first_of(" \t\n\"'\\$`|&;<>()*?[]{}#~!") == std::string::npos)
+  {
+    return arg;
+  }
+
+  std::string result;
+
+  result.reserve((4 * arg.size()) + 2);
+  result += '\'';
+  for (const char c : arg)
+  {
+    if (c == '\'')
+    { // A single quote cannot appear inside single quotes; close, escape, reopen.
+      result += "'\\''";
+    }
+    else
+    {
+      result += c;
+    }
+  }
+  result += '\'';
+  return result;
+}
+
+#endif // _WIN32
+
+std::size_t max_backtick_run(const std::string &str)
+{
+  std::size_t max_run{};
+  std::size_t current_run{};
+  for (const char c : str)
+  {
+    if (c == '`')
+    {
+      ++current_run;
+      max_run = current_run > max_run ? current_run : max_run;
+    }
+    else
+    {
+      current_run = 0;
+    }
+  }
+
+  return max_run;
+}
+
+std::string markdown_code_fence(const std::string &contents)
+{
+  const auto fence_size = max_backtick_run(contents) + 1;
+  return std::string(fence_size < 3 ? 3 : fence_size, '`');
+}
+
+} // namespace
+
+void markdown_printer::do_print_argv()
+{
+  const auto &argv = this->get_raw_argv();
+  if (argv.empty())
+  {
+    return;
+  }
+
+  std::string command_line;
+  for (std::size_t i = 0; i < argv.size(); ++i)
+  {
+    if (i != 0)
+    {
+      command_line += ' ';
+    }
+    command_line += shell_quote(argv[i]);
+  }
+
+  const auto fence = markdown_code_fence(command_line);
+
+  fmt::memory_buffer buffer;
+  fmt::format_to(fmt::appender(buffer),
+                 "# Command Line\n\n{}\n{}\n{}\n\n",
+                 fence,
+                 command_line,
+                 fence);
+  m_ostream << fmt::to_string(buffer);
+}
+
 void markdown_printer::do_print_device_info()
 {
   fmt::memory_buffer buffer;

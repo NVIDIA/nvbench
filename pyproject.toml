@@ -8,6 +8,8 @@ exclude = ["docs/tools"]
 
 [tool.ruff.lint]
 extend-select = ["I"]
+# Keep Python 3.10 compatibility without adding a typing_extensions dependency.
+typing-extensions = false
 
 [tool.codespell]
 # To run codespell interactively and fix errors that pre-commit reports, try
