@@ -151,7 +151,7 @@ process exit status alone.
 
 ## Matching Inputs
 
-Both comparison scripts require the same GPU timing method. The JSON file
+Both comparison scripts require the same GPU timing method used during data collection. The JSON file
 contains a `gpu_timer` field:
 
 - `cuda_events` measures elapsed GPU time, including host activities and idle gaps.
