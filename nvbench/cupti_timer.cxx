@@ -372,13 +372,13 @@ nvbench::float64_t cupti_timer::get_duration() const
     if (invalid_records != 0)
     {
       // Preserve the evidence so subsequent reads cannot report a successful zero duration.
-      throw incomplete_cupti_measurement(fmt::format("CUPTI timer measurement is incomplete: {} "
-                                                     "activity record(s) have invalid timestamps "
-                                                     "(kernels: {}, memcpys: {}, memsets: {}).",
-                                                     invalid_records,
-                                                     invalid_kernels,
-                                                     invalid_memcpys,
-                                                     invalid_memsets));
+      throw cupti_collection_failure(fmt::format("CUPTI timer measurement is incomplete: {} "
+                                                 "activity record(s) have invalid timestamps "
+                                                 "(kernels: {}, memcpys: {}, memsets: {}).",
+                                                 invalid_records,
+                                                 invalid_kernels,
+                                                 invalid_memcpys,
+                                                 invalid_memsets));
     }
   }
 
@@ -412,8 +412,8 @@ nvbench::float64_t cupti_timer::get_duration() const
     store.pending_measurements.erase(m_id);
     if (store.num_collection_failures.load() != m_num_collection_failures)
     {
-      throw incomplete_cupti_measurement("CUPTI timer measurement is incomplete: activity records "
-                                         "were dropped or collection failed.");
+      throw cupti_collection_failure("CUPTI timer measurement is incomplete: activity records "
+                                     "were dropped or collection failed.");
     }
     m_duration = static_cast<nvbench::float64_t>(busy_ns) * 1e-9;
     // Completed work may still belong to another timer whose result has not been read.
