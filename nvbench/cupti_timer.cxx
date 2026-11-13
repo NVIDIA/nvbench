@@ -245,9 +245,9 @@ cupti_timer::~cupti_timer()
   release_activities();
 }
 
-void cupti_timer::start(cudaStream_t stream)
+void cupti_timer::start(cudaStream_t)
 {
-  this->stop(stream); // Close previous external correlation ID, if any
+  this->pop_external_id(); // Close previous external correlation ID, if any
   auto &store = get_store();
   store.pending_measurements.erase(m_id);
   m_duration.reset();
@@ -267,7 +267,9 @@ void cupti_timer::start(cudaStream_t stream)
   m_pushed = true;
 }
 
-void cupti_timer::stop(cudaStream_t)
+void cupti_timer::stop(cudaStream_t) { this->pop_external_id(); }
+
+void cupti_timer::pop_external_id()
 {
   if (m_pushed)
   {

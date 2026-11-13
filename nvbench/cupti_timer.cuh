@@ -51,6 +51,8 @@ struct cupti_timer
   [[nodiscard]] nvbench::float64_t get_duration() const;
 
 private:
+  void pop_external_id();
+
   nvbench::uint64_t m_id = 0; // External correlation ID
   bool m_pushed          = false;
   // nullopt_t means the duration is not yet available.
