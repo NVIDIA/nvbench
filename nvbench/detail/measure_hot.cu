@@ -158,6 +158,29 @@ void measure_hot_base::check()
   }
 }
 
+// Record timing measurements and accumulate finalized batches.
+// Return true if the batch is valid. Return false otherwise, without updating the total values
+bool measure_hot_base::record_measurements(nvbench::int64_t batch_size)
+{
+  nvbench::float64_t duration;
+  try
+  {
+    duration = m_cuda_timer.get_duration();
+  }
+  catch (const nvbench::cupti_collection_failure &error)
+  {
+    if (auto printer = m_state.get_benchmark().get_printer())
+    {
+      printer->log(nvbench::log_level::warn,
+                   fmt::format("Discarding incomplete CUPTI batch: {}", error.what()));
+    }
+    return false;
+  }
+  m_total_cuda_time += duration;
+  m_total_samples += batch_size;
+  return true;
+}
+
 void measure_hot_base::generate_summaries()
 {
   const auto d_samples = static_cast<double>(m_total_samples);

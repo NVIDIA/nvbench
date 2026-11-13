@@ -31,6 +31,7 @@
 #include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
+#include <nvbench/detail/cupti_measurement.cuh>
 #include <nvbench/detail/gpu_frequency.cuh>
 #include <nvbench/detail/gpu_timer.cuh>
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
@@ -46,6 +47,7 @@
 #include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
 
+#include <algorithm>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -279,20 +281,28 @@ private:
     constexpr bool disable_blocking_kernel = true;
     kernel_launch_timer timer(*this, disable_blocking_kernel);
     nvbench::cpu_timer warmup_walltime_timer;
+    const auto warmup_timeout = m_cold_max_warmup_walltime > 0.0
+                                  ? std::min(m_timeout, m_cold_max_warmup_walltime)
+                                  : m_timeout;
 
-    warmup_walltime_timer.start();
-    for (nvbench::int64_t warmup_run = 0; warmup_run < m_cold_warmup_runs; ++warmup_run)
-    {
-      this->launch_kernel(timer);
-      warmup_walltime_timer.stop();
+    const auto warmup_time = retry_cupti_warmup(
+      [&] {
+        warmup_walltime_timer.start();
+        for (nvbench::int64_t warmup_run = 0; warmup_run < m_cold_warmup_runs; ++warmup_run)
+        {
+          this->launch_kernel(timer);
+          warmup_walltime_timer.stop();
 
-      if (m_cold_max_warmup_walltime > 0. &&
-          warmup_walltime_timer.get_duration() > m_cold_max_warmup_walltime)
-      {
-        break;
-      }
-    }
-    this->check_skip_time(m_cuda_timer.get_duration());
+          if (m_cold_max_warmup_walltime > 0. &&
+              warmup_walltime_timer.get_duration() > m_cold_max_warmup_walltime)
+          {
+            break;
+          }
+        }
+        return m_cuda_timer.get_duration();
+      },
+      warmup_timeout);
+    this->check_skip_time(warmup_time);
   }
 
   void run_trials()

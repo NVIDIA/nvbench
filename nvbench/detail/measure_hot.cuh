@@ -31,6 +31,7 @@
 #include <nvbench/blocking_kernel.cuh>
 #include <nvbench/cpu_timer.cuh>
 #include <nvbench/cuda_call.cuh>
+#include <nvbench/detail/cupti_measurement.cuh>
 #include <nvbench/detail/gpu_timer.cuh>
 #include <nvbench/detail/stream_cleanup_guard.cuh>
 #include <nvbench/exec_tag.cuh>
@@ -70,6 +71,7 @@ protected:
   }
 
   void generate_summaries();
+  bool record_measurements(nvbench::int64_t batch_size);
 
   void check_skip_time(nvbench::float64_t warmup_time);
 
@@ -139,21 +141,26 @@ private:
   // measurement.
   void run_warmup()
   {
-    nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
+    const auto warmup_time = retry_cupti_warmup(
+      [&] {
+        nvbench::detail::stream_cleanup_guard<measure_hot_base> cleanup{*this};
 
-    m_walltime_timer.start();
-    {
-      m_cuda_timer.start(m_launch.get_stream());
-      this->launch_kernel();
-      m_cuda_timer.stop(m_launch.get_stream());
+        m_walltime_timer.start();
+        {
+          m_cuda_timer.start(m_launch.get_stream());
+          this->launch_kernel();
+          m_cuda_timer.stop(m_launch.get_stream());
 
-      this->sync_stream();
-    }
-    // get wall-clock estimate of launch execution
-    m_walltime_timer.stop();
-    cleanup.release();
+          this->sync_stream();
+        }
+        // get wall-clock estimate of launch execution
+        m_walltime_timer.stop();
+        cleanup.release();
 
-    this->check_skip_time(m_cuda_timer.get_duration());
+        return m_cuda_timer.get_duration();
+      },
+      m_timeout);
+    this->check_skip_time(warmup_time);
   }
 
   void run_trials()
@@ -221,8 +228,17 @@ private:
       this->sync_stream();
       cleanup.release();
 
-      m_total_cuda_time += m_cuda_timer.get_duration();
-      m_total_samples += batch_size;
+      if (!this->record_measurements(batch_size))
+      {
+        // Invalid timing batches still need to be compared for timeout
+        m_walltime_timer.stop();
+        if (m_walltime_timer.get_duration() >= m_timeout)
+        {
+          m_max_time_exceeded = true;
+          break;
+        }
+        continue;
+      }
 
       if (m_total_cuda_time >= m_batch_target_time && // batch target time okay
           m_total_samples >= m_min_samples)           // min samples okay
@@ -264,6 +280,11 @@ private:
     } while (true);
 
     m_walltime_timer.stop();
+    if (m_total_samples == 0)
+    {
+      throw nvbench::cupti_collection_failure("No complete CUPTI batches collected before  "
+                                              "timeout");
+    }
   }
 
   __forceinline__ void launch_kernel() { m_kernel_launcher(m_launch); }

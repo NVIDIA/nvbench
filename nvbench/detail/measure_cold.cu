@@ -107,6 +107,21 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
+  nvbench::float64_t cur_cuda_time;
+  try
+  {
+    cur_cuda_time = m_cuda_timer.get_duration();
+  }
+  catch (const nvbench::cupti_collection_failure &error)
+  {
+    if (auto printer = m_state.get_benchmark().get_printer())
+    {
+      printer->log(nvbench::log_level::warn,
+                   fmt::format("Discarding incomplete CUPTI trial: {}", error.what()));
+    }
+    return;
+  }
+
   if (m_check_throttling)
   {
     const auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
@@ -156,7 +171,6 @@ void measure_cold_base::record_measurements()
   }
 
   // Update and record timers and counters:
-  const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
 
   m_min_cuda_time = std::min(m_min_cuda_time, cur_cuda_time);
