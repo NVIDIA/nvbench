@@ -43,10 +43,12 @@ namespace nvbench::detail
 measure_cold_base::measure_cold_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
+    , m_cuda_timer{exec_state.get_cupti_timer() && !exec_state.get_run_once()}
     , m_criterion_params{exec_state.get_criterion_params()}
     , m_stopping_criterion{nvbench::criterion_manager::get().get_criterion(
         exec_state.get_stopping_criterion())}
-    , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel()}
+    , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel() ||
+                                m_cuda_timer.uses_cupti()}
     , m_run_once{exec_state.get_run_once()}
     , m_check_throttling(!exec_state.get_run_once())
     , m_min_samples{exec_state.get_min_samples()}
@@ -105,6 +107,21 @@ void measure_cold_base::run_trials_prologue() { m_walltime_timer.start(); }
 
 void measure_cold_base::record_measurements()
 {
+  nvbench::float64_t cur_cuda_time;
+  try
+  {
+    cur_cuda_time = m_cuda_timer.get_duration();
+  }
+  catch (const nvbench::cupti_collection_failure &error)
+  {
+    if (auto printer = m_state.get_benchmark().get_printer())
+    {
+      printer->log(nvbench::log_level::warn,
+                   fmt::format("Discarding incomplete CUPTI trial: {}", error.what()));
+    }
+    return;
+  }
+
   if (m_check_throttling)
   {
     const auto current_clock_rate = m_gpu_frequency.get_clock_frequency();
@@ -154,7 +171,6 @@ void measure_cold_base::record_measurements()
   }
 
   // Update and record timers and counters:
-  const auto cur_cuda_time = m_cuda_timer.get_duration();
   const auto cur_cpu_time  = m_cpu_timer.get_duration();
 
   m_min_cuda_time = std::min(m_min_cuda_time, cur_cuda_time);
@@ -367,8 +383,8 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "Min GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description",
-                    "Fastest isolated kernel execution time "
-                    "(measured with CUDA events)");
+                    fmt::format("Fastest isolated kernel execution time ({})",
+                                m_cuda_timer.description()));
     summ.set_float64("value", m_min_cuda_time);
     summ.set_string("hide", "Hidden by default.");
   }
@@ -378,8 +394,8 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "Max GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description",
-                    "Slowest isolated kernel execution time "
-                    "(measured with CUDA events)");
+                    fmt::format("Slowest isolated kernel execution time ({})",
+                                m_cuda_timer.description()));
     summ.set_float64("value", m_max_cuda_time);
     summ.set_string("hide", "Hidden by default.");
   }
@@ -390,8 +406,8 @@ void measure_cold_base::generate_summaries()
     summ.set_string("name", "GPU Time");
     summ.set_string("hint", "duration");
     summ.set_string("description",
-                    "Mean isolated kernel execution time "
-                    "(measured with CUDA events)");
+                    fmt::format("Mean isolated kernel execution time ({})",
+                                m_cuda_timer.description()));
     summ.set_float64("value", cuda_mean);
   }
 

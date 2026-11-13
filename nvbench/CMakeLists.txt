@@ -37,7 +37,7 @@ set(srcs
 )
 
 if (NVBench_ENABLE_CUPTI)
-  list(APPEND srcs detail/measure_cupti.cu)
+  list(APPEND srcs cupti_timer.cxx detail/measure_cupti.cu)
   if (EXISTS "${nvbench_cupti_root}/include/cupti_profiler_host.h")
     list(APPEND srcs cupti_profiler_host.cxx)
   else()
