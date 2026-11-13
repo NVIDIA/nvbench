@@ -138,10 +138,11 @@
 
 * `--cupti-timer`
   * Measure cold and batch GPU times with the CUPTI Activity API instead of CUDA events.
-  * Reports GPU busy time: the union of the execution intervals of kernels, memcpys, and memsets launched by the benchmark. Launch overhead and idle gaps between operations are excluded.
+  * Reports GPU busy time: the union of the execution intervals of kernels, `memcpy`s, and `memset`s launched by the benchmark. Launch overhead and idle gaps between operations are excluded.
   * Requires NVBench to be built with CUPTI (`NVBench_ENABLE_CUPTI=ON`).
   * Ignored when `--profile` is used.
-  * Disables the blocking kernel. CPU time measurements include the overlap of kernel launches with GPU execution and are not comparable to CUDA event runs.
+  * Disables the blocking kernel. CPU time measurements include the overlap of kernel launches with GPU execution.
+  * The timing method is not directly comparable to CUDA events if the benchmarked routine includes non-trivial host activities, such as driver calls to launch kernels.
 
 * `--batch-target-time <seconds>`
   * Target accumulated GPU time for batched measurements.
