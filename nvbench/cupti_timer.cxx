@@ -68,6 +68,7 @@ constexpr auto external_kind = CUPTI_EXTERNAL_CORRELATION_KIND_CUSTOM0;
 
 constexpr CUpti_ActivityKind activity_kinds[] = {CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
                                                  CUPTI_ACTIVITY_KIND_MEMCPY,
+                                                 CUPTI_ACTIVITY_KIND_MEMCPY2,
                                                  CUPTI_ACTIVITY_KIND_MEMSET,
                                                  CUPTI_ACTIVITY_KIND_RUNTIME,
                                                  CUPTI_ACTIVITY_KIND_DRIVER,
@@ -145,6 +146,11 @@ void CUPTIAPI buffer_completed(CUcontext,
         }
         case CUPTI_ACTIVITY_KIND_MEMCPY: {
           const auto *rec = reinterpret_cast<const CUpti_ActivityMemcpy *>(record);
+          store.records.push_back({rec->correlationId, rec->start, rec->end, record->kind});
+          break;
+        }
+        case CUPTI_ACTIVITY_KIND_MEMCPY2: {
+          const auto *rec = reinterpret_cast<const CUpti_ActivityMemcpyPtoP *>(record);
           store.records.push_back({rec->correlationId, rec->start, rec->end, record->kind});
           break;
         }
@@ -306,6 +312,7 @@ nvbench::float64_t cupti_timer::get_duration() const
               ++invalid_kernels;
               break;
             case CUPTI_ACTIVITY_KIND_MEMCPY:
+            case CUPTI_ACTIVITY_KIND_MEMCPY2:
               ++invalid_memcpys;
               break;
             case CUPTI_ACTIVITY_KIND_MEMSET:
