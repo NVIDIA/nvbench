@@ -18,9 +18,16 @@
 #include <cuda_runtime_api.h>
 
 #include <optional>
+#include <stdexcept>
 
 namespace nvbench
 {
+
+// Exception for incomplete CUPTI activity record
+struct cupti_collection_failure : std::runtime_error
+{
+  using std::runtime_error::runtime_error;
+};
 
 /**
  * GPU timer based on the CUPTI Activity API.
@@ -47,14 +54,15 @@ struct cupti_timer
   void stop(cudaStream_t stream);
 
   // In seconds. Synchronizes the device.
-  // Throws if an activity in this measurement has unavailable or invalid timestamps.
+  // Throws cupti_collection_failure if activity collection or timestamps are incomplete.
   [[nodiscard]] nvbench::float64_t get_duration() const;
 
 private:
   void pop_external_id();
 
-  nvbench::uint64_t m_id = 0; // External correlation ID
-  bool m_pushed          = false;
+  nvbench::uint64_t m_id                      = 0; // External correlation ID
+  nvbench::uint64_t m_num_collection_failures = 0;
+  bool m_pushed                               = false;
   // nullopt_t means the duration is not yet available.
   mutable std::optional<nvbench::float64_t> m_duration{};
 };

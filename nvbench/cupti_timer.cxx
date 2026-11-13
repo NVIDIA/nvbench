@@ -10,6 +10,7 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <mutex>
 #include <new>
@@ -84,6 +85,8 @@ struct activity_record
 
 struct activity_store
 {
+  // Callbacks may report failure without taking the mutex or allocating memory.
+  std::atomic<nvbench::uint64_t> num_collection_failures{0};
   std::mutex mutex;
   std::vector<activity_record> records;
 
@@ -105,10 +108,23 @@ activity_store &get_store()
   return *store;
 }
 
+// CUPTI drops records if the host callback cannot provide a activity buffer large enough, or
+// if the device-side CDP buffer is full. This would make the measurement incomplete, so the
+// collection generation is incremented to invalidate any pending measurements
+void check_dropped_records(CUcontext context, nvbench::uint32_t stream_id) noexcept
+{
+  std::size_t dropped = 0;
+  if (cuptiActivityGetNumDroppedRecords(context, stream_id, &dropped) != CUPTI_SUCCESS ||
+      dropped != 0)
+  {
+    ++(get_store().num_collection_failures);
+  }
+}
+
 // callback called by CUPTI when a memory buffer is requested
-void CUPTIAPI buffer_requested(nvbench::uint8_t **buffer,
-                               std::size_t *size,
-                               std::size_t *max_records)
+void CUPTIAPI buffer_requested_callback(nvbench::uint8_t **buffer,
+                                        std::size_t *size,
+                                        std::size_t *max_records)
 {
   // Size derived from CUPTI samples code
   constexpr auto buffer_size_bytes  = nvbench::uint64_t{4} << 20; // 4 MB
@@ -118,14 +134,19 @@ void CUPTIAPI buffer_requested(nvbench::uint8_t **buffer,
   // 8-byte alignment is required by CUPTI
   auto buffer_ptr = new (std::nothrow) nvbench::uint64_t[buffer_size_dwords];
   *buffer         = reinterpret_cast<nvbench::uint8_t *>(buffer_ptr);
+  if (!buffer_ptr)
+  {
+    *size = 0;
+    ++(get_store().num_collection_failures);
+  }
 }
 
 // callback called by CUPTI when a memory buffer is completed
-void CUPTIAPI buffer_completed(CUcontext,
-                               nvbench::uint32_t,
-                               nvbench::uint8_t *buffer,
-                               std::size_t,
-                               std::size_t valid_size)
+void CUPTIAPI buffer_completed_callback(CUcontext context,
+                                        nvbench::uint32_t stream_id,
+                                        nvbench::uint8_t *buffer,
+                                        std::size_t,
+                                        std::size_t valid_size)
 {
   auto &store = get_store();
   try
@@ -134,7 +155,9 @@ void CUPTIAPI buffer_completed(CUcontext,
     // The start, end, and correlationId fields have the same layout in every
     // version of these records, so the oldest struct versions are used.
     CUpti_Activity *record = nullptr;
-    while (cuptiActivityGetNextRecord(buffer, valid_size, &record) == CUPTI_SUCCESS)
+    CUptiResult status     = CUPTI_ERROR_MAX_LIMIT_REACHED;
+    while (valid_size != 0 &&
+           (status = cuptiActivityGetNextRecord(buffer, valid_size, &record)) == CUPTI_SUCCESS)
     {
       switch (record->kind)
       {
@@ -171,10 +194,19 @@ void CUPTIAPI buffer_completed(CUcontext,
           break;
       }
     }
+    // CUPTI_ERROR_MAX_LIMIT_REACHED means the buffer is fully consumed. Other values indicate an
+    // error
+    if (status != CUPTI_ERROR_MAX_LIMIT_REACHED)
+    {
+      ++(store.num_collection_failures);
+    }
   }
   catch (...)
-  { // Exceptions must not propagate into CUPTI. Records are dropped.
+  { // Exceptions must not propagate into CUPTI, but the collection is now incomplete
+    ++(store.num_collection_failures);
   }
+  // check if there are dropped records before reaching the buffer (e.g. no enough space)
+  check_dropped_records(context, stream_id);
   delete[] reinterpret_cast<nvbench::uint64_t *>(buffer);
 }
 
@@ -194,7 +226,8 @@ void acquire_activities()
     // initialize callbacks for memory buffer management
     if (!store.callbacks_registered)
     {
-      NVBENCH_CUPTI_CALL(cuptiActivityRegisterCallbacks(buffer_requested, buffer_completed));
+      NVBENCH_CUPTI_CALL(
+        cuptiActivityRegisterCallbacks(buffer_requested_callback, buffer_completed_callback));
       store.callbacks_registered = true;
     }
     try
@@ -251,8 +284,12 @@ void cupti_timer::start(cudaStream_t)
   auto &store = get_store();
   store.pending_measurements.erase(m_id);
   m_duration.reset();
-  m_id          = 0;
-  const auto id = ++store.next_id;
+  // keep track of the number of collection failures before start().
+  // If the number of collection failures is different when we call get_duration(), CUPTI dropped
+  // records in this timeframe and the measurement is incomplete.
+  m_num_collection_failures = store.num_collection_failures.load();
+  m_id                      = 0;
+  const auto id             = ++store.next_id;
   store.pending_measurements.insert(id);
   try
   {
@@ -288,6 +325,9 @@ nvbench::float64_t cupti_timer::get_duration() const
 
   NVBENCH_CUDA_CALL(cudaDeviceSynchronize());
   NVBENCH_CUPTI_CALL(cuptiActivityFlushAll(CUPTI_ACTIVITY_FLAG_FLUSH_FORCED));
+  // Check for dropped records even when no callbacks have been called (e.g. allocation failure)
+  // (nullptr, 0) means CUPTI’s global queue
+  check_dropped_records(nullptr, 0);
 
   using interval_t = std::pair<nvbench::uint64_t, nvbench::uint64_t>;
   std::vector<interval_t> intervals;
@@ -332,13 +372,13 @@ nvbench::float64_t cupti_timer::get_duration() const
     if (invalid_records != 0)
     {
       // Preserve the evidence so subsequent reads cannot report a successful zero duration.
-      throw std::runtime_error(fmt::format("CUPTI timer measurement is incomplete: {} activity "
-                                           "record(s) have invalid timestamps "
-                                           "(kernels: {}, memcpys: {}, memsets: {}).",
-                                           invalid_records,
-                                           invalid_kernels,
-                                           invalid_memcpys,
-                                           invalid_memsets));
+      throw incomplete_cupti_measurement(fmt::format("CUPTI timer measurement is incomplete: {} "
+                                                     "activity record(s) have invalid timestamps "
+                                                     "(kernels: {}, memcpys: {}, memsets: {}).",
+                                                     invalid_records,
+                                                     invalid_kernels,
+                                                     invalid_memcpys,
+                                                     invalid_memsets));
     }
   }
 
@@ -361,8 +401,7 @@ nvbench::float64_t cupti_timer::get_duration() const
     busy_ns += current_end - current_start;
   }
 
-  m_duration = static_cast<nvbench::float64_t>(busy_ns) * 1e-9;
-  // cleans up after duration has been cached
+  // Reject incomplete collection before caching the duration
   // A record is in one of the following states:
   // - Consumed: get_duration() successfully completed.
   // - Abandoned: the timer starts a new measurement, invalidating the previous ones.
@@ -371,6 +410,12 @@ nvbench::float64_t cupti_timer::get_duration() const
     auto &store = get_store();
     std::lock_guard lock{store.mutex};
     store.pending_measurements.erase(m_id);
+    if (store.num_collection_failures.load() != m_num_collection_failures)
+    {
+      throw incomplete_cupti_measurement("CUPTI timer measurement is incomplete: activity records "
+                                         "were dropped or collection failed.");
+    }
+    m_duration = static_cast<nvbench::float64_t>(busy_ns) * 1e-9;
     // Completed work may still belong to another timer whose result has not been read.
     // Deletes records related to consumed/invalid measurements and records without a
     // correlation mapping.
