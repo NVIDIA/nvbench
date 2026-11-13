@@ -150,6 +150,30 @@ std::string markdown_code_fence(const std::string &contents)
   return std::string(fence_size < 3 ? 3 : fence_size, '`');
 }
 
+std::string escape_markdown_text(const std::string &text)
+{
+  const std::string punctuation{"\\`*_{}[]<>()#+-.!|~&="};
+  std::string result;
+  result.reserve(text.size());
+  bool line_start = true;
+  for (const char c : text)
+  {
+    // Leading whitespace must not turn plain text into an indented code block.
+    if (line_start && (c == ' ' || c == '\t'))
+    {
+      result += c == ' ' ? "&#32;" : "&#9;";
+      continue;
+    }
+    if (punctuation.find(c) != std::string::npos)
+    {
+      result += '\\';
+    }
+    result += c;
+    line_start = c == '\n' || c == '\r';
+  }
+  return result;
+}
+
 } // namespace
 
 void markdown_printer::do_print_argv()
@@ -321,7 +345,7 @@ void markdown_printer::do_print_benchmark_list(const printer_base::benchmark_vec
     if (const auto &benchmark_description = bench_ptr->get_description();
         !benchmark_description.empty())
     {
-      fmt::format_to(fmt::appender(buffer), "{}\n\n", benchmark_description);
+      fmt::format_to(fmt::appender(buffer), "{}\n\n", escape_markdown_text(benchmark_description));
     }
 
     fmt::format_to(fmt::appender(buffer), "### Axes\n\n");
