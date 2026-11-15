@@ -334,6 +334,90 @@ def test_centers_apply_estimators_to_samples(sample_result):
     assert centers == {"copy": {"BlockSize[pow2]=8": pytest.approx(7.0 / 3.0)}}
 
 
+def test_centers_keep_results_for_each_device_with_matching_axes(tmp_path):
+    bin_dir = tmp_path / "result.json-bin"
+    bin_dir.mkdir()
+    (bin_dir / "0.bin").write_bytes(struct.pack("<2f", 1.2, 1.2))
+    (bin_dir / "1.bin").write_bytes(struct.pack("<2f", 2.1, 2.1))
+    freq_bin_dir = tmp_path / "result.json-freqs-bin"
+    freq_bin_dir.mkdir()
+    (freq_bin_dir / "0.bin").write_bytes(struct.pack("<2f", 100.0, 100.0))
+    (freq_bin_dir / "1.bin").write_bytes(struct.pack("<2f", 200.0, 200.0))
+
+    json_fn = tmp_path / "result.json"
+    write_json(
+        json_fn,
+        {
+            "devices": [
+                {"id": 0, "name": "GPU 0"},
+                {"id": 1, "name": "GPU 1"},
+            ],
+            "benchmarks": [
+                {
+                    "name": "copy",
+                    "devices": [0, 1],
+                    "axes": [block_size_axis(8)],
+                    "states": [
+                        {
+                            "name": "Device=0 BlockSize=2^8",
+                            "device": 0,
+                            "axis_values": [
+                                {
+                                    "name": "BlockSize",
+                                    "type": "int64",
+                                    "value": "256",
+                                }
+                            ],
+                            "summaries": [
+                                sample_times_summary("result.json-bin/0.bin", 2),
+                                sample_frequencies_summary(
+                                    "result.json-freqs-bin/0.bin", 2
+                                ),
+                            ],
+                        },
+                        {
+                            "name": "Device=1 BlockSize=2^8",
+                            "device": 1,
+                            "axis_values": [
+                                {
+                                    "name": "BlockSize",
+                                    "type": "int64",
+                                    "value": "256",
+                                }
+                            ],
+                            "summaries": [
+                                sample_times_summary("result.json-bin/1.bin", 2),
+                                sample_frequencies_summary(
+                                    "result.json-freqs-bin/1.bin", 2
+                                ),
+                            ],
+                        },
+                    ],
+                }
+            ],
+        },
+    )
+
+    result = results.BenchmarkResult.from_json(json_fn)
+    subbenchmark = result["copy"]
+
+    expected_keys = [
+        "Device=0 BlockSize[pow2]=8",
+        "Device=1 BlockSize[pow2]=8",
+    ]
+    assert [state.name() for state in subbenchmark] == expected_keys
+    assert subbenchmark.centers(lambda samples: sum(samples) / len(samples)) == {
+        expected_keys[0]: pytest.approx(1.2),
+        expected_keys[1]: pytest.approx(2.1),
+    }
+    assert subbenchmark.centers_with_frequencies(
+        lambda samples, frequencies: sum(samples) / len(samples)
+    ) == {
+        expected_keys[0]: pytest.approx(1.2),
+        expected_keys[1]: pytest.approx(2.1),
+    }
+
+
 def test_centers_with_frequencies_apply_estimators(sample_result, sample_subbenchmark):
     def weighted_mean(samples, frequencies):
         return sum(

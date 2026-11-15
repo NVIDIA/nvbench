@@ -286,9 +286,18 @@ def get_axis_name(axis: dict) -> str:
 class SubBenchmarkState:
     """Result data for one executed state of an NVBench benchmark."""
 
-    def __init__(self, state: dict, axes_names: dict, axes_values: dict, json_dir: str):
+    def __init__(
+        self,
+        state: dict,
+        axes_names: dict,
+        axes_values: dict,
+        json_dir: str,
+        *,
+        include_device: bool = False,
+    ):
         self.state_name = state["name"]
         self.device = state.get("device")
+        self._include_device = include_device
         self.type_config_index = state.get("type_config_index")
         self.axis_values = state.get("axis_values") or []
         self.is_skipped = state.get("is_skipped", False)
@@ -329,8 +338,32 @@ class SubBenchmarkState:
 
     def name(self) -> str:
         if not self.point:
-            return self.state_name
-        return " ".join(f"{k}={v}" for k, v in self.point.items())
+            name = self.state_name
+        else:
+            name = " ".join(f"{k}={v}" for k, v in self.point.items())
+
+        if not self._include_device:
+            return name
+
+        device_name = (
+            f"Device={self.device}"
+            if self.device is not None
+            else next(
+                (
+                    part
+                    for part in self.state_name.split()
+                    if part.startswith("Device=")
+                ),
+                None,
+            )
+        )
+        if (
+            device_name is None
+            or name == device_name
+            or name.startswith(f"{device_name} ")
+        ):
+            return name
+        return f"{device_name} {name}"
 
     def center(self, estimator: Callable[[array.array], _ResultT]) -> _ResultT | None:
         if self.samples is None:
@@ -352,6 +385,13 @@ class SubBenchmarkResult:
         self.name = bench["name"]
         self.devices = bench.get("devices") or []
         self.axes = bench.get("axes") or []
+        device_ids = set(self.devices)
+        device_ids.update(
+            state["device"]
+            for state in bench["states"]
+            if state.get("device") is not None
+        )
+        include_device = len(device_ids) > 1
 
         axes_names = {}
         axes_values = {}
@@ -368,7 +408,13 @@ class SubBenchmarkResult:
             axes_values[short_name] = this_axis_values
 
         self.states = [
-            SubBenchmarkState(state, axes_names, axes_values, json_dir)
+            SubBenchmarkState(
+                state,
+                axes_names,
+                axes_values,
+                json_dir,
+                include_device=include_device,
+            )
             for state in bench["states"]
         ]
 
