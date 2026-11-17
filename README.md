@@ -52,8 +52,12 @@ void my_benchmark(nvbench::state& state) {
     my_kernel<<<num_blocks, 256, 0, launch.get_stream()>>>();
   });
 }
-NVBENCH_BENCH(my_benchmark);
+NVBENCH_BENCH(my_benchmark)
+  .set_description("Measures the execution time of my kernel.");
 ```
+
+Benchmark descriptions are included in the benchmark list produced by the
+`--list` option.
 
 See [Benchmarks](docs/benchmarks.md) for information on customizing benchmarks
 and implementing parameter sweeps.

@@ -155,8 +155,27 @@ void test_jsonbin_write_failure_omits_file_metadata()
          std::string::npos);
 }
 
+void test_benchmark_list_includes_description()
+{
+  std::ostringstream json_stream;
+  nvbench::json_printer printer{json_stream};
+  dummy_bench bench;
+  bench.set_name("dummy_generator");
+  bench.set_description("Measures the execution time of my kernel.");
+
+  nvbench::printer_base::benchmark_vector benches;
+  benches.emplace_back(bench.clone());
+  printer.print_benchmark_list(benches);
+
+  const auto json = json_stream.str();
+  ASSERT(json.find("\"name\": \"dummy_generator\"") != std::string::npos);
+  ASSERT(json.find("\"description\": \"Measures the execution time of my kernel.\"") !=
+         std::string::npos);
+}
+
 int main()
 {
   test_jsonbin_filenames_are_json_relative();
   test_jsonbin_write_failure_omits_file_metadata();
+  test_benchmark_list_includes_description();
 }
