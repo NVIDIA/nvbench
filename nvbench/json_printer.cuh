@@ -69,6 +69,9 @@ struct json_printer : nvbench::printer_base
 
   [[nodiscard]] static version_t get_json_file_version();
 
+  /// Shared compatibility version for Python tools consuming benchmark results.
+  [[nodiscard]] static version_t get_scripts_version();
+
   [[nodiscard]] bool get_enable_binary_output() const { return m_enable_binary_output; }
   void set_enable_binary_output(bool b) { m_enable_binary_output = b; }
 

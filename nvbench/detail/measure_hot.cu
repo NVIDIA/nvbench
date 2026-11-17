@@ -74,10 +74,13 @@ nvbench::int64_t predict_batch_size(nvbench::float64_t target_duration,
 measure_hot_base::measure_hot_base(state &exec_state)
     : m_state{exec_state}
     , m_launch{exec_state.get_cuda_stream()}
+    , m_cuda_timer{exec_state.get_cupti_timer() && !exec_state.get_run_once()}
     , m_min_samples{exec_state.get_min_samples()}
     , m_batch_target_time{exec_state.get_batch_target_time()}
     , m_skip_time{exec_state.get_skip_time()}
     , m_timeout{exec_state.get_timeout()}
+    , m_disable_blocking_kernel{exec_state.get_disable_blocking_kernel() ||
+                                m_cuda_timer.uses_cupti()}
 {
   try
   {
@@ -155,6 +158,29 @@ void measure_hot_base::check()
   }
 }
 
+// Record timing measurements and accumulate finalized batches.
+// Return true if the batch is valid. Return false otherwise, without updating the total values
+bool measure_hot_base::record_measurements(nvbench::int64_t batch_size)
+{
+  nvbench::float64_t duration;
+  try
+  {
+    duration = m_cuda_timer.get_duration();
+  }
+  catch (const nvbench::cupti_collection_failure &error)
+  {
+    if (auto printer = m_state.get_benchmark().get_printer())
+    {
+      printer->log(nvbench::log_level::warn,
+                   fmt::format("Discarding incomplete CUPTI batch: {}", error.what()));
+    }
+    return false;
+  }
+  m_total_cuda_time += duration;
+  m_total_samples += batch_size;
+  return true;
+}
+
 void measure_hot_base::generate_summaries()
 {
   const auto d_samples = static_cast<double>(m_total_samples);
@@ -172,8 +198,8 @@ void measure_hot_base::generate_summaries()
     summ.set_string("name", "Batch GPU");
     summ.set_string("hint", "duration");
     summ.set_string("description",
-                    "Mean batch kernel execution time "
-                    "(measured by CUDA events)");
+                    fmt::format("Mean batch kernel execution time ({})",
+                                m_cuda_timer.description()));
     summ.set_float64("value", avg_cuda_time);
   }
 

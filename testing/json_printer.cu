@@ -26,6 +26,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -155,8 +156,36 @@ void test_jsonbin_write_failure_omits_file_metadata()
          std::string::npos);
 }
 
+void test_cpu_only_timer_metadata()
+{
+  nvbench::printer_base::benchmark_vector benches;
+  auto bench = std::make_unique<dummy_bench>();
+  bench->set_is_cpu_only(true);
+  bench->clear_devices();
+  bench->get_states().push_back(nvbench::detail::state_tester{*bench});
+  benches.push_back(std::move(bench));
+
+  std::ostringstream output;
+  nvbench::json_printer printer{output};
+  printer.print_benchmark_results(benches);
+  ASSERT(output.str().find("\"gpu_timer\": null") != std::string::npos);
+  ASSERT(output.str().find("\"device\": null") != std::string::npos);
+  const auto script_version = nvbench::json_printer::get_scripts_version();
+  const auto expected_version =
+    fmt::format("\"scripts\": {{\n        \"major\": {},\n        \"minor\": {},\n"
+                "        \"patch\": {},\n        \"string\": \"{}\"\n      }}",
+                script_version.major,
+                script_version.minor,
+                script_version.patch,
+                script_version.get_string());
+  ASSERT_MSG(output.str().find(expected_version) != std::string::npos,
+             "Expected script version metadata: {}",
+             expected_version);
+}
+
 int main()
 {
   test_jsonbin_filenames_are_json_relative();
   test_jsonbin_write_failure_omits_file_metadata();
+  test_cpu_only_timer_metadata();
 }

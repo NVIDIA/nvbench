@@ -213,6 +213,10 @@ struct state
   void set_disable_blocking_kernel(bool v) { m_disable_blocking_kernel = v; }
   /// @}
 
+  /// If true, GPU times are measured with CUPTI instead of CUDA events.
+  /// See `benchmark_base::set_cupti_timer`.
+  [[nodiscard]] bool get_cupti_timer() const { return m_cupti_timer; }
+
   /// If a warmup run finishes in less than `skip_time`, the measurement will
   /// be skipped.
   /// Extremely fast kernels (< 5000 ns) often timeout before they can
@@ -357,6 +361,7 @@ private:
   bool m_is_cpu_only{false};
   bool m_run_once{false};
   bool m_disable_blocking_kernel{false};
+  bool m_cupti_timer{false};
   bool m_skip_batched{false};
 
   nvbench::criterion_params m_criterion_params;
