@@ -20,7 +20,7 @@ def nvbench_walltime(monkeypatch):
 
 def walltime_summary(name, value):
     return {
-        "tag": "nv/{}/walltime".format(name),
+        "tag": f"nv/{name}/walltime",
         "name": "Walltime",
         "hint": "duration",
         "data": [{"name": "value", "type": "float64", "value": value}],
