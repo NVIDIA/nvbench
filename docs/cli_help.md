@@ -69,8 +69,7 @@
 
 * `--axis <axis specification>`, `-a <axis specification>`
   * Override an axis specification.
-  * See `--help-axis`
-    for [details on axis specifications](./cli_help_axis.md).
+  * See `--help-axis` for details on axis specifications.
   * Applies to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
