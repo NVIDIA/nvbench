@@ -178,6 +178,14 @@ nvbench_add_configure_test(test_name
   -D "NVML_DLL_AVAILABLE=OFF"
 )
 
+nvbench_add_configure_test(test_name
+  test_nvml
+  aliased_target
+  -D "NVBench_SOURCE_DIR=${NVBench_SOURCE_DIR}"
+  -D "NVML_COPY_ENABLED=OFF"
+  -D "NVML_TARGET_ALIASED=ON"
+)
+
 # Host-only post-build coverage, including empty runtime DLL lists.
 foreach(copy_case IN ITEMS
     spaces special empty disabled static
