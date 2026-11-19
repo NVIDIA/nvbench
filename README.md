@@ -72,6 +72,7 @@ various NVBench features and usecases:
 
 - [Runtime and compile-time parameter sweeps](examples/axes.cu)
 - [CPU-only benchmarking](examples/cpu_only.cu)
+- [Handling application-specific command-line arguments](examples/custom_args.cu)
 - [Enums and compile-time-constant-integral parameter axes](examples/enums.cu)
 - [Reporting item/sec and byte/sec throughput statistics](examples/throughput.cu)
 - [Skipping benchmark configurations](examples/skip.cu)
