@@ -41,7 +41,7 @@ class SubBenchmarkState:
     frequencies: array | None
     bw: float | None
     point: dict[str, str]
-    def name(self) -> str: ...
+    def name(self, *, include_device: bool = True) -> str: ...
     def center(self, estimator: Callable[[array], _ResultT]) -> _ResultT | None: ...
     def center_with_frequencies(
         self, estimator: Callable[[array, array], _ResultT]
@@ -59,10 +59,13 @@ class SubBenchmarkResult:
     def __getitem__(self, state_index: slice) -> list[SubBenchmarkState]: ...
     def __iter__(self) -> Iterator[SubBenchmarkState]: ...
     def centers(
-        self, estimator: Callable[[array], _ResultT]
+        self, estimator: Callable[[array], _ResultT], *, include_device: bool = True
     ) -> dict[str, _ResultT | None]: ...
     def centers_with_frequencies(
-        self, estimator: Callable[[array, array], _ResultT]
+        self,
+        estimator: Callable[[array, array], _ResultT],
+        *,
+        include_device: bool = True,
     ) -> dict[str, _ResultT | None]: ...
 
 class BenchmarkResult:
@@ -89,8 +92,11 @@ class BenchmarkResult:
     def values(self) -> ValuesView[SubBenchmarkResult]: ...
     def items(self) -> ItemsView[str, SubBenchmarkResult]: ...
     def centers(
-        self, estimator: Callable[[array], _ResultT]
+        self, estimator: Callable[[array], _ResultT], *, include_device: bool = True
     ) -> dict[str, dict[str, _ResultT | None]]: ...
     def centers_with_frequencies(
-        self, estimator: Callable[[array, array], _ResultT]
+        self,
+        estimator: Callable[[array, array], _ResultT],
+        *,
+        include_device: bool = True,
     ) -> dict[str, dict[str, _ResultT | None]]: ...
