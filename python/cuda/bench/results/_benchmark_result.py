@@ -292,12 +292,9 @@ class SubBenchmarkState:
         axes_names: dict,
         axes_values: dict,
         json_dir: str,
-        *,
-        include_device: bool = False,
     ):
         self.state_name = state["name"]
         self.device = state.get("device")
-        self._include_device = include_device
         self.type_config_index = state.get("type_config_index")
         self.axis_values = state.get("axis_values") or []
         self.is_skipped = state.get("is_skipped", False)
@@ -323,7 +320,11 @@ class SubBenchmarkState:
             axis_value_map = axes_values[axis_name]
             if "value" in axis:
                 key = str(axis["value"])
-                value = axis_value_map.get(key, key)
+                if axis.get("type") == "float64" and axis["value"] is not None:
+                    # The axis input string may round distinct values to the same key.
+                    value = key
+                else:
+                    value = axis_value_map.get(key, key)
             else:
                 input_string = axis.get("input_string")
                 value = (
@@ -336,34 +337,20 @@ class SubBenchmarkState:
     def __repr__(self) -> str:
         return str(self.__dict__)
 
-    def name(self) -> str:
-        if not self.point:
-            name = self.state_name
+    def name(self, *, include_device: bool = True) -> str:
+        """Return the state name, including its device ID by default."""
+        device_name = f"Device={self.device}" if self.device is not None else None
+        if self.point:
+            name = " ".join(f"{key}={value}" for key, value in self.point.items())
         else:
-            name = " ".join(f"{k}={v}" for k, v in self.point.items())
+            name = self.state_name
+            prefix, _, remainder = name.partition(" ")
+            if prefix == device_name:
+                name = remainder
 
-        if not self._include_device:
-            return name
-
-        device_name = (
-            f"Device={self.device}"
-            if self.device is not None
-            else next(
-                (
-                    part
-                    for part in self.state_name.split()
-                    if part.startswith("Device=")
-                ),
-                None,
-            )
-        )
-        if (
-            device_name is None
-            or name == device_name
-            or name.startswith(f"{device_name} ")
-        ):
-            return name
-        return f"{device_name} {name}"
+        if include_device and device_name is not None:
+            return f"{device_name} {name}" if name else device_name
+        return name or "<empty>"
 
     def center(self, estimator: Callable[[array.array], _ResultT]) -> _ResultT | None:
         if self.samples is None:
@@ -385,13 +372,6 @@ class SubBenchmarkResult:
         self.name = bench["name"]
         self.devices = bench.get("devices") or []
         self.axes = bench.get("axes") or []
-        device_ids = set(self.devices)
-        device_ids.update(
-            state["device"]
-            for state in bench["states"]
-            if state.get("device") is not None
-        )
-        include_device = len(device_ids) > 1
 
         axes_names = {}
         axes_values = {}
@@ -408,13 +388,7 @@ class SubBenchmarkResult:
             axes_values[short_name] = this_axis_values
 
         self.states = [
-            SubBenchmarkState(
-                state,
-                axes_names,
-                axes_values,
-                json_dir,
-                include_device=include_device,
-            )
+            SubBenchmarkState(state, axes_names, axes_values, json_dir)
             for state in bench["states"]
         ]
 
@@ -433,19 +407,32 @@ class SubBenchmarkResult:
         return iter(self.states)
 
     def centers(
-        self, estimator: Callable[[array.array], _ResultT]
+        self,
+        estimator: Callable[[array.array], _ResultT],
+        *,
+        include_device: bool = True,
     ) -> dict[str, _ResultT | None]:
+        """Estimate centers keyed by state name.
+
+        Set ``include_device=False`` for axis-only keys after selecting one device.
+        """
         result = {}
         for state in self.states:
-            result[state.name()] = state.center(estimator)
+            result[state.name(include_device=include_device)] = state.center(estimator)
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], _ResultT]
+        self,
+        estimator: Callable[[array.array, array.array], _ResultT],
+        *,
+        include_device: bool = True,
     ) -> dict[str, _ResultT | None]:
+        """Estimate centers using frequencies and the same keys as :meth:`centers`."""
         result = {}
         for state in self.states:
-            result[state.name()] = state.center_with_frequencies(estimator)
+            result[state.name(include_device=include_device)] = (
+                state.center_with_frequencies(estimator)
+            )
         return result
 
 
@@ -541,19 +528,27 @@ class BenchmarkResult:
         return self.subbenches.items()
 
     def centers(
-        self, estimator: Callable[[array.array], _ResultT]
+        self,
+        estimator: Callable[[array.array], _ResultT],
+        *,
+        include_device: bool = True,
     ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
-            result[subbench] = self.subbenches[subbench].centers(estimator)
+            result[subbench] = self.subbenches[subbench].centers(
+                estimator, include_device=include_device
+            )
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], _ResultT]
+        self,
+        estimator: Callable[[array.array, array.array], _ResultT],
+        *,
+        include_device: bool = True,
     ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
             result[subbench] = self.subbenches[subbench].centers_with_frequencies(
-                estimator
+                estimator, include_device=include_device
             )
         return result

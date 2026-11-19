@@ -96,10 +96,12 @@ def sample_result_path(tmp_path):
             "benchmarks": [
                 {
                     "name": "copy",
+                    "devices": [0],
                     "axes": [block_size_axis(8)],
                     "states": [
                         {
                             "name": "Device=0 BlockSize=2^8",
+                            "device": 0,
                             "axis_values": [
                                 {
                                     "name": "BlockSize",
@@ -183,7 +185,8 @@ def test_subbenchmark_result_implements_sequence_protocol(sample_subbenchmark):
 
 
 def test_state_parses_axis_name_and_bandwidth(sample_state):
-    assert sample_state.name() == "BlockSize[pow2]=8"
+    assert sample_state.name() == "Device=0 BlockSize[pow2]=8"
+    assert sample_state.name(include_device=False) == "BlockSize[pow2]=8"
     assert sample_state.bw == 0.75
 
 
@@ -331,7 +334,10 @@ def test_state_loads_samples_and_frequencies(sample_state):
 def test_centers_apply_estimators_to_samples(sample_result):
     centers = sample_result.centers(lambda samples: sum(samples) / len(samples))
 
-    assert centers == {"copy": {"BlockSize[pow2]=8": pytest.approx(7.0 / 3.0)}}
+    assert centers == {"copy": {"Device=0 BlockSize[pow2]=8": pytest.approx(7 / 3)}}
+    assert sample_result.centers(
+        lambda samples: sum(samples) / len(samples), include_device=False
+    ) == {"copy": {"BlockSize[pow2]=8": pytest.approx(7 / 3)}}
 
 
 def test_centers_keep_results_for_each_device_with_matching_axes(tmp_path):
@@ -411,10 +417,61 @@ def test_centers_keep_results_for_each_device_with_matching_axes(tmp_path):
         expected_keys[1]: pytest.approx(2.1),
     }
     assert subbenchmark.centers_with_frequencies(
-        lambda samples, frequencies: sum(samples) / len(samples)
+        lambda samples, frequencies: (samples[0], frequencies[0])
     ) == {
-        expected_keys[0]: pytest.approx(1.2),
-        expected_keys[1]: pytest.approx(2.1),
+        expected_keys[0]: pytest.approx((1.2, 100.0)),
+        expected_keys[1]: pytest.approx((2.1, 200.0)),
+    }
+
+    subbenchmark.states = [state for state in subbenchmark if state.device == 1]
+    assert subbenchmark.centers(
+        lambda samples: sum(samples) / len(samples), include_device=False
+    ) == {"BlockSize[pow2]=8": pytest.approx(2.1)}
+    assert result.centers_with_frequencies(
+        lambda samples, frequencies: (samples[0], frequencies[0]),
+        include_device=False,
+    ) == {"copy": {"BlockSize[pow2]=8": pytest.approx((2.1, 200.0))}}
+
+
+def test_centers_keep_float_values_with_the_same_rounded_name(tmp_path):
+    values = ["0.12345678", "0.12345679"]
+    json_path = tmp_path / "result.json"
+    write_json(
+        json_path,
+        {
+            "benchmarks": [
+                {
+                    "name": "float_sweep",
+                    "devices": [0],
+                    "axes": [
+                        {
+                            "name": "Duration",
+                            "type": "float64",
+                            "values": [
+                                {"input_string": "0.12346", "value": float(value)}
+                                for value in values
+                            ],
+                        }
+                    ],
+                    "states": [
+                        {
+                            "name": "Device=0 Duration=0.12346",
+                            "device": 0,
+                            "axis_values": [
+                                {"name": "Duration", "type": "float64", "value": value}
+                            ],
+                        }
+                        for value in values
+                    ],
+                }
+            ]
+        },
+    )
+
+    result = results.BenchmarkResult.from_json(json_path)
+
+    assert result["float_sweep"].centers(max) == {
+        f"Device=0 Duration={value}": None for value in values
     }
 
 
@@ -426,7 +483,9 @@ def test_centers_with_frequencies_apply_estimators(sample_result, sample_subbenc
 
     weighted_centers = sample_result.centers_with_frequencies(weighted_mean)
 
-    assert weighted_centers == {"copy": {"BlockSize[pow2]=8": pytest.approx(3.0)}}
+    assert weighted_centers == {
+        "copy": {"Device=0 BlockSize[pow2]=8": pytest.approx(3.0)}
+    }
     assert (
         sample_subbenchmark.centers_with_frequencies(weighted_mean)
         == weighted_centers["copy"]
@@ -487,6 +546,7 @@ def test_benchmark_result_accepts_no_axis_benchmark_with_recorded_binary_path(
                     "states": [
                         {
                             "name": "Device=0",
+                            "device": 0,
                             "axis_values": None,
                             "summaries": [
                                 sample_times_summary(
@@ -512,11 +572,23 @@ def test_benchmark_result_accepts_no_axis_benchmark_with_recorded_binary_path(
 
     state = result.subbenches["simple"].states[0]
     assert state.name() == "Device=0"
+    assert state.name(include_device=False) == "<empty>"
     assert state.point == {}
     assert state.samples is not None
     assert list(state.samples) == pytest.approx([1.0, 4.0])
     assert state.frequencies is not None
     assert list(state.frequencies) == pytest.approx([100.0, 400.0])
+
+
+@pytest.mark.parametrize("recorded_name", ["", "<empty>", "recorded name"])
+def test_device_less_state_with_no_axes_uses_recorded_name(recorded_name):
+    state = results.SubBenchmarkState(
+        {"name": recorded_name, "device": None}, {}, {}, ""
+    )
+
+    expected_name = recorded_name or "<empty>"
+    assert state.name() == expected_name
+    assert state.name(include_device=False) == expected_name
 
 
 def test_benchmark_result_accepts_axis_value_input_string():
@@ -539,7 +611,8 @@ def test_benchmark_result_accepts_axis_value_input_string():
             ],
             "states": [
                 {
-                    "name": "Device=0 Duration=0",
+                    "name": "Duration=0",
+                    "device": None,
                     "axis_values": [
                         {
                             "name": "Duration",
