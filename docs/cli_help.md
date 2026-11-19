@@ -46,6 +46,11 @@
 
 * `--json <filename/stream>`
   * Write JSON output to a file, or "stdout" / "stderr".
+  * See the [JSON output format](./json_output.md) for the document structure.
+
+* `--jsonbin <filename>`
+  * Write JSON output and raw sample data to a file and binary sidecar directories.
+  * See the [JSON output format](./json_output.md) for sidecar details.
 
 * `--markdown <filename/stream>`, `--md <filename/stream>`
   * Write markdown output to a file, or "stdout" / "stderr".
