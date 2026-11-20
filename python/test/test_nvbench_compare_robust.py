@@ -4637,7 +4637,17 @@ def test_main_warns_threshold_diff_is_ignored(monkeypatch, capsys, nvbench_compa
     assert captured["status_filter"] is None
 
 
-def test_main_passes_status_filter_to_compare_benches(monkeypatch, nvbench_compare):
+@pytest.mark.parametrize(
+    "status_args",
+    [
+        ["--status", "slow,ambg"],
+        ["--status", "slow", "--status", "ambg"],
+        ["--status", "slow,ambg", "--status", "SLOW"],
+    ],
+)
+def test_main_passes_status_filter_to_compare_benches(
+    monkeypatch, nvbench_compare, status_args
+):
     devices = [{"id": 0, "name": "Test GPU"}]
     root = {
         "devices": devices,
@@ -4657,8 +4667,7 @@ def test_main_passes_status_filter_to_compare_benches(monkeypatch, nvbench_compa
         "argv",
         [
             "nvbench_compare",
-            "--status",
-            "slow,ambg",
+            *status_args,
             "ref.json",
             "cmp.json",
         ],

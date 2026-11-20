@@ -3306,8 +3306,9 @@ def main() -> int:
         help=(
             "only show rows with these comma-separated comparison statuses: "
             "unknown/unkn/????, ambiguous/undecided/ambg, same, fast, slow, "
-            "not-unknown"
+            "not-unknown. May be repeated; all statuses are combined with OR"
         ),
+        action="append",
     )
     parser.add_argument(
         "--preset",
@@ -3449,7 +3450,9 @@ def main() -> int:
 
     try:
         filter_plan = build_benchmark_filter_plan(args.filter_actions)
-        status_filter = parse_status_filter(args.status)
+        status_filter = parse_status_filter(
+            None if args.status is None else ",".join(args.status)
+        )
         reference_device_filter = parse_device_filter(
             args.reference_devices, "--reference-devices"
         )
