@@ -91,10 +91,51 @@ if (NVBench_ENABLE_WERROR)
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")
 endif()
 
-# Experimental filesystem library
-if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-  target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
-endif()
+# Match the filesystem header selection used by the CUDA sources.
+block()
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE EXECUTABLE)
+  set(filesystem_source [=[
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#error "No <filesystem> or <experimental/filesystem> found."
+#endif
+
+bool filesystem_exists(const char *path) { return fs::exists(path); }
+]=])
+  set(main_source [=[
+bool filesystem_exists(const char *path);
+int main(int argc, char **argv) { return argc > 1 && filesystem_exists(argv[1]); }
+]=])
+
+  try_compile(filesystem_links
+    SOURCE_FROM_VAR filesystem.cu filesystem_source
+    SOURCE_FROM_VAR main.cxx main_source
+    LINKER_LANGUAGE CXX
+    NO_CACHE
+  )
+
+  if (NOT filesystem_links)
+    try_compile(filesystem_links
+      SOURCE_FROM_VAR filesystem.cu filesystem_source
+      SOURCE_FROM_VAR main.cxx main_source
+      LINKER_LANGUAGE CXX
+      LINK_LIBRARIES stdc++fs
+      NO_CACHE
+    )
+    if (NOT filesystem_links)
+      message(FATAL_ERROR
+        "NVBench could not link a filesystem test with or without stdc++fs. "
+        "See CMakeConfigureLog.yaml."
+      )
+    endif()
+    target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
+  endif()
+endblock()
 
 # CUDA-specific flags
 if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
