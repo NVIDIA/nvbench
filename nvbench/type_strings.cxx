@@ -22,9 +22,9 @@
 
 #include <string>
 
-// clang targeting the MSVC ABI uses Microsoft's standard library, which has no
-// <cxxabi.h>
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER)
+// The Microsoft C++ runtime already returns readable names from type_info::name().
+// On other targets, enable demangling when the ABI header is available.
+#if !defined(_MSC_VER) && __has_include(<cxxabi.h>)
 #define NVBENCH_CXXABI_DEMANGLE
 #endif
 
