@@ -129,7 +129,7 @@ try
 
     try
     {
-      const restore_limit restore;
+      const restore_limit restore{};
       const auto requested_limit = static_cast<std::size_t>(maximum / 2);
       for (bool disable_cache : {false, true})
       {
