@@ -22,7 +22,9 @@
 
 #include <string>
 
-#if defined(__GNUC__) || defined(__clang__)
+// clang targeting the MSVC ABI uses Microsoft's standard library, which has no
+// <cxxabi.h>
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(_MSC_VER)
 #define NVBENCH_CXXABI_DEMANGLE
 #endif
 

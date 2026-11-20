@@ -91,8 +91,10 @@ if (NVBench_ENABLE_WERROR)
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")
 endif()
 
-# Experimental filesystem library
-if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+# Experimental filesystem library (not with Microsoft's standard library, e.g.
+# clang targeting the MSVC ABI)
+if ((CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+    AND NOT CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
   target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
 endif()
 
