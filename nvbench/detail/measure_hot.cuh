@@ -142,7 +142,6 @@ struct measure_hot : public measure_hot_base
     {
       this->run_warmup();
       this->run_trials();
-      this->restore_persisting_l2_cache();
     }
     catch (...)
     {
@@ -150,6 +149,7 @@ struct measure_hot : public measure_hot_base
       throw;
     }
 
+    this->restore_persisting_l2_cache();
     this->generate_summaries();
   }
 

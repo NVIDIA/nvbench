@@ -268,8 +268,6 @@ struct measure_cold : public measure_cold_base
       this->run_trials_prologue();
       this->run_trials();
       this->run_trials_epilogue();
-
-      this->restore_persisting_l2_cache();
     }
     catch (...)
     {
@@ -277,6 +275,7 @@ struct measure_cold : public measure_cold_base
       throw;
     }
 
+    this->restore_persisting_l2_cache();
     this->generate_summaries();
   }
 
