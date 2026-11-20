@@ -3,7 +3,7 @@
 
 import sys
 
-import cuda.bench as bench
+from cuda import bench
 
 
 @bench.register()

@@ -30,6 +30,14 @@ printer_multiplex::printer_multiplex()
     : printer_base(std::cerr) // Nothing should write to this.
 {}
 
+void printer_multiplex::do_print_argv()
+{
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->print_argv();
+  }
+}
+
 void printer_multiplex::do_print_device_info()
 {
   for (auto &format_ptr : m_printers)
@@ -124,10 +132,17 @@ void printer_multiplex::do_set_total_state_count(std::size_t states)
 }
 void printer_multiplex::do_log_argv(const std::vector<std::string> &argv)
 {
-  printer_base::do_log_argv(argv);
   for (auto &format_ptr : m_printers)
   {
     format_ptr->log_argv(argv);
+  }
+}
+
+void printer_multiplex::do_log_raw_argv(const std::vector<std::string> &argv)
+{
+  for (auto &format_ptr : m_printers)
+  {
+    format_ptr->log_raw_argv(argv);
   }
 }
 

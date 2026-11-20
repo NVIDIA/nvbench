@@ -133,6 +133,22 @@ std::string format_criterion_param_options(const nvbench::criterion_params &para
   return fmt::to_string(buffer);
 }
 
+std::string format_cli_options(const std::vector<std::string> &options)
+{
+  fmt::memory_buffer buffer;
+  bool first = true;
+  for (const auto &option : options)
+  {
+    if (!first)
+    {
+      fmt::format_to(fmt::appender(buffer), ", ");
+    }
+    fmt::format_to(fmt::appender(buffer), "{}", option);
+    first = false;
+  }
+  return fmt::to_string(buffer);
+}
+
 [[noreturn]] void
 throw_unrecognized_criterion_param(const std::string &prop_arg,
                                    const std::string &criterion_name,
@@ -171,34 +187,45 @@ std::string current_global_stopping_criterion(const std::vector<std::string> &gl
 //
 // So we're stuck with materializing a std::string and calling std::stoX(). Ah
 // well. At least it's not istream.
-void parse(std::string_view input, nvbench::int32_t &val)
+template <typename T, typename Convert>
+void parse_numeric(std::string_view input, T &val, std::string_view type_name, Convert convert)
 try
 {
-  val = std::stoi(std::string(input));
+  const std::string text(input);
+  std::size_t consumed = 0;
+  val                  = convert(text, &consumed);
+  if (consumed != input.size())
+  {
+    throw std::invalid_argument{"unparsed suffix"};
+  }
 }
 catch (const std::exception &)
 { // The default exception messages are not very useful on gcc...it's just "stoi".
-  NVBENCH_THROW(std::invalid_argument, "Failed to parse int32 value from string '{}'", input);
+  NVBENCH_THROW(std::invalid_argument,
+                "Failed to parse {} value from string '{}'",
+                type_name,
+                input);
+}
+
+void parse(std::string_view input, nvbench::int32_t &val)
+{
+  parse_numeric(input, val, "int32", [](const std::string &text, std::size_t *consumed) {
+    return std::stoi(text, consumed);
+  });
 }
 
 void parse(std::string_view input, nvbench::int64_t &val)
-try
 {
-  val = std::stoll(std::string(input));
-}
-catch (const std::exception &)
-{
-  NVBENCH_THROW(std::invalid_argument, "Failed to parse int64 value from string '{}'", input);
+  parse_numeric(input, val, "int64", [](const std::string &text, std::size_t *consumed) {
+    return std::stoll(text, consumed);
+  });
 }
 
 void parse(std::string_view input, nvbench::float64_t &val)
-try
 {
-  val = std::stod(std::string(input));
-}
-catch (const std::exception &)
-{
-  NVBENCH_THROW(std::invalid_argument, "Failed to parse float64 value from string '{}'", input);
+  parse_numeric(input, val, "float64", [](const std::string &text, std::size_t *consumed) {
+    return std::stod(text, consumed);
+  });
 }
 
 void parse(std::string_view input, std::string &val) { val = input; }
@@ -279,6 +306,13 @@ std::vector<T> parse_range_values(std::string_view range_spec, nvbench::wrapped_
   const T first  = range_params[0];
   const T last   = range_params[1];
   const T stride = range_params.size() == 3 ? range_params[2] : T{1};
+
+  // nvbench::range steps from `first` while `first <= last`, so a zero or
+  // negative stride never terminates.
+  if (!(stride > T{0}))
+  {
+    NVBENCH_THROW(std::runtime_error, "Range stride must be positive: {}", range_spec);
+  }
 
   return nvbench::range<T, T>(first, last, stride);
 }
@@ -441,6 +475,8 @@ void option_parser::parse(std::vector<std::string> args)
 void option_parser::parse_impl()
 {
   m_global_benchmark_args.clear();
+  m_global_criterion_cli_scope_state = {};
+  m_local_criterion_cli_scope_state  = {};
 
   // Initialize to all devices:
   m_recent_devices = nvbench::device_manager::get().get_devices();
@@ -478,6 +514,7 @@ void option_parser::parse_impl()
   this->update_used_device_state();
 
   m_printer.log_argv(m_args);
+  m_printer.log_raw_argv(this->get_raw_args());
 }
 
 void option_parser::parse_range(option_parser::arg_iterator_t first,
@@ -850,16 +887,43 @@ catch (std::exception &e)
 void option_parser::set_stopping_criterion(const std::string &criterion)
 try
 {
+  auto &scope_state = m_benchmarks.empty() ? m_global_criterion_cli_scope_state
+                                           : m_local_criterion_cli_scope_state;
+
+  if (scope_state.explicitly_selected_criterion)
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "--stopping-criterion {} would overwrite a stopping criterion already "
+                  "specified in this option scope: --stopping-criterion {}.\n"
+                  "Move benchmark-specific overrides after --benchmark, or remove the earlier "
+                  "--stopping-criterion.",
+                  criterion,
+                  *scope_state.explicitly_selected_criterion);
+  }
+
+  if (!scope_state.explicitly_set_criterion_params.empty())
+  {
+    NVBENCH_THROW(std::runtime_error,
+                  "--stopping-criterion {} would discard previously specified stopping-criterion "
+                  "parameter(s): {}.\n"
+                  "Move --stopping-criterion before criterion-specific parameters.",
+                  criterion,
+                  format_cli_options(scope_state.explicitly_set_criterion_params));
+  }
+
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
   {
     m_global_benchmark_args.push_back("--stopping-criterion");
     m_global_benchmark_args.push_back(criterion);
-    return;
+  }
+  else
+  {
+    benchmark_base &bench = *m_benchmarks.back();
+    bench.set_stopping_criterion(criterion);
   }
 
-  benchmark_base &bench = *m_benchmarks.back();
-  bench.set_stopping_criterion(criterion);
+  scope_state.explicitly_selected_criterion = criterion;
 }
 catch (std::exception &e)
 {
@@ -934,7 +998,9 @@ catch (std::exception &e)
 
 void option_parser::replay_global_args()
 {
+  m_local_criterion_cli_scope_state = {};
   this->parse_range(m_global_benchmark_args.cbegin(), m_global_benchmark_args.cend());
+  m_local_criterion_cli_scope_state = {};
 }
 
 void option_parser::update_devices(const std::string &devices)
@@ -1141,6 +1207,8 @@ void option_parser::update_criterion_prop(const std::string &prop_arg,
 try
 {
   const std::string name(prop_arg.begin() + 2, prop_arg.end());
+  auto &scope_state = m_benchmarks.empty() ? m_global_criterion_cli_scope_state
+                                           : m_local_criterion_cli_scope_state;
 
   // If no active benchmark, save args as global.
   if (m_benchmarks.empty())
@@ -1154,6 +1222,7 @@ try
 
     m_global_benchmark_args.push_back(prop_arg);
     m_global_benchmark_args.push_back(prop_val);
+    scope_state.explicitly_set_criterion_params.push_back(prop_arg);
     return;
   }
 
@@ -1191,6 +1260,8 @@ try
   {
     NVBENCH_THROW(std::runtime_error, "Unrecognized type for property: `{}`", name);
   }
+
+  scope_state.explicitly_set_criterion_params.push_back(prop_arg);
 }
 catch (std::exception &e)
 {

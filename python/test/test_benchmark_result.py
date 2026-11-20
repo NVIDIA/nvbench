@@ -6,8 +6,8 @@ import struct
 from dataclasses import dataclass
 
 import cuda.bench
-import cuda.bench.results as results
 import pytest
+from cuda.bench import results
 
 
 def write_json(path, data):
@@ -293,6 +293,32 @@ def test_state_reports_malformed_numeric_summary_values(tmp_path):
         ),
     ):
         results.BenchmarkResult.from_json(json_fn)
+
+
+@pytest.mark.parametrize("field_name", [None, 123, "missing"])
+def test_state_rejects_invalid_summary_field_names(sample_result_path, field_name):
+    data = json.loads(sample_result_path.read_text(encoding="utf-8"))
+    field = data["benchmarks"][0]["states"][0]["summaries"][0]["data"][0]
+    if field_name == "missing":
+        del field["name"]
+    else:
+        field["name"] = field_name
+    write_json(sample_result_path, data)
+
+    with pytest.raises(TypeError, match="missing or non-string name"):
+        results.BenchmarkResult.from_json(sample_result_path)
+
+
+@pytest.mark.parametrize(
+    "summary_factory", [sample_times_summary, sample_frequencies_summary]
+)
+def test_state_rejects_null_binary_filename(sample_result_path, summary_factory):
+    data = json.loads(sample_result_path.read_text(encoding="utf-8"))
+    data["benchmarks"][0]["states"][0]["summaries"] = [summary_factory(None, 3)]
+    write_json(sample_result_path, data)
+
+    with pytest.raises(TypeError, match="field 'filename' value must be a string"):
+        results.BenchmarkResult.from_json(sample_result_path)
 
 
 def test_state_loads_samples_and_frequencies(sample_state):

@@ -34,8 +34,10 @@
 
 #include <iosfwd>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace nvbench
@@ -61,10 +63,29 @@ struct option_parser
   void parse(int argc, char const *const argv[]);
   void parse(std::vector<std::string> args);
 
+  /*!
+   * Set the command line that invoked the executable, before any modification.
+   *
+   * Call this before `parse`. `parse` sends these args to the printers as raw
+   * args alongside the args that NVBench parsed.
+   */
+  void set_raw_args(std::vector<std::string> raw_args) { m_raw_args = std::move(raw_args); }
+
   [[nodiscard]] benchmark_vector &get_benchmarks() { return m_benchmarks; };
   [[nodiscard]] const benchmark_vector &get_benchmarks() const { return m_benchmarks; };
 
+  /*!
+   * The args given to `parse` after customization handlers have modified them.
+   */
   [[nodiscard]] const std::vector<std::string> &get_args() const { return m_args; }
+
+  /*!
+   * The args given to `set_raw_args`, or `get_args` if it was not called.
+   */
+  [[nodiscard]] const std::vector<std::string> &get_raw_args() const
+  {
+    return m_raw_args ? *m_raw_args : m_args;
+  }
 
   /*!
    * Returns the output format requested by the parse options.
@@ -79,6 +100,12 @@ struct option_parser
   [[nodiscard]] nvbench::printer_base &get_printer();
 
 private:
+  struct criterion_cli_scope_state
+  {
+    std::optional<std::string> explicitly_selected_criterion;
+    std::vector<std::string> explicitly_set_criterion_params;
+  };
+
   void parse_impl();
 
   using arg_iterator_t = std::vector<std::string>::const_iterator;
@@ -135,9 +162,15 @@ private:
   // Command line args
   std::vector<std::string> m_args;
 
+  // The unmodified command line, if the caller supplied one.
+  std::optional<std::vector<std::string>> m_raw_args;
+
   // Store benchmark modifiers passed in before any benchmarks are requested as
   // "global args". Replay them after every benchmark.
   std::vector<std::string> m_global_benchmark_args;
+
+  criterion_cli_scope_state m_global_criterion_cli_scope_state;
+  criterion_cli_scope_state m_local_criterion_cli_scope_state;
 
   // List of devices specified by the most recent --devices option, or all
   // devices if --devices has not been used.

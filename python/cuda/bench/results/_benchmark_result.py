@@ -7,9 +7,9 @@ import array
 import json
 import os
 import sys
-from collections.abc import ItemsView, Iterator, KeysView, ValuesView
+from collections.abc import Callable, ItemsView, Iterator, KeysView, ValuesView
 from dataclasses import dataclass
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 __all__ = [
     "BenchmarkResult",
@@ -19,8 +19,8 @@ __all__ = [
     "SubBenchmarkState",
 ]
 
-ResultT = TypeVar("ResultT")
-BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
+_ResultT = TypeVar("_ResultT")
+_BenchmarkResultT = TypeVar("_BenchmarkResultT", bound="BenchmarkResult")
 _SummaryValue = int | float | str | None
 
 
@@ -61,7 +61,7 @@ def extract_summary_data_value(summary: dict, name: str, expected_type: str) -> 
 def extract_filename(summary: dict) -> str:
     value = extract_summary_data_value(summary, "filename", "string")
     if not isinstance(value, str):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'filename' "
             "value must be a string"
         )
@@ -154,7 +154,7 @@ def parse_summary(summary: dict) -> BenchmarkResultSummary:
     for value_data in summary.get("data", []):
         field_name = value_data.get("name")
         if not isinstance(field_name, str):
-            raise ValueError(
+            raise TypeError(
                 f"summary {summary_tag!r} has a data entry with a missing "
                 "or non-string name"
             )
@@ -332,14 +332,14 @@ class SubBenchmarkState:
             return self.state_name
         return " ".join(f"{k}={v}" for k, v in self.point.items())
 
-    def center(self, estimator: Callable[[array.array], ResultT]) -> ResultT | None:
+    def center(self, estimator: Callable[[array.array], _ResultT]) -> _ResultT | None:
         if self.samples is None:
             return None
         return estimator(self.samples)
 
     def center_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> ResultT | None:
+        self, estimator: Callable[[array.array, array.array], _ResultT]
+    ) -> _ResultT | None:
         if self.samples is None or self.frequencies is None:
             return None
         return estimator(self.samples, self.frequencies)
@@ -387,16 +387,16 @@ class SubBenchmarkResult:
         return iter(self.states)
 
     def centers(
-        self, estimator: Callable[[array.array], ResultT]
-    ) -> dict[str, ResultT | None]:
+        self, estimator: Callable[[array.array], _ResultT]
+    ) -> dict[str, _ResultT | None]:
         result = {}
         for state in self.states:
             result[state.name()] = state.center(estimator)
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> dict[str, ResultT | None]:
+        self, estimator: Callable[[array.array, array.array], _ResultT]
+    ) -> dict[str, _ResultT | None]:
         result = {}
         for state in self.states:
             result[state.name()] = state.center_with_frequencies(estimator)
@@ -433,7 +433,9 @@ class BenchmarkResult:
         self.subbenches: dict[str, SubBenchmarkResult] = {}
 
     @classmethod
-    def empty(cls: type[BenchmarkResultT], *, metadata: Any = None) -> BenchmarkResultT:
+    def empty(
+        cls: type[_BenchmarkResultT], *, metadata: Any = None
+    ) -> _BenchmarkResultT:
         """Create an empty result container with optional user metadata."""
         result = cls(cls._construction_token)
         result.metadata = metadata
@@ -441,11 +443,11 @@ class BenchmarkResult:
 
     @classmethod
     def from_json(
-        cls: type[BenchmarkResultT],
+        cls: type[_BenchmarkResultT],
         json_path: str | os.PathLike[str],
         *,
         metadata: Any = None,
-    ) -> BenchmarkResultT:
+    ) -> _BenchmarkResultT:
         """Read benchmark result data from an NVBench JSON output file."""
         result = cls.empty(metadata=metadata)
         result._parse_json(json_path)
@@ -493,16 +495,16 @@ class BenchmarkResult:
         return self.subbenches.items()
 
     def centers(
-        self, estimator: Callable[[array.array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]:
+        self, estimator: Callable[[array.array], _ResultT]
+    ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
             result[subbench] = self.subbenches[subbench].centers(estimator)
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]:
+        self, estimator: Callable[[array.array, array.array], _ResultT]
+    ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
             result[subbench] = self.subbenches[subbench].centers_with_frequencies(

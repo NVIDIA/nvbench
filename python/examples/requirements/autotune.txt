@@ -1,2 +1,2 @@
--r numba.txt
+-r numba-cuda-mlir.txt
 tabulate>=0.10.0

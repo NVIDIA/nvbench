@@ -16,8 +16,8 @@
 
 import sys
 
-import cuda.bench as bench
 import torch
+from cuda import bench
 
 
 def as_torch_cuda_Stream(
@@ -35,7 +35,7 @@ def torch_bench(state: bench.State) -> None:
     tc_s = as_torch_cuda_Stream(state.get_stream(), dev_id)
 
     dt = torch.float32
-    scalar_shape: tuple = tuple()
+    scalar_shape: tuple = ()
     n = 2**28
     with torch.cuda.stream(tc_s):
         a3 = torch.randn(scalar_shape, dtype=dt)

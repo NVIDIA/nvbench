@@ -16,8 +16,8 @@
 
 import sys
 
-import cuda.bench as bench
 import cupy as cp
+from cuda import bench
 
 
 def as_cp_ExternalStream(cs: bench.CudaStream):

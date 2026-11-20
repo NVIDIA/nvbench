@@ -91,10 +91,15 @@ python -m pip install --no-build-isolation -e ".[cu13]"  # If CUDACXX points to 
 python test/smoke.py
 ```
 
+The `nvbench-normalize-jsonbin` tool migrates older JSON results whose jsonbin
+sidecar paths were recorded relative to the launch directory. Use `--dry-run`
+to preview changes, `--output` to write a separate result, or `--in-place` to
+update the result while keeping a `.bak` copy.
+
 ### Run examples
 
 ```bash
-# Example benchmarking numba.cuda kernel
+# Example benchmarking Numba CUDA MLIR kernel
 python examples/throughput.py
 ```
 

@@ -96,6 +96,10 @@ Examples are built by default into `build/bin` and are prefixed with `nvbench.ex
   <summary>Example output from `nvbench.example.throughput`</summary>
 
 ```
+# Command Line
+
+./bin/nvbench.example.throughput
+
 # Devices
 
 ## [0] `Quadro GV100`
