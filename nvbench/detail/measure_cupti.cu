@@ -18,6 +18,7 @@
 
 #include <nvbench/benchmark_base.cuh>
 #include <nvbench/detail/measure_cupti.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset.cuh>
 #include <nvbench/detail/throw.cuh>
 #include <nvbench/printer_base.cuh>
 #include <nvbench/state.cuh>
@@ -162,24 +163,58 @@ std::vector<std::string> add_metrics(nvbench::state &state)
   return metrics;
 }
 
+cupti_profiler make_cupti_profiler(state &exec_state)
+{
+  // Keep exception logging out of the measurement constructor: NVCC can fail
+  // compiling a constructor function-try-block with the opaque cache-reset pointer.
+  try
+  {
+    return cupti_profiler{*exec_state.get_device(), add_metrics(exec_state)};
+  }
+  catch (const std::exception &ex)
+  {
+    if (auto printer_ptr = exec_state.get_benchmark().get_printer())
+    {
+      auto &printer = *printer_ptr;
+      printer.log(nvbench::log_level::warn,
+                  fmt::format("CUPTI failed to construct profiler: {}", ex.what()));
+    }
+    throw;
+  }
+}
+
 } // namespace
 
 measure_cupti_base::measure_cupti_base(state &exec_state)
-// clang-format off
-// (formatter doesn't handle `try :` very well...)
-try
-  : m_state{exec_state}
-  , m_launch{exec_state.get_cuda_stream()}
-  , m_cupti{*m_state.get_device(), add_metrics(m_state)}
+    : m_state{exec_state}
+    , m_launch{exec_state.get_cuda_stream()}
+    , m_cupti{make_cupti_profiler(exec_state)}
+    , m_disable_persisting_l2_cache{exec_state.get_disable_persisting_l2_cache()}
 {}
-// clang-format on
-catch (const std::exception &ex)
+
+measure_cupti_base::~measure_cupti_base() = default;
+
+void measure_cupti_base::initialize_persisting_l2_cache_disable()
 {
-  if (auto printer_ptr = exec_state.get_benchmark().get_printer())
+  m_persisting_l2_cache_disable =
+    nvbench::detail::make_persisting_l2_cache_disable_if_requested(m_disable_persisting_l2_cache,
+                                                                   m_state.get_device());
+}
+
+void measure_cupti_base::reset_persisting_l2_cache()
+{
+  if (m_persisting_l2_cache_disable)
   {
-    auto &printer = *printer_ptr;
-    printer.log(nvbench::log_level::warn,
-                fmt::format("CUPTI failed to construct profiler: {}", ex.what()));
+    m_persisting_l2_cache_disable->reset_before_measurement();
+  }
+}
+
+void measure_cupti_base::restore_persisting_l2_cache()
+{
+  if (m_persisting_l2_cache_disable)
+  {
+    m_persisting_l2_cache_disable->restore();
+    m_persisting_l2_cache_disable.reset();
   }
 }
 

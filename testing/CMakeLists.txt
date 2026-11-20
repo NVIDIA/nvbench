@@ -36,6 +36,10 @@ set(test_srcs
   type_list.cu
 )
 
+if (NVBench_ENABLE_CUPTI)
+  list(APPEND test_srcs measure_cupti.cu)
+endif()
+
 # Custom arguments:
 # CTest commands+args can't be modified after creation, so we need to rely on substitution.
 set(NVBench_TEST_ARGS_nvbench.test.custom_main_custom_args "--quiet" "--my-custom-arg" "--profile" "-d" "0")
@@ -69,6 +73,10 @@ set_tests_properties(nvbench.test.custom_main_raw_argv PROPERTIES
   FAIL_REGULAR_EXPRESSION "custom_main_raw_argv(\\.exe)? --profile"
 )
 set_tests_properties(nvbench.test.exception_safety PROPERTIES TIMEOUT 20)
+
+if (NVBench_ENABLE_CUPTI)
+  set_tests_properties(nvbench.test.measure_cupti PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
+endif()
 
 add_subdirectory(cmake)
 add_subdirectory(device)

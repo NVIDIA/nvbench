@@ -136,6 +136,16 @@
   * Applied to the most recent `--benchmark`, or all benchmarks if specified
     before any `--benchmark` arguments.
 
+* `--disable-persisting-l2-cache`
+  * Disable persisting-L2 cache reservation and state before GPU warmups and
+    measurement work.
+  * Intended to isolate benchmark iterations from persisting-L2 state left by
+    earlier work.
+  * Resets before each cold launch and CUPTI replay, and before each hot batch.
+    The previous persisting-L2 reservation size is restored after each measurement phase.
+  * Applies to the most recent `--benchmark`, or all benchmarks if specified
+    before any `--benchmark` arguments.
+
 * `--batch-target-time <seconds>`
   * Target accumulated GPU time for batched measurements.
   * Default is 0.5 seconds.

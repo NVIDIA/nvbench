@@ -45,9 +45,10 @@ std::unique_ptr<benchmark_base> benchmark_base::clone() const
 
   result->m_printer_ptr = m_printer_ptr;
 
-  result->m_is_cpu_only             = m_is_cpu_only;
-  result->m_run_once                = m_run_once;
-  result->m_disable_blocking_kernel = m_disable_blocking_kernel;
+  result->m_is_cpu_only                 = m_is_cpu_only;
+  result->m_run_once                    = m_run_once;
+  result->m_disable_blocking_kernel     = m_disable_blocking_kernel;
+  result->m_disable_persisting_l2_cache = m_disable_persisting_l2_cache;
 
   result->m_min_samples              = m_min_samples;
   result->m_cold_warmup_runs         = m_cold_warmup_runs;
