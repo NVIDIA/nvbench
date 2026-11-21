@@ -120,21 +120,25 @@ int main(int argc, char **argv) { return argc > 1 && filesystem_exists(argv[1]);
     list(APPEND filesystem_sources filesystem.cu)
   endif()
 
+  # Prefer the matching filesystem archive when available. GCC 8 headers can
+  # otherwise link to incompatible symbols in a newer libstdc++.so and crash.
   set(filesystem_needs_stdcxxfs FALSE)
   foreach(filesystem_source_name IN LISTS filesystem_sources)
     try_compile(filesystem_links
       SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
       SOURCE_FROM_VAR main.cxx main_source
       LINKER_LANGUAGE CXX
+      LINK_LIBRARIES stdc++fs
       NO_CACHE
     )
 
-    if (NOT filesystem_links)
+    if (filesystem_links)
+      set(filesystem_needs_stdcxxfs TRUE)
+    else()
       try_compile(filesystem_links
         SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
         SOURCE_FROM_VAR main.cxx main_source
         LINKER_LANGUAGE CXX
-        LINK_LIBRARIES stdc++fs
         NO_CACHE
       )
       if (NOT filesystem_links)
@@ -143,7 +147,6 @@ int main(int argc, char **argv) { return argc > 1 && filesystem_exists(argv[1]);
           "See CMakeConfigureLog.yaml."
         )
       endif()
-      set(filesystem_needs_stdcxxfs TRUE)
     endif()
   endforeach()
 
