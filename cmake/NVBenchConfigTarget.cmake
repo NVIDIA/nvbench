@@ -91,10 +91,69 @@ if (NVBench_ENABLE_WERROR)
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")
 endif()
 
-# Experimental filesystem library
-if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-  target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
-endif()
+# Match the filesystem header selection used by the CUDA sources.
+block()
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE EXECUTABLE)
+  set(filesystem_source [=[
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#error "No <filesystem> or <experimental/filesystem> found."
+#endif
+
+bool filesystem_exists(const char *path) { return fs::exists(path); }
+]=])
+  set(main_source [=[
+bool filesystem_exists(const char *path);
+int main(int argc, char **argv) { return argc > 1 && filesystem_exists(argv[1]); }
+]=])
+
+  # C++ and CUDA may use different host compilers and standard libraries.
+  # Probe both independently, retaining the C++ linker used by NVBench.
+  set(filesystem_sources filesystem.cxx)
+  get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+  if ("CUDA" IN_LIST enabled_languages)
+    list(APPEND filesystem_sources filesystem.cu)
+  endif()
+
+  # Prefer the matching filesystem archive when available. GCC 8 headers can
+  # otherwise link to incompatible symbols in a newer libstdc++.so and crash.
+  set(filesystem_needs_stdcxxfs FALSE)
+  foreach(filesystem_source_name IN LISTS filesystem_sources)
+    try_compile(filesystem_links
+      SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
+      SOURCE_FROM_VAR main.cxx main_source
+      LINKER_LANGUAGE CXX
+      LINK_LIBRARIES stdc++fs
+      NO_CACHE
+    )
+
+    if (filesystem_links)
+      set(filesystem_needs_stdcxxfs TRUE)
+    else()
+      try_compile(filesystem_links
+        SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
+        SOURCE_FROM_VAR main.cxx main_source
+        LINKER_LANGUAGE CXX
+        NO_CACHE
+      )
+      if (NOT filesystem_links)
+        message(FATAL_ERROR
+          "NVBench could not link ${filesystem_source_name} with or without stdc++fs. "
+          "See CMakeConfigureLog.yaml."
+        )
+      endif()
+    endif()
+  endforeach()
+
+  if (filesystem_needs_stdcxxfs)
+    target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
+  endif()
+endblock()
 
 # CUDA-specific flags
 if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")

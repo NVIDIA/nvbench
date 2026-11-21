@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.30.4)
 project(nvbench_test_dep_dlls CXX)
+
+# Match NVBench's language standard for the filesystem link probes.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 enable_testing()
 
 set(native_windows ${WIN32})
