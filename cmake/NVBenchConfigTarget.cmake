@@ -112,27 +112,42 @@ bool filesystem_exists(const char *path);
 int main(int argc, char **argv) { return argc > 1 && filesystem_exists(argv[1]); }
 ]=])
 
-  try_compile(filesystem_links
-    SOURCE_FROM_VAR filesystem.cu filesystem_source
-    SOURCE_FROM_VAR main.cxx main_source
-    LINKER_LANGUAGE CXX
-    NO_CACHE
-  )
+  # C++ and CUDA may use different host compilers and standard libraries.
+  # Probe both independently, retaining the C++ linker used by NVBench.
+  set(filesystem_sources filesystem.cxx)
+  get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+  if ("CUDA" IN_LIST enabled_languages)
+    list(APPEND filesystem_sources filesystem.cu)
+  endif()
 
-  if (NOT filesystem_links)
+  set(filesystem_needs_stdcxxfs FALSE)
+  foreach(filesystem_source_name IN LISTS filesystem_sources)
     try_compile(filesystem_links
-      SOURCE_FROM_VAR filesystem.cu filesystem_source
+      SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
       SOURCE_FROM_VAR main.cxx main_source
       LINKER_LANGUAGE CXX
-      LINK_LIBRARIES stdc++fs
       NO_CACHE
     )
+
     if (NOT filesystem_links)
-      message(FATAL_ERROR
-        "NVBench could not link a filesystem test with or without stdc++fs. "
-        "See CMakeConfigureLog.yaml."
+      try_compile(filesystem_links
+        SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
+        SOURCE_FROM_VAR main.cxx main_source
+        LINKER_LANGUAGE CXX
+        LINK_LIBRARIES stdc++fs
+        NO_CACHE
       )
+      if (NOT filesystem_links)
+        message(FATAL_ERROR
+          "NVBench could not link ${filesystem_source_name} with or without stdc++fs. "
+          "See CMakeConfigureLog.yaml."
+        )
+      endif()
+      set(filesystem_needs_stdcxxfs TRUE)
     endif()
+  endforeach()
+
+  if (filesystem_needs_stdcxxfs)
     target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
   endif()
 endblock()
