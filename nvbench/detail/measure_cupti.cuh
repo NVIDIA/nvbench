@@ -35,6 +35,7 @@
 #include <nvbench/cupti_profiler.cuh>
 #include <nvbench/detail/kernel_launcher_timer_wrapper.cuh>
 #include <nvbench/detail/l2flush.cuh>
+#include <nvbench/detail/persisting_l2_cache_reset_fwd.cuh>
 #include <nvbench/detail/statistics.cuh>
 #include <nvbench/device_info.cuh>
 #include <nvbench/exec_tag.cuh>
@@ -58,6 +59,7 @@ namespace detail
 struct measure_cupti_base
 {
   explicit measure_cupti_base(nvbench::state &exec_state);
+  ~measure_cupti_base();
   measure_cupti_base(const measure_cupti_base &)            = delete;
   measure_cupti_base(measure_cupti_base &&)                 = delete;
   measure_cupti_base &operator=(const measure_cupti_base &) = delete;
@@ -70,6 +72,9 @@ protected:
   void generate_summaries();
 
   __forceinline__ void flush_device_l2() { m_l2flush.flush(m_launch.get_stream()); }
+  void initialize_persisting_l2_cache_disable();
+  void reset_persisting_l2_cache();
+  void restore_persisting_l2_cache();
 
   __forceinline__ void sync_stream() const
   {
@@ -83,8 +88,10 @@ protected:
   nvbench::cpu_timer m_walltime_timer;
 
   cupti_profiler m_cupti;
+  nvbench::detail::persisting_l2_cache_disable_ptr m_persisting_l2_cache_disable{};
 
   nvbench::int64_t m_total_samples{};
+  bool m_disable_persisting_l2_cache{false};
 };
 
 struct measure_cupti_base::kernel_launch_timer
@@ -95,6 +102,7 @@ struct measure_cupti_base::kernel_launch_timer
 
   __forceinline__ void start()
   {
+    m_measure.reset_persisting_l2_cache();
     m_measure.flush_device_l2();
     m_measure.sync_stream();
 
@@ -129,7 +137,19 @@ struct measure_cupti : public measure_cupti_base
   void operator()()
   {
     this->check();
-    this->run();
+    this->initialize_persisting_l2_cache_disable();
+
+    try
+    {
+      this->run();
+    }
+    catch (...)
+    {
+      this->restore_persisting_l2_cache();
+      throw;
+    }
+
+    this->restore_persisting_l2_cache();
     this->generate_summaries();
   }
 
