@@ -2,6 +2,7 @@ set(example_srcs
   auto_throughput.cu
   axes.cu
   custom_criterion.cu
+  custom_args.cu
   cpu_only.cu
   enums.cu
   exec_tag_sync.cu
