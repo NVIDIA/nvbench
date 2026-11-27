@@ -16,11 +16,9 @@
 
 import ctypes
 import sys
-from typing import Optional
 
-import cuda.bench as bench
-import cuda.cccl.headers as headers
-import cuda.core as core
+from cuda import bench, core
+from cuda.cccl import headers
 
 
 def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
@@ -28,7 +26,7 @@ def as_core_Stream(cs: bench.CudaStream) -> core.Stream:
     return core.Stream.from_handle(cs.addressof())
 
 
-def make_fill_kernel(data_type: Optional[str] = None):
+def make_fill_kernel(data_type: str | None = None):
     src = r"""
 #include <cuda/std/cstdint>
 #include <cuda/std/cstddef>

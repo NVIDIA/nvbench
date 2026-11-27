@@ -491,7 +491,9 @@ void json_printer::do_print_benchmark_results(const benchmark_vector &benches)
       bench["skip_time"]                = bench_ptr->get_skip_time();
       bench["timeout"]                  = bench_ptr->get_timeout();
 
-      auto &devices = bench["devices"];
+      // CPU-only benchmarks have no devices. Write an empty array rather than
+      // null so readers can always iterate over the device ids.
+      auto &devices = bench["devices"] = nlohmann::json::array();
       for (const auto &dev_info : bench_ptr->get_devices())
       {
         devices.push_back(dev_info.get_id());

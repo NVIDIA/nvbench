@@ -99,6 +99,13 @@ NVBENCH_DECLARE_ENUM_TYPE_STRINGS(
     }
   })
 
+// No NVBENCH_DECLARE_ENUM_TYPE_STRINGS: the default type_strings is used.
+enum class undeclared_scoped_enum
+{
+  val_a = 3,
+  val_b = 7
+};
+
 void test_int()
 {
   ASSERT((std::is_same_v<nvbench::enum_type_list<>, nvbench::type_list<>>));
@@ -165,11 +172,21 @@ void test_unscoped_enum_type_strings()
 
   // There's a gcc bug (fixed in gcc8) that causes these templates to resolve
   // incorrectly. See NVIDIA/nvbench#39 and NVBug 3404609 for details.
-#if defined(__GNUC__) && __GNUC_ > 7
+#if defined(__GNUC__) && __GNUC__ > 7
   ASSERT((nvbench::type_strings<val_1>::description() == "unscoped_val_1"));
   ASSERT((nvbench::type_strings<val_2>::description() == "unscoped_val_2"));
   ASSERT((nvbench::type_strings<val_3>::description() == "unscoped_val_3"));
 #endif
+}
+
+void test_undeclared_scoped_enum_type_strings()
+{
+  using values =
+    nvbench::enum_type_list<undeclared_scoped_enum::val_a, undeclared_scoped_enum::val_b>;
+  using val_a = nvbench::tl::get<0, values>;
+  using val_b = nvbench::tl::get<1, values>;
+  ASSERT((nvbench::type_strings<val_a>::input_string() == "3"));
+  ASSERT((nvbench::type_strings<val_b>::input_string() == "7"));
 }
 
 int main()
@@ -179,4 +196,5 @@ int main()
   test_unscoped_enum();
   test_scoped_enum_type_strings();
   test_unscoped_enum_type_strings();
+  test_undeclared_scoped_enum_type_strings();
 }

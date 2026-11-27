@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
@@ -521,7 +519,7 @@ class PlotCollector:
             self.plt.ylabel("time [s]")
             self.plt.title(cmp_device_name)
 
-            for axis in plot_data["cmp"].keys():
+            for axis in plot_data["cmp"]:
                 self._plot_line(plot_data, "cmp", "-", axis, axis)
                 self._plot_line(plot_data, "ref", "--", axis + " ref", axis)
 

@@ -235,6 +235,51 @@ void test_invalid_option()
   ASSERT_THROWS_ANY(parser.parse({"--not-a-real-option"}));
 }
 
+void test_partial_number_rejected()
+{
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=12abc"},
+                              {"int64", "12abc"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=0x10"},
+                              {"int64", "0x10"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Floats=1.5xyz"},
+                              {"float64", "1.5xyz"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=[1,12abc]"},
+                              {"int64", "12abc"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Floats=[1.0,1.5xyz]"},
+                              {"float64", "1.5xyz"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=[1:12abc]"},
+                              {"int64", "12abc"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=[1:10:2abc]"},
+                              {"int64", "2abc"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--min-samples", "12abc"},
+                              {"int64", "12abc"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--timeout", "1.5xyz"},
+                              {"float64", "1.5xyz"});
+}
+
+void test_range_stride_must_be_positive()
+{
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=[0:10:0]"},
+                              {"stride must be positive", "0:10:0"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Ints=[0:10:-1]"},
+                              {"stride must be positive", "0:10:-1"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "PO2s[pow2]=[0:10:0]"},
+                              {"stride must be positive", "0:10:0"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Floats=[0.0:1.0:0.0]"},
+                              {"stride must be positive", "0.0:1.0:0.0"});
+  assert_parse_error_contains({"--benchmark", "TestBench", "--axis", "Floats=[0.0:1.0:-0.1]"},
+                              {"stride must be positive", "0.0:1.0:-0.1"});
+}
+
+void test_scientific_float_axis()
+{
+  nvbench::option_parser parser;
+  parser.parse({"--benchmark", "TestBench", "--axis", "Floats=1.5e2"});
+  const auto &states = parser_to_states(parser);
+  ASSERT(!states.empty());
+  ASSERT(states.front().get_float64("Floats") == 150.);
+}
+
 void test_benchmark_long() // --benchmark
 {
   const std::string ref =
@@ -1862,6 +1907,9 @@ try
   test_exec_name_tolerance();
   test_argc_argv_parse();
   test_invalid_option();
+  test_partial_number_rejected();
+  test_range_stride_must_be_positive();
+  test_scientific_float_axis();
 
   test_benchmark_long();
   test_benchmark_short();

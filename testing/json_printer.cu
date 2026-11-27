@@ -26,6 +26,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -173,9 +174,28 @@ void test_benchmark_list_includes_description()
          std::string::npos);
 }
 
+void test_cpu_only_benchmark_devices_is_empty_array()
+{
+  auto bench = std::make_unique<dummy_bench>();
+  bench->set_is_cpu_only(true);
+  ASSERT(bench->get_devices().empty());
+
+  nvbench::printer_base::benchmark_vector benches;
+  benches.push_back(std::move(bench));
+
+  std::ostringstream output;
+  nvbench::json_printer printer{output, "cpu_only.json", false};
+  printer.print_benchmark_results(benches);
+
+  const auto json = output.str();
+  ASSERT_MSG(json.find("\"devices\": []") != std::string::npos, "{}", json);
+  ASSERT_MSG(json.find("\"devices\": null") == std::string::npos, "{}", json);
+}
+
 int main()
 {
   test_jsonbin_filenames_are_json_relative();
   test_jsonbin_write_failure_omits_file_metadata();
   test_benchmark_list_includes_description();
+  test_cpu_only_benchmark_devices_is_empty_array();
 }

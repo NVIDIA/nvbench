@@ -4,7 +4,7 @@ if (NOT TARGET CUDA::toolkit)
   find_package(CUDAToolkit REQUIRED)
 endif()
 
-if (EXISTS "${CUDAToolkit_LIBRARY_ROOT}/extras/CUPTI/lib64")
+if (EXISTS "${CUDAToolkit_LIBRARY_ROOT}/extras/CUPTI/include/cupti.h")
   # NVIDIA installer layout:
   set(nvbench_cupti_root "${CUDAToolkit_LIBRARY_ROOT}/extras/CUPTI")
 else()
@@ -14,8 +14,14 @@ endif()
 
 set(nvbench_cupti_library_hints "${nvbench_cupti_root}/lib64")
 if (WIN32)
+  # MSVC architecture IDs match the Windows library subdirectory names.
+  if (CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
+    string(TOLOWER "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" nvbench_cupti_arch)
+  else()
+    set(nvbench_cupti_arch x64)
+  endif()
   list(APPEND nvbench_cupti_library_hints
-    "${nvbench_cupti_root}/lib/x64"
+    "${nvbench_cupti_root}/lib/${nvbench_cupti_arch}"
     "${nvbench_cupti_root}/lib"
   )
 endif()
@@ -28,7 +34,7 @@ function(nvbench_find_windows_cupti_runtime_library out_var dep_name library_pat
   cmake_path(GET library_path PARENT_PATH library_dir)
   set(runtime_search_dirs "${library_dir}")
 
-  if ("${library_dir}" MATCHES "/Library/lib/x64$")
+  if ("${library_dir}" MATCHES "/Library/lib/[^/]+$")
     cmake_path(GET library_dir PARENT_PATH conda_lib_dir)
     cmake_path(GET conda_lib_dir PARENT_PATH conda_library_dir)
     list(APPEND runtime_search_dirs "${conda_library_dir}/bin")

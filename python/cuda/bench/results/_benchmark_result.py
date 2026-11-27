@@ -7,9 +7,9 @@ import array
 import json
 import os
 import sys
-from collections.abc import ItemsView, Iterator, KeysView, ValuesView
+from collections.abc import Callable, ItemsView, Iterator, KeysView, ValuesView
 from dataclasses import dataclass
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 __all__ = [
     "BenchmarkResult",
@@ -19,8 +19,8 @@ __all__ = [
     "SubBenchmarkState",
 ]
 
-ResultT = TypeVar("ResultT")
-BenchmarkResultT = TypeVar("BenchmarkResultT", bound="BenchmarkResult")
+_ResultT = TypeVar("_ResultT")
+_BenchmarkResultT = TypeVar("_BenchmarkResultT", bound="BenchmarkResult")
 _SummaryValue = int | float | str | None
 
 
@@ -61,7 +61,7 @@ def extract_summary_data_value(summary: dict, name: str, expected_type: str) -> 
 def extract_filename(summary: dict) -> str:
     value = extract_summary_data_value(summary, "filename", "string")
     if not isinstance(value, str):
-        raise ValueError(
+        raise TypeError(
             f"summary {summary.get('tag', '<unknown>')!r} field 'filename' "
             "value must be a string"
         )
@@ -154,7 +154,7 @@ def parse_summary(summary: dict) -> BenchmarkResultSummary:
     for value_data in summary.get("data", []):
         field_name = value_data.get("name")
         if not isinstance(field_name, str):
-            raise ValueError(
+            raise TypeError(
                 f"summary {summary_tag!r} has a data entry with a missing "
                 "or non-string name"
             )
@@ -286,7 +286,13 @@ def get_axis_name(axis: dict) -> str:
 class SubBenchmarkState:
     """Result data for one executed state of an NVBench benchmark."""
 
-    def __init__(self, state: dict, axes_names: dict, axes_values: dict, json_dir: str):
+    def __init__(
+        self,
+        state: dict,
+        axes_names: dict,
+        axes_values: dict,
+        json_dir: str,
+    ):
         self.state_name = state["name"]
         self.device = state.get("device")
         self.type_config_index = state.get("type_config_index")
@@ -314,7 +320,11 @@ class SubBenchmarkState:
             axis_value_map = axes_values[axis_name]
             if "value" in axis:
                 key = str(axis["value"])
-                value = axis_value_map.get(key, key)
+                if axis.get("type") == "float64" and axis["value"] is not None:
+                    # The axis input string may round distinct values to the same key.
+                    value = key
+                else:
+                    value = axis_value_map.get(key, key)
             else:
                 input_string = axis.get("input_string")
                 value = (
@@ -327,19 +337,29 @@ class SubBenchmarkState:
     def __repr__(self) -> str:
         return str(self.__dict__)
 
-    def name(self) -> str:
-        if not self.point:
-            return self.state_name
-        return " ".join(f"{k}={v}" for k, v in self.point.items())
+    def name(self, *, include_device: bool = True) -> str:
+        """Return the state name, including its device ID by default."""
+        device_name = f"Device={self.device}" if self.device is not None else None
+        if self.point:
+            name = " ".join(f"{key}={value}" for key, value in self.point.items())
+        else:
+            name = self.state_name
+            prefix, _, remainder = name.partition(" ")
+            if prefix == device_name:
+                name = remainder
 
-    def center(self, estimator: Callable[[array.array], ResultT]) -> ResultT | None:
+        if include_device and device_name is not None:
+            return f"{device_name} {name}" if name else device_name
+        return name or "<empty>"
+
+    def center(self, estimator: Callable[[array.array], _ResultT]) -> _ResultT | None:
         if self.samples is None:
             return None
         return estimator(self.samples)
 
     def center_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> ResultT | None:
+        self, estimator: Callable[[array.array, array.array], _ResultT]
+    ) -> _ResultT | None:
         if self.samples is None or self.frequencies is None:
             return None
         return estimator(self.samples, self.frequencies)
@@ -387,19 +407,32 @@ class SubBenchmarkResult:
         return iter(self.states)
 
     def centers(
-        self, estimator: Callable[[array.array], ResultT]
-    ) -> dict[str, ResultT | None]:
+        self,
+        estimator: Callable[[array.array], _ResultT],
+        *,
+        include_device: bool = True,
+    ) -> dict[str, _ResultT | None]:
+        """Estimate centers keyed by state name.
+
+        Set ``include_device=False`` for axis-only keys after selecting one device.
+        """
         result = {}
         for state in self.states:
-            result[state.name()] = state.center(estimator)
+            result[state.name(include_device=include_device)] = state.center(estimator)
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> dict[str, ResultT | None]:
+        self,
+        estimator: Callable[[array.array, array.array], _ResultT],
+        *,
+        include_device: bool = True,
+    ) -> dict[str, _ResultT | None]:
+        """Estimate centers using frequencies and the same keys as :meth:`centers`."""
         result = {}
         for state in self.states:
-            result[state.name()] = state.center_with_frequencies(estimator)
+            result[state.name(include_device=include_device)] = (
+                state.center_with_frequencies(estimator)
+            )
         return result
 
 
@@ -433,7 +466,9 @@ class BenchmarkResult:
         self.subbenches: dict[str, SubBenchmarkResult] = {}
 
     @classmethod
-    def empty(cls: type[BenchmarkResultT], *, metadata: Any = None) -> BenchmarkResultT:
+    def empty(
+        cls: type[_BenchmarkResultT], *, metadata: Any = None
+    ) -> _BenchmarkResultT:
         """Create an empty result container with optional user metadata."""
         result = cls(cls._construction_token)
         result.metadata = metadata
@@ -441,11 +476,11 @@ class BenchmarkResult:
 
     @classmethod
     def from_json(
-        cls: type[BenchmarkResultT],
+        cls: type[_BenchmarkResultT],
         json_path: str | os.PathLike[str],
         *,
         metadata: Any = None,
-    ) -> BenchmarkResultT:
+    ) -> _BenchmarkResultT:
         """Read benchmark result data from an NVBench JSON output file."""
         result = cls.empty(metadata=metadata)
         result._parse_json(json_path)
@@ -493,19 +528,27 @@ class BenchmarkResult:
         return self.subbenches.items()
 
     def centers(
-        self, estimator: Callable[[array.array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]:
+        self,
+        estimator: Callable[[array.array], _ResultT],
+        *,
+        include_device: bool = True,
+    ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
-            result[subbench] = self.subbenches[subbench].centers(estimator)
+            result[subbench] = self.subbenches[subbench].centers(
+                estimator, include_device=include_device
+            )
         return result
 
     def centers_with_frequencies(
-        self, estimator: Callable[[array.array, array.array], ResultT]
-    ) -> dict[str, dict[str, ResultT | None]]:
+        self,
+        estimator: Callable[[array.array, array.array], _ResultT],
+        *,
+        include_device: bool = True,
+    ) -> dict[str, dict[str, _ResultT | None]]:
         result = {}
         for subbench in self.subbenches:
             result[subbench] = self.subbenches[subbench].centers_with_frequencies(
-                estimator
+                estimator, include_device=include_device
             )
         return result

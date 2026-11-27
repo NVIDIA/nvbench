@@ -1,4 +1,4 @@
-include(CheckCXXCompilerFlag)
+include(CheckCompilerFlag)
 
 option(NVBench_ENABLE_WERROR
   "Treat warnings as errors while compiling NVBench."
@@ -22,20 +22,29 @@ set_target_properties(nvbench.build_interface PROPERTIES
 )
 
 function(nvbench_add_cxx_flag target_name type flag)
-  string(MAKE_C_IDENTIFIER "NVBench_CXX_FLAG_${flag}" var)
-  check_cxx_compiler_flag(${flag} ${var})
+  string(MAKE_C_IDENTIFIER "NVBench_CXX_FLAG_${flag}" cxx_var)
+  check_compiler_flag(CXX "${flag}" ${cxx_var})
 
-  if (${${var}})
+  if (${cxx_var})
     target_compile_options(${target_name} ${type}
       $<$<COMPILE_LANGUAGE:CXX>:${flag}>
-      $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcompiler=${flag}>
     )
+  endif()
+
+  if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+    string(MAKE_C_IDENTIFIER "NVBench_CUDA_HOST_FLAG_${flag}" cuda_host_var)
+    check_compiler_flag(CUDA "-Xcompiler=${flag}" ${cuda_host_var})
+
+    if (${cuda_host_var})
+      target_compile_options(${target_name} ${type}
+        $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcompiler=${flag}>
+      )
+    endif()
   endif()
 endfunction()
 
-# We test to see if C++ compiler options exist using try-compiles in the CXX lang, and then reuse those flags as
-# -Xcompiler flags for CUDA targets. This requires that the CXX compiler and CUDA_HOST compilers are the same when
-# using nvcc.
+# Check warning support independently for the C++ compiler and the CUDA host compiler. The top-level developer
+# build check below still requires matching compilers when using nvcc.
 if (NVBench_TOPLEVEL_PROJECT AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
   set(cuda_host_matches_cxx_compiler FALSE)
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.31)
@@ -82,10 +91,69 @@ if (NVBench_ENABLE_WERROR)
   nvbench_add_cxx_flag(nvbench.build_interface INTERFACE "-Werror")
 endif()
 
-# Experimental filesystem library
-if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-  target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
-endif()
+# Match the filesystem header selection used by the CUDA sources.
+block()
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE EXECUTABLE)
+  set(filesystem_source [=[
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#error "No <filesystem> or <experimental/filesystem> found."
+#endif
+
+bool filesystem_exists(const char *path) { return fs::exists(path); }
+]=])
+  set(main_source [=[
+bool filesystem_exists(const char *path);
+int main(int argc, char **argv) { return argc > 1 && filesystem_exists(argv[1]); }
+]=])
+
+  # C++ and CUDA may use different host compilers and standard libraries.
+  # Probe both independently, retaining the C++ linker used by NVBench.
+  set(filesystem_sources filesystem.cxx)
+  get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+  if ("CUDA" IN_LIST enabled_languages)
+    list(APPEND filesystem_sources filesystem.cu)
+  endif()
+
+  # Prefer the matching filesystem archive when available. GCC 8 headers can
+  # otherwise link to incompatible symbols in a newer libstdc++.so and crash.
+  set(filesystem_needs_stdcxxfs FALSE)
+  foreach(filesystem_source_name IN LISTS filesystem_sources)
+    try_compile(filesystem_links
+      SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
+      SOURCE_FROM_VAR main.cxx main_source
+      LINKER_LANGUAGE CXX
+      LINK_LIBRARIES stdc++fs
+      NO_CACHE
+    )
+
+    if (filesystem_links)
+      set(filesystem_needs_stdcxxfs TRUE)
+    else()
+      try_compile(filesystem_links
+        SOURCE_FROM_VAR ${filesystem_source_name} filesystem_source
+        SOURCE_FROM_VAR main.cxx main_source
+        LINKER_LANGUAGE CXX
+        NO_CACHE
+      )
+      if (NOT filesystem_links)
+        message(FATAL_ERROR
+          "NVBench could not link ${filesystem_source_name} with or without stdc++fs. "
+          "See CMakeConfigureLog.yaml."
+        )
+      endif()
+    endif()
+  endforeach()
+
+  if (filesystem_needs_stdcxxfs)
+    target_link_libraries(nvbench.build_interface INTERFACE stdc++fs)
+  endif()
+endblock()
 
 # CUDA-specific flags
 if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
@@ -124,6 +192,10 @@ function(nvbench_config_target target_name)
     LIBRARY_OUTPUT_DIRECTORY "${NVBench_LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "${NVBench_EXECUTABLE_OUTPUT_DIR}"
   )
+  # Final executables need their own copy step when nvbench is static or the
+  # control executable is disabled/not built. The helper skips static targets.
+  nvbench_setup_dep_dlls(${target_name})
+
   # CUPTI libraries are installed in random locations depending on the platform
   # and installation method. Sometimes they're next to the CUDA libraries and in
   # the library path, other times they're in a subdirectory that isn't added to
